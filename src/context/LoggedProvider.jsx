@@ -21,7 +21,6 @@ export function LoggedProvider({ children }) {
         auxLogged['isLoggedIn']=false
         auxLogged['user']={}
         deleteToken()
-()
         setLogged(auxLogged)
     }
 

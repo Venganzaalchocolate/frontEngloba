@@ -1,0 +1,56 @@
+.contenedor{
+    display: flex;
+    flex-direction: column;
+    flex: 1 100%;
+    background-image: url('../../../public/img/fondo_menuStart.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    justify-content: center;
+    align-items: center;
+    /* From https://css.glass */
+
+}
+
+.contenedor div{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    max-width: 30rem;
+    flex: 0;
+}
+
+.contenedor>.menu{
+    background-color: var(--color-malva);
+    height: auto;
+    border-radius: 1rem;
+    background: rgba(79, 82, 159, 0.42);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(4.4px);
+    -webkit-backdrop-filter: blur(4.4px);
+
+    width: 100%;
+    padding: 1rem 0;
+}
+
+.menu p{
+    padding-top: 2rem;
+    text-transform: uppercase;
+}
+
+@media (min-width: 600px) {
+    .contenedor div{
+        flex: 50%;
+    }
+    .contenedor>.menu{
+        height: 20rem;
+        width: auto;
+        padding: 0;
+
+    }
+    .contenedor{
+        flex-direction: row;
+    }
+    
+}

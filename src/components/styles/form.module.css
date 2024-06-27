@@ -1,49 +1,90 @@
 .contenedorLogin{
     display: flex;
-    flex-direction: column;
     flex: 1 100%;
     background-image: url('../../../public/img/fondo_menuStart.jpg');
+    flex-direction: column;
     background-repeat: no-repeat;
     background-size: cover;
     justify-content: center;
     align-items: center;
+    padding: 1rem;
+    flex-wrap: wrap;
     /* From https://css.glass */
 }
 
-.contenedorLogin div{
+.contenedorForm button{
+    margin-top: 1rem;
+}
+
+.contenedorLogin>:nth-child(1){
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    max-width: 30rem;
+    max-width: 20rem;
     flex: 0;
 }
 
+.contenedorLogin>div>div{
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 100%;
+    padding: 0 1rem;
+}
+
 .contenedorLogin>.contenedorForm{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 0;
     background-color: var(--color-malva);
-    height: auto;
     border-radius: 1rem;
     background: rgba(79, 82, 159, 0.42);
     border-radius: 16px;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(4.4px);
     -webkit-backdrop-filter: blur(4.4px);
-
-    width: 100%;
     padding: 1rem 0;
 }
 
+.contenedorForm input, .contenedorForm label, .contenedorForm span, .contenedorForm select, .contenedorForm textarea{
+    align-self: normal;
+    flex: 1 100%;
+}
+
 @media (min-width: 600px) {
+    .contenedorLogin>.contenedorForm{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        max-width: 600px;
+        align-items: flex-start;
+
+    }
     .contenedorLogin div{
         flex: 50%;
+        
     }
+
+    .contenedorLogin>div>div{
+        flex: 1 40%;
+    }
+
+    .contenedorLogin>div>div.inputGrande{
+        
+        flex: 1 100%;
+    }
+
+    input[type="file"] {
+        max-width: auto;
+      }
+
     .contenedorLogin>.menu{
         height: 20rem;
-        width: auto;
         padding: 0;
     }
-    .contenedorLogin{
-        flex-direction: row;
-    }
+
+
     
 }

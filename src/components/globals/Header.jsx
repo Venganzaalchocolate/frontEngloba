@@ -7,7 +7,7 @@ import { useLogin } from '../../hooks/useLogin';
 
 
 const Header = () => {
-    const { logged } = useLogin()
+    const { logged, logout } = useLogin()
 
     return (
         <header className={styles.header}>
@@ -15,7 +15,7 @@ const Header = () => {
                 <img src="/graphic/logotipo_blanco.png" alt="logotipo Engloba"/>
             </div>
             <div  className={styles.contenedorIconos}>
-                <FaUserCircle/>
+                <button onClick={()=>logout()}>Cerrar Sesión</button>
                 <FaEnvelope />
             </div>
         </header>

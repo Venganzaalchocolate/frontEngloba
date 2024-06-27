@@ -62,8 +62,7 @@ const Login = () => {
             } else {
                 changeLogged(login.user)
                 saveToken(login.token)
-                if(login.user.role=='admin') navigate('/admin')
-                else navigate('/')
+                navigate('/')
             }
         }
     }
@@ -77,12 +76,12 @@ const Login = () => {
             <div  className={styles.contenedorForm}>
                 <div className={styles.inputs}>
                     <label htmlFor="email">Email</label>
-                    <input type="email" id='email' name='email'onChange={(e)=>handleChange(e)} value={datos.email}/>
+                    <input type="email" id='email' name='email'onChange={(e)=>handleChange(e)} value={datos.email==null?'':datos.email}/>
                     <span className='errorSpan'>{errores.email}</span>
                 </div>
                 <div className={styles.inputs}>
                     <label htmlFor="password">Contraseña</label>
-                    <input type="password" id='password' name='password' onChange={(e)=>handleChange(e)} value={datos.password}/>
+                    <input type="password" id='password' name='password' onChange={(e)=>handleChange(e)} value={datos.password==null?'':datos.password}/>
                     <span className='errorSpan'>{errores.password}</span>
                 </div>
                 <button onClick={()=>login()}>

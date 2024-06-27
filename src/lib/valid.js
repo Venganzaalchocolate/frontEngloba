@@ -53,9 +53,13 @@ export const validUser=(respuesta)=>{
   return respuesta
 }
 
-export const validNumber=(texto, cero=false)=>{
-  let regex =/^[1-9][0-9]*$/; 
-  if(cero) regex =/^(0|[1-9][0-9]*)$/;
+
+export const validJobs=(job)=>{
+  return true
+}
+
+export const validNumber = (texto) => {
+  let regex = /^[1-9][0-9]{8}$/;
   return regex.test(texto);
 }
 

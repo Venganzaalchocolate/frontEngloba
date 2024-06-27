@@ -118,7 +118,11 @@ button{
   font-weight: 900;
   letter-spacing: 2px;
   width: 20rem;
-  margin: 0.5rem;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
 }
 
 button:hover{
@@ -141,12 +145,10 @@ label{
   letter-spacing: 2px;
   font-size: 10pt;
   align-self: flex-start;
-  max-width: 19rem;
 }
 
-input{
+input, select{
   border: none;
-  width: 19rem;
   padding: 0.5rem;
   border-radius: 0.5rem;
   background-color: white;
@@ -154,10 +156,18 @@ input{
   font-family: 'titulo1';
 }
 
+input[type="file"] {
+  max-width: 10rem;
+}
+
+textarea{
+  width: auto;
+  height: auto;
+}
+
 .errorSpan{
   color: tomato;
   font-family: 'Courier New', Courier, monospace;
   font-weight: bold;
   padding: 0.5rem 0;
-  max-width: 19rem;
 }

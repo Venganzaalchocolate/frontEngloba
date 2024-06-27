@@ -3,6 +3,8 @@ export const textErrors = (tipo) => {
         case "name":
         case "nombre":
             return "El nombre no es correcto, no debe contener números ni carácteres especiales";
+        case "phone":
+            return "El teléfono debe contener 9 números y no puede empezar por 0";
         case "from":
         case "email":
             return "El email no está bien escrito ej: email@gmail.com";

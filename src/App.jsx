@@ -7,6 +7,8 @@ import { tokenUser } from './lib/data.js'
 import Login from './components/globals/Login.jsx';
 import MenuStart from './components/globals/MenuStart.jsx';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import WorkerMenu from './components/globals/WorkerMenu.jsx';
+import FormJob from './components/globals/FormJob.jsx';
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()
@@ -28,13 +30,15 @@ function App() {
     isLogged();
   }, [])
 
+
   if (logged.isLoggedIn) {
     return (
       <BrowserRouter>
         <Header />
         <Routes>
+          <Route path="/" element={<WorkerMenu/>}></Route>
           <Route path="/login" element={<Login />}></Route>
-          <Route path="/trabajaconnosotros" element={<Login />}></Route>
+          <Route path="/trabajaconnosotros" element={<FormJob />}></Route>
         </Routes>
       </BrowserRouter>
     )
@@ -45,7 +49,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MenuStart/>}></Route>
           <Route path="/login" element={<Login />}></Route>
-          <Route path="/trabajaconnosotros" element={<Login />}></Route>
+          <Route path="/trabajaconnosotros" element={<FormJob />}></Route>
         </Routes>
       </BrowserRouter>
     )

@@ -1,6 +1,4 @@
 import styles from '../styles/menuStart.module.css';
-import { FaUserCircle, FaEnvelope } from "react-icons/fa";
-import { useLogin } from '../../hooks/useLogin';
 import { Link } from 'react-router-dom';
 
 

@@ -34,6 +34,10 @@
     padding: 1rem 0;
 }
 
+.menu a{
+    margin-top: 1rem;
+}
+
 .menu p{
     padding-top: 2rem;
     text-transform: uppercase;

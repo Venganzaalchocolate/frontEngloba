@@ -1,8 +1,10 @@
+const urlApi='https://backengloba.onrender.com/api'
+
 export const tokenUser = async (token) => {
     const datos = {
         token,
     };
-    const url = `${import.meta.env.VITE_API}/validtoken`
+    const url = `${urlApi}/validtoken`
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -18,7 +20,7 @@ export const tokenUser = async (token) => {
 }
 
 export const getData = async () => {
-    const url = `${import.meta.env.VITE_API}/infodata`
+    const url = `${urlApi}/infodata`
     const response = await fetch(url, {
         method: 'GET',
     });
@@ -32,7 +34,7 @@ export const getCVs = async (id) => {
       id
     };
   
-    const url = `${import.meta.env.VITE_API}/getFile`; // Endpoint para obtener el archivo PDF
+    const url = `${urlApi}/getFile`; // Endpoint para obtener el archivo PDF
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -68,7 +70,7 @@ export const loginUser = async (email, password) => {
         email,
         password,
     };
-    const url = `${import.meta.env.VITE_API}/login`
+    const url = `${urlApi}/login`
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -87,7 +89,7 @@ export const getusercvs=async (page, limit, filters)=>{
         limit,
         ...filters
     };
-    const url = `${import.meta.env.VITE_API}/usercvs`
+    const url = `${urlApi}/usercvs`
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -111,7 +113,7 @@ export const sendFormCv = async (dataForm, file) => {
         formData.append('file', file);
     }
 
-    let url = `${import.meta.env.VITE_API}/filterusercv`
+    let url = `${urlApi}/filterusercv`
     let response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -122,7 +124,7 @@ export const sendFormCv = async (dataForm, file) => {
 
     const userExist = await response.json()
     if (userExist.data.length == 0) {
-        const url = `${import.meta.env.VITE_API}/createusercv`
+        const url = `${urlApi}/createusercv`
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -139,7 +141,7 @@ export const sendFormCv = async (dataForm, file) => {
         }
     } else {
         if (!!userExist.data[0]._id) {
-            const url = `${import.meta.env.VITE_API}/modifyusercv`
+            const url = `${urlApi}/modifyusercv`
             dataForm['_id']=userExist.data[0]._id;
             dataForm['numberCV']=userExist.data[0].numberCV+1
             const response = await fetch(url, {
@@ -161,7 +163,7 @@ export const sendFormCv = async (dataForm, file) => {
         }
     }
 
-    const uploadUrl = `${import.meta.env.VITE_API}/uploadcv`;
+    const uploadUrl = `${urlApi}/uploadcv`;
 
     const uploadResponse = await fetch(uploadUrl, {
         method: 'POST',

@@ -4,14 +4,27 @@
     flex: 1 100%;
     padding: 1rem 4rem;
     flex-direction: column;
+    color: var(--color-malva);
+    gap: 1rem;
 }
 
-.contenedorCV{
+.contenedor h2{
+    color: var(--color-yema);
+    text-transform: uppercase;
+
+}
+
+.paginacion{
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
 }
 
-.contenedorCV>div:nth-child(2){
-    flex: 1;
+.paginacion>div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .contenedorfiltro{
@@ -21,10 +34,21 @@
     padding: 1rem;
     border-radius: 1rem;
     gap: 1rem;
+    align-items: end;
 }
 
 .contenedorfiltro>h3{
     flex: 1 100%;
+}
+
+.contenedorfiltro button{
+    color: var(--color-yema);
+    background-color: var(--color-morado);
+}
+
+.contenedorfiltro button:hover{
+    background-color: var(--color-yema);
+    color: var(--color-morado);
 }
 
 .contenedorfiltro>div{
@@ -37,8 +61,10 @@
 .tableContainer {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 3px;
+    color: var(--color-morado);
 }
+
 
 .tableRow {
     display: flex;
@@ -47,6 +73,14 @@
     padding: 10px;
     border-radius: 4px;
     background-color: #fff;
+}
+
+.tableRow:hover{
+    background-color: var(--color-malva);
+}
+
+.tableContainer>:nth-child(1):hover{
+    background-color: white;
 }
 
 .header {
@@ -81,6 +115,14 @@
     border-right: none;
 }
 
+.botonDestacado{
+    background-color: var(--color-crema);
+    color: var(--color-morado);
+}
+
+.botonDestacado:hover{
+    background-color: var(--color-malva);
+}
 
 @media (max-width: 1080px) {
     .tableCell {

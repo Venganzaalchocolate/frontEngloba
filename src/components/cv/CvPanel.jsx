@@ -1,0 +1,139 @@
+import { useEffect, useState } from "react"
+import PdfV from "./PdfV";
+import styles from '../styles/cvPanel.module.css';
+import { FaPhoneAlt } from "react-icons/fa";
+import { MdVideoCall } from "react-icons/md";
+import { IoPersonSharp } from "react-icons/io5";
+import { FaEye } from "react-icons/fa";
+import { FaRegEyeSlash } from "react-icons/fa6";
+import { GoStar } from "react-icons/go";
+import { GoStarFill } from "react-icons/go";
+import { BsExclamationOctagonFill } from "react-icons/bs";
+import { modifyUser } from "../../lib/data";
+import { BsExclamationOctagon } from "react-icons/bs";
+import { dateAndHour } from "../../lib/utils";
+import { useLogin } from '../../hooks/useLogin';
+import { IoBagAdd } from "react-icons/io5";
+
+const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
+    const { logged} = useLogin()
+    const [typeComment, setTypeComment] = useState(null)
+    const [textComment, setTextComment] = useState('')
+
+    const saveComment = async () => {
+        if (textComment != '' && typeComment != null) {
+            const textAux = {
+                _id:user._id,
+                id:logged.user._id,
+                nameUserComment:logged.user.name,
+                [typeComment]: textComment,
+                
+            }
+            const response = await modifyUser(textAux);
+            if(!response.error)changeUser(response)
+            modal('Comentario', 'Comentario guardado con éxito')
+        }
+    }
+
+    const changeStatus=async (typeStatus)=>{
+        const textAux={
+            _id:user._id,
+            id:logged.user._id,
+            nameUserComment:logged.user.name,
+            [typeStatus]:!user[typeStatus]
+        }
+        const response = await modifyUser(textAux);
+        if(!response.error)changeUser(response)
+    }
+
+    const handleChange = (e) => {
+        setTextComment(e.target.value)
+    }
+
+    const handleChangeType=(type)=>{
+        setTypeComment(type)
+        setTextComment('')
+    }
+
+    if(user){
+        return (
+
+            <div className={styles.contenedorCV}>
+                <div className={styles.comments}>
+                    <div className={styles.iconos}>
+                        {(user.view) ? <FaEye color="white" onClick={()=>changeStatus('view')} /> : <FaRegEyeSlash onClick={()=>changeStatus('view')}/>}
+                        {(user.favorite) ? <GoStarFill color='yellow' onClick={()=>changeStatus('favorite')}></GoStarFill> : <GoStar onClick={()=>changeStatus('favorite')}></GoStar>}
+                        {(user.reject) ? <BsExclamationOctagonFill color="tomato" onClick={()=>changeStatus('reject')}/>: <BsExclamationOctagon  onClick={()=>changeStatus('reject')}/>}
+                    </div>
+                    <div className={styles.boxComments}>
+                        <h2>Comentarios</h2>
+                        <div>
+                            <div className={styles.iconos}>
+                                <FaPhoneAlt onClick={() => handleChangeType('commentsPhone')}></FaPhoneAlt>
+                                <MdVideoCall onClick={() => handleChangeType('commentsVideo')}></MdVideoCall>
+                                <IoPersonSharp onClick={() => handleChangeType('commentsInperson')}></IoPersonSharp>
+                            </div>
+                            {typeComment != null &&
+                                <div className={styles.contentComment}>
+                                    <h4>Entrevista {(typeComment == 'commentsPhone') ? 'por Telefónica' : (typeComment == 'commentsVideo') ? 'por Videollamada' : 'en Persona'}</h4>
+                                    <textarea name="comentarios" id="comentarios" value={textComment} onChange={(e) => handleChange(e)}></textarea>
+                                    <button onClick={() => saveComment()}>Guardar Comentarios</button>
+                                    <button onClick={() => setTypeComment(null)}>Cancelar</button>
+                                </div>}
+                        </div>
+                       
+                    </div>
+                    {!!user.about &&
+                            <div className={styles.about}>
+                                <h3>Sobre mi</h3>
+                                <p>{user.about}</p>
+                            </div>
+                    }
+                    <h2>COMENTARIOS ANTERIORES</h2>
+                    {!user.commentsPhone && !user.commentsVideo && !user.commentsInperson && <p>No hay comentarios todavía</p>}
+                    {!!user.commentsPhone &&
+                            <div className={styles.about}>
+                                <h3>Entrevistas Teléfonicas</h3>
+                                {user.commentsPhone.map((x)=> <div>
+                                    <p>{x.nameUser}</p>
+                                    <p>{dateAndHour(x.date)}</p>
+                                    <p>{x.message}</p>
+                                </div>
+                                )}
+                            </div>
+                    }
+                    {!!user.commentsVideo &&
+                            <div className={styles.about}>
+                                <h3>Entrevistas Videollamada</h3>
+                                {user.commentsVideo.map((x)=> <div>
+                                    <p>{x.nameUser}</p>
+                                    <p>{dateAndHour(x.date)}</p>
+                                    <p>{x.message}</p>
+                                </div>
+                                )}
+                            </div>
+                    }
+                    {!!user.commentsInperson &&
+                            <div className={styles.about}>
+                                <h3>Entrevistas en Persona</h3>
+                                {user.commentsInperson.map((x)=> <div>
+                                    <p>{x.nameUser}</p>
+                                    <p>{dateAndHour(x.date)}</p>
+                                    <p>{x.message}</p>
+                                </div>
+                                )}
+                            </div>
+                    }
+                                
+    
+    
+                </div>
+                <PdfV url={urlpdf}></PdfV>
+            </div>
+        )
+    }
+
+
+}
+
+export default CvPanel;

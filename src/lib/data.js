@@ -1,4 +1,5 @@
-const urlApi='https://backengloba.onrender.com/api'
+// const urlApi='https://backengloba.onrender.com/api'
+const urlApi='http://localhost:10000/api'
 
 export const tokenUser = async (token) => {
     const datos = {
@@ -29,7 +30,7 @@ export const getData = async () => {
     return data.data
 }
 
-export const getCVs = async (id) => {
+export const getCVs = async (id, token) => {
     const datos = {
       id
     };
@@ -39,7 +40,8 @@ export const getCVs = async (id) => {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(datos)
       });
@@ -63,6 +65,20 @@ export const getCVs = async (id) => {
     }
   };
   
+  export const modifyUser=async(dataUser)=>{
+
+    const url = `${urlApi}/modifyusercv`
+    const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataUser)
+    });
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+  }
 
 
 export const loginUser = async (email, password) => {
@@ -83,7 +99,7 @@ export const loginUser = async (email, password) => {
     return data.data
 }
 
-export const getusercvs=async (page, limit, filters)=>{
+export const getusercvs=async (page, limit, filters, token)=>{
     const datos = {
         page,
         limit,
@@ -93,7 +109,8 @@ export const getusercvs=async (page, limit, filters)=>{
     const response = await fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(datos)
     });
@@ -104,7 +121,6 @@ export const getusercvs=async (page, limit, filters)=>{
 
 
 export const sendFormCv = async (dataForm, file) => {
-
     
     const formData = new FormData();
 
@@ -123,7 +139,7 @@ export const sendFormCv = async (dataForm, file) => {
     });
 
     const userExist = await response.json()
-    if (userExist.data.length == 0) {
+    if (userExist.data==undefined || userExist.data.length == 0) {
         const url = `${urlApi}/createusercv`
         const response = await fetch(url, {
             method: 'POST',

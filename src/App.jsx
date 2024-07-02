@@ -9,9 +9,26 @@ import MenuStart from './components/globals/MenuStart.jsx';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import WorkerMenu from './components/globals/WorkerMenu.jsx';
 import FormJob from './components/globals/FormJob.jsx';
+import Modal from './components/globals/Modal.jsx';
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()
+  const [modal, setModal]=useState({
+    open:false,
+    title:'',
+    message:''
+})
+
+  const changeModal=(title, message, status=true)=>{
+    const textAux={
+      open:status,
+      title:title,
+      message:message
+    }
+    setModal(textAux)
+  }
+
+
 
   useEffect(() => {
     const isLogged = async () => {
@@ -36,10 +53,10 @@ function App() {
       <BrowserRouter>
         <Header />
         <Routes>
-          <Route path="/" element={<WorkerMenu/>}></Route>
-          <Route path="/login" element={<Login />}></Route>
-          <Route path="/trabajaconnosotros" element={<FormJob />}></Route>
+          <Route path="/" element={<WorkerMenu modal={(title, message)=>changeModal(title, message)}/>}></Route>
+          <Route path="/login" element={<Login modal={(title, message)=>changeModal(title, message)}/>}></Route>
         </Routes>
+        {modal.open && <Modal data={modal} closeModal={()=>setModal({open:false})}></Modal>}
       </BrowserRouter>
     )
 
@@ -49,8 +66,10 @@ function App() {
         <Routes>
           <Route path="/" element={<MenuStart/>}></Route>
           <Route path="/login" element={<Login />}></Route>
-          <Route path="/trabajaconnosotros" element={<FormJob />}></Route>
+          <Route path="/trabajaconnosotros" element={<FormJob modal={(open, title, message)=>changeModal(open, title, message)}/>}></Route>
+          
         </Routes>
+        {modal.open && <Modal data={modal} closeModal={()=>setModal({open:false})} />}
       </BrowserRouter>
     )
   }

@@ -12,13 +12,13 @@ import ManagingPayroll from '../payroll/ManagingPayroll';
 
 
 
-const WorkerMenu = () => {
+const WorkerMenu = ({modal}) => {
     const [action, setAction] = useState(null)
 
     if(action!=null){
-        if (action=='cv') return <ManagingResumenes closeAction={()=>setAction(null)}/>;
-        if( action=='socialForm') return <ManagingSocial closeAction={()=>setAction(null)}/>;
-        if( action=='payroll') return <ManagingPayroll closeAction={()=>setAction(null)}/>;
+        if (action=='cv') return <ManagingResumenes closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
+        if( action=='socialForm') return <ManagingSocial closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
+        if( action=='payroll') return <ManagingPayroll closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
     } else return (
         <>
         <div className={styles.contenedor}>

@@ -1,0 +1,97 @@
+
+.contenedorCV{
+    display: flex;
+    color: white;
+    padding: 1rem 0rem;
+    gap: 1rem;
+    flex-direction: column;
+}
+
+.contenedorCV>div{
+    display: flex;
+    flex-direction: column;
+}
+
+
+.contenedorCV h2, .contenedorCV h3, .contenedorCV h4{
+    color: var(--color-crema);
+    text-transform: uppercase;
+}
+
+.contenedorCV .iconos{
+    padding: 1rem 0;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.iconos svg {
+    color: var(--color-malva);
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.iconos svg:hover{
+    color: var(--color-chicle);
+}
+
+.boxComments{
+    border-bottom: 5px solid var(--color-malva);
+    border-top: 5px solid var(--color-malva);
+    padding: 0.5rem 0;
+
+}
+
+.contenedorCV .contentComment{
+    color: var(--color-morado);
+    background-color: var(--color-crema);
+    padding: 1rem;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    
+}
+
+
+
+.contentComment>h4{
+    color: var(--color-morado);
+}
+
+.contentComment textarea{
+    display: flex;
+    border: none;
+    padding: 1rem;
+    flex: 1;
+
+}
+
+.contenedorCV .about{
+    padding: 1rem 0;
+   
+}
+
+.contenedorCV>div:nth-child(2){
+    display: flex;
+    flex: 1;
+    min-height: 80vh;
+}
+
+.contenedorCV object{
+    display: flex;
+    flex: 1 100%;
+}
+
+/*
+*/
+
+@media (min-width: 600px) {
+    .contenedorCV{
+        flex-direction: row;
+    }
+
+    .contenedorCV .about{
+        max-width: 20rem;
+    }
+}

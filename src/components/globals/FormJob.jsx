@@ -5,13 +5,12 @@ import styles from '../styles/form.module.css';
 import { Link } from 'react-router-dom';
 import { textErrors } from '../../lib/textErrors';
 import {  sendFormCv, getData } from '../../lib/data';
-import Modal from '../utils/Modal';
+
 
 
 
 const FormJob = () => {
     const [file, setFile]=useState(null)
-    const [modalMessage, setModal]=useState(null)
     const [enums, setEnums]=useState(null)
     const [jobs, setJobs]=useState(null)
     const [datos,setDatos]=useState({
@@ -94,7 +93,7 @@ const FormJob = () => {
                 auxErrores['mensajeError'] = sendForm.message;
                 setError(auxErrores)
             } else {
-                setModal('Curriculum enviado con éxito')
+                
             }
         } 
     }
@@ -184,7 +183,6 @@ const FormJob = () => {
                     <button>Cancelar</button>
                 </Link>
                 <span className='errorSpan'>{errores.mensajeError}</span>
-                {modalMessage && <Modal message={modalMessage}></Modal>}
             </div>
         </div>
     )

@@ -6,19 +6,26 @@ import PdfV from "./PdfV";
 import { FaCheck } from "react-icons/fa";
 import { FaRegEyeSlash } from "react-icons/fa6";
 import { IoNewspaperSharp } from "react-icons/io5";
-
-
+import { useNavigate } from "react-router-dom";
+import { getToken } from "../../lib/serviceToken";
+import { useLogin } from '../../hooks/useLogin.jsx';
+import CvPanel from "./CvPanel.jsx";
+import Modal from "../globals/Modal.jsx";
 
 
 // 
-const ManagingResumenes = ({ closeAction }) => {
+const ManagingResumenes = ({ closeAction, modalC }) => {
+    const { logged, changeLogged, logout } = useLogin()
+
+    const navigate = useNavigate();
+
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10); // Tamaño de página por defecto
     const [users, setUsers] = useState([]);
     const [totalPages, setTotalPages] = useState(0);
     const [enums, setEnums] = useState(null)
-    const [urlCv, setUrlCv]=useState(null)
-    const [userSelected, setUserSelected]=useState(null)
+    const [urlCv, setUrlCv] = useState(null)
+    const [userSelected, setUserSelected] = useState(null)
     const [filters, setFilters] = useState({
         name: '',
         email: '',
@@ -33,7 +40,8 @@ const ManagingResumenes = ({ closeAction }) => {
     // Función para cargar los datos de la página actual
     const loadUsers = async () => {
         try {
-            const data = await getusercvs(page, limit, filters);
+            const token = getToken();
+            const data = await getusercvs(page, limit, filters, token);
             const enumsData = await getData();
             let auxEnums = {}
             auxEnums['jobs'] = enumsData.jobs
@@ -41,7 +49,7 @@ const ManagingResumenes = ({ closeAction }) => {
             auxEnums['work_schedule'] = enumsData.work_schedule
             setEnums(auxEnums)
             if (data.error) {
-                console.error('Error al cargar usuarios:', data.error);
+                console.error('Error al cargar usuarios:', data.message);
             } else {
                 setUsers(data.users); // Establece los usuarios recuperados
                 setTotalPages(data.totalPages); // Establece el número total de páginas
@@ -54,7 +62,8 @@ const ManagingResumenes = ({ closeAction }) => {
 
     // Cargar usuarios cuando cambie la página, el tamaño de página o los filtros
     useEffect(() => {
-        loadUsers();
+        if (logged.isLoggedIn) loadUsers();
+        else navigate('/login')
     }, [page, limit, filters]);
 
     // Función para manejar el cambio de página
@@ -95,27 +104,36 @@ const ManagingResumenes = ({ closeAction }) => {
         })); // Reiniciar a la primera página al aplicar los filtros
     };
 
-    const lookCV=async (id, userData)=>{
-        const cvData=await getCVs(id);
-        console.log(cvData)
+    const lookCV = async (id, userData) => {
+        const token = getToken();
+        const cvData = await getCVs(id, token);
         setUrlCv(cvData)
         setUserSelected(userData);
     }
 
     return (
         <div className={styles.contenedor}>
-            <h2>Listado de Usuarios</h2>
-            <div>
-                <label htmlFor="limit">Usuarios por página:</label>
-                <select id="limit" value={limit} onChange={handleLimitChange}>
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                </select>
+            <div className={styles.paginacion}>
+                <h2>Gestión de Curriculums</h2>
+                <div>
+                    <label htmlFor="limit">Usuarios por página:</label>
+                    <select id="limit" value={limit} onChange={handleLimitChange}>
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                    </select>
+                    <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
+                        {'<'}
+                    </button>
+                    <span>Página {page}</span>
+                    <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
+                    {'>'}
+                    </button>
+                    <button className={styles.botonDestacado}>Crear Bolsa de Empleo</button>
+                </div>
             </div>
 
             <div className={styles.contenedorfiltro}>
-                <h3>Filtros</h3>
                 <div>
                     <label htmlFor="name">Nombre:</label>
                     <input type="text" id="name" name="name" value={filters.name} onChange={handleFilterChange} />
@@ -132,8 +150,8 @@ const ManagingResumenes = ({ closeAction }) => {
                     <label htmlFor="view">Visto</label>
                     <select id='view' name='view' onChange={handleFilterChange} value={filters.view}>
                         <option>Selecciona una opción</option>
-                        <option value={true}>Si</option>
-                        <option value={false}>No</option>
+                        <option value={`true`}>Si</option>
+                        <option value={`false`}>No</option>
                     </select>
                 </div>
 
@@ -141,9 +159,9 @@ const ManagingResumenes = ({ closeAction }) => {
                     <div>
                         <label htmlFor="jobs">Puestos</label>
                         <select id='jobs' name='jobs' onChange={handleFilterChange} value={filters.jobs}>
-                            <option>Selecciona una opción</option>
+                            <option key='selectJob'>Selecciona una opción</option>
                             {enums.jobs.map((x) => {
-                                return <option value={x}>{x}</option>
+                                return <option value={x} key={`SelectJob${x}`}>{x}</option>
                             })}
                         </select>
                     </div>
@@ -152,9 +170,9 @@ const ManagingResumenes = ({ closeAction }) => {
                     <div>
                         <label htmlFor="provinces">Provincias</label>
                         <select id='provinces' name='provinces' onChange={handleFilterChange} value={filters.provinces}>
-                            <option>Selecciona una opción</option>
+                            <option key='selectProvinces'>Selecciona una opción</option>
                             {enums.provinces.map((x) => {
-                                return <option value={x}>{x}</option>
+                                return <option value={x} key={`selectProvinces${x}`}>{x}</option>
                             })}
                         </select>
                     </div>
@@ -163,15 +181,15 @@ const ManagingResumenes = ({ closeAction }) => {
                     <div>
                         <label htmlFor="work_schedule">Horario</label>
                         <select id='work_schedule' name='work_schedule' onChange={handleFilterChange} value={filters.work_schedule}>
-                            <option>Selecciona una opción</option>
+                            <option key='selectSchedule'>Selecciona una opción</option>
                             {enums.work_schedule.map((x) => {
-                                return <option value={x}>{x}</option>
+                                return <option key={`selectSchedule${x}`} value={x}>{x}</option>
                             })}
                         </select>
                     </div>
                 }
 
-                
+
 
                 <div>
                     <button onClick={resetFilters}>Reset Filtros</button>
@@ -180,64 +198,43 @@ const ManagingResumenes = ({ closeAction }) => {
             </div>
 
             <div className={styles.tableContainer}>
-            <div className={`${styles.tableRow} ${styles.header}`}>
-                <div className={styles.tableCell}>Nombre</div>
-                <div className={styles.tableCell}>Email</div>
-                <div className={styles.tableCell}>Teléfono</div>
-                <div className={styles.tableCell}>Puesto al que oferta</div>
-                <div className={styles.tableCell}>Provincias</div>
-                <div className={styles.tableCell}>Oferta</div>
-                <div className={styles.tableCell}>Version</div>
-                <div className={styles.tableCell}>Visto</div>
-                <div className={styles.tableCell}>Ver Curriculum</div>
-            </div>
-            {users.map(user => (
-                <>
-                <div className={styles.tableRow} key={user._id}>
-                    <div className={styles.tableCell}>{user.name}</div>
-                    <div className={styles.tableCell}>{user.email}</div>
-                    <div className={styles.tableCell}>{user.phone}</div>
-                    <div className={styles.tableCell}>{user.jobs}</div>
-                    <div className={styles.tableCell}>{user.provinces}</div>
-                    <div className={styles.tableCell}>{user.offer}</div>
-                    <div className={styles.tableCell}>{user.numberCV}</div>
-                    <div className={styles.tableCell}>{(user.view)?<FaEye/>:<FaRegEyeSlash/>}</div>
-                    <div className={styles.tableCell}>
-                        <IoNewspaperSharp onClick={()=>lookCV(user._id, user)}></IoNewspaperSharp>
-                    </div>
+                <div className={`${styles.tableRow} ${styles.header}`}>
+                    <div className={styles.tableCell}>Nombre</div>
+                    <div className={styles.tableCell}>Email</div>
+                    <div className={styles.tableCell}>Teléfono</div>
+                    <div className={styles.tableCell}>Puesto al que oferta</div>
+                    <div className={styles.tableCell}>Provincias</div>
+                    <div className={styles.tableCell}>Oferta</div>
+                    <div className={styles.tableCell}>Version</div>
+                    <div className={styles.tableCell}>Visto</div>
                 </div>
-                {urlCv!=null && userSelected._id==user._id && 
-                <div className={styles.contenedorCV}>
-                    <div>
-                        <div>
-                            <h2>Comentarios</h2>
-                            <textarea name="comentarios" id="comentarios"></textarea>   
-                            <button>Guardar Comentarios</button> 
+                {users.map(user => (
+                    <div key={user._id} >
+                        <div className={styles.tableRow} onClick={() => lookCV(user._id, user)}>
+                            <div className={styles.tableCell}>{user.name}</div>
+                            <div className={styles.tableCell}>{user.email}</div>
+                            <div className={styles.tableCell}>{user.phone}</div>
+                            <div className={styles.tableCell}>{user.jobs}</div>
+                            <div className={styles.tableCell}>{user.provinces}</div>
+                            <div className={styles.tableCell}>{user.offer}</div>
+                            <div className={styles.tableCell}>{user.numberCV}</div>
+                            <div className={styles.tableCell}>{(user.view) ? <FaEye /> : <FaRegEyeSlash />}</div>
                         </div>
-                        <div>
-                            <label htmlFor="visto">Visto</label>
-                            <input type="checkbox" name="visto" id="visto"/>
-                        </div>
-
+                        {urlCv != null && userSelected._id == user._id &&
+                            <CvPanel
+                                urlpdf={urlCv.url}
+                                user={userSelected}
+                                changeUser={(x) => setUserSelected(x)}
+                                modal={(title, message) => modalC(title, message)}>
+                            </CvPanel>
+                        }
                     </div>
-                    <PdfV url={urlCv.url}></PdfV>
-                    
-                </div>}
-                </>
-                
-            ))}
-            
-        </div>
-            <div>
-                <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
-                    Anterior
-                </button>
-                <span>Página {page}</span>
-                <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
-                    Siguiente
-                </button>
+
+                ))}
+
             </div>
         </div>
+
     );
 };
 

@@ -94,7 +94,7 @@ img {
   object-fit: contain;
 }
 
-button{
+button, input::file-selector-button{
   background: none;
   border: none;
   padding: 0;
@@ -113,6 +113,16 @@ button{
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+input::file-selector-button{
+  width: 100%;
+}
+
+input[type='file']{
+  background: none;
+  padding: 0;
+  color: var(--color-chicle);
 }
 
 button:hover{
@@ -146,13 +156,11 @@ input, select{
   font-family: 'titulo1';
 }
 
-input[type="file"] {
-  max-width: 10rem;
-}
 
 textarea{
   width: auto;
   height: auto;
+  min-height: 10rem;
 }
 
 .errorSpan{
@@ -160,4 +168,9 @@ textarea{
   font-family: 'Courier New', Courier, monospace;
   font-weight: bold;
   padding: 0.5rem 0;
+}
+
+.green{
+  background-color: var(--color-verde-hoja);
+  color: white;
 }

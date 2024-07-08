@@ -115,14 +115,16 @@
     border-right: none;
 }
 
-.botonDestacado{
+#tituloProcesoActivo{
+    text-align: center;
+    font-size: 30pt;
     background-color: var(--color-crema);
     color: var(--color-morado);
+    padding: 1rem;
+    border-radius: 0.5rem;
 }
 
-.botonDestacado:hover{
-    background-color: var(--color-malva);
-}
+
 
 @media (max-width: 1080px) {
     .tableCell {

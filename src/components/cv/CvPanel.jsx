@@ -13,12 +13,16 @@ import { modifyUser } from "../../lib/data";
 import { BsExclamationOctagon } from "react-icons/bs";
 import { dateAndHour } from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
-import { IoBagAdd } from "react-icons/io5";
+import BagPanel from "./BagPanel";
+import { useBag } from "../../hooks/useBag.jsx";
+
 
 const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
     const { logged} = useLogin()
+    const {Bag, schedule}= useBag()
     const [typeComment, setTypeComment] = useState(null)
     const [textComment, setTextComment] = useState('')
+
 
     const saveComment = async () => {
         if (textComment != '' && typeComment != null) {
@@ -40,7 +44,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
             _id:user._id,
             id:logged.user._id,
             nameUserComment:logged.user.name,
-            [typeStatus]:!user[typeStatus]
+            [typeStatus]:(user[typeStatus]==null)?logged.user._id:null
         }
         const response = await modifyUser(textAux);
         if(!response.error)changeUser(response)
@@ -61,10 +65,12 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
             <div className={styles.contenedorCV}>
                 <div className={styles.comments}>
                     <div className={styles.iconos}>
-                        {(user.view) ? <FaEye color="white" onClick={()=>changeStatus('view')} /> : <FaRegEyeSlash onClick={()=>changeStatus('view')}/>}
-                        {(user.favorite) ? <GoStarFill color='yellow' onClick={()=>changeStatus('favorite')}></GoStarFill> : <GoStar onClick={()=>changeStatus('favorite')}></GoStar>}
-                        {(user.reject) ? <BsExclamationOctagonFill color="tomato" onClick={()=>changeStatus('reject')}/>: <BsExclamationOctagon  onClick={()=>changeStatus('reject')}/>}
+                        {(user.view!=null) ? <FaEye color="white" onClick={()=>changeStatus('view')} /> : <FaRegEyeSlash onClick={()=>changeStatus('view')}/>}
+                        {(user.favorite!=null) ? <GoStarFill color='yellow' onClick={()=>changeStatus('favorite')}></GoStarFill> : <GoStar onClick={()=>changeStatus('favorite')}></GoStar>}
+                        {(user.reject!=null) ? <BsExclamationOctagonFill color="tomato" onClick={()=>changeStatus('reject')}/>: <BsExclamationOctagon  onClick={()=>changeStatus('reject')}/>}
+                        {Bag!=null && <BagPanel userSelected={user}/>}
                     </div>
+                    {Bag!=null && schedule &&
                     <div className={styles.boxComments}>
                         <h2>Comentarios</h2>
                         <div>
@@ -83,6 +89,9 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
                         </div>
                        
                     </div>
+                    
+                    }
+                    
                     {!!user.about &&
                             <div className={styles.about}>
                                 <h3>Sobre mi</h3>
@@ -94,7 +103,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
                     {!!user.commentsPhone &&
                             <div className={styles.about}>
                                 <h3>Entrevistas Teléfonicas</h3>
-                                {user.commentsPhone.map((x)=> <div>
+                                {user.commentsPhone.map((x)=> <div key={`commentPhone${x._id}`}>
                                     <p>{x.nameUser}</p>
                                     <p>{dateAndHour(x.date)}</p>
                                     <p>{x.message}</p>
@@ -105,7 +114,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
                     {!!user.commentsVideo &&
                             <div className={styles.about}>
                                 <h3>Entrevistas Videollamada</h3>
-                                {user.commentsVideo.map((x)=> <div>
+                                {user.commentsVideo.map((x)=> <div key={`commentVideo${x._id}`}>
                                     <p>{x.nameUser}</p>
                                     <p>{dateAndHour(x.date)}</p>
                                     <p>{x.message}</p>
@@ -116,7 +125,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
                     {!!user.commentsInperson &&
                             <div className={styles.about}>
                                 <h3>Entrevistas en Persona</h3>
-                                {user.commentsInperson.map((x)=> <div>
+                                {user.commentsInperson.map((x)=> <div key={`commentAbout${x._id}`}>
                                     <p>{x.nameUser}</p>
                                     <p>{dateAndHour(x.date)}</p>
                                     <p>{x.message}</p>

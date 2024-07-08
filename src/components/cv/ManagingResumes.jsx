@@ -11,12 +11,14 @@ import { getToken } from "../../lib/serviceToken";
 import { useLogin } from '../../hooks/useLogin.jsx';
 import CvPanel from "./CvPanel.jsx";
 import Modal from "../globals/Modal.jsx";
+import BagCreate from "./BagCreate.jsx";
+import { useBag } from "../../hooks/useBag.jsx";
 
 
 // 
 const ManagingResumenes = ({ closeAction, modalC }) => {
     const { logged, changeLogged, logout } = useLogin()
-
+    const {Bag, schedule}= useBag()
     const navigate = useNavigate();
 
     const [page, setPage] = useState(1);
@@ -59,6 +61,11 @@ const ManagingResumenes = ({ closeAction, modalC }) => {
         }
     };
 
+    
+    useEffect(()=>{
+        setUrlCv(null)
+        setUserSelected(null)
+    }, [Bag])
 
     // Cargar usuarios cuando cambie la página, el tamaño de página o los filtros
     useEffect(() => {
@@ -105,11 +112,20 @@ const ManagingResumenes = ({ closeAction, modalC }) => {
     };
 
     const lookCV = async (id, userData) => {
-        const token = getToken();
-        const cvData = await getCVs(id, token);
-        setUrlCv(cvData)
-        setUserSelected(userData);
+
+        if(userSelected==userData){
+            setUrlCv(null)
+            setUserSelected(null);   
+        } else{
+            const token = getToken();
+            const cvData = await getCVs(id, token);
+            setUrlCv(cvData)
+            setUserSelected(userData);
+        }
+        
     }
+
+    
 
     return (
         <div className={styles.contenedor}>
@@ -123,79 +139,83 @@ const ManagingResumenes = ({ closeAction, modalC }) => {
                         <option value={20}>20</option>
                     </select>
                     <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
-                        {'<'}
+                    {'<'}
                     </button>
                     <span>Página {page}</span>
                     <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
                     {'>'}
                     </button>
-                    <button className={styles.botonDestacado}>Crear Bolsa de Empleo</button>
+                    <BagCreate/>
                 </div>
             </div>
-
+            {Bag!=null && !schedule &&<h2 id={styles.tituloProcesoActivo}>Selección activa: {Bag.name}</h2>}
+            {Bag!=null && !!schedule &&<h2 id={styles.tituloProcesoActivo}>Entrevistas: {Bag.name}</h2>}
+            {!schedule &&
             <div className={styles.contenedorfiltro}>
+            <div>
+                <label htmlFor="name">Nombre:</label>
+                <input type="text" id="name" name="name" value={filters.name} onChange={handleFilterChange} />
+            </div>
+            <div>
+                <label htmlFor="email">Email:</label>
+                <input type="text" id="email" name="email" value={filters.email} onChange={handleFilterChange} />
+            </div>
+            <div>
+                <label htmlFor="offer">Oferta:</label>
+                <input type="text" id="offer" name="offer" value={filters.offer} onChange={handleFilterChange} />
+            </div>
+            <div>
+                <label htmlFor="view">Visto</label>
+                <select id='view' name='view' onChange={handleFilterChange} value={filters.view}>
+                    <option>Selecciona una opción</option>
+                    <option value={`true`}>Si</option>
+                    <option value={`false`}>No</option>
+                </select>
+            </div>
+
+            {!!enums &&
                 <div>
-                    <label htmlFor="name">Nombre:</label>
-                    <input type="text" id="name" name="name" value={filters.name} onChange={handleFilterChange} />
-                </div>
-                <div>
-                    <label htmlFor="email">Email:</label>
-                    <input type="text" id="email" name="email" value={filters.email} onChange={handleFilterChange} />
-                </div>
-                <div>
-                    <label htmlFor="offer">Oferta:</label>
-                    <input type="text" id="offer" name="offer" value={filters.offer} onChange={handleFilterChange} />
-                </div>
-                <div>
-                    <label htmlFor="view">Visto</label>
-                    <select id='view' name='view' onChange={handleFilterChange} value={filters.view}>
-                        <option>Selecciona una opción</option>
-                        <option value={`true`}>Si</option>
-                        <option value={`false`}>No</option>
+                    <label htmlFor="jobs">Puestos</label>
+                    <select id='jobs' name='jobs' onChange={handleFilterChange} value={filters.jobs}>
+                        <option key='selectJob'>Selecciona una opción</option>
+                        {enums.jobs.map((x) => {
+                            return <option value={x} key={`SelectJob${x}`}>{x}</option>
+                        })}
                     </select>
                 </div>
-
-                {!!enums &&
-                    <div>
-                        <label htmlFor="jobs">Puestos</label>
-                        <select id='jobs' name='jobs' onChange={handleFilterChange} value={filters.jobs}>
-                            <option key='selectJob'>Selecciona una opción</option>
-                            {enums.jobs.map((x) => {
-                                return <option value={x} key={`SelectJob${x}`}>{x}</option>
-                            })}
-                        </select>
-                    </div>
-                }
-                {!!enums &&
-                    <div>
-                        <label htmlFor="provinces">Provincias</label>
-                        <select id='provinces' name='provinces' onChange={handleFilterChange} value={filters.provinces}>
-                            <option key='selectProvinces'>Selecciona una opción</option>
-                            {enums.provinces.map((x) => {
-                                return <option value={x} key={`selectProvinces${x}`}>{x}</option>
-                            })}
-                        </select>
-                    </div>
-                }
-                {!!enums &&
-                    <div>
-                        <label htmlFor="work_schedule">Horario</label>
-                        <select id='work_schedule' name='work_schedule' onChange={handleFilterChange} value={filters.work_schedule}>
-                            <option key='selectSchedule'>Selecciona una opción</option>
-                            {enums.work_schedule.map((x) => {
-                                return <option key={`selectSchedule${x}`} value={x}>{x}</option>
-                            })}
-                        </select>
-                    </div>
-                }
-
-
-
+            }
+            {!!enums &&
                 <div>
-                    <button onClick={resetFilters}>Reset Filtros</button>
+                    <label htmlFor="provinces">Provincias</label>
+                    <select id='provinces' name='provinces' onChange={handleFilterChange} value={filters.provinces}>
+                        <option key='selectProvinces'>Selecciona una opción</option>
+                        {enums.provinces.map((x) => {
+                            return <option value={x} key={`selectProvinces${x}`}>{x}</option>
+                        })}
+                    </select>
                 </div>
+            }
+            {!!enums &&
+                <div>
+                    <label htmlFor="work_schedule">Horario</label>
+                    <select id='work_schedule' name='work_schedule' onChange={handleFilterChange} value={filters.work_schedule}>
+                        <option key='selectSchedule'>Selecciona una opción</option>
+                        {enums.work_schedule.map((x) => {
+                            return <option key={`selectSchedule${x}`} value={x}>{x}</option>
+                        })}
+                    </select>
+                </div>
+            }
 
+
+
+            <div>
+                <button onClick={resetFilters}>Reset Filtros</button>
             </div>
+
+        </div>
+            }
+
 
             <div className={styles.tableContainer}>
                 <div className={`${styles.tableRow} ${styles.header}`}>
@@ -208,29 +228,52 @@ const ManagingResumenes = ({ closeAction, modalC }) => {
                     <div className={styles.tableCell}>Version</div>
                     <div className={styles.tableCell}>Visto</div>
                 </div>
-                {users.map(user => (
-                    <div key={user._id} >
-                        <div className={styles.tableRow} onClick={() => lookCV(user._id, user)}>
-                            <div className={styles.tableCell}>{user.name}</div>
-                            <div className={styles.tableCell}>{user.email}</div>
-                            <div className={styles.tableCell}>{user.phone}</div>
-                            <div className={styles.tableCell}>{user.jobs}</div>
-                            <div className={styles.tableCell}>{user.provinces}</div>
-                            <div className={styles.tableCell}>{user.offer}</div>
-                            <div className={styles.tableCell}>{user.numberCV}</div>
-                            <div className={styles.tableCell}>{(user.view) ? <FaEye /> : <FaRegEyeSlash />}</div>
+                {(!!schedule && Bag!=null && Bag['userCv'].length>0) ?
+                    Bag['userCv'].map(user => (
+                        <div key={user._id} >
+                            <div className={styles.tableRow} onClick={() => lookCV(user._id, user)}>
+                                <div className={styles.tableCell}>{user.name}</div>
+                                <div className={styles.tableCell}>{user.email}</div>
+                                <div className={styles.tableCell}>{user.phone}</div>
+                                <div className={styles.tableCell}>{user.jobs}</div>
+                                <div className={styles.tableCell}>{user.provinces}</div>
+                                <div className={styles.tableCell}>{user.offer}</div>
+                                <div className={styles.tableCell}>{user.numberCV}</div>
+                                <div className={styles.tableCell}>{(user.view) ? <FaEye /> : <FaRegEyeSlash />}</div>
+                            </div>
+                            {urlCv != null && userSelected._id == user._id &&
+                                <CvPanel
+                                    urlpdf={urlCv.url}
+                                    user={userSelected}
+                                    changeUser={(x) => setUserSelected(x)}
+                                    modal={(title, message) => modalC(title, message)}>
+                                </CvPanel>
+                            }
                         </div>
-                        {urlCv != null && userSelected._id == user._id &&
-                            <CvPanel
-                                urlpdf={urlCv.url}
-                                user={userSelected}
-                                changeUser={(x) => setUserSelected(x)}
-                                modal={(title, message) => modalC(title, message)}>
-                            </CvPanel>
-                        }
-                    </div>
-
-                ))}
+                    ))
+                    : users.map(user => (
+                        <div key={user._id} >
+                            <div className={`${styles.tableRow} ${(Bag!=null && !!Bag.userCv && Bag.userCv.find(x => x._id === user._id)) ? 'green' : ''}`} onClick={() => lookCV(user._id, user)}>
+                                <div className={styles.tableCell}>{user.name}</div>
+                                <div className={styles.tableCell}>{user.email}</div>
+                                <div className={styles.tableCell}>{user.phone}</div>
+                                <div className={styles.tableCell}>{user.jobs}</div>
+                                <div className={styles.tableCell}>{user.provinces}</div>
+                                <div className={styles.tableCell}>{user.offer}</div>
+                                <div className={styles.tableCell}>{user.numberCV}</div>
+                                <div className={styles.tableCell}>{(user.view) ? <FaEye /> : <FaRegEyeSlash />}</div>
+                            </div>
+                            {urlCv != null && userSelected._id == user._id &&
+                                <CvPanel
+                                    urlpdf={urlCv.url}
+                                    user={userSelected}
+                                    changeUser={(x) => setUserSelected(x)}
+                                    modal={(title, message) => modalC(title, message)}>
+                                </CvPanel>
+                            }
+                        </div>
+                    ))}
+                
 
             </div>
         </div>

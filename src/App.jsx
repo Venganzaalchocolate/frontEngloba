@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import WorkerMenu from './components/globals/WorkerMenu.jsx';
 import FormJob from './components/globals/FormJob.jsx';
 import Modal from './components/globals/Modal.jsx';
+import NotFound from './components/globals/NotFound.jsx';
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()
@@ -54,7 +55,7 @@ function App() {
         <Header />
         <Routes>
           <Route path="/" element={<WorkerMenu modal={(title, message)=>changeModal(title, message)}/>}></Route>
-          <Route path="/login" element={<Login modal={(title, message)=>changeModal(title, message)}/>}></Route>
+          <Route path="/*" element={<WorkerMenu modal={(title, message)=>changeModal(title, message)}/>}></Route>
         </Routes>
         {modal.open && <Modal data={modal} closeModal={()=>setModal({open:false})}></Modal>}
       </BrowserRouter>
@@ -66,10 +67,11 @@ function App() {
         <Routes>
           <Route path="/" element={<MenuStart/>}></Route>
           <Route path="/login" element={<Login />}></Route>
-          <Route path="/trabajaconnosotros" element={<FormJob modal={(open, title, message)=>changeModal(open, title, message)}/>}></Route>
-          
+          <Route path="/trabajaconnosotros" element={<FormJob modal={(title, message)=>changeModal(title, message)}/>}></Route>
+          <Route path="/*" element={<NotFound/>}></Route>
         </Routes>
         {modal.open && <Modal data={modal} closeModal={()=>setModal({open:false})} />}
+        
       </BrowserRouter>
     )
   }

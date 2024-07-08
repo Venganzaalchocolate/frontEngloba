@@ -1,0 +1,121 @@
+.ventana{
+  display: flex;
+  position: fixed;
+  background-color: rgba(79, 82, 161, 0.643);
+  min-width: 100vw;
+  min-height: 100vh;
+  z-index: 10000;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  top: 0;
+  left: 0;
+}
+
+.contenedor{
+  display: flex;
+  justify-content: center;
+  align-items: left;
+  background-color: var(--color-morado);
+  flex:0;
+  flex-direction: column;
+  
+  padding: 2rem;
+  border-radius: 1rem;
+  color: white;
+}
+
+.botonDestacado{
+    background-color: var(--color-crema);
+    color: var(--color-morado);
+}
+
+.botonDestacado:hover{
+    background-color: var(--color-malva);
+}
+
+.botonesBag{
+  display: flex;
+}
+
+
+  
+  
+
+  .contenedor>div, .contenedor>h2{
+    display: flex;
+    flex-direction: column;
+  }
+
+  .contenedor>h2{
+    text-transform: uppercase;
+    width: 100%;
+    font-size: 24pt;
+    color: var(--color-crema);
+  }
+
+  .contenedor label {
+    color: var(--color-morado);
+  }
+
+  .contenedor div{
+    display: flex;
+    gap: 0.5rem;
+    color: var(--color-morado);
+  }
+  
+  .contenedor p {
+    color: var(--color-morado);
+  }
+
+  .contenedorSelect{
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-malva);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+
+  .contenedorSelect>:nth-child(2){
+    margin-bottom: 1rem;
+    display: flex;
+  }
+
+  .contenedorSelect>div>button{
+    flex: 1 50%;
+    background-color: var(--color-morado);
+    color: var(--color-malva);
+  }
+
+  .contenedorSelect>div>button:hover{
+    background-color: var(--color-crema);
+    color: var(--color-morado);
+  }
+
+  .tomato{
+    background-color: tomato;
+    color: white;
+  }
+
+  .tomato:hover{
+    background-color: var(--color-crema);
+    color: var(--color-morado);
+  }
+
+  .botonesMenu{
+    padding: 0.5rem;
+    background-color: var(--color-malva);
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .botonesMenu>button{
+    color: var(--color-malva);
+    background-color: var(--color-morado);
+  }
+
+  .botonesMenu>button:hover{
+    background-color: var(--color-crema);
+    color: var(--color-morado);
+  }

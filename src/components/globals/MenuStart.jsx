@@ -16,6 +16,9 @@ const MenuStart = () => {
                 <Link to={'/trabajaconnosotros'}>
                     <button>TRABAJA CON NOSOTROS</button>
                 </Link>
+                <Link to={'/ofertas'}>
+                    <button>OFERTAS DE EMPLEO</button>
+                </Link>
                 <Link to={'/contacto'}>
                         <p>Contacto</p>   
                 </Link>

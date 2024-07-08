@@ -9,14 +9,14 @@ import { AiOutlineEuro } from "react-icons/ai";
 import ManagingResumenes from '../cv/ManagingResumes';
 import ManagingSocial from '../social/ManagingSocial';
 import ManagingPayroll from '../payroll/ManagingPayroll';
-
+import { BagProvider } from '../../context/BagProvider'
 
 
 const WorkerMenu = ({modal}) => {
     const [action, setAction] = useState(null)
 
     if(action!=null){
-        if (action=='cv') return <ManagingResumenes closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
+        if (action=='cv') return <BagProvider><ManagingResumenes closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/></BagProvider>;
         if( action=='socialForm') return <ManagingSocial closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
         if( action=='payroll') return <ManagingPayroll closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
     } else return (

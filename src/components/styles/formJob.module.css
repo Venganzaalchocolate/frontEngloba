@@ -1,0 +1,165 @@
+.contenedor{
+    display: flex;
+    flex: 1 100%;
+    background-image: url('../../../public/img/fondo_menuStart.jpg');
+    flex-direction: column;
+    background-repeat: no-repeat;
+    background-size: cover;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    flex-wrap: wrap;
+    /* From https://css.glass */
+}
+
+.contenedorForm button{
+    margin-top: 1rem;
+}
+
+.contenedor>:nth-child(1){
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    max-width: 20rem;
+    flex: 0;
+}
+
+.contenedor>div>div{
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 100%;
+    padding: 0 1rem;
+}
+
+.contenedor>.contenedorForm{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 0;
+    background-color: var(--color-malva);
+    border-radius: 1rem;
+    background: rgba(79, 82, 159, 0.42);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(4.4px);
+    -webkit-backdrop-filter: blur(4.4px);
+    padding: 1rem 0;
+}
+
+.contenedorForm input, .contenedorForm label, .contenedorForm span, .contenedorForm select, .contenedorForm textarea{
+    align-self: normal;
+    flex: 1 100%;
+}
+
+.contenedorForm>.contenedorSelectionMultiple{
+    display: flex;
+    flex: 1 100%;
+    gap: 2rem;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    color: var(--color-morado);
+    margin-bottom: 0.5rem;
+}
+
+.contenedorForm>.contenedorSelectionMultiple select{
+    flex:0
+}
+
+.contenedorForm>.contenedorSelectionMultiple>div{
+    display: flex;
+    flex-direction: column;
+    flex: 1 45%;
+}
+
+.contenedorForm>.contenedorSelectionMultiple>div>ul>li{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 2px;
+}
+
+
+
+.contenedorForm>.contenedorSelectionMultiple>div>ul>li>button{
+    margin: 0;
+    padding: 0 1rem;
+    background-color: tomato;
+    color: white;
+}
+
+.contenedorForm>.contenedorSelectionMultiple>div>label{
+    color: var(--color-morado);
+    flex:0
+}
+
+.contenedorForm>.contenedorSelectionMultiple>div>div{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.contenedorForm>.contenedorSelectionMultiple>div>div>button{
+    background-color: var(--color-morado);
+    color: var(--color-malva);
+    flex:1;
+}
+
+.contenedorForm>.contenedorSelectionMultiple>div>div>button:hover{
+    background-color: var(--color-crema);
+    color: var(--color-morado);
+}
+
+
+
+.contenedorForm>.contenedorSelectionMultiple>div>div>span{
+    flex:1 100%;
+}
+
+.botones{
+    display: flex;
+    flex-direction: column;
+
+}
+
+.botones button, .botones>a{
+    display: flex;
+    flex: 1;
+}
+
+
+
+@media (min-width: 600px) {
+    .contenedor>.contenedorForm{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        max-width: 600px;
+        align-items: flex-start;
+
+    }
+
+    .contenedor>div>div{
+        flex: 1 40%;
+    }
+
+    .contenedor>div>div.inputGrande{
+        flex: 1 100%;
+    }
+
+    input[type="file"] {
+        max-width: auto;
+      }
+
+    .contenedor>.menu{
+        height: 20rem;
+        padding: 0;
+    }
+
+    .botones{
+        flex-direction: row;
+        gap: 2rem;
+    }
+    
+}

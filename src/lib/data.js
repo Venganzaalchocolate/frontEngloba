@@ -1,6 +1,69 @@
 // const urlApi='https://backengloba.onrender.com/api'
 const urlApi='http://localhost:10000/api'
 
+export const addEmployerBag=async(datos,token)=>{
+    const url = `${urlApi}/addemployerbag`
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
+export const createBag=async(datos, token)=>{
+
+    const url = `${urlApi}/createbag`
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
+export const getBags=async(token)=>{
+    const url = `${urlApi}/getbags`
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
+export const getPrograms=async(token)=>{
+    const url = `${urlApi}/programs`
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
 export const tokenUser = async (token) => {
     const datos = {
         token,
@@ -121,7 +184,6 @@ export const getusercvs=async (page, limit, filters, token)=>{
 
 
 export const sendFormCv = async (dataForm, file) => {
-    
     const formData = new FormData();
 
     // Check for file presence
@@ -169,7 +231,6 @@ export const sendFormCv = async (dataForm, file) => {
             });
 
             const data = await response.json();
-            console.log(data)
             if (data.error) return data
             else {
                 if (!!data.data._id) {
@@ -190,7 +251,6 @@ export const sendFormCv = async (dataForm, file) => {
     if (uploadData.error) {
         throw new Error(uploadData.error); // Re-throw error for better handling
     }
-    console.log(uploadData)
     // Assuming upload response contains relevant data (e.g., uploaded file info)
     return {
         uploadedFile: uploadData, // Uploaded file information

@@ -54,7 +54,7 @@ const Login = () => {
         }
 
         if (valido) {
-            const login = await loginUser(datos.email, datos.password).catch((error) => console.log(error));
+            const login = await loginUser(datos.email, datos.password);
             if (login.error) {
                 let auxErrores = { ...errores }
                 auxErrores['mensajeError'] = login.message;
@@ -77,12 +77,12 @@ const Login = () => {
                 <div className={styles.inputs}>
                     <label htmlFor="email">Email</label>
                     <input type="email" id='email' name='email'onChange={(e)=>handleChange(e)} value={datos.email==null?'':datos.email}/>
-                    <span className='errorSpan'>{errores.email}</span>
+                    {!!errores.email && <span className='errorSpan'>{errores.email}</span>}
                 </div>
                 <div className={styles.inputs}>
                     <label htmlFor="password">Contraseña</label>
                     <input type="password" id='password' name='password' onChange={(e)=>handleChange(e)} value={datos.password==null?'':datos.password}/>
-                    <span className='errorSpan'>{errores.password}</span>
+                    {!!errores.password && <span className='errorSpan'>{errores.password}</span>}
                 </div>
                 <button onClick={()=>login()}>
                     Entrar
@@ -90,7 +90,7 @@ const Login = () => {
                 <Link to={'/'}>
                     <button>Cancelar</button>
                 </Link>
-                
+                {!!errores.mensajeError && <span className='errorSpan'>{errores.mensajeError}</span>}
             </div>
         </div>
     )

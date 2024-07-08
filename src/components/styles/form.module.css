@@ -12,24 +12,19 @@
     /* From https://css.glass */
 }
 
-.contenedorForm button{
-    margin-top: 1rem;
-}
-
-.contenedorLogin>:nth-child(1){
+.contenedorLogin>div{
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
     max-width: 20rem;
     flex: 0;
+    flex-wrap: wrap;
 }
 
 .contenedorLogin>div>div{
     display: flex;
     flex-wrap: wrap;
     flex: 1 100%;
-    padding: 0 1rem;
 }
 
 .contenedorLogin>.contenedorForm{
@@ -45,46 +40,15 @@
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(4.4px);
     -webkit-backdrop-filter: blur(4.4px);
-    padding: 1rem 0;
+    padding: 1rem;
+    gap: 0.5rem;
 }
 
-.contenedorForm input, .contenedorForm label, .contenedorForm span, .contenedorForm select, .contenedorForm textarea{
-    align-self: normal;
+.contenedorForm>button{
+    margin-top: 1rem;
+}
+
+.contenedorForm input, .contenedorForm label, .contenedorForm span,.contenedorForm button, .contenedorForm>a, .contenedorForm>a>button{
+    display: flex;
     flex: 1 100%;
-}
-
-@media (min-width: 600px) {
-    .contenedorLogin>.contenedorForm{
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        max-width: 600px;
-        align-items: flex-start;
-
-    }
-    .contenedorLogin div{
-        flex: 50%;
-        
-    }
-
-    .contenedorLogin>div>div{
-        flex: 1 40%;
-    }
-
-    .contenedorLogin>div>div.inputGrande{
-        
-        flex: 1 100%;
-    }
-
-    input[type="file"] {
-        max-width: auto;
-      }
-
-    .contenedorLogin>.menu{
-        height: 20rem;
-        padding: 0;
-    }
-
-
-    
 }

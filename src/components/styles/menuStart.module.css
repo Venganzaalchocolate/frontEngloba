@@ -15,9 +15,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
-    max-width: 30rem;
+    max-width: 25rem;
     flex: 0;
+    flex-wrap: wrap;
 }
 
 .contenedor>.menu{
@@ -29,28 +29,28 @@
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(4.4px);
     -webkit-backdrop-filter: blur(4.4px);
-
-    width: 100%;
-    padding: 1rem 0;
+    padding: 1rem;
+    gap: 1rem;
 }
 
-.menu a{
-    margin-top: 1rem;
-}
 
 .menu p{
-    padding-top: 2rem;
     text-transform: uppercase;
 }
+
+.menu button, .menu a{
+    display: flex;
+    flex: 1 100%;
+    justify-content: center;
+}
+
 
 @media (min-width: 600px) {
     .contenedor div{
         flex: 50%;
     }
     .contenedor>.menu{
-        height: 20rem;
         width: auto;
-        padding: 0;
 
     }
     .contenedor{

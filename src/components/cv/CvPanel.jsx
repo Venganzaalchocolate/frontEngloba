@@ -15,6 +15,7 @@ import { dateAndHour } from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
 import BagPanel from "./BagPanel";
 import { useBag } from "../../hooks/useBag.jsx";
+import VisualizadorPDF from "./GoogleView.jsx";
 
 
 const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
@@ -137,6 +138,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
     
     
                 </div>
+                <VisualizadorPDF url={urlpdf}></VisualizadorPDF>
                 <PdfV url={urlpdf}></PdfV>
             </div>
         )

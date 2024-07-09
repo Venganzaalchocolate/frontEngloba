@@ -5,6 +5,7 @@ const VisualizadorPDF = ({url}) => {
     const blobUrl = url;
     return (
         <div>
+          <h2>holi {blobUrl}</h2>
           {blobUrl && (
             <embed
               src={blobUrl}

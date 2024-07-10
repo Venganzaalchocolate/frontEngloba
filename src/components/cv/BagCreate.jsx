@@ -74,12 +74,13 @@ const BagCreate = () => {
 
     const handleChangeSelected = (e) => {
         const { value, name } = e.target;
-        if(name=='bag')setBag(value);
+        if(name=='bags' && value!=-1)setBag(value);
         if(name=='programs') setProgramSelected(value);
         if(name=='dispositive') setDispositiveSelected(value);
     }
 
     const selectedBag = () => {
+
         const bagSelectedData = options.filter((x) => x._id == bagselected)[0]
         if (bagselected != null && bagSelectedData != null) {
             setOptions(null)
@@ -92,7 +93,6 @@ const BagCreate = () => {
     const closeProcess = () => {
         changeBag(null)
     }
-
 
 
     if (Bag != null) {
@@ -123,7 +123,7 @@ const BagCreate = () => {
                                 <label htmlFor="bags">Selecciona un proceso</label>
                                 <div>
                                     <select id='bags' name='bags' onChange={handleChangeSelected} value={bagselected}>
-                                        <option key='selectBag'>Selecciona una opción</option>
+                                        <option key='selectBag' value={-1}>Selecciona una opción</option>
                                         {options.map((x) => {
                                             return <option value={x._id} key={`SelectBag${x._id}`}>{x.name} - Sepe:{(x.sepe) ? 'Si' : 'No'} - Fecha:{dateAndHour(x.date)}</option>
                                         })}

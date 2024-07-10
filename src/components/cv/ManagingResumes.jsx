@@ -16,11 +16,10 @@ import { useBag } from "../../hooks/useBag.jsx";
 
 
 // 
-const ManagingResumenes = ({ closeAction, modalC }) => {
+const ManagingResumenes = ({ modalC }) => {
     const { logged, changeLogged, logout } = useLogin()
     const {Bag, schedule}= useBag()
     const navigate = useNavigate();
-
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10); // Tamaño de página por defecto
     const [users, setUsers] = useState([]);
@@ -41,9 +40,19 @@ const ManagingResumenes = ({ closeAction, modalC }) => {
 
     // Función para cargar los datos de la página actual
     const loadUsers = async () => {
+  
         try {
+            let data=null
             const token = getToken();
-            const data = await getusercvs(page, limit, filters, token);
+           
+            if(Bag!=null && !!schedule){
+
+                const ids={ users: Bag.userCv }
+                data = await getusercvs(page, limit, ids, token);
+            } else{
+                data = await getusercvs(page, limit, filters, token); 
+            }
+            
             const enumsData = await getData();
             let auxEnums = {}
             auxEnums['jobs'] = enumsData.jobs
@@ -71,7 +80,7 @@ const ManagingResumenes = ({ closeAction, modalC }) => {
     useEffect(() => {
         if (logged.isLoggedIn) loadUsers();
         else navigate('/login')
-    }, [page, limit, filters]);
+    }, [page, limit, filters, schedule]);
 
     // Función para manejar el cambio de página
     const handlePageChange = (newPage) => {
@@ -228,10 +237,9 @@ const ManagingResumenes = ({ closeAction, modalC }) => {
                     <div className={styles.tableCell}>Version</div>
                     <div className={styles.tableCell}>Visto</div>
                 </div>
-                {(!!schedule && Bag!=null && Bag['userCv'].length>0) ?
-                    Bag['userCv'].map(user => (
+                 {users.map(user => (
                         <div key={user._id} >
-                            <div className={styles.tableRow} onClick={() => lookCV(user._id, user)}>
+                            <div className={`${styles.tableRow} ${(Bag!=null && !!Bag.userCv && Bag.userCv.find(x => x === user._id)) ? 'green' : ''}`} onClick={() => lookCV(user._id, user)}>
                                 <div className={styles.tableCell}>{user.name}</div>
                                 <div className={styles.tableCell}>{user.email}</div>
                                 <div className={styles.tableCell}>{user.phone}</div>
@@ -241,31 +249,9 @@ const ManagingResumenes = ({ closeAction, modalC }) => {
                                 <div className={styles.tableCell}>{user.numberCV}</div>
                                 <div className={styles.tableCell}>{(user.view) ? <FaEye /> : <FaRegEyeSlash />}</div>
                             </div>
-                            {urlCv != null && userSelected._id == user._id &&
+                            {userSelected!=null && userSelected._id == user._id &&
                                 <CvPanel
-                                    urlpdf={urlCv.url}
-                                    user={userSelected}
-                                    changeUser={(x) => setUserSelected(x)}
-                                    modal={(title, message) => modalC(title, message)}>
-                                </CvPanel>
-                            }
-                        </div>
-                    ))
-                    : users.map(user => (
-                        <div key={user._id} >
-                            <div className={`${styles.tableRow} ${(Bag!=null && !!Bag.userCv && Bag.userCv.find(x => x._id === user._id)) ? 'green' : ''}`} onClick={() => lookCV(user._id, user)}>
-                                <div className={styles.tableCell}>{user.name}</div>
-                                <div className={styles.tableCell}>{user.email}</div>
-                                <div className={styles.tableCell}>{user.phone}</div>
-                                <div className={styles.tableCell}>{user.jobs}</div>
-                                <div className={styles.tableCell}>{user.provinces}</div>
-                                <div className={styles.tableCell}>{user.offer}</div>
-                                <div className={styles.tableCell}>{user.numberCV}</div>
-                                <div className={styles.tableCell}>{(user.view) ? <FaEye /> : <FaRegEyeSlash />}</div>
-                            </div>
-                            {urlCv != null && userSelected._id == user._id &&
-                                <CvPanel
-                                    urlpdf={urlCv.url}
+                                    urlpdf={urlCv}
                                     user={userSelected}
                                     changeUser={(x) => setUserSelected(x)}
                                     modal={(title, message) => modalC(title, message)}>

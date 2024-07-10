@@ -69,7 +69,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
                         {(user.view!=null) ? <FaEye color="white" onClick={()=>changeStatus('view')} /> : <FaRegEyeSlash onClick={()=>changeStatus('view')}/>}
                         {(user.favorite!=null) ? <GoStarFill color='yellow' onClick={()=>changeStatus('favorite')}></GoStarFill> : <GoStar onClick={()=>changeStatus('favorite')}></GoStar>}
                         {(user.reject!=null) ? <BsExclamationOctagonFill color="tomato" onClick={()=>changeStatus('reject')}/>: <BsExclamationOctagon  onClick={()=>changeStatus('reject')}/>}
-                        {Bag!=null && <BagPanel userSelected={user}/>}
+                        {Bag!=null && !schedule && <BagPanel userSelected={user}/>}
                     </div>
                     {Bag!=null && schedule &&
                     <div className={styles.boxComments}>
@@ -138,8 +138,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
     
     
                 </div>
-                <VisualizadorPDF url={urlpdf}></VisualizadorPDF>
-                <PdfV url={urlpdf}></PdfV>
+                {(urlpdf!=null)? <VisualizadorPDF url={urlpdf.url}></VisualizadorPDF>:<div>No se ha podido cargar el</div>}
             </div>
         )
     }

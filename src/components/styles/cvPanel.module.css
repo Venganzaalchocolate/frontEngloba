@@ -78,7 +78,7 @@
     min-height: 80vh;
 }
 
-.contenedorCV object{
+.contenedorCV embed{
     display: flex;
     flex: 1 100%;
 }

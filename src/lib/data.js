@@ -17,6 +17,22 @@ export const addEmployerBag=async(datos,token)=>{
     return data.data
 }
 
+export const deleteEmployerBag=async(datos,token)=>{
+    const url = `${urlApi}/deleteemployerbag`
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
 export const createBag=async(datos, token)=>{
 
     const url = `${urlApi}/createbag`
@@ -112,7 +128,6 @@ export const getCVs = async (id, token) => {
       if (!response.ok) {
         throw new Error(`Error al obtener el archivo PDF: ${response.statusText}`);
       }
-  
       // Obtener el contenido del archivo como un arraybuffer
       const pdfBlob = await response.arrayBuffer();
   
@@ -168,6 +183,7 @@ export const getusercvs=async (page, limit, filters, token)=>{
         limit,
         ...filters
     };
+
     const url = `${urlApi}/usercvs`
     const response = await fetch(url, {
         method: 'POST',

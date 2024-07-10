@@ -9,7 +9,7 @@ import {  sendFormCv, getData } from '../../lib/data';
 
 
 
-const FormJob = ({modal}) => {
+const FormJob = ({modal, charge}) => {
     const [file, setFile]=useState(null)
     const [multipleData, setMultipleData]=useState({studies:[],provinces:[],jobs:[],work_schedule:[]})
     const [enums, setEnums]=useState(null)
@@ -34,6 +34,7 @@ const FormJob = ({modal}) => {
 
     const navigate=useNavigate()
     useEffect(()=>{
+        charge(true)
         const cargarDatos=async ()=>{
             const enumsData = await getData();
             if(!enumsData.error){
@@ -43,9 +44,11 @@ const FormJob = ({modal}) => {
             auxEnums['work_schedule']=enumsData.work_schedule
             auxEnums['studies']=enumsData.studies
             setEnums(auxEnums)    
+            charge(false)
             } else {
                 modal('Error','Servicio no disponible, porfavor inténtelo más tarde')
                 navigate('/')
+                charge(false)
             }
         }
         cargarDatos();
@@ -91,7 +94,7 @@ const FormJob = ({modal}) => {
     }
 
     const send = async () => {
-
+        
         let valido = true;
         let auxErrores = { ...errores }
         if(file==null){
@@ -111,6 +114,7 @@ const FormJob = ({modal}) => {
         if(!multipleData.studies.length>0)auxErrores['studies'] = textErrors('vacio'), valido=false;
 
         if (valido) {
+            charge(true)
             const auxDatos={...datos}
             auxDatos.jobs=multipleData.jobs
             auxDatos.provinces=multipleData.provinces
@@ -121,9 +125,12 @@ const FormJob = ({modal}) => {
                 let auxErrores = { ...errores }
                 auxErrores['mensajeError'] = sendForm.message;
                 setError(auxErrores)
+                charge(false)
             } else {
+                charge(false)
                 modal('CV enviado', "Curriculum enviado con éxito")
                 navigate('/')
+                
             }
         } 
     }

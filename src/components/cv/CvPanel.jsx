@@ -18,11 +18,12 @@ import { useBag } from "../../hooks/useBag.jsx";
 import VisualizadorPDF from "./GoogleView.jsx";
 
 
-const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
+const CvPanel = ({ urlpdf, user, changeUser, modal}) => {
     const { logged} = useLogin()
     const {Bag, schedule}= useBag()
     const [typeComment, setTypeComment] = useState(null)
     const [textComment, setTextComment] = useState('')
+
 
 
     const saveComment = async () => {
@@ -141,8 +142,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal }) => {
                 {(urlpdf!=null)? <VisualizadorPDF url={urlpdf.url}></VisualizadorPDF>:<div>No se ha podido cargar el</div>}
             </div>
         )
-    }
-
+    } 
 
 }
 

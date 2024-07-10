@@ -16,7 +16,7 @@ import { useBag } from "../../hooks/useBag.jsx";
 
 
 // 
-const ManagingResumenes = ({ modalC }) => {
+const ManagingResumenes = ({ modalC, charge }) => {
     const { logged, changeLogged, logout } = useLogin()
     const {Bag, schedule}= useBag()
     const navigate = useNavigate();
@@ -38,9 +38,13 @@ const ManagingResumenes = ({ modalC }) => {
         offer: ''
     });
 
+    useEffect(()=>{
+        (users!=0)? charge(true):charge(false)
+    },[])
+
     // Función para cargar los datos de la página actual
     const loadUsers = async () => {
-  
+        charge(true)
         try {
             let data=null
             const token = getToken();
@@ -64,6 +68,7 @@ const ManagingResumenes = ({ modalC }) => {
             } else {
                 setUsers(data.users); // Establece los usuarios recuperados
                 setTotalPages(data.totalPages); // Establece el número total de páginas
+                charge(false)
             }
         } catch (error) {
             console.error('Error en la solicitud:', error);
@@ -122,14 +127,18 @@ const ManagingResumenes = ({ modalC }) => {
 
     const lookCV = async (id, userData) => {
 
+        charge(true)
+
         if(userSelected==userData){
             setUrlCv(null)
             setUserSelected(null);   
+            charge(false)
         } else{
             const token = getToken();
             const cvData = await getCVs(id, token);
             setUrlCv(cvData)
             setUserSelected(userData);
+            charge(false)
         }
         
     }

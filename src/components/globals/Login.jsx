@@ -10,7 +10,7 @@ import { saveToken } from '../../lib/serviceToken';
 
 
 
-const Login = () => {
+const Login = ({charge}) => {
     const { logged,  changeLogged } = useLogin()
     const [datos,setDatos]=useState({
         email: null,
@@ -54,15 +54,19 @@ const Login = () => {
         }
 
         if (valido) {
+            charge(true)
             const login = await loginUser(datos.email, datos.password);
             if (login.error) {
                 let auxErrores = { ...errores }
                 auxErrores['mensajeError'] = login.message;
                 setError(auxErrores)
+                charge(false)
             } else {
+                charge(false)
                 changeLogged(login.user)
                 saveToken(login.token)
                 navigate('/')
+
             }
         }
     }

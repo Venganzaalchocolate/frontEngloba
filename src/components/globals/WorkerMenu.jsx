@@ -12,11 +12,11 @@ import ManagingPayroll from '../payroll/ManagingPayroll';
 import { BagProvider } from '../../context/BagProvider'
 
 
-const WorkerMenu = ({modal}) => {
+const WorkerMenu = ({modal, charge}) => {
     const [action, setAction] = useState(null)
 
     if(action!=null){
-        if (action=='cv') return <BagProvider><ManagingResumenes closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/></BagProvider>;
+        if (action=='cv') return <BagProvider><ManagingResumenes closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/></BagProvider>;
         if( action=='socialForm') return <ManagingSocial closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
         if( action=='payroll') return <ManagingPayroll closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
     } else return (

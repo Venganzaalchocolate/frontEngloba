@@ -40,7 +40,7 @@ export const validText=(texto, longitudMinima, longitudMaxima, numerosycaractere
   }
 
   // Definir la expresión regular para caracteres permitidos (letras, números y espacios)
-  const regex =(numerosycaracteresespeciales) ?/^[a-zA-ZÀ-ÿ0-9\s,º:/()]+$/:/^[a-zA-ZÀ-ÿ\s]+$/;
+  const regex =(numerosycaracteresespeciales) ?/^[a-zA-ZÀ-ÿ0-9\s,º:/()-]+$/:/^[a-zA-ZÀ-ÿ\s]+$/;
   return regex.test(texto);
 }
 

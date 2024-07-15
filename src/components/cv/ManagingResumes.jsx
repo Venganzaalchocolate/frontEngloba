@@ -16,7 +16,7 @@ import { useBag } from "../../hooks/useBag.jsx";
 
 
 // 
-const ManagingResumenes = ({ modalC, charge }) => {
+const ManagingResumenes = ({ modal, charge }) => {
     const { logged, changeLogged, logout } = useLogin()
     const {Bag, schedule}= useBag()
     const navigate = useNavigate();
@@ -263,7 +263,7 @@ const ManagingResumenes = ({ modalC, charge }) => {
                                     urlpdf={urlCv}
                                     user={userSelected}
                                     changeUser={(x) => setUserSelected(x)}
-                                    modal={(title, message) => modalC(title, message)}>
+                                    modal={(title, message) => modal(title, message)}>
                                 </CvPanel>
                             }
                         </div>

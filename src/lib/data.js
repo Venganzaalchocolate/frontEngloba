@@ -198,6 +198,53 @@ export const getusercvs=async (page, limit, filters, token)=>{
     return data.data
 }
 
+export const sendFormCreateOffer=async (datos, token)=>{
+    const url = `${urlApi}/createofferjob`
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
+export const updateOffer=async (datos, token)=>{
+    const url = `${urlApi}/modifyofferjob`
+    const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
+export const getOfferJobs=async (token)=>{
+    const url = `${urlApi}/offerjobs`
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
 
 export const sendFormCv = async (dataForm, file) => {
     const formData = new FormData();

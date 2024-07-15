@@ -1,0 +1,49 @@
+.contenedor{
+    display: flex;
+    flex-direction: column;
+    flex: 100% 1;
+    background-color: var(--color-morado);
+    padding: 0 4rem;
+    gap: 1rem;
+}
+
+.contenedor>div{
+    display: flex;
+}
+
+.contenedor>div>div>button{
+    background-color: var(--color-crema);
+}
+
+.contenedor>div>div>button:hover{
+    background-color: var(--color-morado);
+    color: var(--color-malva);
+}
+
+.contenedor>:nth-child(1){
+    background-color: var(--color-malva);
+    padding: 1rem;
+    border-radius: 1rem;
+}
+
+.contenedor>div>h2{
+    flex: 1;
+    color: var(--color-morado);
+    text-transform: uppercase;
+}
+
+.contenedor>div>div{
+    display: flex;
+}
+
+.contenedor>div>:nth-child(2){
+    gap: 1rem;
+}
+
+.contenedor>.contenido{
+    display: flex;
+    padding: 1rem 0;
+    background-color: aqua;
+}
+
+

@@ -12,6 +12,7 @@
 }
 
 .contenedor div{
+    flex-direction: column;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -44,6 +45,20 @@
     justify-content: center;
 }
 
+#contenedorWorkerMenu>div{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+#contenedorWorkerMenu h2{
+    color: var(--color-malva);
+}
+
+#contenedorWorkerMenu>div>button{
+    flex: 1 100%;
+    width: 100%;
+}
 
 @media (min-width: 600px) {
     .contenedor div{
@@ -56,5 +71,7 @@
     .contenedor{
         flex-direction: row;
     }
+
+    
     
 }

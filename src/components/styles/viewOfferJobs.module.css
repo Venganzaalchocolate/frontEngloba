@@ -1,0 +1,38 @@
+.contenedorOferta{
+    display: flex;
+    flex-wrap: wrap;
+    color: white;
+    flex: 1 100%;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+
+.contenedorOferta>.oferta{
+    background-color: var(--color-malva);
+    color: var(--color-morado);
+    display: flex;
+    justify-content: space-between;
+    flex: 1 100%;
+    min-width: 20rem;
+    align-items: end;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.contenedorOferta>.oferta>div{
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 100%;
+    gap: 1rem;
+}
+
+.contenedorOferta>.oferta>div>h3{
+    display: flex;
+    flex: 1 100%;
+}
+
+.contenedorOferta>.oferta:hover{
+    background-color: var(--color-crema);
+}

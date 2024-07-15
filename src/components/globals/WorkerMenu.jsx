@@ -1,35 +1,40 @@
 import styles from '../styles/menuStart.module.css';
-import { FaUserCircle, FaEnvelope } from "react-icons/fa";
-import { useLogin } from '../../hooks/useLogin';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { FaEarthEurope } from "react-icons/fa6";
-import { GrDocumentUser } from "react-icons/gr";
-import { AiOutlineEuro } from "react-icons/ai";
+
 import ManagingResumenes from '../cv/ManagingResumes';
 import ManagingSocial from '../social/ManagingSocial';
 import ManagingPayroll from '../payroll/ManagingPayroll';
 import { BagProvider } from '../../context/BagProvider'
-
+import { useMenuWorker } from '../../hooks/useMenuWorker';
+import OfferJobsPanel from '../offerJobs/OfferJobsPanel';
+import { useLogin } from '../../hooks/useLogin';
+import ManagingPrograms from '../programs/ManagingPrograms';
+import ManagingEmployer from '../employer/ManagingEmployer';
 
 const WorkerMenu = ({modal, charge}) => {
-    const [action, setAction] = useState(null)
+    const {MenuWorker,changeMenuWorker} =useMenuWorker()
+    const { logged } = useLogin()
 
-    if(action!=null){
-        if (action=='cv') return <BagProvider><ManagingResumenes closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/></BagProvider>;
-        if( action=='socialForm') return <ManagingSocial closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
-        if( action=='payroll') return <ManagingPayroll closeAction={()=>setAction(null)} modalC={(title, message)=>modal(title, message)}/>;
+    if(MenuWorker!=null){
+        if (MenuWorker=='cv') return <BagProvider><ManagingResumenes closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/></BagProvider>;
+        if( MenuWorker=='socialForm') return <ManagingSocial closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)}/>;
+        if( MenuWorker=='payroll') return <ManagingPayroll closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)}/>;
+        if( MenuWorker=='offersJobs') return <OfferJobsPanel closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message) } charge={(x)=>charge(x)}/>;
+        if( MenuWorker=='programs') return <ManagingPrograms closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
+        if( MenuWorker=='employer') return <ManagingEmployer closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
     } else return (
-        <>
-        <div className={styles.contenedor}>
-            <button onClick={()=>setAction('cv')}><GrDocumentUser/> GESTIONAR CV</button>
-            <button onClick={()=>setAction('socialForm')}><FaEarthEurope/> IMPACTO SOCIAL</button>    
-            <button onClick={()=>setAction('payroll')}><AiOutlineEuro/> GESTIONAR NÓMINAS</button>
+        <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
+            <div>
+                <h2>Bienvenido, {logged.user.name}</h2>
+                <button onClick={()=>changeMenuWorker('cv')}> GESTIONAR CV</button>
+                <button onClick={()=>changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>    
+                <button onClick={()=>changeMenuWorker('payroll')}> GESTIONAR NÓMINAS</button>
+                <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
+                <button onClick={()=>changeMenuWorker('employer')}> GESTIONAR TRABAJADORES</button>
+                <button onClick={()=>changeMenuWorker('programs')}> GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
+            </div>
+            
         </div>
-        <div>
 
-        </div>
-        </>   
     )
 }
 

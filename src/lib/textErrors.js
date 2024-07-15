@@ -44,6 +44,14 @@ export const textErrors = (tipo) => {
             return "El asunto no es correcto, debe tener mínimo 10 carácteres y no debe contener carácteres especiales ni tener mas de 100 carácteres";
         case "message":
             return "El motivo no es correcto, debe tener mínimo 10 carácteres y no debe contener carácteres especiales ni tener mas de 500 carácteres";
+        case "job_title":
+            return "El título no es correcto, no debe contener números ni carácteres especiales, debe tener mínimo 3 carácteres y máximo 100 ";
+        case "location":
+            return "La zona no es correcta, no debe contener números ni carácteres especiales, debe tener mínimo 3 carácteres y máximo 100 ";
+        case "optionals_requirements":
+        case "conditions":
+        case "essentials_requirements":
+            return "El texto no es correcto, carácteres permitidos (º:/()-), debe tener mínimo 3 carácteres y máximo 1000 ";
         default:
             return null;
     }

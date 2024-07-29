@@ -1,8 +1,9 @@
 {
-  "name": "frontengloba",
+  "name": "engloba",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://frontengloba.onrender.com/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

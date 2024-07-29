@@ -8,7 +8,7 @@ import { useBag } from "../../hooks/useBag.jsx";
 import { useLogin } from '../../hooks/useLogin';
 
 
-const BagCreate = () => {
+const BagCreate = ({offer=false}) => {
     const [options, setOptions] = useState(null)
     const { logged} = useLogin()
     const { Bag, changeBag, scheduleInterview, schedule } = useBag()
@@ -40,10 +40,11 @@ const BagCreate = () => {
         
         auxData['create']=logged.user._id;
         (optionAction=='createBagInternal'?auxData['sepe']='false':auxData['sepe']='true')
-        console.log(auxData)
         if (data.name != null && data.name != '' && dispositiveSelected!=null) {
             const token = getToken();
+            console.log(auxData)
             const response = await createBag(auxData, token)
+            
             if (!response.error) {
                 changeBag(response)
                 setData({ name: null, sepe: "false" })
@@ -97,8 +98,8 @@ const BagCreate = () => {
 
     if (Bag != null) {
         return <div className={styles.botonesBag}>
-            <button className={`${styles.botonDestacado} ${styles.tomato}`} onClick={() => closeProcess()}>CERRAR PROCESO</button>
-            {!schedule && !!Bag.userCv && <button className={`${styles.botonDestacado}`} onClick={() => scheduleInterview()}>COMENZAR ENTREVISTAS</button>}
+            <button className={`${styles.botonDestacado} ${styles.tomato}`} onClick={() => closeProcess()}>{(!offer)?'CERRAR PROCESO':`Quitar ${Bag.name}`}</button>
+            {!schedule && !!Bag.userCv && !offer &&<button className={`${styles.botonDestacado}`} onClick={() => scheduleInterview()}>COMENZAR ENTREVISTAS</button>}
         </div>
 
     } else {
@@ -107,14 +108,14 @@ const BagCreate = () => {
             {
                 !!view && !!options &&
 
-                <div className={styles.ventana}>
+                <div className={(!offer)?styles.ventana:styles.ventanaNoModal}>
                     <div className={styles.contenedor}>
                         <h2>Procesos de selección</h2>
                         {optionAction == null &&
                             <div className={styles.botonesMenu}>
                                 <button onClick={() => setOptionAction('select')}>Seleccionar proceso</button>
                                 <button onClick={() => setOptionAction('create')}>Crear proceso</button>
-                                <button onClick={() => setOptionAction('delete')}>Eliminar proceso</button>
+                                {!offer && <button onClick={() => setOptionAction('delete')}>Eliminar proceso</button>}
                             </div>
 
                         }

@@ -5,7 +5,7 @@ import FormCreateJob from "./FormCreateJob";
 import styles from '../styles/viewOfferJobs.module.css';
 import { dateAndHour } from "../../lib/utils";
 
-const ViewJobs=({modal, charge, back})=>{
+const ViewJobs=({enums, modal, charge, back})=>{
     const [offers, setOffers]=useState(null)
     const [offerSelected,setOfferSelected]=useState(null)
 
@@ -35,6 +35,7 @@ const ViewJobs=({modal, charge, back})=>{
         const auxOfferSelected=offers.filter((x)=>x._id==id)
         setOfferSelected(auxOfferSelected[0])
     }
+
     return <div className={styles.contenedorOferta}>
         {offers!=null && offerSelected==null &&
         offers.map((x)=>{
@@ -49,7 +50,7 @@ const ViewJobs=({modal, charge, back})=>{
         }
         {offers!=null && offerSelected!=null &&
             <div>
-                <FormCreateJob back={()=>setOfferSelected(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)} datosOferta={offerSelected}></FormCreateJob>
+                <FormCreateJob enums={enums} back={()=>setOfferSelected(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)} datosOferta={offerSelected}></FormCreateJob>
                 <button onClick={()=>setOfferSelected(null)}>Volver</button>
             </div>
         }

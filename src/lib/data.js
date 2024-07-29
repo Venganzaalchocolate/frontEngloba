@@ -105,9 +105,93 @@ export const getData = async () => {
         method: 'GET',
     });
     const data = await response.json();
+
     if (data.error) return data
     return data.data
 }
+
+export const changeData = async (token, datos) => {
+    const url = `${urlApi}/changedata`
+    const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+    const data = await response.json();
+
+    if (data.error) return data
+    return data.data
+}
+
+export const deleteData = async (token, datos) => {
+    const url = `${urlApi}/deletedata`
+    const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+    const data = await response.json();
+
+    if (data.error) return data
+    return data.data
+}
+
+export const createData = async (token, datos) => {
+    const url = `${urlApi}/createdata`
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+    const data = await response.json();
+
+    if (data.error) return data
+    return data.data
+}
+
+
+export const createSubData = async (token, datos) => {
+    const url = `${urlApi}/createsubcategory`
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+    const data = await response.json();
+
+    if (data.error) return data
+    return data.data
+}
+
+export const deleteSubData = async (token, datos) => {
+    const url = `${urlApi}/deletesubdata`
+    const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+    const data = await response.json();
+
+    if (data.error) return data
+    return data.data
+}
+
+
 
 export const getCVs = async (id, token) => {
     const datos = {
@@ -215,6 +299,7 @@ export const sendFormCreateOffer=async (datos, token)=>{
 }
 
 export const updateOffer=async (datos, token)=>{
+
     const url = `${urlApi}/modifyofferjob`
     const response = await fetch(url, {
         method: 'PUT',
@@ -226,6 +311,7 @@ export const updateOffer=async (datos, token)=>{
     });
 
     const data = await response.json();
+
     if (data.error) return data
     return data.data
 }

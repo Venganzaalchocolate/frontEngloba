@@ -13,9 +13,12 @@ import Modal from './components/globals/Modal.jsx';
 import NotFound from './components/globals/NotFound.jsx';
 import Spinnning from './components/globals/Spinning.jsx';
 import { MenuWorkerProvider } from './context/MenuWorkerProvider.jsx'
+import { BagProvider } from './context/BagProvider.jsx';
+import { useBag } from './hooks/useBag.jsx';
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()
+
   const [modal, setModal] = useState({
     open: false,
     title: '',
@@ -52,22 +55,25 @@ function App() {
       }
     }
     isLogged();
+   
   }, [])
 
 
   if (logged.isLoggedIn) {
     return (
-      <MenuWorkerProvider>
-        <BrowserRouter>
-          <Header />
-          <Routes>
-            <Route path="/" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
-            <Route path="/*" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
-          </Routes>
-          {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })}></Modal>}
-          {charge && <Spinnning status={charge}></Spinnning>}
-        </BrowserRouter>
-      </MenuWorkerProvider>
+      <BagProvider>
+        <MenuWorkerProvider>
+          <BrowserRouter>
+            <Header/>
+            <Routes>
+              <Route path="/" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
+              <Route path="/*" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
+            </Routes>
+            {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })}></Modal>}
+            {charge && <Spinnning status={charge}></Spinnning>}
+          </BrowserRouter>
+        </MenuWorkerProvider>
+      </BagProvider>
     )
 
   } else {

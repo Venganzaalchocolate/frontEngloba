@@ -37,6 +37,7 @@ const FormJob = ({modal, charge}) => {
         charge(true)
         const cargarDatos=async ()=>{
             const enumsData = await getData();
+  
             if(!enumsData.error){
             let auxEnums={}
             auxEnums['jobs']=enumsData.jobs
@@ -164,7 +165,7 @@ const FormJob = ({modal, charge}) => {
                     <select id='work_schedule' name='work_schedule'onChange={(e)=>handleChange(e)} value={datos.work_schedule}>
                     <option>Selecciona una opción</option>
                         {enums.work_schedule.map((x)=>{
-                            return <option value={x}>{x}</option>
+                            return <option value={x.name}>{x.name}</option>
                         })}
                     </select>
                     <span className='errorSpan'>{errores.work_schedule}</span>
@@ -175,7 +176,19 @@ const FormJob = ({modal, charge}) => {
                     <select id='jobs' name='jobs'onChange={(e)=>handleChange(e)} value={datos.jobs}>
                     <option value={'x'}>Selecciona una opción</option>
                         {enums.jobs.map((x)=>{
-                            return <option value={x}>{x}</option>
+                           if(x.subcategories!=undefined && x.subcategories.length>0){
+
+                            return <optgroup label={x.name}>
+                                {x.subcategories!=undefined && x.subcategories.map((y)=>{
+                                    return <option value={y.name}>{y.name}</option>
+                                })}
+                            </optgroup>
+                        }
+                        else {
+                            return <option value={x.name}>{x.name}</option>
+                        }
+                        
+                            
                         })}
                     </select>
                     <div>
@@ -200,8 +213,20 @@ const FormJob = ({modal, charge}) => {
                     <label htmlFor="studies">Estudios realizados</label>
                     <select id='studies' name='studies'onChange={(e)=>handleChange(e)} value={datos.studies}>
                     <option>Selecciona una opción</option>
-                        {enums.studies.map((x)=>{
-                            return <option value={x}>{x}</option>
+                         {enums.studies.map((x)=>{
+                            if(x.subcategories!=undefined && x.subcategories.length>0){
+
+                                return <optgroup label={x.name}>
+                                    {x.subcategories!=undefined && x.subcategories.map((y)=>{
+                                        return <option value={y.name}>{y.name}</option>
+                                    })}
+                                </optgroup>
+                            }
+                            else {
+                                return <option value={x.name}>{x.name}</option>
+                            }
+                            
+                            
                         })}
                     </select>
                     <div>
@@ -227,8 +252,20 @@ const FormJob = ({modal, charge}) => {
                     <select id='provinces' name='provinces'onChange={(e)=>handleChange(e)} value={datos.provinces}>
                     <option>Selecciona una opción</option>
                         {enums.provinces.map((x)=>{
-                            return <option value={x}>{x}</option>
+                            if(x.subcategories!=undefined && x.subcategories.length>0){
+
+                                return <optgroup label={x.name}>
+                                    {x.subcategories!=undefined && x.subcategories.map((y)=>{
+                                        return <option value={y.name}>{y.name}</option>
+                                    })}
+                                </optgroup>
+                            }
+                            else {
+                                return <option value={x.name}>{x.name}</option>
+                            }
+                            
                         })}
+                       
                     </select>
                     <div>
                     <button onClick={()=>addOption('provinces') }>Añadir</button> 

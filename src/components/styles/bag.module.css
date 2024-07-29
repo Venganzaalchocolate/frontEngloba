@@ -12,6 +12,8 @@
   left: 0;
 }
 
+
+
 .contenedor{
   display: flex;
   justify-content: center;
@@ -117,5 +119,20 @@
 
   .botonesMenu>button:hover{
     background-color: var(--color-crema);
+    color: var(--color-morado);
+  }
+
+  /*stylos crear oferta empleo*/
+  .ventanaNoModal{
+    display: flex;
+    background-color: rgba(79, 82, 161, 0.643);
+  
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  
+  .ventanaNoModal>.contenedor>.contenedorSelect>label{
     color: var(--color-morado);
   }

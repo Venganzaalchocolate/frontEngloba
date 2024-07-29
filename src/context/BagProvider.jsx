@@ -11,6 +11,10 @@ export function BagProvider({ children }) {
         setBag(bag)
     }
 
+    const resetBag=()=>{
+        setBag(null)
+    }
+
     const scheduleInterview=(status)=>{
         if(!!Bag.userCv) setSchedule(true)
     }
@@ -21,7 +25,8 @@ export function BagProvider({ children }) {
             Bag,
             changeBag,
             schedule,
-            scheduleInterview
+            scheduleInterview,
+            resetBag
         }}>
             {children}
         </BagContext.Provider>

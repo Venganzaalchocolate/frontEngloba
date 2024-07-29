@@ -8,13 +8,14 @@ import { getData, getPrograms, sendFormCreateOffer, updateOffer } from '../../li
 import { getToken } from '../../lib/serviceToken';
 import { useLogin } from '../../hooks/useLogin';
 import { dateFormated } from '../../lib/utils';
+import BagCreate from '../cv/BagCreate';
+import { useBag } from "../../hooks/useBag.jsx";
 
 
-const FormCreateJob = ({ modal, charge, back, datosOferta = null }) => {
+const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
     const { logged } = useLogin()
-    const [enums, setEnums] = useState(null)
+    const { Bag, changeBag } = useBag()
     const [noEditar, setnoEditar] = useState((datosOferta == null) ? false : true)
-    const [programs, setPrograms] = useState((null))
     const [datos, setDatos] = useState({
         job_title: (datosOferta == null) ? null : datosOferta.job_title,
         essentials_requirements: (datosOferta == null) ? null : datosOferta.essentials_requirements,
@@ -22,15 +23,15 @@ const FormCreateJob = ({ modal, charge, back, datosOferta = null }) => {
         conditions: (datosOferta == null) ? null : datosOferta.conditions,
         location: (datosOferta == null) ? null : datosOferta.location,
         expected_incorporation_date: (datosOferta == null) ? null : dateFormated(datosOferta.expected_incorporation_date),
-        dispositive: (datosOferta == null) ? null : datosOferta.dispositive,
-        program: (datosOferta == null) ? null : datosOferta.program,
         work_schedule: (datosOferta == null) ? null : datosOferta.work_schedule,
         studies: (datosOferta == null) ? null : datosOferta.studies,
         provinces: (datosOferta == null) ? null : datosOferta.province,
         functions: (datosOferta == null) ? null : datosOferta.functions,
         id: (datosOferta == null) ? '' : datosOferta._id,
-        date: (datosOferta == null) ? '' : datosOferta.date
+        date: (datosOferta == null) ? '' : datosOferta.date,
+        bag:(datosOferta == null) ? '' : datosOferta.bag
     })
+
 
 
     const [errores, setError] = useState({
@@ -41,37 +42,14 @@ const FormCreateJob = ({ modal, charge, back, datosOferta = null }) => {
         location: null,
         expected_incorporation_date: null,
         dispositive: null,
-        program: null,
         work_schedule: null,
         studies: null,
         provinces: null,
-        functions: null
+        functions: null,
+        bag:null
     })
 
-    const navigate = useNavigate()
-    useEffect(() => {
-        charge(true)
-        const cargarDatos = async () => {
-            const token = getToken();
-            const enumsData = await getData();
-            const programs = await getPrograms(token);
-            if (!enumsData.error && !programs.error) {
-                let auxEnums = {}
-                auxEnums['jobs'] = enumsData.jobs
-                auxEnums['provinces'] = enumsData.provinces
-                auxEnums['work_schedule'] = enumsData.work_schedule
-                auxEnums['studies'] = enumsData.studies
-                setPrograms(programs)
-                setEnums(auxEnums)
-                charge(false)
-            } else {
-                modal('Error', 'Servicio no disponible, porfavor inténtelo más tarde')
-                navigate('/')
-                charge(false)
-            }
-        }
-        cargarDatos();
-    }, [])
+
 
     const handleChange = (e) => {
         let auxErrores = { ...errores }
@@ -107,11 +85,20 @@ const FormCreateJob = ({ modal, charge, back, datosOferta = null }) => {
             }
         }
 
+        if(noEditar && Bag==null) {
+            auxErrores['bag']=textErrors('vacio')
+            setError(auxErrores)
+            valido = false;
+        }
+
         if (valido) {
             charge(true)
-            const auxDatos = { ...datos }
+            let auxDatos = { ...datos }
             const token = getToken();
             auxDatos['create'] = logged.user._id
+            if (!!Bag){
+                auxDatos['bag']=Bag._id
+            }
             let sendForm = '';
             if (datosOferta != null) sendForm = await updateOffer(auxDatos, token);
             else sendForm = await sendFormCreateOffer(auxDatos, token);
@@ -137,47 +124,42 @@ const FormCreateJob = ({ modal, charge, back, datosOferta = null }) => {
         }
     }
 
+    const editar=()=>{
+        changeBag(null)
+        setnoEditar(false)
+    }
+
 
     return (
         <div className={styles.contenedor}>
             <div className={styles.contenedorForm}>
+            
                 <div>
                     <label htmlFor="job_title">Título de la oferta</label>
                     <input disabled={noEditar} type="text" id='job_title' name='job_title' onChange={(e) => handleChange(e)} value={datos.job_title} placeholder='Ej: Educacor Social en Málaga' />
                     <span className='errorSpan'>{errores.job_title}</span>
                 </div>
-                {!!programs &&
-                    <div>
-                        <label htmlFor="program">Programa</label>
-                        <select id='program' name='program' onChange={(e) => handleChange(e)} value={datos.program} disabled={noEditar}>
-                            <option value={'noOption'} key='program-1'>Selecciona una opción</option>
-                            {programs.map((x, i) => {
-                                if (datosOferta != null && datosOferta.program == x._id) return <option value={x._id} key={`program` + i} selected>{x.name}</option>
-                                else return <option value={x._id} key={`program` + i}>{x.name}</option>
-
-                            })}
-                        </select>
-                        <span className='errorSpan'>{errores.program}</span>
-                    </div>
-                }
-                {datos.program != null && datos.program != 'noOption' &&
+                
+                <div>
+                    {!noEditar && <BagCreate offer={true}></BagCreate>}
+                    <span className='errorSpan'>{errores.bag}</span>
+                </div>
+              
+                {!!Bag && !noEditar &&
                     <div>
                         <label htmlFor="dispositive">Dispositivo</label>
-                        <select id='dispositive' name='dispositive' onChange={(e) => handleChange(e)} value={datos.dispositive} disabled={noEditar}>
-                            <option value={'noOption'} key='dispositive-1'>Selecciona una opción</option>
-                            {programs != null && programs.filter((x) => x._id == datos.program).map((x) => {
-                                return x.devices.map((y) => {
-                                    if (datosOferta != null && datosOferta.dispositive == y._id) {
-                                        return <option value={y._id} key={`SelectDispositive${y._id}`} selected>{y.name}</option>
-                                    }
-                                    else return <option value={y._id} key={`SelectDispositive${y._id}`}>{y.name}</option>
-                                })
-
-                            })}
-                        </select>
-                        <span className='errorSpan'>{errores.dispositive}</span>
+                        <p>{Bag.dispositive.name}</p>
                     </div>
                 }
+
+                {datosOferta!=null && noEditar &&
+                    <div>
+                        <label htmlFor="dispositive">Dispositivo</label>
+                        <p>{datosOferta.bag.dispositive.name}</p>
+                    </div>
+                }
+
+                
                 {!!enums &&
                     <>
                         <div>
@@ -268,9 +250,10 @@ const FormCreateJob = ({ modal, charge, back, datosOferta = null }) => {
                         ? <button onClick={() => back()}>Cancelar</button>
                         : (noEditar == false)
                             ? <button onClick={() => send()}>Guardar</button>
-                            : <button onClick={() => setnoEditar(false)}>Editar</button>
+                            : <button onClick={() => editar(false)}>Editar</button>
                     }
                 </div>
+                    
 
                 <span className='errorSpan'>{errores.mensajeError}</span>
             </div>

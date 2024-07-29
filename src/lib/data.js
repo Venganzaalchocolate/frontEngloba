@@ -1,5 +1,5 @@
-const urlApi='https://backengloba.onrender.com/api'
-//const urlApi='http://localhost:10000/api'
+//const urlApi='https://backengloba.onrender.com/api'
+const urlApi='http://localhost:10000/api'
 
 export const addEmployerBag=async(datos,token)=>{
     const url = `${urlApi}/addemployerbag`

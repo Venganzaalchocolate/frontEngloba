@@ -15,6 +15,7 @@ import Spinnning from './components/globals/Spinning.jsx';
 import { MenuWorkerProvider } from './context/MenuWorkerProvider.jsx'
 import { BagProvider } from './context/BagProvider.jsx';
 import { useBag } from './hooks/useBag.jsx';
+import AvailableJobsPanel from './components/availableJobs/availableJobsPanel.jsx';
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()
@@ -83,6 +84,7 @@ function App() {
           <Route path="/" element={<MenuStart charge={(x) => setCharge(x)} />}></Route>
           <Route path="/login" element={<Login charge={(x) => setCharge(x)} />}></Route>
           <Route path="/trabajaconnosotros" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
+          <Route path="/ofertas" element={<AvailableJobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
           <Route path="/*" element={<NotFound />}></Route>
         </Routes>
         {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}

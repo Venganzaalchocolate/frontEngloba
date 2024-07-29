@@ -1,0 +1,4 @@
+staticSite:
+  routes:
+    - src: /.*  # Esto captura todas las rutas
+      dest: /index.html  # Redirige todas las rutas a index.html

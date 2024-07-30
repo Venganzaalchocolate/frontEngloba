@@ -14,9 +14,7 @@ import NotFound from './components/globals/NotFound.jsx';
 import Spinnning from './components/globals/Spinning.jsx';
 import { MenuWorkerProvider } from './context/MenuWorkerProvider.jsx'
 import { BagProvider } from './context/BagProvider.jsx';
-import { useBag } from './hooks/useBag.jsx';
 import AvailableJobsPanel from './components/availableJobs/AvailableJobsPanel.jsx';
-import OfferDetail from './components/availableJobs/OfferDetail.jsx';
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()

@@ -128,7 +128,34 @@
     flex: 1;
 }
 
+.tituloOferta{
+    flex: 1 100%;
+    background-color: var(--color-crema);
+    padding: 1rem;
+    color: var(--color-morado);
+    margin: 1rem;
+    border-radius: 1rem;
+}
 
+.contenedor> div > div.terminos{
+    display: flex;
+    flex: 1 100%;
+    flex-wrap: wrap;
+}
+
+.contenedor> div > div.terminos>label{
+    color: white;
+    flex: auto;
+    font-size: 7pt;
+}
+
+.contenedor> div > div.terminos>input{
+    flex: auto
+}
+
+.contenedor> div > div.terminos>span{
+    flex: 1 100%;
+}
 
 @media (min-width: 600px) {
     .contenedor>.contenedorForm{
@@ -146,6 +173,16 @@
 
     .contenedor>div>div.inputGrande{
         flex: 1 100%;
+        color: white;
+        display: flex;
+    }
+
+    .contenedor>div>div.inputGrande>input{
+        flex:0 10%;
+    }
+
+    .contenedor>div>div.inputGrande>p{
+        flex:0 90%;
     }
 
     input[type="file"] {

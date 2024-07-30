@@ -1,0 +1,42 @@
+.contenedorOferta{
+    display: flex;
+    padding: 1rem;
+    color: white;
+    flex-wrap: wrap;
+    max-width: 600px;
+}
+
+.contenedorOferta>h2{
+    flex: 1 100%;
+    border-bottom: solid 1px var(--color-crema);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.contenedorOferta>.campo{
+    display: flex;
+    flex: 1 100%;
+    flex-direction: column;
+    margin: 1rem 0;
+}
+
+.contenedorOferta>.campo>h3{
+    font-size: 11pt;
+    color: var(--color-crema);
+}
+
+.contenedorOferta>.campo>p{
+    font-size: 14pt;
+    font-weight: bold;
+}
+
+.contenedorBotones{
+    display: flex;
+    flex: 1 100%;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.contenedorOferta>.campo>p.conditions{
+    font-weight: 400;
+}

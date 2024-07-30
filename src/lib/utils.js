@@ -15,6 +15,7 @@ export const dateAndHour = (fechaString) => {
     return fechaFormateada;
 }
 
+
 export const dateFormated=(date)=>{
     const datePart = date.split('T')[0]
 

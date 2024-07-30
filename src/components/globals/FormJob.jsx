@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState} from 'react';
 import { validEmail, validJobs, validNumber, validText } from '../../lib/valid';
 import styles from '../styles/formJob.module.css';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { textErrors } from '../../lib/textErrors';
-import { sendFormCv, getData } from '../../lib/data';
+import { sendFormCv, getData, getOfferJobId } from '../../lib/data';
 
-const FormJob = ({ modal, charge }) => {
+const FormJob = ({ modal, charge}) => {
     const [file, setFile] = useState(null);
+    const { id } = useParams();
+    const [offer,setIdOffer]=useState(null)
     const [multipleData, setMultipleData] = useState({ studies: [], provinces: [], jobs: [], work_schedule: [] });
     const [enums, setEnums] = useState({ studies: [], provinces: [], jobs: [], work_schedule: [] });
     const [datos, setDatos] = useState({
@@ -16,7 +18,8 @@ const FormJob = ({ modal, charge }) => {
         jobs: null,
         provinces: null,
         work_schedule: null,
-        studies: null
+        studies: null,
+        terms:null
     });
     const [errores, setError] = useState({
         name: null,
@@ -25,8 +28,10 @@ const FormJob = ({ modal, charge }) => {
         jobs: null,
         provinces: null,
         work_schedule: null,
-        studies: null
+        studies: null,
+        terms:null
     });
+    
 
     const navigate = useNavigate();
 
@@ -43,6 +48,13 @@ const FormJob = ({ modal, charge }) => {
                 auxEnums['studies'] = enumsData.studies;
                 setEnums(auxEnums);
                 charge(false);
+                if(!!id){
+                  const offerJob=await getOfferJobId({id:id})  
+                  if(!!offerJob.error){
+                    modal('Error', 'Oferta no disponible, por favor inténtelo más tarde');
+                   navigate('/trabajaconnosotros'); 
+                  } else setIdOffer(offerJob)
+                } 
             } else {
                 modal('Error', 'Servicio no disponible, por favor inténtelo más tarde');
                 navigate('/');
@@ -101,6 +113,13 @@ const FormJob = ({ modal, charge }) => {
         setError(auxErrores);
     }
 
+    const handleChangeCheck=(e)=>{
+        let auxDatos = { ...datos };
+        auxDatos[e.target.name] =(auxDatos[e.target.name]==null)?e.target.value:null;
+        console.log(auxDatos)
+        setDatos(auxDatos);
+    }
+
     const send = async () => {
         let valido = true;
         let auxErrores = { ...errores };
@@ -127,6 +146,7 @@ const FormJob = ({ modal, charge }) => {
             auxDatos.provinces = multipleData.provinces;
             auxDatos.studies = multipleData.studies;
             auxDatos.work_schedule = [auxDatos.work_schedule];
+            if(!!offer) auxDatos['offer']=offer._id
             const sendForm = await sendFormCv(auxDatos, file);
             if (sendForm.error) {
                 let auxErrores = { ...errores };
@@ -186,7 +206,11 @@ const FormJob = ({ modal, charge }) => {
             <div>
                 <img src="/graphic/imagotipo_blanco_malva_descriptor.png" alt="logotipo engloba" />
             </div>
+            {!!offer && <div className={styles.tituloOferta}>
+                    <h2>Oferta: {offer.job_title}</h2>
+                    </div>}
             <div className={styles.contenedorForm}>
+                
                 <div>
                     <label htmlFor="name">Nombre</label>
                     <input type="text" id='name' name='name' onChange={(e) => handleChange(e)} value={datos.name} />
@@ -239,6 +263,11 @@ const FormJob = ({ modal, charge }) => {
                     <input type="file" id='file' name='file' onChange={(e) => handleChangeFile(e)} />
                     <span className='errorSpan'>{errores.file}</span>
                 </div>
+                <div className={styles.terminos}>
+                    <input type="checkbox" id="terms" name="terms" value="accepted" onChange={(e) => handleChangeCheck(e)}/>
+                    <label for="terms">Aceptar términos y condiciones: <Link to={'https://engloba.org.es/privacidad'}>política de privacidad</Link></label>
+                    <span className='errorSpan'>{errores.terms}</span>
+                </div>
                 <div className={styles.botones}>
                     <button onClick={() => send()}>
                         Enviar Formulario
@@ -247,7 +276,7 @@ const FormJob = ({ modal, charge }) => {
                         <button>Cancelar</button>
                     </Link>
                 </div>
-
+               
                 <span className='errorSpan'>{errores.mensajeError}</span>
             </div>
         </div>

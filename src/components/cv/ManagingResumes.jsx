@@ -321,14 +321,15 @@ const ManagingResumenes = ({ modal, charge }) => {
                 </div>
                 {users.map(user => (
                     <div key={user._id} >
+                        
                         <div className={`${styles.tableRow} ${(Bag != null && !!Bag.userCv && Bag.userCv.find(x => x === user._id)) ? 'green' : ''}`} onClick={() => lookCV(user._id, user)}>
-                            <div className={styles.tableCell}>{user.name}</div>
+                            <div className={`${styles.tableCell} ${styles.capitalize}`}>{user.name}</div>
                             <div className={styles.tableCell}>{user.email}</div>
                             <div className={styles.tableCell}>{user.phone}</div>
                             <div className={styles.tableCell}>{user.jobs.join(', ')}</div>
                             <div className={styles.tableCell}>{user.studies.join(', ')}</div>
                             <div className={styles.tableCell}>{user.provinces.join(', ')}</div>
-                            <div className={styles.tableCell}>{user.offer}</div>
+                            <div className={styles.tableCell}>{(user.offer!=null)?user.offer.job_title:''}</div>
                             <div className={styles.tableCell}>{user.numberCV}</div>
                             <div className={styles.tableCell}>{(user.view) ? <FaEye /> : <FaRegEyeSlash />}</div>
                         </div>

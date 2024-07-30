@@ -167,8 +167,8 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                             <select id='work_schedule' name='work_schedule' onChange={(e) => handleChange(e)} value={datos.work_schedule} disabled={noEditar}>
                                 <option value={'noOption'} key='work-1'>Selecciona una opción</option>
                                 {enums.work_schedule.map((x, i) => {
-                                    if (datosOferta != null && datosOferta.work_schedule == x) return <option value={x} key={`work` + i} selected>{x}</option>
-                                    else return <option value={x} key={`work` + i}>{x}</option>
+                                    if (datosOferta != null && datosOferta.work_schedule == x.name) return <option value={x.name} key={`work` + i} selected>{x.name}</option>
+                                    else return <option value={x} key={`work` + i}>{x.name}</option>
                                 })}
                             </select>
                             <span className='errorSpan'>{errores.work_schedule}</span>
@@ -178,8 +178,8 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                             <select id='functions' name='functions' onChange={(e) => handleChange(e)} value={datos.funtions} disabled={noEditar}>
                                 <option value={'noOption'} key='functions-1'>Selecciona una opción</option>
                                 {enums.jobs.map((x, i) => {
-                                    if (datosOferta != null && datosOferta.functions == x) return <option value={x} key={`functions` + i} selected>{x}</option>
-                                    else return <option value={x} key={`functions` + i}>{x}</option>
+                                    if (datosOferta != null && datosOferta.functions == x.name) return <option value={x.name} key={`functions` + i} selected>{x.name}</option>
+                                    else return <option value={x.name} key={`functions` + i}>{x.name}</option>
                                 })}
                             </select>
                             <span className='errorSpan'>{errores.functions}</span>
@@ -189,7 +189,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                             <select id='studies' name='studies' onChange={(e) => handleChange(e)} value={datos.studies} disabled={noEditar}>
                                 <option value={'noOption'} key='studies-1'>Selecciona una opción</option>
                                 {enums.studies.map((x, i) => {
-                                    return <option value={x} key={`studies` + i}>{x}</option>
+                                    return <option value={x.name} key={`studies` + i}>{x.name}</option>
                                 })}
                                 <option value={'noRequired'} key={`studies` + 'noRequired'}>No requerido</option>
                             </select>
@@ -200,8 +200,8 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                             <select id='provinces' name='provinces' onChange={(e) => handleChange(e)} value={datos.provinces} disabled={noEditar}>
                                 <option value={'noOption'} key='provinces-1'>Selecciona una opción</option>
                                 {enums.provinces.map((x, i) => {
-                                    if (datosOferta != null && datosOferta.province == x) return <option value={x} key={`provinces` + i} selected>{x}</option>
-                                    else return <option value={x} key={`provinces` + i} >{x}</option>
+                                    if (datosOferta != null && datosOferta.province == x.name) return <option value={x.name} key={`provinces` + i} selected>{x.name}</option>
+                                    else return <option value={x.name} key={`provinces` + i} >{x.name}</option>
                                 })}
                             </select>
                             <span className='errorSpan'>{errores.provinces}</span>

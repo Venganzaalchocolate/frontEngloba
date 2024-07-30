@@ -14,6 +14,7 @@ const OfferJobsPanel =({modal, charge})=>{
             const enumsData = await getData();
             if (!enumsData.error) {
                 let auxEnums = {}
+
                 auxEnums['jobs'] = enumsData.jobs
                 auxEnums['provinces'] = enumsData.provinces
                 auxEnums['work_schedule'] = enumsData.work_schedule

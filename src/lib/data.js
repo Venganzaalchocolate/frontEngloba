@@ -1,5 +1,5 @@
-const urlApi='https://backengloba.onrender.com/api'
-//const urlApi='http://localhost:10000/api'
+//const urlApi='https://backengloba.onrender.com/api'
+const urlApi='http://localhost:10000/api'
 
 export const addEmployerBag=async(datos,token)=>{
     const url = `${urlApi}/addemployerbag`
@@ -316,14 +316,28 @@ export const updateOffer=async (datos, token)=>{
     return data.data
 }
 
-export const getOfferJobs=async (token)=>{
+export const getOfferJobs=async ()=>{
     const url = `${urlApi}/offerjobs`
     const response = await fetch(url, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
         },
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
+}
+
+export const getOfferJobId=async (datos)=>{
+    const url = `${urlApi}/offerjob`
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(datos)
     });
 
     const data = await response.json();

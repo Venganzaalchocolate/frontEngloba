@@ -124,7 +124,9 @@
     border-radius: 0.5rem;
 }
 
-
+.capitalize{
+    text-transform: capitalize;
+}
 
 @media (max-width: 1080px) {
     .tableCell {

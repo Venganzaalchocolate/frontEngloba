@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import styles from '../styles/availableJobsPanel.module.css';
 import {getOfferJobs } from '../../lib/data';
 import { useParams } from 'react-router-dom';
-//import OfferDetail from './OfferDetail';
 import { useNavigate } from 'react-router-dom';
+import OfferDetail from './OfferDetail';
 
 const JobsPanel=({ modal, charge })=>{
     const [offers, setOffers]=useState(null)

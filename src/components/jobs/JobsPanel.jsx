@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import OfferDetail from './OfferDetail';
 import { useNavigate } from 'react-router-dom';
 
-const AvailableJobsPanel=({ modal, charge })=>{
+const JobsPanel=({ modal, charge })=>{
     const [offers, setOffers]=useState(null)
     const [offerSelected, setOfferSelected]=useState(null)
     const { id } = useParams();
@@ -33,7 +33,6 @@ const AvailableJobsPanel=({ modal, charge })=>{
                 charge(false);
                 modal('Error', 'Servicio no disponible, por favor inténtelo más tarde');
                 navigate('/');
-                
             }
             
         }
@@ -72,4 +71,4 @@ const AvailableJobsPanel=({ modal, charge })=>{
 
 }
 
-export default AvailableJobsPanel;
+export default JobsPanel;

@@ -6,6 +6,7 @@ import { useLogin } from './hooks/useLogin.jsx';
 import { tokenUser } from './lib/data.js'
 import Login from './components/globals/Login.jsx';
 import MenuStart from './components/globals/MenuStart.jsx';
+import JobsPanel from './components/jobs/JobsPanel.jsx';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import WorkerMenu from './components/globals/WorkerMenu.jsx';
 import FormJob from './components/globals/FormJob.jsx';
@@ -14,8 +15,7 @@ import NotFound from './components/globals/NotFound.jsx';
 import Spinnning from './components/globals/Spinning.jsx';
 import { MenuWorkerProvider } from './context/MenuWorkerProvider.jsx'
 import { BagProvider } from './context/BagProvider.jsx';
-import JobsPanel from './components/jobs/JobsPanel.jsx';
-// import AvailableJobsPanel from './components/availableJobs/AvailableJobsPanel.jsx';
+
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()

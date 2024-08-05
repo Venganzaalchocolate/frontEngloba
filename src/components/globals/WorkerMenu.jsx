@@ -16,7 +16,7 @@ import PanelRoot from '../root/panelRoot';
 const WorkerMenu = ({modal, charge}) => {
     const {MenuWorker,changeMenuWorker} =useMenuWorker()
     const { logged } = useLogin()
-
+    console.log(logged)
     if(MenuWorker!=null){
         if (MenuWorker=='cv') return <ManagingResumenes closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='socialForm') return <ManagingSocial closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)}/>;
@@ -28,14 +28,20 @@ const WorkerMenu = ({modal, charge}) => {
     } else return (
         <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
             <div>
-                <h2>Bienvenido, {logged.user.name}</h2>
+                <h2>Bienvenido, {logged.user.firstName}</h2>
                 <button onClick={()=>changeMenuWorker('cv')}> GESTIONAR CV</button>
-                <button onClick={()=>changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>    
-                <button onClick={()=>changeMenuWorker('payroll')}> GESTIONAR NÓMINAS</button>
-                <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
-                <button onClick={()=>changeMenuWorker('employer')}> GESTIONAR TRABAJADORES</button>
-                <button onClick={()=>changeMenuWorker('programs')}> GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
-                <button onClick={()=>changeMenuWorker('root')}> PANEL ROOT</button>
+                {logged.user.role!='global' &&
+                <>
+                    <button onClick={()=>changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>    
+                    <button onClick={()=>changeMenuWorker('payroll')}> GESTIONAR NÓMINAS</button>
+                    <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
+                    <button onClick={()=>changeMenuWorker('employer')}> GESTIONAR TRABAJADORES</button>
+                    <button onClick={()=>changeMenuWorker('programs')}> GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
+                    <button onClick={()=>changeMenuWorker('root')}> PANEL ROOT</button>
+                </>
+                
+                }
+                
 
             </div>
             

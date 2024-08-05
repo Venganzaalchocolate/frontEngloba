@@ -13,7 +13,7 @@ import { useBag } from '../../hooks/useBag';
 
 const Header = () => {
     const [viewMenu, setViewMenu]=useState(false)
-    const {logout } = useLogin()
+    const {logout, logged } = useLogin()
     const {resetBag}=useBag()
     const {changeMenuWorker} =useMenuWorker()
 
@@ -33,7 +33,7 @@ const Header = () => {
                 <FaEnvelope />
                 {(viewMenu)?<RiCloseLargeFill  onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}/>:<FiAlignJustify onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}></FiAlignJustify>}
             </div>
-            {viewMenu &&
+            {viewMenu && logged.user.role!='global' &&
             <div className={styles.menuHeader}>
                 <ul>
                     <li onClick={()=>changeOption('cv')}>GESTION CV</li>

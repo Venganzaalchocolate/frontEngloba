@@ -9,7 +9,7 @@ export const validEmail = (email) => {
 export const validPassword = (pass) => {
   if (pass == undefined) return false
   // Verificar si la contraseña tiene al menos 8 caracteres
-  if (pass.length < 8) {
+  if (pass.length <= 8) {
     return false;
   }
 

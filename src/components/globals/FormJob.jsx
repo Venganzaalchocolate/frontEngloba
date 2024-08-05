@@ -5,21 +5,23 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { textErrors } from '../../lib/textErrors';
 import { sendFormCv, getData, getOfferJobId } from '../../lib/data';
 
-const FormJob = ({ modal, charge}) => {
+const FormJob = ({ modal, charge, user=null, changeUser=null}) => {
     const [file, setFile] = useState(null);
     const { id } = useParams();
     const [offer,setIdOffer]=useState(null)
-    const [multipleData, setMultipleData] = useState({ studies: [], provinces: [], jobs: [], work_schedule: [] });
+    const [multipleData, setMultipleData] = useState({ studies: ((user!=null)?user.studies:[]), provinces: ((user!=null)?user.provinces:[]), jobs: ((user!=null)?user.jobs:[]), work_schedule: ((user!=null)?user.work_schedule:[]) });
     const [enums, setEnums] = useState({ studies: [], provinces: [], jobs: [], work_schedule: [] });
     const [datos, setDatos] = useState({
-        name: null,
-        email: null,
-        phone: null,
+        name: (user!=null)?user.name:null,
+        email: (user!=null)?user.email:null,
+        phone: (user!=null)?user.phone:null,
         jobs: null,
         provinces: null,
-        work_schedule: null,
+        work_schedule: (user!=null)?user.work_schedule[0]:null,
         studies: null,
-        terms:null
+        terms:(user!=null)?'':null,
+        about:(user!=null)?user.about:"",
+        id:(user!=null)?user._id:""
     });
     const [errores, setError] = useState({
         name: null,
@@ -39,7 +41,6 @@ const FormJob = ({ modal, charge}) => {
         charge(true);
         const cargarDatos = async () => {
             const enumsData = await getData();
-
             if (!enumsData.error) {
                 let auxEnums = {};
                 auxEnums['jobs'] = enumsData.jobs;
@@ -65,6 +66,9 @@ const FormJob = ({ modal, charge}) => {
     }, []);
 
     const handleChangeFile = (e) => {
+        let auxErrores = { ...errores };
+        auxErrores['file']=null
+        setError(auxErrores)
         setFile(e.target.files[0]);
     }
 
@@ -114,31 +118,46 @@ const FormJob = ({ modal, charge}) => {
     }
 
     const handleChangeCheck=(e)=>{
-        let auxDatos = { ...datos };
+        let auxErrores = { ...errores };
+        auxErrores['terms']=null
+        setError(auxErrores)
+        let auxDatos = {...datos};
         auxDatos[e.target.name] =(auxDatos[e.target.name]==null)?e.target.value:null;
-        console.log(auxDatos)
         setDatos(auxDatos);
     }
 
     const send = async () => {
         let valido = true;
+        const keyAux=['jobs', 'studies', 'provinces']
         let auxErrores = { ...errores };
-        if (file == null) {
+        if (file == null && user==null) {
             auxErrores['file'] = textErrors('vacio');
             valido = false;
         }
+
+
         for (const key in datos) {
-            if (datos[key] == null) {
+            if (datos[key] == null && !keyAux.includes(key) && key!='about') {
                 auxErrores[key] = textErrors('vacio');
                 setError(auxErrores);
                 valido = false;
             }
         }
 
-        if (!multipleData.jobs.length > 0) auxErrores['jobs'] = textErrors('vacio'), valido = false;
-        if (!multipleData.provinces.length > 0) auxErrores['provinces'] = textErrors('vacio'), valido = false;
-        if (!multipleData.studies.length > 0) auxErrores['studies'] = textErrors('vacio'), valido = false;
+        for  (const key in errores) {
+            if (errores[key] != null) {
+                valido = false;
+            }
+        }
 
+        keyAux.map((x)=>{
+            if(multipleData[x].length==0){
+                auxErrores[x] = textErrors('vacio');
+                setError(auxErrores);
+                valido = false; 
+            }
+        })
+        
         if (valido) {
             charge(true);
             const auxDatos = { ...datos };
@@ -147,15 +166,16 @@ const FormJob = ({ modal, charge}) => {
             auxDatos.studies = multipleData.studies;
             auxDatos.work_schedule = [auxDatos.work_schedule];
             if(!!offer) auxDatos['offer']=offer._id
-            const sendForm = await sendFormCv(auxDatos, file);
+            const sendForm =(user==null?await sendFormCv(auxDatos, file):await sendFormCv(auxDatos, file, true)) 
             if (sendForm.error) {
                 let auxErrores = { ...errores };
                 auxErrores['mensajeError'] = sendForm.message;
                 setError(auxErrores);
                 charge(false);
             } else {
+                if(user!=null) changeUser(sendForm.data)
                 charge(false);
-                modal('CV enviado', "Curriculum enviado con éxito");
+                modal('CV enviado', (user!=null)?"Curriculum modificado con éxito":"Curriculum enviado con éxito");
                 navigate('/');
             }
         }
@@ -202,10 +222,12 @@ const FormJob = ({ modal, charge}) => {
     }
 
     return (
-        <div className={styles.contenedor}>
-            <div>
+        <div className={(user==null)?styles.contenedor:`${styles.contenedor} ${styles.contendorEditar}`}>
+            {user==null &&
+             <div>
                 <img src="/graphic/imagotipo_blanco_malva_descriptor.png" alt="logotipo engloba" />
-            </div>
+            </div>   
+            }
             {!!offer && <div className={styles.tituloOferta}>
                     <h2>Oferta: {offer.job_title}</h2>
                     </div>}
@@ -263,20 +285,27 @@ const FormJob = ({ modal, charge}) => {
                     <input type="file" id='file' name='file' onChange={(e) => handleChangeFile(e)} />
                     <span className='errorSpan'>{errores.file}</span>
                 </div>
-                <div className={styles.terminos}>
-                    <input type="checkbox" id="terms" name="terms" value="accepted" onChange={(e) => handleChangeCheck(e)}/>
-                    <label for="terms">Aceptar términos y condiciones: <Link to={'https://engloba.org.es/privacidad'}>política de privacidad</Link></label>
-                    <span className='errorSpan'>{errores.terms}</span>
-                </div>
+                {
+                    user==null &&
+                    <div className={styles.terminos}>
+                        <input type="checkbox" id="terms" name="terms" value="accepted" onChange={(e) => handleChangeCheck(e)}/>
+                        <label for="terms">Aceptar términos y condiciones: <Link to={'https://engloba.org.es/privacidad'}>política de privacidad</Link></label>
+                        <span className='errorSpan'>{errores.terms}</span>
+                    </div>
+                }
+                
                 <div className={styles.botones}>
                     <button onClick={() => send()}>
-                        Enviar Formulario
+                        {(user!=null)?"Guardar Cambios":"Enviar Formulario"}
                     </button>
-                    <Link to={'/'}>
-                        <button>Cancelar</button>
-                    </Link>
+                    {
+                        user==null && 
+                        <Link to={'/'}>
+                            <button>Cancelar</button>
+                        </Link>
+                    }
+                   
                 </div>
-               
                 <span className='errorSpan'>{errores.mensajeError}</span>
             </div>
         </div>

@@ -21,6 +21,13 @@ const OfferDetail = ({data, reset}) => {
         <h3>Requisitos Esenciales</h3>
         <p>{data.essentials_requirements}</p>  
       </div>
+      {!!data.optionals_requirements && 
+      <div className={styles.campo}>
+        <h3>Requisitos que se valorarán</h3>
+        <p>{data.optionals_requirements}</p>  
+      </div>
+      }
+      
       <div className={styles.campo}>
         <h3>Incorporación</h3>
         <p>{dateFormated(data.expected_incorporation_date)}</p>  
@@ -28,14 +35,6 @@ const OfferDetail = ({data, reset}) => {
       <div className={styles.campo}>
         <h3>Funciones a desempeñar</h3>
         <p>{data.functions}</p>  
-      </div>
-      <div className={styles.campo}>
-        <h3>Requisitos que se valorarán</h3>
-        <p>{data.optionals_requirements}</p>  
-      </div>
-      <div className={styles.campo}>
-        <h3>Titulación requerida</h3>
-        <p>{data.studies}</p>  
       </div>
       <div className={styles.campo}>
         <h3>Jornada</h3>

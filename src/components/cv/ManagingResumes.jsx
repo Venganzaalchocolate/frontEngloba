@@ -13,6 +13,10 @@ import CvPanel from "./CvPanel.jsx";
 import Modal from "../globals/Modal.jsx";
 import BagCreate from "./BagCreate.jsx";
 import { useBag } from "../../hooks/useBag.jsx";
+import { GoStar } from "react-icons/go";
+import { GoStarFill } from "react-icons/go";
+import { BsExclamationOctagonFill } from "react-icons/bs";
+import { BsExclamationOctagon } from "react-icons/bs";
 
 
 // 
@@ -149,6 +153,26 @@ const ManagingResumenes = ({ modal, charge }) => {
 
     }
 
+    const changeUser=(userModify)=>{
+        let usersAux=[...users]
+        usersAux.map((x, i ,a)=>{
+            if(x._id==userModify._id){
+                a[i]=userModify
+                setUserSelected(userModify)
+                setUsers(usersAux)
+            }
+        })
+    }
+
+    const checkUser=(userInfo)=>{
+        if(userInfo.reject!=null) return 'tomato'
+        if(Bag != null && !!Bag.userCv){
+            const user=Bag.userCv.find(x => x === userInfo._id)
+            if(user!=undefined){              
+                return 'green'
+            }
+        }
+    }
 
 
     return (
@@ -317,12 +341,12 @@ const ManagingResumenes = ({ modal, charge }) => {
                     <div className={styles.tableCell}>Provincias</div>
                     <div className={styles.tableCell}>Oferta</div>
                     <div className={styles.tableCell}>Version</div>
-                    <div className={styles.tableCell}>Visto</div>
+                    <div className={styles.tableCell}>Visto | Favorito | Rechazado</div>
                 </div>
                 {users.map(user => (
                     <div key={user._id} >
-                        
-                        <div className={`${styles.tableRow} ${(Bag != null && !!Bag.userCv && Bag.userCv.find(x => x === user._id)) ? 'green' : ''}`} onClick={() => lookCV(user._id, user)}>
+
+                        <div className={`${styles.tableRow} ${checkUser(user)}`} onClick={() => lookCV(user._id, user)}>
                             <div className={`${styles.tableCell} ${styles.capitalize}`}>{user.name}</div>
                             <div className={styles.tableCell}>{user.email}</div>
                             <div className={styles.tableCell}>{user.phone}</div>
@@ -331,13 +355,24 @@ const ManagingResumenes = ({ modal, charge }) => {
                             <div className={styles.tableCell}>{user.provinces.join(', ')}</div>
                             <div className={styles.tableCell}>{(user.offer!=null)?user.offer.job_title:''}</div>
                             <div className={styles.tableCell}>{user.numberCV}</div>
-                            <div className={styles.tableCell}>{(user.view) ? <FaEye /> : <FaRegEyeSlash />}</div>
+                            <div className={styles.tableCell}>{
+                                (user.view) 
+                                ? <FaEye /> 
+                                : <FaRegEyeSlash />}{
+                                (user.favorite) 
+                                ? <GoStarFill/> 
+                                : <GoStar />}{
+                                (user.reject) 
+                                ? <BsExclamationOctagonFill/> 
+                                : <BsExclamationOctagon />}
+                            </div>
                         </div>
                         {userSelected != null && userSelected._id == user._id &&
                             <CvPanel
+                                charge={()=>charge()}
                                 urlpdf={urlCv}
                                 user={userSelected}
-                                changeUser={(x) => setUserSelected(x)}
+                                changeUser={(x) => changeUser(x)}
                                 modal={(title, message) => modal(title, message)}>
                             </CvPanel>
                         }

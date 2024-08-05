@@ -346,7 +346,7 @@ export const getOfferJobId=async (datos)=>{
 }
 
 
-export const sendFormCv = async (dataForm, file) => {
+export const sendFormCv = async (dataForm, file, editUser=false) => {
     const formData = new FormData();
 
     // Check for file presence
@@ -360,10 +360,13 @@ export const sendFormCv = async (dataForm, file) => {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dataForm)
+        body: JSON.stringify((editUser)?{id:dataForm.id}:dataForm)
     });
 
+
     const userExist = await response.json()
+    let data='';
+
     if (userExist.data==undefined || userExist.data.length == 0) {
         const url = `${urlApi}/createusercv`
         const response = await fetch(url, {
@@ -373,7 +376,7 @@ export const sendFormCv = async (dataForm, file) => {
             },
             body: JSON.stringify(dataForm)
         });
-        const data = await response.json();
+        data = await response.json();
         if (data.error) return data
         else {
             if (!!data.data._id) {
@@ -384,7 +387,7 @@ export const sendFormCv = async (dataForm, file) => {
         if (!!userExist.data[0]._id) {
             const url = `${urlApi}/modifyusercv`
             dataForm['_id']=userExist.data[0]._id;
-            dataForm['numberCV']=userExist.data[0].numberCV+1
+            if(file!=null) dataForm['numberCV']=userExist.data[0].numberCV+1;          
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: {
@@ -393,9 +396,9 @@ export const sendFormCv = async (dataForm, file) => {
                 body: JSON.stringify(dataForm)
             });
 
-            const data = await response.json();
+            data = await response.json();
             if (data.error) return data
-            else {
+            else if(file!=null){
                 if (!!data.data._id) {
                     formData.append('nameFile', data.data._id);
                 }
@@ -403,20 +406,21 @@ export const sendFormCv = async (dataForm, file) => {
         }
     }
 
-    const uploadUrl = `${urlApi}/uploadcv`;
+    if(file!=null){
+        const uploadUrl = `${urlApi}/uploadcv`;
 
-    const uploadResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        body: formData,
-    });
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'POST',
+            body: formData,
+        });
 
-    const uploadData = await uploadResponse.json();
-    if (uploadData.error) {
-        throw new Error(uploadData.error); // Re-throw error for better handling
+        const uploadData = await uploadResponse.json();
+        if (uploadData.error) {
+            return uploadData
+        }
+        // Assuming upload response contains relevant data (e.g., uploaded file info)
+   
     }
-    // Assuming upload response contains relevant data (e.g., uploaded file info)
-    return {
-        uploadedFile: uploadData, // Uploaded file information
-    };
-
+    return data
+    
 }

@@ -12,6 +12,8 @@
     /* From https://css.glass */
 }
 
+
+
 .contenedorForm button{
     margin-top: 1rem;
 }
@@ -155,6 +157,18 @@
 
 .contenedor> div > div.terminos>span{
     flex: 1 100%;
+}
+
+.contendorEditar{
+    background-image: none;
+    padding: 0;
+}
+
+.contendorEditar>.contenedorForm{
+    background: none;
+    padding: 0;
+    border: none;
+    box-shadow: none;
 }
 
 @media (min-width: 600px) {

@@ -83,6 +83,20 @@
     flex: 1 100%;
 }
 
+.contenedorEditar{
+    border-top: 5px solid var(--color-malva);
+    padding: 1rem 0;
+}
+
+.cerrar{
+    display: flex;
+}
+
+.cerrar>button{
+    margin-left: 1rem;
+    font-size: 10pt;
+}
+
 /*
 */
 

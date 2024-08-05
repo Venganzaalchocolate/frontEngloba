@@ -16,13 +16,17 @@ import { useLogin } from '../../hooks/useLogin';
 import BagPanel from "./BagPanel";
 import { useBag } from "../../hooks/useBag.jsx";
 import VisualizadorPDF from "./GoogleView.jsx";
+import { FaRegEdit  } from "react-icons/fa";
+import FormJob from "../globals/FormJob.jsx";
 
 
-const CvPanel = ({ urlpdf, user, changeUser, modal}) => {
-    const { logged} = useLogin()
+
+const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
+    const {logged} = useLogin()
     const {Bag, schedule}= useBag()
     const [typeComment, setTypeComment] = useState(null)
     const [textComment, setTextComment] = useState('')
+    const [panelEditUser, setPanelEditUser]=useState(false)
 
 
 
@@ -61,6 +65,10 @@ const CvPanel = ({ urlpdf, user, changeUser, modal}) => {
         setTextComment('')
     }
 
+    const viewPanelEditUser=()=>{
+        setPanelEditUser(!panelEditUser)
+    }
+
     if(user){
         return (
 
@@ -70,8 +78,19 @@ const CvPanel = ({ urlpdf, user, changeUser, modal}) => {
                         {(user.view!=null) ? <FaEye color="white" onClick={()=>changeStatus('view')} /> : <FaRegEyeSlash onClick={()=>changeStatus('view')}/>}
                         {(user.favorite!=null) ? <GoStarFill color='yellow' onClick={()=>changeStatus('favorite')}></GoStarFill> : <GoStar onClick={()=>changeStatus('favorite')}></GoStar>}
                         {(user.reject!=null) ? <BsExclamationOctagonFill color="tomato" onClick={()=>changeStatus('reject')}/>: <BsExclamationOctagon  onClick={()=>changeStatus('reject')}/>}
+                        <FaRegEdit  onClick={()=>viewPanelEditUser()}/>
                         {Bag!=null && !schedule && <BagPanel userSelected={user}/>}
                     </div>
+                    {!!panelEditUser && <div className={styles.contenedorEditar}>
+                        <h2 className={styles.cerrar}>Editar Información <button className="tomato" onClick={()=>viewPanelEditUser()}>Cerrar</button></h2> 
+                        <FormJob 
+                        charge={()=>charge()}   
+                        modal={(title, message) => modal(title, message)}
+                        user={user}
+                        changeUser={(x)=>changeUser(x)}
+                        />
+                        
+                        </div>}
                     {Bag!=null && schedule &&
                     <div className={styles.boxComments}>
                         <h2>Comentarios</h2>

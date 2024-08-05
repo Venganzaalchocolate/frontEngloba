@@ -24,7 +24,6 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
         location: (datosOferta == null) ? null : datosOferta.location,
         expected_incorporation_date: (datosOferta == null) ? null : dateFormated(datosOferta.expected_incorporation_date),
         work_schedule: (datosOferta == null) ? null : datosOferta.work_schedule,
-        studies: (datosOferta == null) ? null : datosOferta.studies,
         provinces: (datosOferta == null) ? null : datosOferta.province,
         functions: (datosOferta == null) ? null : datosOferta.functions,
         id: (datosOferta == null) ? '' : datosOferta._id,
@@ -43,7 +42,6 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
         expected_incorporation_date: null,
         dispositive: null,
         work_schedule: null,
-        studies: null,
         provinces: null,
         functions: null,
         bag:null
@@ -78,7 +76,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
         let valido = true;
         let auxErrores = { ...errores }
         for (const key in datos) {
-            if (datos[key] == null || datos[key] == 'noOption') {
+            if (key!='optionals_requirements' && (datos[key] == null || datos[key] == 'noOption' )) {
                 auxErrores[key] = textErrors('vacio')
                 setError(auxErrores)
                 valido = false;
@@ -91,6 +89,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
             valido = false;
         }
 
+
         if (valido) {
             charge(true)
             let auxDatos = { ...datos }
@@ -100,8 +99,14 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                 auxDatos['bag']=Bag._id
             }
             let sendForm = '';
-            if (datosOferta != null) sendForm = await updateOffer(auxDatos, token);
-            else sendForm = await sendFormCreateOffer(auxDatos, token);
+            console.log(auxDatos)
+            if (datosOferta != null){
+                sendForm = await updateOffer(auxDatos, token);  
+                
+            } else {
+                sendForm = await sendFormCreateOffer(auxDatos, token)
+
+            }
             if (sendForm.error) {
                 let auxErrores = { ...errores }
                 auxErrores['mensajeError'] = sendForm.message;
@@ -113,10 +118,9 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                     modal('Oferta Modificada', "Oferta modificada con éxito")
                     back()
                 } 
-                else{
+                else {
                   modal('Oferta Creada', "Oferta creada con éxito")  
                   back()
-
                 } 
                 
 
@@ -164,44 +168,52 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                     <>
                         <div>
                             <label htmlFor="work_schedule">Jornada</label>
-                            <select id='work_schedule' name='work_schedule' onChange={(e) => handleChange(e)} value={datos.work_schedule} disabled={noEditar}>
-                                <option value={'noOption'} key='work-1'>Selecciona una opción</option>
-                                {enums.work_schedule.map((x, i) => {
-                                    if (datosOferta != null && datosOferta.work_schedule == x.name) return <option value={x.name} key={`work` + i} selected>{x.name}</option>
-                                    else return <option value={x} key={`work` + i}>{x.name}</option>
-                                })}
-                            </select>
+                            <input type='text' id='work_schedule' name='work_schedule' onChange={(e) => handleChange(e)} value={datos.work_schedule} disabled={noEditar}/>
                             <span className='errorSpan'>{errores.work_schedule}</span>
                         </div>
                         <div>
                             <label htmlFor="functions">Funciones</label>
-                            <select id='functions' name='functions' onChange={(e) => handleChange(e)} value={datos.funtions} disabled={noEditar}>
+                            <select id='functions' name='functions' onChange={(e) => handleChange(e)} value={datos.functions} disabled={noEditar}>
                                 <option value={'noOption'} key='functions-1'>Selecciona una opción</option>
                                 {enums.jobs.map((x, i) => {
-                                    if (datosOferta != null && datosOferta.functions == x.name) return <option value={x.name} key={`functions` + i} selected>{x.name}</option>
-                                    else return <option value={x.name} key={`functions` + i}>{x.name}</option>
+                                     if (x.subcategories != undefined && x.subcategories.length > 0) {
+                                        return (
+                                            <optgroup label={x.name} key={x._id}>
+                                                {x.subcategories.map((y, iy) =>{ 
+                                                   if (datosOferta != null && datosOferta.functions == y.name) return <option value={y.name} key={y._id} selected>{y.name}</option>
+                                                   else return <option value={y.name} key={y._id}>{y.name}</option>   
+                                                })}
+                                            </optgroup>
+                                        );
+                                    } else {
+                                        if (datosOferta != null && datosOferta.functions == x.name) return <option value={x.name} key={x._id} selected>{x.name}</option>
+                                        else return <option value={x.name} key={x._id}>{x.name}</option>    
+                                    }
+                                    
                                 })}
                             </select>
                             <span className='errorSpan'>{errores.functions}</span>
                         </div>
-                        <div>
-                            <label htmlFor="studies">Estudios requeridos</label>
-                            <select id='studies' name='studies' onChange={(e) => handleChange(e)} value={datos.studies} disabled={noEditar}>
-                                <option value={'noOption'} key='studies-1'>Selecciona una opción</option>
-                                {enums.studies.map((x, i) => {
-                                    return <option value={x.name} key={`studies` + i}>{x.name}</option>
-                                })}
-                                <option value={'noRequired'} key={`studies` + 'noRequired'}>No requerido</option>
-                            </select>
-                            <span className='errorSpan'>{errores.studies}</span>
-                        </div>
+                        
                         <div>
                             <label htmlFor="provinces">Provincias</label>
                             <select id='provinces' name='provinces' onChange={(e) => handleChange(e)} value={datos.provinces} disabled={noEditar}>
                                 <option value={'noOption'} key='provinces-1'>Selecciona una opción</option>
                                 {enums.provinces.map((x, i) => {
-                                    if (datosOferta != null && datosOferta.province == x.name) return <option value={x.name} key={`provinces` + i} selected>{x.name}</option>
-                                    else return <option value={x.name} key={`provinces` + i} >{x.name}</option>
+                                     if (x.subcategories != undefined && x.subcategories.length > 0) {
+                                        return (
+                                            <optgroup label={x.name} key={x._id}>
+                                                {x.subcategories.map((y) =>{ 
+                                                   if (datosOferta != null && datosOferta.provinces == y.name) return <option value={y.name} key={y._id} selected>{y.name}</option>
+                                                   else return <option value={y.name} key={y._id}>{y.name}</option>   
+                                                })}
+                                            </optgroup>
+                                        );
+                                    } else {
+                                        if (datosOferta != null && datosOferta.functions == x.name) return <option value={x.name} key={x._id} selected>{x.name}</option>
+                                        else return <option value={x.name} key={x._id}>{x.name}</option>    
+                                    }
+                                    
                                 })}
                             </select>
                             <span className='errorSpan'>{errores.provinces}</span>
@@ -215,8 +227,8 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                     <span className='errorSpan'>{errores.location}</span>
                 </div>
                 <div>
-                    <label htmlFor="expected_incorporation_date">Fecha de incorporación</label>
-                    <input type="date" id='expected_incorporation_date' name='expected_incorporation_date' onChange={(e) => handleChange(e)} value={datos.expected_incorporation_date} disabled={noEditar} />
+                    <label htmlFor="expected_incorporation_date">Incorporación</label>
+                    <input placeholder='Inmediata, En Septiembre ..' type="text" id='expected_incorporation_date' name='expected_incorporation_date' onChange={(e) => handleChange(e)} value={datos.expected_incorporation_date} disabled={noEditar} />
                     <span className='errorSpan'>{errores.expected_incorporation_date}</span>
                 </div>
                 <div>

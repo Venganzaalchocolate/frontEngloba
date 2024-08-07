@@ -153,22 +153,22 @@ const ManagingResumenes = ({ modal, charge }) => {
 
     }
 
-    const changeUser=(userModify)=>{
-        let usersAux=[...users]
-        usersAux.map((x, i ,a)=>{
-            if(x._id==userModify._id){
-                a[i]=userModify
+    const changeUser = (userModify) => {
+        let usersAux = [...users]
+        usersAux.map((x, i, a) => {
+            if (x._id == userModify._id) {
+                a[i] = userModify
                 setUserSelected(userModify)
                 setUsers(usersAux)
             }
         })
     }
 
-    const checkUser=(userInfo)=>{
-        if(userInfo.reject!=null) return 'tomato'
-        if(Bag != null && !!Bag.userCv){
-            const user=Bag.userCv.find(x => x === userInfo._id)
-            if(user!=undefined){              
+    const checkUser = (userInfo) => {
+        if (userInfo.reject != null) return 'tomato'
+        if (Bag != null && !!Bag.userCv) {
+            const user = Bag.userCv.find(x => x === userInfo._id)
+            if (user != undefined) {
                 return 'green'
             }
         }
@@ -212,14 +212,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                         <label htmlFor="offer">Oferta:</label>
                         <input type="text" id="offer" name="offer" value={filters.offer} onChange={handleFilterChange} />
                     </div>
-                    <div>
-                        <label htmlFor="view">Visto</label>
-                        <select id='view' name='view' onChange={handleFilterChange} value={filters.view}>
-                            <option value={''}>Selecciona una opción</option>
-                            <option value={`true`}>Si</option>
-                            <option value={`false`}>No</option>
-                        </select>
-                    </div>
+
                     {!!enums &&
                         <>
                             <div>
@@ -321,7 +314,30 @@ const ManagingResumenes = ({ modal, charge }) => {
                     }
 
 
-
+                    <div>
+                        <label htmlFor="view">Visto</label>
+                        <select id='view' name='view' onChange={handleFilterChange} value={filters.view}>
+                            <option value={''}>Selecciona una opción</option>
+                            <option value={`1`}>Si</option>
+                            <option value={`0`}>No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="favorite">Favoritos</label>                       
+                        <select id='favorite' name='favorite' onChange={handleFilterChange} value={filters.favorite}>
+                            <option value={''}>Selecciona una opción</option>
+                            <option value={`1`}>Si</option>
+                            <option value={`0`}>No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="reject">Rechazados</label>
+                        <select id='reject' name='reject' onChange={handleFilterChange} value={filters.reject}>
+                            <option value={''}>Selecciona una opción</option>
+                            <option value={`1`}>Si</option>
+                            <option value={`0`}>No</option>
+                        </select>
+                    </div>
 
                     <div>
                         <button onClick={resetFilters}>Reset Filtros</button>
@@ -353,18 +369,18 @@ const ManagingResumenes = ({ modal, charge }) => {
                             <div className={styles.tableCell}>{user.jobs.join(', ')}</div>
                             <div className={styles.tableCell}>{user.studies.join(', ')}</div>
                             <div className={styles.tableCell}>{user.provinces.join(', ')}</div>
-                            <div className={styles.tableCell}>{(user.offer!=null)?user.offer.job_title:''}</div>
+                            <div className={styles.tableCell}>{(user.offer != null) ? user.offer.job_title : ''}</div>
                             <div className={styles.tableCell}>{user.numberCV}</div>
                             <div className={styles.tableCell}>{
-                                (user.view) 
-                                ? <FaEye /> 
-                                : <FaRegEyeSlash />}{
-                                (user.favorite) 
-                                ? <GoStarFill/> 
-                                : <GoStar />}{
-                                (user.reject) 
-                                ? <BsExclamationOctagonFill/> 
-                                : <BsExclamationOctagon />}
+                                (user.view)
+                                    ? <FaEye />
+                                    : <FaRegEyeSlash />}{
+                                    (user.favorite)
+                                        ? <GoStarFill />
+                                        : <GoStar />}{
+                                    (user.reject)
+                                        ? <BsExclamationOctagonFill />
+                                        : <BsExclamationOctagon />}
                             </div>
                         </div>
                         {userSelected != null && userSelected._id == user._id &&
@@ -372,7 +388,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                                 charge={()=>charge()}
                                 urlpdf={urlCv}
                                 user={userSelected}
-                                changeUser={(x) => changeUser(x)}
+                                changeUser={(x)=>changeUser(x)}
                                 modal={(title, message) => modal(title, message)}>
                             </CvPanel>
                         }

@@ -16,7 +16,6 @@ import PanelRoot from '../root/panelRoot';
 const WorkerMenu = ({modal, charge}) => {
     const {MenuWorker,changeMenuWorker} =useMenuWorker()
     const { logged } = useLogin()
-    console.log(logged)
     if(MenuWorker!=null){
         if (MenuWorker=='cv') return <ManagingResumenes closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='socialForm') return <ManagingSocial closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)}/>;

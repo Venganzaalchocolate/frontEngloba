@@ -1,4 +1,6 @@
-const urlApi='https://backengloba.onrender.com/api'
+let urlApi = import.meta.env.VITE_API_URL;
+
+//const urlApi='https://backengloba.onrender.com/api'
 //const urlApi='http://localhost:10000/api'
 
 export const addEmployerBag=async(datos,token)=>{
@@ -262,6 +264,7 @@ export const loginUser = async (email, password) => {
 }
 
 export const getusercvs=async (page, limit, filters, token)=>{
+
     const datos = {
         page,
         limit,

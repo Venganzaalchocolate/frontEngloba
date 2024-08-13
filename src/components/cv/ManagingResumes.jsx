@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { getCVs, getData, getusercvs } from "../../lib/data";
 import styles from '../styles/managingResumenes.module.css';
+import stylesTooltip from '../styles/tooltip.module.css';
 import { FaEye } from "react-icons/fa";
 import PdfV from "./PdfV";
 import { FaCheck } from "react-icons/fa";
@@ -50,6 +51,7 @@ const ManagingResumenes = ({ modal, charge }) => {
     // Función para cargar los filters de la página actual
     const loadUsers = async () => {
         charge(true)
+        
         try {
             let data = null
             const token = getToken();
@@ -59,7 +61,14 @@ const ManagingResumenes = ({ modal, charge }) => {
                 const ids = { users: Bag.userCv }
                 data = await getusercvs(page, limit, ids, token);
             } else {
-                data = await getusercvs(page, limit, filters, token);
+                let auxFilters={...filters}
+                for (let key in auxFilters) {
+                    if (auxFilters[key] === "") {
+                        delete auxFilters[key];
+                    }
+                }
+
+                data = await getusercvs(page, limit, auxFilters, token);
             }
 
             const enumsData = await getData();
@@ -109,7 +118,6 @@ const ManagingResumenes = ({ modal, charge }) => {
 
     // Función para manejar el cambio en los filtros
     const handleFilterChange = (event) => {
-        console.log(filters)
         setPage(1)
         setUrlCv(null)
         const { name, value } = event.target;
@@ -356,8 +364,8 @@ const ManagingResumenes = ({ modal, charge }) => {
                     <div className={styles.tableCell}>Estudios</div>
                     <div className={styles.tableCell}>Provincias</div>
                     <div className={styles.tableCell}>Oferta</div>
-                    <div className={styles.tableCell}>Version</div>
-                    <div className={styles.tableCell}>Visto | Favorito | Rechazado</div>
+                    <div className={styles.tableCell}>V</div>
+                    <div className={styles.tableCell}>Visto Favorito Rechazado</div>
                 </div>
                 {users.map(user => (
                     <div key={user._id} >
@@ -368,19 +376,19 @@ const ManagingResumenes = ({ modal, charge }) => {
                             <div className={styles.tableCell}>{user.phone}</div>
                             <div className={styles.tableCell}>{user.jobs.join(', ')}</div>
                             <div className={styles.tableCell}>{user.studies.join(', ')}</div>
-                            <div className={styles.tableCell}>{user.provinces.join(', ')}</div>
+                            <div className={styles.tableCell}>{(user.provinces.length!=11)?user.provinces.join(', '):'Todas'}</div>
                             <div className={styles.tableCell}>{(user.offer != null) ? user.offer.job_title : ''}</div>
-                            <div className={styles.tableCell}>{user.numberCV}</div>
+                            <div className={styles.tableCell}><span className={stylesTooltip.tooltip}>{user.numberCV}<span className={stylesTooltip.tooltiptext}>Versión</span></span></div>
                             <div className={styles.tableCell}>{
                                 (user.view)
-                                    ? <FaEye />
-                                    : <FaRegEyeSlash />}{
+                                    ?<span className={stylesTooltip.tooltip}><FaEye /><span className={stylesTooltip.tooltiptext}>Visto</span></span> 
+                                    :<span className={stylesTooltip.tooltip}><FaRegEyeSlash /><span className={stylesTooltip.tooltiptext}>No Visto</span></span>  }{
                                     (user.favorite)
-                                        ? <GoStarFill />
-                                        : <GoStar />}{
+                                        ? <span className={stylesTooltip.tooltip}><GoStarFill /><span className={stylesTooltip.tooltiptext}>Favorito</span></span>
+                                        : <span className={stylesTooltip.tooltip}><GoStar /><span className={stylesTooltip.tooltiptext}>No Favorito</span></span>}{
                                     (user.reject)
-                                        ? <BsExclamationOctagonFill />
-                                        : <BsExclamationOctagon />}
+                                        ? <span className={stylesTooltip.tooltip}><BsExclamationOctagonFill /><span className={stylesTooltip.tooltiptext}>Rechazado</span></span>
+                                        : <span className={stylesTooltip.tooltip}><BsExclamationOctagon /><span className={stylesTooltip.tooltiptext}>No Rechazado</span></span>}
                             </div>
                         </div>
                         {userSelected != null && userSelected._id == user._id &&

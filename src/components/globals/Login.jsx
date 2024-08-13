@@ -75,7 +75,7 @@ const Login = ({charge}) => {
     return (
         <div className={styles.contenedorLogin}>
             <div>
-                <img src="/graphic/imagotipo_blanco_malva_descriptor.png" alt="logotipo engloba" />
+                <img src="/graphic/logotipo_blanco.png" alt="logotipo engloba" />
             </div>
             <div  className={styles.contenedorForm}>
                 <div className={styles.inputs}>

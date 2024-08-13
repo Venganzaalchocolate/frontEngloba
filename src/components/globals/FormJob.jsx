@@ -17,18 +17,28 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         work_schedule: user ? user.work_schedule : [],
     });
     const [datos, setDatos] = useState({
-        name: user?.name || '',
-        email: user?.email || '',
-        phone: user?.phone || '',
-        jobs: null,
-        provinces: null,
-        work_schedule: user?.work_schedule?.[0] || '',
-        studies: null,
-        terms: user ? '' : null,
-        about: user?.about || '',
-        id: user?._id || '',
+        name: (user != null) ? user.name : null, 
+        email: (user != null) ? user.email : null, 
+        phone: (user != null) ? user.phone : null, 
+        jobs: null, 
+        provinces: null, 
+        work_schedule: (user != null) ? user.work_schedule[0] : null, 
+        studies: null, 
+        terms: (user != null) ? '' : null, 
+        about: (user != null) ? user.about : "", 
+        id: (user != null) ? user._id : "" 
     });
-    const [errores, setError] = useState({});
+    const [errores, setError] = useState({
+        name: null, 
+        email: null, 
+        phone: null, 
+        jobs: null, 
+        provinces: null, 
+        work_schedule: null, 
+        studies: null, 
+        terms: null 
+    });
+
     const navigate = useNavigate();
     const { enums, offer } = useJobFormData(charge, modal);
 
@@ -42,19 +52,27 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        const validationMap = {
-            name: validText(value, 3, 100),
-            email: validEmail(value),
-            phone: validNumber(value),
-        };
+        let auxErrores = { ...errores }; 
+        let auxDatos = { ...datos }; 
+        auxErrores['mensajeError'] = null; 
+        let valido = false;
 
-        setDatos({ ...datos, [name]: value });
-        setError({
-            ...errores,
-            [name]: validationMap[name] ? null : textErrors(name),
-        });
-    };
+        // Validar según el tipo de input
+        if (e.target.name == 'name') valido = validText(e.target.value, 3, 100); 
+        if (e.target.name == 'email') valido = validEmail(e.target.value); 
+        if (e.target.name == 'phone') valido = validNumber(e.target.value);
+        
+        auxDatos[e.target.name] = e.target.value; 
+        setDatos(auxDatos);
+
+        // Manejo de errores
+        if (!valido) {
+            auxErrores[e.target.name] = textErrors(e.target.name); 
+        } else {
+            auxErrores[e.target.name] = null; 
+        }
+        setError(auxErrores);
+    }
 
     const addOption = (e, type) => {
         const value = e.target.value;
@@ -82,36 +100,66 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
     };
 
     const send = async () => {
-        const requiredFields = ['name', 'email', 'phone', 'work_schedule', 'terms'];
-        let isValid = requiredFields.every((field) => datos[field] !== null);
-        if (!file && !user) isValid = false;
+        let valido = true;
+        const keyAux = ['jobs', 'studies', 'provinces']; 
+        let auxErrores = { ...errores };
 
-        if (isValid) {
+        // Validar si el archivo es requerido y no está presente
+        if (file == null && user == null) {
+            auxErrores['file'] = textErrors('vacio');
+            valido = false;
+        }
+
+        // Validar campos obligatorios
+        for (const key in datos) {
+            if (datos[key] == null && !keyAux.includes(key) && key != 'about') {
+                auxErrores[key] = textErrors('vacio');
+                setError(auxErrores);
+                valido = false;
+            }
+        }
+
+        // Verificar si hay errores previos
+        for (const key2 in errores) {
+            if (errores[key2] != null) {
+                valido = false;
+            }
+        }
+
+        // Validar que las opciones múltiples no estén vacías
+        keyAux.map((x) => {
+            if (multipleData[x].length == 0) {
+                auxErrores[x] = textErrors('vacio');
+                setError(auxErrores);
+                valido = false;
+            }
+        });
+
+        // Si todo es válido, enviar el formulario
+        if (valido) {
             charge(true);
-            const sendForm = await sendFormCv(
-                {
-                    ...datos,
-                    jobs: multipleData.jobs,
-                    provinces: multipleData.provinces,
-                    studies: multipleData.studies,
-                    work_schedule: [datos.work_schedule],
-                    offer: offer?._id,
-                },
-                file,
-                !!user
-            );
+            const auxDatos = { ...datos };
+            auxDatos.jobs = multipleData.jobs;
+            auxDatos.provinces = multipleData.provinces;
+            auxDatos.studies = multipleData.studies;
+            auxDatos.work_schedule = [auxDatos.work_schedule];
+            if (!!offer) auxDatos['offer'] = offer._id;
 
+            // Enviar el formulario al servidor
+            const sendForm = (user == null ? await sendFormCv(auxDatos, file) : await sendFormCv(auxDatos, file, true));
             if (sendForm.error) {
-                setError({ ...errores, mensajeError: sendForm.message });
+                let auxErrores = { ...errores };
+                auxErrores['mensajeError'] = sendForm.message;
+                setError(auxErrores);
                 charge(false);
             } else {
-                if (user) changeUser(sendForm.data);
+                if (user != null) changeUser(sendForm.data);
                 charge(false);
-                modal('CV enviado', user ? "Curriculum modificado con éxito" : "Curriculum enviado con éxito");
+                modal('CV enviado', (user != null) ? "Curriculum modificado con éxito" : "Curriculum enviado con éxito");
                 navigate('/');
             }
         }
-    };
+    }
 
     return (
         <div className={user ? `${styles.contenedor} ${styles.contendorEditar}` : styles.contenedor}>

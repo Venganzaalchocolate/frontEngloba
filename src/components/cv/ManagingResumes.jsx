@@ -162,7 +162,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                 charge(false)   
             } else {
                 charge(false)
-                modal('Error', data.message)
+                modal('Error', cvData.message)
             }
             
         }
@@ -174,7 +174,7 @@ const ManagingResumenes = ({ modal, charge }) => {
         usersAux.map((x, i, a) => {
             if (x._id == userModify._id) {
                 a[i] = userModify
-                setUserSelected(userModify)
+                setUserSelected(null)
                 setUsers(usersAux)
             }
         })

@@ -1,5 +1,5 @@
 let urlApi = import.meta.env.VITE_API_URL;
-
+console.log("API URL:", urlApi);
 //const urlApi='https://backengloba.onrender.com/api'
 //const urlApi='http://localhost:10000/api'
 

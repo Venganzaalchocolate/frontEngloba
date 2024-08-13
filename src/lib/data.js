@@ -1,5 +1,4 @@
 let urlApi = import.meta.env.VITE_API_URL;
-console.log("API URL:", urlApi);
 
 
 export const addEmployerBag=async(datos,token)=>{

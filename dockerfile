@@ -15,6 +15,12 @@ COPY . .
 # Eliminar la carpeta dist si existe
 RUN rm -rf dist
 
+# Recibir variables de entorno como argumentos de construcción
+ARG VITE_API_URL
+
+# Establecer la variable de entorno durante la construcción
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Construir la aplicación
 RUN npm run build
 

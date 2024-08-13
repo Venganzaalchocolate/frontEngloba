@@ -81,14 +81,16 @@ const ManagingResumenes = ({ modal, charge }) => {
                 setEnums(auxEnums)
             }
             if (data.error) {
-                console.error('Error al cargar usuarios:', data.message);
+                charge(false)
+                modal('Error', data.message)
             } else {
                 setUsers(data.users); // Establece los usuarios recuperados
                 setTotalPages(data.totalPages); // Establece el número total de páginas
                 charge(false)
             }
         } catch (error) {
-            console.error('Error en la solicitud:', error);
+            charge(false)
+            modal('Error', error)
         }
     };
 
@@ -154,9 +156,15 @@ const ManagingResumenes = ({ modal, charge }) => {
         } else {
             const token = getToken();
             const cvData = await getCVs(id, token);
-            setUrlCv(cvData)
-            setUserSelected(userData);
-            charge(false)
+            if(!cvData.error){
+                setUrlCv(cvData)
+                setUserSelected(userData);
+                charge(false)   
+            } else {
+                charge(false)
+                modal('Error', data.message)
+            }
+            
         }
 
     }

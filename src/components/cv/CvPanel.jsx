@@ -158,7 +158,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
     
     
                 </div>
-                {(urlpdf!=null)? <VisualizadorPDF url={urlpdf.url}></VisualizadorPDF>:<div>No se ha podido cargar el</div>}
+                {(urlpdf!=null)? <VisualizadorPDF url={urlpdf.url}></VisualizadorPDF>:<div>No se ha podido cargar el PDF</div>}
             </div>
         )
     } 

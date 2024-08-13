@@ -7,7 +7,7 @@ const MenuStart = () => {
     return (
         <div className={styles.contenedor}>
             <div>
-                <img src="/graphic/imagotipo_blanco_malva_descriptor.png" alt="logotipo engloba" />
+                <img src="/graphic/logotipo_blanco.png" alt="logotipo engloba" />
             </div>
             <div className={styles.menu}>
                 <Link to={'/login'}>

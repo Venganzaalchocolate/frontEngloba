@@ -52,6 +52,8 @@ export const textErrors = (tipo) => {
         case "conditions":
         case "essentials_requirements":
             return "El texto no es correcto, carácteres permitidos (º:/()-), debe tener mínimo 3 carácteres y máximo 1000 ";
+        case "fileError":
+            return "El archivo no es válido, debe ser un pdf";
         default:
             return null;
     }

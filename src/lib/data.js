@@ -1,7 +1,6 @@
 let urlApi = import.meta.env.VITE_API_URL;
 console.log("API URL:", urlApi);
-//const urlApi='https://backengloba.onrender.com/api'
-//const urlApi='http://localhost:10000/api'
+
 
 export const addEmployerBag=async(datos,token)=>{
     const url = `${urlApi}/addemployerbag`
@@ -83,6 +82,7 @@ export const getPrograms=async(token)=>{
 }
 
 export const tokenUser = async (token) => {
+    console.log('pasa')
     const datos = {
         token,
     };
@@ -95,8 +95,11 @@ export const tokenUser = async (token) => {
         },
         body: JSON.stringify(datos)
     });
+    
+    
     if (response.status == 401) return { error: true, message: 'Token no valido' }
     const data = await response.json();
+
     if (data.error) return data
     return data.data
 }
@@ -224,8 +227,8 @@ export const getCVs = async (id, token) => {
       const pdfUrl = URL.createObjectURL(blob);
       return {url:pdfUrl}; // Devolver la URL del PDF para mostrarlo en el frontend
     } catch (error) {
-      console.error('Error en la solicitud de obtener el archivo PDF:', error);
-      return null; // Manejo del error según sea necesario en tu aplicación
+      
+      return {error: true, message: 'Error al obtener el pdf'}; // Manejo del error según sea necesario en tu aplicación
     }
   };
   

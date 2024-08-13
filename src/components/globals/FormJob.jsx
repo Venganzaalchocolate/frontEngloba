@@ -156,7 +156,7 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                 if (user != null) changeUser(sendForm.data);
                 charge(false);
                 modal('CV enviado', (user != null) ? "Curriculum modificado con éxito" : "Curriculum enviado con éxito");
-                navigate('/');
+                window.location.href = 'https://engloba.org.es';
             }
         }
     }

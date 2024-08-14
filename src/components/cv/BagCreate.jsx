@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import styles from '../styles/bag.module.css';
 import { getToken } from '../../lib/serviceToken';
 import { getBags, addEmployerBag, createBag, getPrograms } from '../../lib/data';
-import { IoBagAdd } from "react-icons/io5";
-import { dateAndHour } from '../../lib/utils';
 import { useBag } from "../../hooks/useBag.jsx";
 import { useLogin } from '../../hooks/useLogin';
+import { formatDatetime } from '../../lib/utils.js';
 
 
 const BagCreate = ({offer=false}) => {
@@ -42,7 +41,6 @@ const BagCreate = ({offer=false}) => {
         (optionAction=='createBagInternal'?auxData['sepe']='false':auxData['sepe']='true')
         if (data.name != null && data.name != '' && dispositiveSelected!=null) {
             const token = getToken();
-            console.log(auxData)
             const response = await createBag(auxData, token)
             
             if (!response.error) {
@@ -126,7 +124,7 @@ const BagCreate = ({offer=false}) => {
                                     <select id='bags' name='bags' onChange={handleChangeSelected} value={bagselected}>
                                         <option key='selectBag' value={-1}>Selecciona una opción</option>
                                         {options.map((x) => {
-                                            return <option value={x._id} key={`SelectBag${x._id}`}>{x.name} - Sepe:{(x.sepe) ? 'Si' : 'No'} - Fecha:{dateAndHour(x.date)}</option>
+                                            return <option value={x._id} key={`SelectBag${x._id}`}>{x.name} - Sepe:{(x.sepe) ? 'Si' : 'No'} - Fecha:{formatDatetime(x.date)}</option>
                                         })}
                                     </select>
                                 </div>

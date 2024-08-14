@@ -19,6 +19,8 @@ import { GoStarFill } from "react-icons/go";
 import { BsExclamationOctagonFill } from "react-icons/bs";
 import { BsExclamationOctagon } from "react-icons/bs";
 
+import { formatDatetime } from "../../lib/utils.js";
+
 
 // 
 const ManagingResumenes = ({ modal, charge }) => {
@@ -190,6 +192,7 @@ const ManagingResumenes = ({ modal, charge }) => {
         }
     }
 
+    
 
     return (
         <div className={styles.contenedor}>
@@ -201,6 +204,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                         <option value={5}>5</option>
                         <option value={10}>10</option>
                         <option value={20}>20</option>
+                        <option value={50}>50</option>
                     </select>
                     <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
                         {'<'}
@@ -373,7 +377,8 @@ const ManagingResumenes = ({ modal, charge }) => {
                     <div className={styles.tableCell}>Provincias</div>
                     <div className={styles.tableCell}>Oferta</div>
                     <div className={styles.tableCell}>V</div>
-                    <div className={styles.tableCell}>Visto Favorito Rechazado</div>
+                    <div className={styles.tableCell}></div>
+                    <div className={styles.tableCell}>Fecha</div>
                 </div>
                 {users.map(user => (
                     <div key={user._id} >
@@ -398,6 +403,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                                         ? <span className={stylesTooltip.tooltip}><BsExclamationOctagonFill /><span className={stylesTooltip.tooltiptext}>Rechazado</span></span>
                                         : <span className={stylesTooltip.tooltip}><BsExclamationOctagon /><span className={stylesTooltip.tooltiptext}>No Rechazado</span></span>}
                             </div>
+                            <div className={styles.tableCell}>{formatDatetime(user.date)}</div>
                         </div>
                         {userSelected != null && userSelected._id == user._id &&
                             <CvPanel

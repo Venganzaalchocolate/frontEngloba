@@ -7,7 +7,7 @@ import { textErrors } from '../../lib/textErrors';
 import { getData, getPrograms, sendFormCreateOffer, updateOffer } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 import { useLogin } from '../../hooks/useLogin';
-import { dateFormated } from '../../lib/utils';
+import { formatDatetime } from '../../lib/utils';
 import BagCreate from '../cv/BagCreate';
 import { useBag } from "../../hooks/useBag.jsx";
 
@@ -22,7 +22,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
         optionals_requirements: (datosOferta == null) ? null : datosOferta.optionals_requirements,
         conditions: (datosOferta == null) ? null : datosOferta.conditions,
         location: (datosOferta == null) ? null : datosOferta.location,
-        expected_incorporation_date: (datosOferta == null) ? null : dateFormated(datosOferta.expected_incorporation_date),
+        expected_incorporation_date: (datosOferta == null) ? null : formatDatetime(datosOferta.expected_incorporation_date),
         work_schedule: (datosOferta == null) ? null : datosOferta.work_schedule,
         provinces: (datosOferta == null) ? null : datosOferta.province,
         functions: (datosOferta == null) ? null : datosOferta.functions,

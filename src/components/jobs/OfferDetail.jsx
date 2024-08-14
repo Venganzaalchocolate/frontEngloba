@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styles from '../styles/offerDetails.module.css';
 import { useNavigate } from 'react-router-dom';
-import { dateFormated } from '../../lib/utils';
 
 const OfferDetail = ({data, reset}) => {
   const navigate = useNavigate();
@@ -30,7 +29,7 @@ const OfferDetail = ({data, reset}) => {
       
       <div className={styles.campo}>
         <h3>Incorporación</h3>
-        <p>{dateFormated(data.expected_incorporation_date)}</p>  
+        <p>{data.expected_incorporation_date}</p>  
       </div>
       <div className={styles.campo}>
         <h3>Funciones a desempeñar</h3>

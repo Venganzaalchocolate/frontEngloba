@@ -3,7 +3,7 @@ import { getOfferJobs, updateOffer } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import FormCreateJob from "./FormCreateJob";
 import styles from '../styles/viewOfferJobs.module.css';
-import { dateAndHour } from "../../lib/utils";
+import { formatDatetime } from "../../lib/utils";
 
 const ViewJobs=({enums, modal, charge, back})=>{
     const [offers, setOffers]=useState(null)
@@ -42,7 +42,7 @@ const ViewJobs=({enums, modal, charge, back})=>{
             return <div   className={styles.oferta}>
                 <div onClick={()=>viewOffer(x._id) }>
                     <h3>{x.job_title}</h3>
-                    <p>{dateAndHour(x.date)}</p>   
+                    <p>{formatDatetime(x.date)}</p>   
                 </div>
                 <button onClick={()=>changeStatusOffer(!x.active, x._id)} className={(x.active)?'tomato':"green"}>{(!x.active)?'Activar':"Deshabilitar"}</button>
             </div>

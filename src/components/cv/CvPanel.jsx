@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react"
-import PdfV from "./PdfV";
+import { useState } from "react"
 import styles from '../styles/cvPanel.module.css';
 import { FaPhoneAlt } from "react-icons/fa";
 import { MdVideoCall } from "react-icons/md";
@@ -11,7 +10,7 @@ import { GoStarFill } from "react-icons/go";
 import { BsExclamationOctagonFill } from "react-icons/bs";
 import { modifyUser } from "../../lib/data";
 import { BsExclamationOctagon } from "react-icons/bs";
-import { dateAndHour } from "../../lib/utils";
+import { formatDatetime } from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
 import BagPanel from "./BagPanel";
 import { useBag } from "../../hooks/useBag.jsx";
@@ -126,7 +125,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
                                 <h3>Entrevistas Teléfonicas</h3>
                                 {user.commentsPhone.map((x)=> <div key={`commentPhone${x._id}`}>
                                     <p>{x.nameUser}</p>
-                                    <p>{dateAndHour(x.date)}</p>
+                                    <p>{formatDatetime(x.date)}</p>
                                     <p>{x.message}</p>
                                 </div>
                                 )}
@@ -137,7 +136,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
                                 <h3>Entrevistas Videollamada</h3>
                                 {user.commentsVideo.map((x)=> <div key={`commentVideo${x._id}`}>
                                     <p>{x.nameUser}</p>
-                                    <p>{dateAndHour(x.date)}</p>
+                                    <p>{formatDatetime(x.date)}</p>
                                     <p>{x.message}</p>
                                 </div>
                                 )}
@@ -148,7 +147,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
                                 <h3>Entrevistas en Persona</h3>
                                 {user.commentsInperson.map((x)=> <div key={`commentAbout${x._id}`}>
                                     <p>{x.nameUser}</p>
-                                    <p>{dateAndHour(x.date)}</p>
+                                    <p>{formatDatetime(x.date)}</p>
                                     <p>{x.message}</p>
                                 </div>
                                 )}

@@ -139,6 +139,8 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         if (valido) {
             charge(true);
             const auxDatos = { ...datos };
+            auxDatos['name'] = auxDatos['name'].toLowerCase();
+            auxDatos['email'] = auxDatos['email'].toLowerCase();
             auxDatos.jobs = multipleData.jobs;
             auxDatos.provinces = multipleData.provinces;
             auxDatos.studies = multipleData.studies;
@@ -156,7 +158,7 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                 if (user != null) changeUser(sendForm.data);
                 charge(false);
                 modal('CV enviado', (user != null) ? "Curriculum modificado con éxito" : "Curriculum enviado con éxito");
-                window.location.href = 'https://engloba.org.es';
+                if(user==null) window.location.href='https://engloba.org.es';
             }
         }
     }

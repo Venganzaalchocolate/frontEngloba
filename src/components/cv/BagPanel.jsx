@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import styles from '../styles/bag.module.css';
-import {  getBags, addEmployerBag, deleteEmployerBag } from '../../lib/data';
+import {  addEmployerBag, deleteEmployerBag } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 import { IoBagAdd } from "react-icons/io5";
-import { dateAndHour } from '../../lib/utils';
 import { useBag } from "../../hooks/useBag.jsx";
 import { IoBagCheck } from "react-icons/io5";
 

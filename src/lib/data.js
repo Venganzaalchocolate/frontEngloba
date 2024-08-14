@@ -81,7 +81,6 @@ export const getPrograms=async(token)=>{
 }
 
 export const tokenUser = async (token) => {
-    console.log('pasa')
     const datos = {
         token,
     };

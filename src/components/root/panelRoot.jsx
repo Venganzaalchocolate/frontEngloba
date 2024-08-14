@@ -18,6 +18,7 @@ const PanelRoot=({charge})=>{
         auxEnums['provinces']=enumsData.provinces
         auxEnums['work_schedule']=enumsData.work_schedule
         auxEnums['studies']=enumsData.studies
+        auxEnums['finantial']=enumsData.finantial
         setEnums(auxEnums)    
         charge(false)
         } else {

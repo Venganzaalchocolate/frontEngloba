@@ -173,6 +173,7 @@
     box-shadow: none;
 }
 
+
 @media (min-width: 600px) {
     .contenedor>.contenedorForm{
         display: flex;

@@ -18,7 +18,7 @@ import { GoStar } from "react-icons/go";
 import { GoStarFill } from "react-icons/go";
 import { BsExclamationOctagonFill } from "react-icons/bs";
 import { BsExclamationOctagon } from "react-icons/bs";
-
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { formatDatetime } from "../../lib/utils.js";
 
 
@@ -28,7 +28,7 @@ const ManagingResumenes = ({ modal, charge }) => {
     const { Bag, schedule } = useBag()
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(10); // Tamaño de página por defecto
+    const [limit, setLimit] = useState(50); // Tamaño de página por defecto
     const [users, setUsers] = useState([]);
     const [totalPages, setTotalPages] = useState(0);
     const [enums, setEnums] = useState(null)
@@ -375,7 +375,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                     <div className={styles.tableCell}>Puesto al que oferta</div>
                     <div className={styles.tableCell}>Estudios</div>
                     <div className={styles.tableCell}>Provincias</div>
-                    <div className={styles.tableCell}>Oferta</div>
+                    <div className={styles.tableCell}></div>
                     <div className={styles.tableCell}>V</div>
                     <div className={styles.tableCell}></div>
                     <div className={styles.tableCell}>Fecha</div>
@@ -390,7 +390,9 @@ const ManagingResumenes = ({ modal, charge }) => {
                             <div className={styles.tableCell}>{user.jobs.join(', ')}</div>
                             <div className={styles.tableCell}>{user.studies.join(', ')}</div>
                             <div className={styles.tableCell}>{(user.provinces.length!=11)?user.provinces.join(', '):'Todas'}</div>
-                            <div className={styles.tableCell}>{(user.offer != null) ? user.offer.job_title : ''}</div>
+                            <div className={styles.tableCell}>{(user.offer != null) 
+                                ?<span className={stylesTooltip.tooltip}><FaCheckCircle /><span className={stylesTooltip.tooltiptext}>{ user.offer.job_title}</span></span> 
+                                :<span className={stylesTooltip.tooltip}><FaTimesCircle /><span className={stylesTooltip.tooltiptext}>No asociado a una oferta</span></span> }</div>
                             <div className={styles.tableCell}><span className={stylesTooltip.tooltip}>{user.numberCV}<span className={stylesTooltip.tooltiptext}>Versión</span></span></div>
                             <div className={styles.tableCell}>{
                                 (user.view)

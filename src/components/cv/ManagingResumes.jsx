@@ -16,10 +16,11 @@ import BagCreate from "./BagCreate.jsx";
 import { useBag } from "../../hooks/useBag.jsx";
 import { GoStar } from "react-icons/go";
 import { GoStarFill } from "react-icons/go";
-import { BsExclamationOctagonFill } from "react-icons/bs";
-import { BsExclamationOctagon } from "react-icons/bs";
+import { BsExclamationOctagonFill, BsExclamationLg, BsExclamationOctagon  } from "react-icons/bs";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { formatDatetime } from "../../lib/utils.js";
+import { BsStarHalf, BsStarFill, BsStar } from "react-icons/bs";
+import { TbEyeDotted, TbEyeClosed, TbEyeFilled  } from "react-icons/tb";
 
 
 // 
@@ -43,7 +44,9 @@ const ManagingResumenes = ({ modal, charge }) => {
         work_schedule: '',
         view: '',
         offer: '',
-        studies: ''
+        studies: '',
+        favorite:'',
+        reject:'',
     });
 
     useEffect(() => {
@@ -334,8 +337,33 @@ const ManagingResumenes = ({ modal, charge }) => {
                     }
 
 
-                    <div>
-                        <label htmlFor="view">Visto</label>
+                    <div className={styles.cajaIconosFiltro}>
+                        
+                        <div> 
+                            <span className={stylesTooltip.tooltip}>
+                                {filters.view == '' && <TbEyeDotted onClick={() => setFilters(prevFilters => ({ ...prevFilters, view: '1' }))} />}
+                                {filters.view == '1' && <TbEyeFilled onClick={() => setFilters(prevFilters => ({ ...prevFilters, view: '0' }))} />}
+                                {filters.view == '0' && <TbEyeClosed onClick={() => setFilters(prevFilters => ({ ...prevFilters, view: '' }))} />}
+                            <span className={stylesTooltip.tooltiptext}>{(filters.view == '1')?'Vistos':(filters.view == '0')?'No Vistos':'todos'}</span></span> 
+                            
+                        </div>
+                        <div>
+                            <span className={stylesTooltip.tooltip}>
+                                {filters.favorite == '' && <BsStarHalf onClick={() => setFilters(prevFilters => ({ ...prevFilters, favorite: '1' }))} />}
+                                {filters.favorite == '1' && <BsStarFill onClick={() => setFilters(prevFilters => ({ ...prevFilters, favorite: '0' }))} />}
+                                {filters.favorite == '0' && <BsStar onClick={() => setFilters(prevFilters => ({ ...prevFilters, favorite: '' }))} />}
+                            <span className={stylesTooltip.tooltiptext}>{(filters.favorite == '1')?'Favoritos':(filters.favorite == '0')?'No Favoritos':'todos'}</span></span> 
+                        </div>
+                        <div>
+                            <span className={stylesTooltip.tooltip}>
+                                {filters.reject == '' && <BsExclamationLg onClick={() => setFilters(prevFilters => ({ ...prevFilters, reject: '0' }))} />}
+                                {filters.reject == '0' && <BsExclamationOctagon onClick={() => setFilters(prevFilters => ({ ...prevFilters, reject: '1' }))} />}
+                                {filters.reject == '1' && <BsExclamationOctagonFill onClick={() => setFilters(prevFilters => ({ ...prevFilters, reject: '' }))} />}
+                            <span className={stylesTooltip.tooltiptext}>{(filters.reject == '1')?'Rechazados':(filters.reject == '0')?'No Rechazados':'Todos'}</span></span> 
+                        </div>
+                        
+                        
+                        {/* <label htmlFor="view">Visto</label>
                         <select id='view' name='view' onChange={handleFilterChange} value={filters.view}>
                             <option value={''}>Selecciona una opción</option>
                             <option value={`1`}>Si</option>
@@ -356,7 +384,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                             <option value={''}>Selecciona una opción</option>
                             <option value={`1`}>Si</option>
                             <option value={`0`}>No</option>
-                        </select>
+                        </select> */}
                     </div>
 
                     <div>

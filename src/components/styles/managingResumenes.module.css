@@ -14,6 +14,8 @@
 
 }
 
+
+
 .paginacion{
     display: flex;
     justify-content: space-between;
@@ -158,6 +160,19 @@
 .capitalize{
     text-transform: capitalize;
 }
+
+.contenedorfiltro > div.cajaIconosFiltro{
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.contenedorfiltro > div.cajaIconosFiltro>div>span>svg{
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-morado);
+}
+
 
 @media (max-width: 1080px) {
     .tableCell {

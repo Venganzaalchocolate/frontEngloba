@@ -10,3 +10,41 @@
 .contenedor>h2{
     color: var(--color-crema);
 }
+
+
+
+.contenedor>div{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    border-radius: 1rem;
+    gap: 1rem;
+}
+
+.contenedor>div.menuOpciones{
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    border-radius: 0;
+    border: none;
+    border-top: solid 2px var(--color-malva);
+    border-bottom: solid 2px var(--color-malva);
+    padding: 1rem;
+    background: none;
+    
+}
+
+.contenedor>div>label{
+    flex: 1 100%;
+    justify-content: center;
+    color: var(--color-morado);
+    text-align: center;
+    font-size: 30pt;
+}
+
+.contenedor>div>select{
+    flex: 0;
+    height: 3rem;
+}

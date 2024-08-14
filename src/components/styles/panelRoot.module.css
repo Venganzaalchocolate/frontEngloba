@@ -23,7 +23,7 @@
     gap: 1rem;
 }
 
-.contenedor>div.menuOpciones{
+div.menuOpciones{
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -32,8 +32,12 @@
     border-top: solid 2px var(--color-malva);
     border-bottom: solid 2px var(--color-malva);
     padding: 1rem;
-    background: none;
-    
+    background: none;   
+}
+
+div.menuOpciones>button{
+    background-color: var(--color-morado);
+    color: var(--color-malva);   
 }
 
 .contenedor>div>label{
@@ -47,4 +51,9 @@
 .contenedor>div>select{
     flex: 0;
     height: 3rem;
+}
+
+.contenedorCrearPrograma{
+    display: flex;
+    flex-direction: column;
 }

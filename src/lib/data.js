@@ -65,13 +65,12 @@ export const getBags=async(token)=>{
     return data.data
 }
 
-export const getPrograms=async(token)=>{
+export const getPrograms=async()=>{
     const url = `${urlApi}/programs`
     const response = await fetch(url, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
         },
     });
 
@@ -427,4 +426,20 @@ export const sendFormCv = async (dataForm, file, editUser=false) => {
     }
     return data
     
+}
+
+export const createProgram=async (datos, token)=>{
+    const url = `${urlApi}/createprogram`
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(datos)
+    });
+
+    const data = await response.json();
+    if (data.error) return data
+    return data.data
 }

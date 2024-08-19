@@ -1,71 +1,79 @@
 import { useState } from "react";
-import { FaEdit, FaTrashAlt, FaPlusSquare, FaAngleDoubleRight, FaAngleRight  } from "react-icons/fa";
-
+import { FaEdit, FaTrashAlt, FaPlusSquare, FaAngleDoubleRight, FaAngleRight } from "react-icons/fa";
 import styles from '../styles/panelEnum.module.css';
 
+const PanelEnum = ({ type, addEnum, data, delEnum, createSubCategory, delSubCategory }) => {
+    const [text, setText] = useState('');
+    const [create, setCreate] = useState(false);
+    const [createSub, setCreateSub] = useState(null);  // Usar null para indicar que no se está creando ninguna subcategoría
 
-const PanelEnum=({type, addEnum, data, delEnum, createSubCategory, delSubCategory})=>{
-    const [text, setText]=useState('')
-    const [create, setCreate]=useState(false)
-    const [createSub, setCreateSub]=useState(false)
+    const handleChange = (e) => {
+        setText(e.target.value);
+    };
 
-    const handleChange=(e)=>{
-        setText(e.target.value)
-    }
-
-    const deleteEnum=(id)=>{
-        delEnum(type, id)
-    }
-
-    const createEnum=()=>{
-        addEnum(type, text)
-    }
-
-    const createSubcategory=(idCategoria)=>{
-        createSubCategory(idCategoria, text, type)
-    }
-
-    const deleteSubCategory=(id,idCategoria)=>{
-        delSubCategory(id,idCategoria, type)
-    }
-
-    
-    return <div className={styles.contenedor}>
-        <h2>{type} <FaPlusSquare onClick={()=>{setCreateSub(false), setCreate(!create), setText('')}}></FaPlusSquare></h2>
-        {!!create &&
-        <div>
-        <input type="text" onChange={(e)=>handleChange(e)} value={text}/>
-        <button onClick={()=>createEnum()}>Añadir</button>    
-        </div>
+    const handleCreateEnum = () => {
+        if (text.trim()) {
+            addEnum(type, text);
+            setText('');  // Limpiar el input después de añadir
+            setCreate(false);  // Cerrar la sección de crear después de añadir
         }
-        
-        {!!data && data.length>0 &&
-        data.map((x)=>{
-            return <div className={styles.contenedorCategoria}>
-                <FaAngleRight/>
-                <p>{x.name}</p>
-                <FaTrashAlt onClick={()=>deleteEnum(x._id)}></FaTrashAlt>
-                <FaPlusSquare onClick={()=>{setCreateSub(x._id), setCreate(false), setText('')}} className={styles.crema}></FaPlusSquare>
-                {!!createSub && x._id==createSub &&
-                <div className={styles.contenedorSubcategory}>
-                <input type="text" onChange={(e)=>handleChange(e)} value={text}/>
-                <button onClick={()=>createSubcategory(x._id)}>Añadir Subcategoria</button>
-                <button className="tomato" onClick={()=>setCreateSub(false)}>Cancelar</button>    
+    };
+
+    const handleCreateSubcategory = (idCategoria) => {
+        if (text.trim()) {
+            createSubCategory(idCategoria, text, type);
+            setText('');  // Limpiar el input después de añadir
+            setCreateSub(null);  // Cerrar la sección de crear subcategoría después de añadir
+        }
+    };
+
+    return (
+        <div className={styles.contenedor}>
+            <h2>{type} 
+                <FaPlusSquare onClick={() => {
+                    setCreateSub(null); 
+                    setCreate(!create); 
+                    setText('');
+                }} 
+                className={styles.crema} />
+            </h2>
+            {create && (
+                <div>
+                    <input type="text" onChange={handleChange} value={text} />
+                    <button onClick={handleCreateEnum}>Añadir</button>
                 </div>
-                }
-                {!!x.subcategories && x.subcategories.length>0 &&
-                x.subcategories.map((y)=>{
-                    return <div className={styles.contenedorSubCategoria}>
-                        <FaAngleDoubleRight></FaAngleDoubleRight>
-                        <p>{y.name}</p>
-                        <FaTrashAlt onClick={()=>deleteSubCategory(x._id,y._id)}></FaTrashAlt>
-                    </div>
-                })
-                }
-            </div>
-        })
-        }
-    </div>
-}
+            )}
+            
+            {!!data && data.length > 0 && data.map((x) => (
+                <div key={x._id} className={styles.contenedorCategoria}>
+                    <FaAngleRight />
+                    <p>{x.name}</p>
+                    <FaTrashAlt onClick={() => delEnum(type, x._id)} className={styles.iconoEliminar} />
+                    <FaPlusSquare onClick={() => {
+                        setCreateSub(x._id); 
+                        setCreate(false); 
+                        setText('');
+                    }} className={styles.crema} />
+                    
+                    {createSub === x._id && (
+                        <div className={styles.contenedorSubcategory}>
+                            <input type="text" onChange={handleChange} value={text} />
+                            <button onClick={() => handleCreateSubcategory(x._id)}>Añadir Subcategoría</button>
+                            <button className="tomato" onClick={() => setCreateSub(null)}>Cancelar</button>
+                        </div>
+                    )}
+                    
+                    {!!x.subcategories && x.subcategories.length > 0 && x.subcategories.map((y) => (
+                        <div key={y._id} className={styles.contenedorSubCategoria}>
+                            <FaAngleDoubleRight />
+                            <p>{y.name}</p>
+                            <FaTrashAlt onClick={() => delSubCategory(y._id, x._id)} className={styles.iconoEliminar} />
+                        </div>
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+};
 
 export default PanelEnum;

@@ -57,3 +57,189 @@ div.menuOpciones>button{
     display: flex;
     flex-direction: column;
 }
+
+/**/
+
+.panelContainer {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    max-width: 1200px;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.panelContainer h3 {
+    color: #333;
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.panelContainer button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-bottom: 15px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.panelContainer button:hover {
+    background-color: #0056b3;
+}
+
+.programContainer {
+    background-color: #ffffff;
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.programHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+}
+
+.programHeader span {
+    font-weight: bold;
+    font-size: 1.25rem;
+    color: #333;
+}
+
+.programHeader button {
+    padding: 5px 10px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.programHeader button:hover {
+    background-color: #218838;
+}
+
+.deviceList {
+    margin-top: 10px;
+    padding-left: 15px;
+}
+
+.deviceItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.deviceItem:last-child {
+    border-bottom: none;
+}
+
+.deviceItem span {
+    font-size: 1rem;
+    color: #555;
+}
+
+.deviceItem button {
+    padding: 5px 10px;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 0.9rem;
+    margin-left: 5px;
+}
+
+.deviceItem button:hover {
+    background-color: #c82333;
+}
+
+.formContainer {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    margin-top: 20px;
+}
+
+.formContainer h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.formContainer input,
+.formContainer select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.formContainer button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 1rem;
+}
+
+.formContainer button:hover {
+    background-color: #0056b3;
+}
+
+.confirmDelete {
+    background-color: #ffe6e6;
+    border: 1px solid #ffcccc;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.confirmDelete p {
+    margin: 0 0 10px 0;
+    color: #d9534f;
+}
+
+.confirmDelete button {
+    margin-right: 10px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.confirmDelete button:first-child {
+    background-color: #d9534f;
+    color: #fff;
+}
+
+.confirmDelete button:last-child {
+    background-color: #f0f0f0;
+    color: #333;
+}

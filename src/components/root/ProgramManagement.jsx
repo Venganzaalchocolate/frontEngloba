@@ -70,10 +70,8 @@ const ProgramManagementPanel = ({ enums }) => {
     };
 
     const handleProgramUpdate = async () => {
-        if (!selectedProgram) {
-            console.error("No se ha seleccionado ningún programa para actualizar.");
-            return;
-        }
+        console.log(selectedProgram)
+
         const token = getToken();
         const result = await updateProgram({ _id: selectedProgram._id, ...programData }, token);
         if (!result.error) {
@@ -96,10 +94,9 @@ const ProgramManagementPanel = ({ enums }) => {
         }
     };
 
-    const handleDispositiveCreate = async () => {
+    const handleDispositiveCreate = async (program) => {
         const token = getToken();
-        
-        const result = await createDispositive({ ...dispositiveData, _id: selectedProgram._id }, token);
+        const result = await createDispositive({ ...dispositiveData, _id: program._id }, token);
         if (!result.error) {
             setDispositiveData({ name: '', address: '', responsible: '' });
             setActiveCreateDispositive(null);
@@ -107,10 +104,9 @@ const ProgramManagementPanel = ({ enums }) => {
         }
     };
 
-    const handleDispositiveUpdate = async () => {
+    const handleDispositiveUpdate = async (program) => {
         const token = getToken();
-        
-        const result = await updateDispositive({ programId: selectedProgram._id, dispositiveId: selectedDispositive._id, ...dispositiveData }, token);
+        const result = await updateDispositive({ programId: program._id, dispositiveId: selectedDispositive._id, ...dispositiveData }, token);
         if (!result.error) {
             setDispositiveData({ name: '', address: '', responsible: '' });
             setSelectedDispositive(null);
@@ -119,38 +115,51 @@ const ProgramManagementPanel = ({ enums }) => {
         }
     };
 
-    const handleDispositiveDelete = async (dispositiveId) => {
+    const handleDispositiveDelete = async (program,device) => {
         const token = getToken();
-        
-        const result = await deleteDispositive({ programId: selectedProgram._id, dispositiveId }, token);
+        const result = await deleteDispositive({ programId: program._id, dispositiveId:device._id }, token);
         if (!result.error) {
             loadPrograms();
             setConfirmDeleteDispositive(null);
         }
     };
 
+    const createDispositiveButton=(program)=>{
+        setSelectedProgram(program);
+        setDispositiveData({ name: '', address: '', responsible: '' });
+        setActiveCreateDispositive(program._id);
+        setEditMode(false);
+        setActiveEditDispositive(null);
+        setConfirmDeleteDispositive(null); // Cerrar confirmación de borrado de dispositivo si estaba abierta
+    }
+
+    const editProgram=(program)=>{
+        setSelectedProgram(program);
+        setProgramData({ name: program.name, acronym: program.acronym, funding: program.funding });
+        setEditMode(true);
+        setActiveEditProgram(program._id);
+        setConfirmDeleteProgram(null); // Cerrar confirmación de borrado si estaba abierta
+        setActiveCreateDispositive(null); // Cerrar creación de dispositivo si estaba abierta
+    }
+
+    const editDispositiveButton=(program, device)=>{
+            setSelectedProgram(program)
+            setSelectedDispositive(device);
+            setDispositiveData({ name: device.name, address: device.address, responsible: device.responsible });
+            setEditMode(true);
+            setActiveEditDispositive(device._id);
+            setConfirmDeleteDispositive(null); // Cerrar confirmación de borrado si estaba abierta
+        
+    }
+
     const renderTree = () => {
         return programs.map(program => (
             <div key={program._id} className={styles.programContainer}>
                 <div className={styles.programHeader}>
                     <span>{program.name}</span>
-                    <button onClick={() => {
-                        setSelectedProgram(program);
-                        setProgramData({ name: program.name, acronym: program.acronym, funding: program.funding });
-                        setEditMode(true);
-                        setActiveEditProgram(program._id);
-                        setConfirmDeleteProgram(null); // Cerrar confirmación de borrado si estaba abierta
-                        setActiveCreateDispositive(null); // Cerrar creación de dispositivo si estaba abierta
-                    }}>Editar</button>
+                    <button onClick={() => editProgram(program)}>Editar</button>
                     <button onClick={() => setConfirmDeleteProgram(program._id)}>Borrar</button>
-                    <button onClick={() => {
-                        setSelectedProgram(program);
-                        setDispositiveData({ name: '', address: '', responsible: '' });
-                        setActiveCreateDispositive(program._id);
-                        setEditMode(false);
-                        setActiveEditDispositive(null);
-                        setConfirmDeleteDispositive(null); // Cerrar confirmación de borrado de dispositivo si estaba abierta
-                    }}>Crear Dispositivo</button>
+                    <button onClick={() => createDispositiveButton(program)}>Crear Dispositivo</button>
                 </div>
 
                 {confirmDeleteProgram === program._id && (
@@ -186,7 +195,7 @@ const ProgramManagementPanel = ({ enums }) => {
                         <input type="text" name="name" placeholder="Nombre del Dispositivo" value={dispositiveData.name} onChange={handleChangeDispositiveData} />
                         <input type="text" name="address" placeholder="Dirección" value={dispositiveData.address} onChange={handleChangeDispositiveData} />
                         <input type="text" name="responsible" placeholder="Responsable" value={dispositiveData.responsible} onChange={handleChangeDispositiveData} />
-                        <button onClick={handleDispositiveCreate}>Crear Dispositivo</button>
+                        <button onClick={()=>handleDispositiveCreate(program)}>Crear Dispositivo</button>
                         <button onClick={() => setActiveCreateDispositive(null)}>Cerrar</button>
                     </div>
                 )}
@@ -195,19 +204,13 @@ const ProgramManagementPanel = ({ enums }) => {
                     {program.devices.map(device => (
                         <div key={device._id} className={styles.deviceItem}>
                             <span>{device.name}</span>
-                            <button onClick={() => {
-                                setSelectedDispositive(device);
-                                setDispositiveData({ name: device.name, address: device.address, responsible: device.responsible });
-                                setEditMode(true);
-                                setActiveEditDispositive(device._id);
-                                setConfirmDeleteDispositive(null); // Cerrar confirmación de borrado si estaba abierta
-                            }}>Editar</button>
+                            <button onClick={() => editDispositiveButton(program,device)}>Editar</button>
                             <button onClick={() => setConfirmDeleteDispositive(device._id)}>Borrar</button>
 
                             {confirmDeleteDispositive === device._id && (
                                 <div className={styles.confirmDelete}>
                                     <p>¿Estás seguro de que quieres borrar este dispositivo?</p>
-                                    <button onClick={() => handleDispositiveDelete(device._id)}>Sí</button>
+                                    <button onClick={() => handleDispositiveDelete(program,device)}>Sí</button>
                                     <button onClick={() => setConfirmDeleteDispositive(null)}>No</button>
                                 </div>
                             )}
@@ -218,7 +221,7 @@ const ProgramManagementPanel = ({ enums }) => {
                                     <input type="text" name="name" placeholder="Nombre" value={dispositiveData.name} onChange={handleChangeDispositiveData} />
                                     <input type="text" name="address" placeholder="Dirección" value={dispositiveData.address} onChange={handleChangeDispositiveData} />
                                     <input type="text" name="responsible" placeholder="Responsable" value={dispositiveData.responsible} onChange={handleChangeDispositiveData} />
-                                    <button onClick={handleDispositiveUpdate}>Actualizar Dispositivo</button>
+                                    <button onClick={()=>handleDispositiveUpdate(program)}>Actualizar Dispositivo</button>
                                     <button onClick={() => {
                                         setActiveEditDispositive(null);
                                         setEditMode(false);

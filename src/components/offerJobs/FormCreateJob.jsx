@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {  validText } from '../../lib/valid';
 import styles from '../styles/formCreateJob.module.css';
 import { textErrors } from '../../lib/textErrors';
@@ -12,23 +12,28 @@ import { useBag } from "../../hooks/useBag.jsx";
 
 
 const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOffers=null }) => {
+    
     const { logged } = useLogin()
     const { Bag, changeBag } = useBag()
     const [noEditar, setnoEditar] = useState((datosOferta == null) ? false : true)
-    const [datos, setDatos] = useState({
-        essentials_requirements: (datosOferta == null) ? null : datosOferta.essentials_requirements,
-        optionals_requirements: (datosOferta == null) ? null : datosOferta.optionals_requirements,
-        conditions: (datosOferta == null) ? null : datosOferta.conditions,
-        location: (datosOferta == null) ? null : datosOferta.location,
-        expected_incorporation_date: (datosOferta == null) ? null : formatDatetime(datosOferta.expected_incorporation_date),
-        work_schedule: (datosOferta == null) ? null : datosOferta.work_schedule,
-        provinces: (datosOferta == null) ? null : datosOferta.province,
-        functions: (datosOferta == null) ? null : datosOferta.functions,
-        id: (datosOferta == null) ? '' : datosOferta._id,
-        date: (datosOferta == null) ? '' : datosOferta.date,
-        bag:(datosOferta == null) ? '' : datosOferta.bag
-    })
-
+    const [datos, setDatos] = useState({})
+ 
+    useEffect(()=>{
+        const datosAux={
+            essentials_requirements: (datosOferta == null) ? null : datosOferta.essentials_requirements,
+            optionals_requirements: (datosOferta == null) ? null : datosOferta.optionals_requirements,
+            conditions: (datosOferta == null) ? null : datosOferta.conditions,
+            location: (datosOferta == null) ? null : datosOferta.location,
+            expected_incorporation_date: (datosOferta == null) ? null : datosOferta.expected_incorporation_date,
+            work_schedule: (datosOferta == null) ? null : datosOferta.work_schedule,
+            provinces: (datosOferta == null) ? null : datosOferta.province,
+            functions: (datosOferta == null) ? null : datosOferta.functions,
+            id: (datosOferta == null) ? '' : datosOferta._id,
+            date: (datosOferta == null) ? '' : datosOferta.date,
+            bag:(datosOferta == null) ? '' : datosOferta.bag
+        }
+        setDatos(datosAux)
+    }, [datosOferta])
 
     const [errores, setError] = useState({
         essentials_requirements: null,
@@ -97,16 +102,18 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
             let sendForm = '';
             if (datosOferta != null){
                 sendForm = await updateOffer(auxDatos, token);  
-                changeOffers(sendForm)
+                
             } else {
                 sendForm = await sendFormCreateOffer(auxDatos, token)
             }
             if (sendForm.error) {
+                
                 let auxErrores = { ...errores }
                 auxErrores['mensajeError'] = sendForm.message;
                 setError(auxErrores)
                 charge(false)
             } else {
+                if(changeOffers!=null)changeOffers(sendForm)
                 charge(false)
                 if (datosOferta != null){
                     modal('Oferta Modificada', "Oferta modificada con éxito")
@@ -131,13 +138,14 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
     return (
         <div className={styles.contenedor}>
             <div className={styles.contenedorForm}>
-            
+                {datosOferta!=null &&
+                    <div>
+                        <h2>{datosOferta.job_title}</h2>
+                    </div>
+                }
                 
                 
                     {!noEditar && <div><BagCreate offer={true}></BagCreate></div>}
-    
-                
-              
                 {!!Bag && !noEditar &&
                     <div>
                         <label htmlFor="dispositive">Dispositivo</label>

@@ -20,7 +20,6 @@ const ViewJobs=({ charge, offerSelect, offers, changeOffers})=>{
     }
 
     const viewOffer=(offer)=>{
-        
         offerSelect(offer)
     }
 

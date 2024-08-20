@@ -55,6 +55,11 @@ const OfferJobsPanel =({modal, charge})=>{
         setOffers(offersAux)
     }
 
+    const back=()=>{
+        setOfferSelected(null)
+        setAction(null)
+    }
+
 
     return <div className={styles.contenedor}>
         <div className={styles.contenido}>
@@ -63,13 +68,13 @@ const OfferJobsPanel =({modal, charge})=>{
                 <FaSquarePlus onClick={()=>changeAction()}/>
             </div>  
             <div className={styles.caja}>
-                <ViewJobs charge={(x)=>charge(x)} offerSelect={(x)=>offerSelect(x)} offers={offers}  changeOffers={(offer)=>changeOffers(offer) }></ViewJobs>
+                <ViewJobs charge={(x)=>charge(x)} offerSelect={(x)=>offerSelect(x)} offers={offers}  changeOffers={(offer)=>changeOffers(offer)}></ViewJobs>
                 {offerSelected!=null &&
-                    <FormCreateJob enums={enums} back={()=>setOfferSelected(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)} datosOferta={offerSelected} changeOffers={(offer)=>changeOffers(offer)}></FormCreateJob>    
+                    <FormCreateJob enums={enums} back={()=>back()} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)} datosOferta={offerSelected} changeOffers={(offer)=>changeOffers(offer)}></FormCreateJob>    
                 }
                 {
                 action=='create' &&
-                    <FormCreateJob enums={enums} modal={(title, message)=>modal(title, message)} back={()=>setAction(null)} charge={(x)=>charge(x)} ></FormCreateJob>
+                    <FormCreateJob enums={enums} modal={(title, message)=>modal(title, message)} back={()=>back()} charge={(x)=>charge(x)} changeOffers={(offer)=>changeOffers(offer)}></FormCreateJob>
                 }
                 
             </div>

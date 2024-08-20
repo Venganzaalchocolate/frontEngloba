@@ -1,10 +1,9 @@
 
-import { useEffect, useState } from 'react';
-import { validEmail, validJobs, validNumber, validText } from '../../lib/valid';
+import { useState } from 'react';
+import {  validText } from '../../lib/valid';
 import styles from '../styles/formCreateJob.module.css';
-import { Link, useNavigate } from 'react-router-dom';
 import { textErrors } from '../../lib/textErrors';
-import { getData, getPrograms, sendFormCreateOffer, updateOffer } from '../../lib/data';
+import {sendFormCreateOffer, updateOffer } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 import { useLogin } from '../../hooks/useLogin';
 import { formatDatetime } from '../../lib/utils';
@@ -12,12 +11,11 @@ import BagCreate from '../cv/BagCreate';
 import { useBag } from "../../hooks/useBag.jsx";
 
 
-const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
+const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOffers=null }) => {
     const { logged } = useLogin()
     const { Bag, changeBag } = useBag()
     const [noEditar, setnoEditar] = useState((datosOferta == null) ? false : true)
     const [datos, setDatos] = useState({
-        job_title: (datosOferta == null) ? null : datosOferta.job_title,
         essentials_requirements: (datosOferta == null) ? null : datosOferta.essentials_requirements,
         optionals_requirements: (datosOferta == null) ? null : datosOferta.optionals_requirements,
         conditions: (datosOferta == null) ? null : datosOferta.conditions,
@@ -32,9 +30,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
     })
 
 
-
     const [errores, setError] = useState({
-        job_title: null,
         essentials_requirements: null,
         optionals_requirements: null,
         conditions: null,
@@ -99,13 +95,11 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                 auxDatos['bag']=Bag._id
             }
             let sendForm = '';
-            console.log(auxDatos)
             if (datosOferta != null){
                 sendForm = await updateOffer(auxDatos, token);  
-                
+                changeOffers(sendForm)
             } else {
                 sendForm = await sendFormCreateOffer(auxDatos, token)
-
             }
             if (sendForm.error) {
                 let auxErrores = { ...errores }
@@ -138,16 +132,11 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
         <div className={styles.contenedor}>
             <div className={styles.contenedorForm}>
             
-                <div>
-                    <label htmlFor="job_title">Título de la oferta</label>
-                    <input disabled={noEditar} type="text" id='job_title' name='job_title' onChange={(e) => handleChange(e)} value={datos.job_title} placeholder='Ej: Educacor Social en Málaga' />
-                    <span className='errorSpan'>{errores.job_title}</span>
-                </div>
                 
-                <div>
-                    {!noEditar && <BagCreate offer={true}></BagCreate>}
-                    <span className='errorSpan'>{errores.bag}</span>
-                </div>
+                
+                    {!noEditar && <div><BagCreate offer={true}></BagCreate></div>}
+    
+                
               
                 {!!Bag && !noEditar &&
                     <div>
@@ -156,7 +145,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null }) => {
                     </div>
                 }
 
-                {datosOferta!=null && noEditar &&
+                {datosOferta!=null && noEditar && datosOferta.bag.dispositive &&
                     <div>
                         <label htmlFor="dispositive">Dispositivo</label>
                         <p>{datosOferta.bag.dispositive.name}</p>

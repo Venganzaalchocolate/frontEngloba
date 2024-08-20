@@ -7,7 +7,7 @@ import { useLogin } from '../../hooks/useLogin';
 import { formatDatetime } from '../../lib/utils.js';
 
 
-const BagCreate = ({offer=false}) => {
+const BagCreate = ({offer=false, style=null}) => {
     const [options, setOptions] = useState(null)
     const { logged} = useLogin()
     const { Bag, changeBag, scheduleInterview, schedule } = useBag()
@@ -18,34 +18,21 @@ const BagCreate = ({offer=false}) => {
     const [dispositiveSelected, setDispositiveSelected]=useState(null)
     const [optionAction, setOptionAction] = useState(null)
     const [programs, setPrograms]=useState(null)
-    const [data, setData] = useState({
-        name: null,
-    })
     const [error, setError] = useState(null)
 
 
-    const handleChange = (e) => {
-        if (data.name != '' || data.name != null) setError(null)
-        const { name, value } = e.target;
-        setData(prevData => ({
-            ...prevData,
-            [name]: value
-        }));
-    }
-
     const createBagEmployer = async () => {
-        let auxData={...data}
+        let auxData={}
         auxData['dispositive']=dispositiveSelected;
-        
         auxData['create']=logged.user._id;
         (optionAction=='createBagInternal'?auxData['sepe']='false':auxData['sepe']='true')
-        if (data.name != null && data.name != '' && dispositiveSelected!=null) {
+        if (dispositiveSelected!=null) {
             const token = getToken();
             const response = await createBag(auxData, token)
             
             if (!response.error) {
                 changeBag(response)
-                setData({ name: null, sepe: "false" })
+                setData({ sepe: "false" })
                 setView(false)
                 setViewCreate(false)
             } else {
@@ -106,7 +93,7 @@ const BagCreate = ({offer=false}) => {
             {
                 !!view && !!options &&
 
-                <div className={(!offer)?styles.ventana:styles.ventanaNoModal}>
+                <div className={styles.ventana}>
                     <div className={styles.contenedor}>
                         <h2>Procesos de selección</h2>
                         {optionAction == null &&
@@ -124,7 +111,7 @@ const BagCreate = ({offer=false}) => {
                                     <select id='bags' name='bags' onChange={handleChangeSelected} value={bagselected}>
                                         <option key='selectBag' value={-1}>Selecciona una opción</option>
                                         {options.map((x) => {
-                                            return <option value={x._id} key={`SelectBag${x._id}`}>{x.name} - Sepe:{(x.sepe) ? 'Si' : 'No'} - Fecha:{formatDatetime(x.date)}</option>
+                                            return <option value={x._id} key={`SelectBag${x._id}`}>{x.name}</option>
                                         })}
                                     </select>
                                 </div>
@@ -147,11 +134,6 @@ const BagCreate = ({offer=false}) => {
                         {(optionAction == 'createBagInternal' || optionAction == 'createBagSepe') &&
                             <div className={styles.contenedorSelect}>
                                 <label>Crear Proceso de selección {(optionAction == 'createBagInternal')?'interno':'Sepe'}</label>
-                                <div>
-                                    <label htmlFor="name">Nombre:</label>
-                                    <input type='text' name='name' id='name' onChange={handleChange} />
-                                </div>
-                                {!!error && <span className="errorSpan">{error}</span>}
                                 <label htmlFor='programs'>Programa:</label>
                                 <div>
                                     <select id='programs' name='programs' onChange={handleChangeSelected} value={programSelected}>

@@ -177,7 +177,7 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
             )}
             <div className={styles.contenedorForm}>
                 <div>
-                    <label htmlFor="name">Nombre</label>
+                    <label htmlFor="name">Nombre Completo</label>
                     <input type="text" id="name" name="name" onChange={handleChange} value={datos.name} />
                     <span className="errorSpan">{errores.name}</span>
                 </div>

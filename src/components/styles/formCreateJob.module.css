@@ -2,12 +2,12 @@
     display: flex;
     flex: 1 100%;
     flex-direction: column;
-    background-repeat: no-repeat;
-    background-size: cover;
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-    /* From https://css.glass */
+    background-color: var(--color-malva);
+    border-radius: 1rem;
+ 
 }
 
 
@@ -31,13 +31,6 @@
     display: flex;
     justify-content: center;
     flex: 0;
-    background-color: var(--color-malva);
-    border-radius: 1rem;
-    background: rgba(79, 82, 159, 0.42);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(4.4px);
-    -webkit-backdrop-filter: blur(4.4px);
     padding: 1rem 0;
     flex-direction: row;
     flex-wrap: wrap;
@@ -51,15 +44,14 @@
 }
 
 .contenedorForm label{
-    color: var(--color-crema);
+    color: var(--color-morado);
 }
 
 .contenedorForm input, .contenedorForm select, .contenedorForm textarea{
-    background-color: var(--color-morado);
+    background-color: white;
     border: none;
-    border-bottom: solid var(--color-malva) 2px;
     border-radius: 0;
-    color: white;
+    color: var(--color-morado);
     outline: none;
 }
 
@@ -78,14 +70,20 @@
 
 
 
-
-
 .contenedor>div>div.botones{
     display: flex;
     flex-direction: row;
     gap: 1rem;
     flex: 1;
-
+    >button{
+        background-color: var(--color-morado);
+        color: var(--color-malva);
+        
+    };
+    >button:hover{
+        background-color: var(--color-crema);
+        color: var(--color-morado);
+    }
 }
 
 .botones button, .botones>a{

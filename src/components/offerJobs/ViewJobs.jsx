@@ -1,59 +1,45 @@
 import { useEffect, useState } from "react";
 import { getOfferJobs, updateOffer } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
-import FormCreateJob from "./FormCreateJob";
+
 import styles from '../styles/viewOfferJobs.module.css';
 import { formatDatetime } from "../../lib/utils";
 
-const ViewJobs=({enums, modal, charge, back})=>{
-    const [offers, setOffers]=useState(null)
-    const [offerSelected,setOfferSelected]=useState(null)
-
-    const cargarDatos=async()=>{
-        charge(true)
-        const token=getToken()
-        const data=await getOfferJobs(token)
-        setOffers(data)
-        charge(false)
-    }
-
-    useEffect(()=>{
-        cargarDatos();
-    },[offerSelected])
+const ViewJobs=({ charge, offerSelect, offers, changeOffers})=>{
 
     const changeStatusOffer=async (status, id)=>{
+        charge(true)
         const token=getToken();
         const auxData={
             id:id,
             active:status
         }
-        const changeStatusData= await updateOffer(auxData, token)
-        cargarDatos();
+        const offerNew=await updateOffer(auxData, token)
+        changeOffers(offerNew)
+        charge(false)
     }
 
-    const viewOffer=(id)=>{
-        const auxOfferSelected=offers.filter((x)=>x._id==id)
-        setOfferSelected(auxOfferSelected[0])
+    const viewOffer=(offer)=>{
+        
+        offerSelect(offer)
     }
 
     return <div className={styles.contenedorOferta}>
-        {offers!=null && offerSelected==null &&
+        {offers!=null &&
         offers.map((x)=>{
             return <div   className={styles.oferta}>
-                <div onClick={()=>viewOffer(x._id) }>
+                <div onClick={()=>viewOffer(x) }>
                     <h3>{x.job_title}</h3>
-                    <p>{formatDatetime(x.date)}</p>   
+                    <p>Fecha de creación: {formatDatetime(x.date)}</p>
+                    <div>
+                        <div>PROCESO: {x.bag.name}</div>
+                    </div>  
                 </div>
                 <button onClick={()=>changeStatusOffer(!x.active, x._id)} className={(x.active)?'tomato':"green"}>{(!x.active)?'Activar':"Deshabilitar"}</button>
             </div>
         })
         }
-        {offers!=null && offerSelected!=null &&
-            <div>
-                <FormCreateJob enums={enums} back={()=>setOfferSelected(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)} datosOferta={offerSelected}></FormCreateJob>
-                <button onClick={()=>setOfferSelected(null)}>Volver</button>
-            </div>
-        }
+        
     </div>
 }
 

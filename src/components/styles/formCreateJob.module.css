@@ -23,7 +23,6 @@
     display: flex;
     flex-wrap: wrap;
     flex: 1 100%;
-    padding: 0 1rem;
     flex-direction: column;
 }
 
@@ -31,11 +30,10 @@
     display: flex;
     justify-content: center;
     flex: 0;
-    padding: 1rem 0;
+    padding: 2rem;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: flex-start;
-    max-width: 800px;
 }
 
 .contenedorForm input, .contenedorForm label, .contenedorForm span, .contenedorForm select, .contenedorForm textarea{
@@ -57,6 +55,15 @@
 
 .contenedorForm input:disabled, .contenedorForm select:disabled, .contenedorForm textarea:disabled{
     border: none;
+    background-color: white;
+    color: var(--color-morado);
+    padding: 0;
+}
+
+.contenedorForm:has(input:disabled) {
+    background-color: white; /* Cambia el color de fondo del contenedor */
+    border: 1px solid var(--color-morado); /* Cambia el borde del contenedor (opcional) */
+    border-radius: 1rem;
 }
 
 .contenedorForm select{
@@ -92,6 +99,9 @@
 }
 
 
+.botonBag{
+    margin: 1rem 0;
+}
 
 
 

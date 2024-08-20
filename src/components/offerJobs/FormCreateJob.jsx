@@ -6,7 +6,6 @@ import { textErrors } from '../../lib/textErrors';
 import {sendFormCreateOffer, updateOffer } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 import { useLogin } from '../../hooks/useLogin';
-import { formatDatetime } from '../../lib/utils';
 import BagCreate from '../cv/BagCreate';
 import { useBag } from "../../hooks/useBag.jsx";
 
@@ -138,23 +137,21 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
     return (
         <div className={styles.contenedor}>
             <div className={styles.contenedorForm}>
-                {datosOferta!=null &&
-                    <div>
-                        <h2>{datosOferta.job_title}</h2>
-                    </div>
-                }
+                <div>
+                        <h2>{(datosOferta!=null)?datosOferta.job_title:'CREAR OFERTA'}</h2>
+                </div>
                 
                 
-                    {!noEditar && <div><BagCreate offer={true}></BagCreate></div>}
+                {!noEditar && <div className={styles.botonBag}><BagCreate offer={true}></BagCreate></div>}
                 {!!Bag && !noEditar &&
-                    <div>
+                    <div className={styles.botonBag}>
                         <label htmlFor="dispositive">Dispositivo</label>
                         <p>{Bag.dispositive.name}</p>
                     </div>
                 }
 
                 {datosOferta!=null && noEditar && datosOferta.bag.dispositive &&
-                    <div>
+                    <div className={styles.botonBag}>
                         <label htmlFor="dispositive">Dispositivo</label>
                         <p>{datosOferta.bag.dispositive.name}</p>
                     </div>

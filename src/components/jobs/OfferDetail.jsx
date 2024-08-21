@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import styles from '../styles/offerDetails.module.css';
 import { useNavigate } from 'react-router-dom';
+import { MdAccessTimeFilled } from "react-icons/md";
+import { FaRegCalendarDays } from "react-icons/fa6";
+import stylesTooltip from '../styles/tooltip.module.css';
+import { FaMapMarkedAlt } from "react-icons/fa";
 
 const OfferDetail = ({data, reset}) => {
   const navigate = useNavigate();
@@ -8,13 +12,34 @@ const OfferDetail = ({data, reset}) => {
   return (
     <div className={styles.contenedorOferta}>
       <h2>{data.job_title}</h2>
+      <div className={styles.contenedorIconos}>
+        <div>
+          <MdAccessTimeFilled/>
+          <div>
+            <p>JORNADA</p>
+            <p>{data.work_schedule}</p>
+          </div>
+        </div>
+        <div>
+          <FaRegCalendarDays/>
+          <div>
+            <p>INCORPORACIÓN</p>
+            <p>{data.expected_incorporation_date}</p>
+          </div>
+          
+        </div>
+        <div>
+          <FaMapMarkedAlt/>
+          <div>
+            <p>LOCALIDAD</p>
+            <p>{data.location}</p>
+          </div>
+          
+        </div>
+      </div>
       <div className={styles.campo}>
         <h3>Provincia</h3>
         <p>{data.province}</p>  
-      </div>
-      <div className={styles.campo}>
-        <h3>Localidad</h3>
-        <p>{data.location}</p>  
       </div>
       <div className={styles.campo}>
         <h3>Requisitos Esenciales</h3>
@@ -28,16 +53,8 @@ const OfferDetail = ({data, reset}) => {
       }
       
       <div className={styles.campo}>
-        <h3>Incorporación</h3>
-        <p>{data.expected_incorporation_date}</p>  
-      </div>
-      <div className={styles.campo}>
         <h3>Funciones a desempeñar</h3>
         <p>{data.functions}</p>  
-      </div>
-      <div className={styles.campo}>
-        <h3>Jornada</h3>
-        <p>{data.work_schedule}</p>  
       </div>
       <div className={styles.campo}>
         <h3>Condiciones</h3>

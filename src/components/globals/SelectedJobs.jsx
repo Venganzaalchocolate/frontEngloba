@@ -1,4 +1,5 @@
 import React from 'react';
+import { IoCloseCircle } from "react-icons/io5";
 
 const SelectedJobs = ({ data, type, errores, removeOption }) => {
     return (
@@ -8,7 +9,7 @@ const SelectedJobs = ({ data, type, errores, removeOption }) => {
                 {data[type].map((x, i) => (
                     <li key={`${type}-${i}`}>
                         <p>{x}</p>
-                        <button onClick={() => removeOption(type, i)}>X</button>
+                        <IoCloseCircle className='iconTomato' onClick={() => removeOption(type, i)}/>
                     </li>
                 ))}
                 {errores[type] && <li><span className='errorSpan'>{errores[type]}</span></li>}

@@ -28,7 +28,6 @@ const JobsPanel=({ modal, charge })=>{
                 }
                 setOffers(offersActive);
                 charge(false);
-                console.log(offersActive)
             } else {
                 charge(false);
                 modal('Error', 'Servicio no disponible, por favor inténtelo más tarde');
@@ -49,25 +48,38 @@ const JobsPanel=({ modal, charge })=>{
         navigate(`/ofertas`)
     }
 
+    const handleChange=(e)=>{
+        const auxOffer=offers.filter((x)=>{return x._id==e.target.value})
+        selectOffer(auxOffer[0])
+    }
+
 
     return  <div className={styles.contenedor}>
-            <div>
-                <img src="/graphic/imagotipo_blanco_malva_descriptor.png" alt="logotipo engloba" />
-            </div>
-            <div className={styles.contenedorForm}>
-                {offerSelected==null && !!offers && offers.map((x)=>{
-                    return <div className={styles.contenedorOferta} onClick={()=>selectOffer(x)}>
-                                <h2>{x.job_title}</h2>
-                                <div className={styles.contenedorInfoOferta}>
-                                    <p>{x.province}</p>
-                                    <p>({x.location})</p>
+                
+                <div className={styles.contenedorForm}>
+                    <h2>OFERTAS DISPONIBLES</h2>
+                    { !!offers && offers.length>0 && offers.map((x)=>{
+                        return <div className={(offerSelected && offerSelected._id==x._id) ?`${styles.contenedorOferta} crema`:styles.contenedorOferta} onClick={()=>selectOffer(x)}>
+                                    <h2>{x.job_title}</h2>
+                                    <p>{x.location}</p>
                                 </div>
-                            </div>
-                })
-                }
-                { !!offerSelected && <OfferDetail data={offerSelected} reset={()=>reset()}></OfferDetail>}
+                        })
+                    }
+                    <select className={styles.contenedorSelect} onChange={handleChange} >
+                    <option value={''}>Selecciona una opción</option>
+                    { !!offers && offers.length>0 && offers.map((x)=>{
+                        return <option value={x._id}>{x.job_title}</option>
+                                
+                        })
+                    }
+                    </select>
+                    {!!offers && offers.length==0 && <p>No hay ofertas actualmente</p>}
+                    
+                </div>
+                <div className={styles.contenedorDetalleOferta}>
+                    { !!offerSelected && <OfferDetail data={offerSelected} reset={()=>reset()}></OfferDetail>}
+                </div>
             </div>
-        </div>
 
 }
 

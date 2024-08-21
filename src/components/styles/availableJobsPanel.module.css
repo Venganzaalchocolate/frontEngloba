@@ -1,79 +1,82 @@
 .contenedor{
     display: flex;
     flex: 1 100%;
-    background-image: url('../../../public/img/fondo_menuStart.jpg');
-    flex-direction: column;
+    background-color: var(--color-morado);
+    background-image: url('../../../public/graphic/mesa.svg');
+    flex-direction: row;
     background-repeat: no-repeat;
-    background-size: cover;
-    justify-content: center;
-    align-items: center;
+    background-size: 500px;
+    background-position: bottom 50px right 100px;
     padding: 1rem;
     flex-wrap: wrap;
+    padding: 3rem;
     /* From https://css.glass */
 }
 
-.contenedorForm button{
-    margin-top: 1rem;
-}
-
-.contenedor>:nth-child(1){
+.contenedorForm{
     display: flex;
-    justify-content: center;
-    align-items: center;
     flex-direction: column;
-    max-width: 20rem;
-    flex: 0;
-}
+    flex: 1 30%;
+    max-width: 30rem;
+    gap: 1rem;
+    >h2{
+        color: var(--color-malva);
+    }
 
-
-.contenedor>.contenedorForm{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    flex: 0;
-    background-color: var(--color-malva);
-    border-radius: 1rem;
-    background: rgba(79, 82, 159, 0.42);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(4.4px);
-    -webkit-backdrop-filter: blur(4.4px);
-    padding: 2rem;
 }
 
 .contenedorOferta{
-    padding: 1rem;
     display: flex;
-    flex: 1 100%;
+    flex-direction: row;
     flex-wrap: wrap;
-    color: white;
-    border-top: 1px solid var(--color-malva);
+    background-color: var(--color-malva);
+    border-radius: 1rem;
+    padding: 0.8rem;
+    transition: all 0.3s ease;
+    color: var(--color-morado);
+    >h2{
+        display: flex;
+        flex: 1 100%;
+        font-size: 12pt;
+    };
 }
 
 .contenedorOferta:hover{
-    background-color: var(--color-malva);
-    color: var(--color-morado);
+    transform: scale(1.2); /* Efecto de zoom al hacer hover */
+    background-color: var(--color-crema);
 }
 
-.contenedorOferta>h2{
-    flex: 1 100%;
-    color: var(--color-crema);
-}
-
-.contenedorOferta>h2:hover{
-    color: var(--color-morado);
-}
-
-.contenedorOferta>div.contenedorInfoOferta{
+.contenedorDetalleOferta{
     display: flex;
+    margin-left: 3rem;
     
 }
 
-.contenedorOferta>div.contenedorInfoOferta>p{
-    padding-right: 1rem;
+.contenedorSelect{
+    display: none;
 }
 
-.contenedorOferta>div.contenedorInfoOferta>p:nth-child(2){
-    font-style: italic;
+
+@media (width < 1080px) { 
+    .contenedorSelect{
+        display: flex;
+        margin-bottom: 1rem;
+    }
+
+    .contenedorForm{
+        height: fit-content;
+        flex-direction: column;
+        >h2{
+            font-size: 11pt;
+        }
+    }
+
+    .contenedorOferta{
+        display: none;
+    }
+
+    .contenedorDetalleOferta{
+        margin: 0;
+    }
+
 }

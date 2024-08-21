@@ -122,3 +122,11 @@ textarea{
   background-color: tomato;
   color: white;
 }
+
+.crema{
+  background-color: var(--color-crema);
+}
+
+.iconTomato{
+  color: tomato;
+}

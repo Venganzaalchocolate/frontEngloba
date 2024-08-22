@@ -16,9 +16,9 @@ const MenuStart = () => {
                 <Link to={'/trabajaconnosotros'}>
                     <button>TRABAJA CON NOSOTROS</button>
                 </Link>
-                {/* <Link to={'/ofertas'}>
+                <Link to={'/ofertas'}>
                     <button>OFERTAS DE EMPLEO</button>
-                </Link> */}
+                </Link>
                 <a href="mailto:comunicacion@engloba.org.es?subject=app">CONTACTO</a>   
             </div>
         </div>

@@ -237,7 +237,7 @@ const ManagingResumenes = ({ modal, charge }) => {
 
                     {!!enums &&
                         <>
-                            {/* <div>
+                            <div>
                                 <label htmlFor="offer">Oferta:</label>
                                 <select name="offer" id="offer" onChange={handleFilterChange} value={filters.offer}>
                                     <option value={''}>Selecciona una opción</option>
@@ -245,7 +245,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                                         return <option value={x._id}>{x.job_title}</option>
                                     })}
                                 </select>
-                            </div> */}
+                            </div>
                             <div>
                                 <label htmlFor="work_schedule">Disponibilidad Horaria</label>
                                 <select id='work_schedule' name='work_schedule' onChange={handleFilterChange} value={filters.work_schedule}>

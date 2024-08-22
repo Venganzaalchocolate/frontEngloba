@@ -135,3 +135,15 @@ display: flex;
 .ventanaNoModal>.contenedor>.contenedorSelect>label{
   color: var(--color-morado);
 }
+
+.contenedorConfirmar{
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-rosa-palo);
+  padding: 1rem;
+  border-radius: 1rem;
+  >p{
+   color: tomato; 
+  }
+  
+}

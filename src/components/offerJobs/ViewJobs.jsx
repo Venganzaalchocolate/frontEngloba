@@ -24,6 +24,7 @@ const ViewJobs=({ charge, offerSelect, offers, changeOffers})=>{
     }
 
     return <div className={styles.contenedorOferta}>
+        {offers!=null && offers.length==0 && <h3>ACTUALMENTE NO HAY OFERTAS ACTIVAS</h3>}
         {offers!=null &&
         offers.map((x)=>{
             return <div   className={styles.oferta}>

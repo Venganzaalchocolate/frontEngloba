@@ -31,6 +31,8 @@ export const createBag = (datos, token) => fetchData('/createbag', 'POST', token
 
 export const getBags = (token) => fetchData('/getbags', 'GET', token);
 
+export const deactivateBagId=(datos, token)=>fetchData('/bagdeactivate', 'POST', token, datos)
+
 export const getPrograms = () => fetchData('/programs', 'GET');
 
 export const tokenUser = async (token) => {
@@ -57,6 +59,10 @@ export const getCVs = async (id, token) => {
 };
 
 export const modifyUser = (dataUser) => fetchData('/modifyusercv', 'PUT', null, dataUser);
+
+export const createEmployer=(data, token)=>fetchData('/createemployer', 'POST',token, data);
+
+export const getEmployers=(token)=>fetchData('/users', 'GET', token)
 
 export const loginUser = (email, password) => fetchData('/login', 'POST', null, { email, password });
 

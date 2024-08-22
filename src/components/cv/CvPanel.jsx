@@ -39,8 +39,15 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
                 
             }
             const response = await modifyUser(textAux);
-            if(!response.error)changeUser(response)
-            modal('Comentario', 'Comentario guardado con éxito')
+            if(!response.error){
+                changeUser(response)   
+                modal('Comentario', 'Comentario guardado con éxito')
+                setTextComment('')
+                setTypeComment(null)
+            } else {
+                modal('Comentario', 'Error al guardar el comentario, vuelve a intentarlo más tarde')
+            }
+            
         }
     }
 

@@ -4,6 +4,7 @@
     color: white;
     flex: 1 100%;
     gap: 0.5rem;
+    color: var(--color-morado);
 }
 
 

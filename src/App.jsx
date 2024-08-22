@@ -89,7 +89,8 @@ function App() {
           <Route path="/login" element={<Login charge={(x) => setCharge(x)} />}></Route>
           <Route path="/trabajaconnosotros" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
           <Route path="/trabajaconnosotros/:id" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-          
+          <Route path="/ofertas"  element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
+          <Route path="/ofertas/:id"  element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
           <Route path="/*" element={<NotFound />}></Route>
         </Routes>
         {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/bag.module.css';
 import { getToken } from '../../lib/serviceToken';
-import { getBags, addEmployerBag, createBag, getPrograms } from '../../lib/data';
+import { getBags, addEmployerBag, createBag, getPrograms, deactivateBagId } from '../../lib/data';
 import { useBag } from "../../hooks/useBag.jsx";
 import { useLogin } from '../../hooks/useLogin';
 import { formatDatetime } from '../../lib/utils.js';
@@ -19,6 +19,7 @@ const BagCreate = ({offer=false, style=null}) => {
     const [optionAction, setOptionAction] = useState(null)
     const [programs, setPrograms]=useState(null)
     const [error, setError] = useState(null)
+    const [confirmDeactivate, setConfirmDeactivate]=useState(null)
 
 
     const createBagEmployer = async () => {
@@ -32,7 +33,6 @@ const BagCreate = ({offer=false, style=null}) => {
             
             if (!response.error) {
                 changeBag(response)
-                setData({ sepe: "false" })
                 setView(false)
                 setViewCreate(false)
             } else {
@@ -47,15 +47,16 @@ const BagCreate = ({offer=false, style=null}) => {
         setView(status)
     }
 
+    const optionsSelect = async () => {
+        const token = getToken();
+        const bags = await getBags(token);
+        const programs = await getPrograms(token);
+        if (!bags.error) setOptions(bags)
+        if (!programs.error) setPrograms(programs)    
+    }
+
     useEffect(() => {
-        const options = async () => {
-            const token = getToken();
-            const bags = await getBags(token);
-            const programs = await getPrograms(token);
-            if (!bags.error) setOptions(bags)
-            if (!programs.error) setPrograms(programs)    
-        }
-        options();
+        optionsSelect();
     }, [Bag])
 
     const handleChangeSelected = (e) => {
@@ -66,7 +67,6 @@ const BagCreate = ({offer=false, style=null}) => {
     }
 
     const selectedBag = () => {
-
         const bagSelectedData = options.filter((x) => x._id == bagselected)[0]
         if (bagselected != null && bagSelectedData != null) {
             setOptions(null)
@@ -76,8 +76,37 @@ const BagCreate = ({offer=false, style=null}) => {
         }
     }
 
+    const resetOptionBag=()=>{
+        setViewCreate(false)
+        setBag(null)
+        setProgramSelected(null)
+        setDispositiveSelected(null)
+        setOptionAction(null)
+        setConfirmDeactivate(null)
+    }
+
     const closeProcess = () => {
+        setOptions(null)
+        setOptionAction(null)
         changeBag(null)
+        setView(null)
+    }
+
+    const bagDeactivate=async ()=>{
+        resetOptionBag()
+        if(bagselected!=-1 || bagselected!=null){
+            const token = getToken();
+            const data = {_id:bagselected}
+            const response = await deactivateBagId(data, token)
+            if (!response.error) {
+                setView(false)
+                setViewCreate(false)
+                changeBag(null)
+                optionsSelect()
+            } else {
+                setError('Error al crear el proceso de selección')
+            }
+        }
     }
 
 
@@ -100,11 +129,11 @@ const BagCreate = ({offer=false, style=null}) => {
                             <div className={styles.botonesMenu}>
                                 <button onClick={() => setOptionAction('select')}>Seleccionar proceso</button>
                                 <button onClick={() => setOptionAction('create')}>Crear proceso</button>
-                                {!offer && <button onClick={() => setOptionAction('delete')}>Eliminar proceso</button>}
+                                {!offer && <button onClick={() => setOptionAction('deactivate')}>Desactivar proceso</button>}
                             </div>
 
                         }
-                        {(optionAction == 'select' || optionAction == 'delete') &&
+                        {(optionAction == 'select' || optionAction == 'deactivate') &&
                             <div className={styles.contenedorSelect}>
                                 <label htmlFor="bags">Selecciona un proceso</label>
                                 <div>
@@ -116,9 +145,20 @@ const BagCreate = ({offer=false, style=null}) => {
                                     </select>
                                 </div>
                                 <div>
-                                    {(optionAction == 'delete') ? <button onClick={() => selectedBag()}>Borrar</button> : <button onClick={() => selectedBag()}>Seleccionar</button>}
-                                    <button onClick={() => setOptionAction(null)}>Atrás</button>
+                                    {(optionAction == 'deactivate') ? <button onClick={() => setConfirmDeactivate(true)}>Desactivar</button> : <button onClick={() => selectedBag()}>Seleccionar</button>}
+                                    
+                                    <button onClick={() => resetOptionBag()}>Atrás</button>
                                 </div>
+                                {confirmDeactivate && 
+                                    <div className={styles.contenedorConfirmar}>
+                                        <p>¿Estas seguro que quieres desactivar este proceso?</p>
+                                        <p>Este acto es irreversible y eliminará todas las ofertas asociadas</p>
+                                        <div >
+                                            <button  onClick={() => bagDeactivate()}>Sí</button>
+                                            <button className='tomato' onClick={() => setConfirmDeactivate(false)}>No</button>
+                                        </div>
+                                        
+                                    </div>}
                             </div>
                         }
                         {optionAction == 'create' &&
@@ -159,13 +199,13 @@ const BagCreate = ({offer=false, style=null}) => {
                                 </>}
                                 <div>
                                     <button onClick={() => createBagEmployer()}>Crear</button>
-                                    <button onClick={() => setOptionAction(null)}>Atrás</button>
+                                    <button onClick={() => resetOptionBag()}>Atrás</button>
                                 </div>
                             </div>
 
                         }
                         <div>
-                            <button className={styles.tomato} onClick={() => { viewBagEmployer(); setOptionAction(null) }}>Cancelar</button>
+                            <button className={styles.tomato} onClick={() => { viewBagEmployer(); resetOptionBag() }}>Cancelar</button>
                         </div>
 
 

@@ -48,10 +48,16 @@ const OfferJobsPanel =({modal, charge})=>{
     }
 
     const changeOffers=(offer)=>{
+        let exists=false
         const offersAux=[...offers]
         offersAux.map((x,i,a)=>{
-            if(x._id==offer._id) a[i]=offer
+            if(x._id==offer._id){
+              a[i]=offer;  
+              exists=true;
+            } 
         })
+        if(!exists)offersAux.push(offer)
+        setOfferSelected(null)
         setOffers(offersAux)
     }
 

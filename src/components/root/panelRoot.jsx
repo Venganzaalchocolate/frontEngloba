@@ -4,6 +4,7 @@ import ProgramManagement from "./ProgramManagement";
 import { getData, getPrograms, createData, deleteData, createSubData, deleteSubData } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import styles from '../styles/panelRoot.module.css';
+import EmployersManagement from "./EmployersManagement";
 
 const PanelRoot = ({ charge }) => {
     const [enums, setEnums] = useState(null);
@@ -115,6 +116,12 @@ const PanelRoot = ({ charge }) => {
                     enums={enums}
                     programs={programs}
                     cargarDatos={cargarDatos}
+                    charge={charge}
+                />
+            )}
+
+            {optionSelected === 'employers' && (
+                <EmployersManagement
                     charge={charge}
                 />
             )}

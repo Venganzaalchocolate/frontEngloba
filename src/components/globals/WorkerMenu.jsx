@@ -28,15 +28,22 @@ const WorkerMenu = ({modal, charge}) => {
         <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
             <div>
                 <h2>Bienvenido, {logged.user.firstName}</h2>
-                <button onClick={()=>changeMenuWorker('cv')}> GESTIONAR CV</button>
-                {logged.user.role!='global' &&
+                
+                {logged.user.role=='root' &&
                 <>
+                    <button onClick={()=>changeMenuWorker('cv')}> GESTIONAR CV</button>
                     <button onClick={()=>changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>    
                     <button onClick={()=>changeMenuWorker('payroll')}> GESTIONAR NÓMINAS</button>
                     <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
                     <button onClick={()=>changeMenuWorker('employer')}> GESTIONAR TRABAJADORES</button>
                     <button onClick={()=>changeMenuWorker('programs')}> GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
                     <button onClick={()=>changeMenuWorker('root')}> PANEL ROOT</button>
+                </>
+                
+                }
+                {logged.user.role!='root' &&
+                <>
+                    <button onClick={()=>changeMenuWorker('cv')}> GESTIONAR CURRICULUMS</button>
                 </>
                 
                 }

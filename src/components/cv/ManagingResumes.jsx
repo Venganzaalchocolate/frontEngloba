@@ -179,7 +179,7 @@ const ManagingResumenes = ({ modal, charge }) => {
         usersAux.map((x, i, a) => {
             if (x._id == userModify._id) {
                 a[i] = userModify
-                setUserSelected(null)
+                setUserSelected(userModify)
                 setUsers(usersAux)
             }
         })
@@ -362,29 +362,6 @@ const ManagingResumenes = ({ modal, charge }) => {
                             <span className={stylesTooltip.tooltiptext}>{(filters.reject == '1')?'Rechazados':(filters.reject == '0')?'No Rechazados':'Todos'}</span></span> 
                         </div>
                         
-                        
-                        {/* <label htmlFor="view">Visto</label>
-                        <select id='view' name='view' onChange={handleFilterChange} value={filters.view}>
-                            <option value={''}>Selecciona una opción</option>
-                            <option value={`1`}>Si</option>
-                            <option value={`0`}>No</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="favorite">Favoritos</label>                       
-                        <select id='favorite' name='favorite' onChange={handleFilterChange} value={filters.favorite}>
-                            <option value={''}>Selecciona una opción</option>
-                            <option value={`1`}>Si</option>
-                            <option value={`0`}>No</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="reject">Rechazados</label>
-                        <select id='reject' name='reject' onChange={handleFilterChange} value={filters.reject}>
-                            <option value={''}>Selecciona una opción</option>
-                            <option value={`1`}>Si</option>
-                            <option value={`0`}>No</option>
-                        </select> */}
                     </div>
 
                     <div>

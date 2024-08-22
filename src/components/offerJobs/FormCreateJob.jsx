@@ -105,6 +105,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
             } else {
                 sendForm = await sendFormCreateOffer(auxDatos, token)
             }
+
             if (sendForm.error) {
                 
                 let auxErrores = { ...errores }
@@ -114,6 +115,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
             } else {
                 if(changeOffers!=null)changeOffers(sendForm)
                 charge(false)
+                changeBag(null)
                 if (datosOferta != null){
                     modal('Oferta Modificada', "Oferta modificada con éxito")
                     back()

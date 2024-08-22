@@ -28,7 +28,6 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
     const [panelEditUser, setPanelEditUser]=useState(false)
 
 
-
     const saveComment = async () => {
         if (textComment != '' && typeComment != null) {
             const textAux = {

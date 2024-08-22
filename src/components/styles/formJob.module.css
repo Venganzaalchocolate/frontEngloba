@@ -173,6 +173,12 @@
     box-shadow: none;
 }
 
+.conditions{
+    font-size: 7pt;
+    color: white;
+    font-style: italic;
+}
+
 
 @media (min-width: 600px) {
     .contenedor>.contenedorForm{

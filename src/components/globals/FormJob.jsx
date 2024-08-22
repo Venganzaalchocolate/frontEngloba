@@ -250,9 +250,10 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                     <div className={styles.terminos}>
                         <input type="checkbox" id="terms" name="terms" value="accepted" onChange={handleChange} />
                         <label htmlFor="terms">
-                            Aceptar términos y condiciones: <Link to="https://engloba.org.es/privacidad">política de privacidad</Link>
+                            *Aceptar términos y condiciones: <Link to="https://engloba.org.es/privacidad">política de privacidad</Link>
                         </label>
                         <span className="errorSpan">{errores.terms}</span>
+                        <span className={styles.conditions}>*Para cumplir con la normativa vigente en protección de datos de carácter personal, tal y como se indica en la correspondiente cláusula informativa, tu C.V. se mantendrá en nuestra base de datos durante un periodo de dos años a contar desde la fecha de entrega, pasado este tiempo se borrarán tus datos</span>
                     </div>
                 )}
                 <div className={styles.botones}>

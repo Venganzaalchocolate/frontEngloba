@@ -16,11 +16,11 @@ import BagCreate from "./BagCreate.jsx";
 import { useBag } from "../../hooks/useBag.jsx";
 import { GoStar } from "react-icons/go";
 import { GoStarFill } from "react-icons/go";
-import { BsExclamationOctagonFill, BsExclamationLg, BsExclamationOctagon  } from "react-icons/bs";
+import { BsExclamationOctagonFill, BsExclamationLg, BsExclamationOctagon } from "react-icons/bs";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { formatDatetime } from "../../lib/utils.js";
 import { BsStarHalf, BsStarFill, BsStar } from "react-icons/bs";
-import { TbEyeDotted, TbEyeClosed, TbEyeFilled  } from "react-icons/tb";
+import { TbEyeDotted, TbEyeClosed, TbEyeFilled } from "react-icons/tb";
 
 
 // 
@@ -45,8 +45,8 @@ const ManagingResumenes = ({ modal, charge }) => {
         view: '',
         offer: '',
         studies: '',
-        favorite:'',
-        reject:'',
+        favorite: '',
+        reject: '',
     });
 
     useEffect(() => {
@@ -56,7 +56,7 @@ const ManagingResumenes = ({ modal, charge }) => {
     // Función para cargar los filters de la página actual
     const loadUsers = async () => {
         charge(true)
-        
+
         try {
             let data = null
             const token = getToken();
@@ -66,7 +66,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                 const ids = { users: Bag.userCv }
                 data = await getusercvs(page, limit, ids, token);
             } else {
-                let auxFilters={...filters}
+                let auxFilters = { ...filters }
                 for (let key in auxFilters) {
                     if (auxFilters[key] === "") {
                         delete auxFilters[key];
@@ -83,6 +83,8 @@ const ManagingResumenes = ({ modal, charge }) => {
                 auxEnums['provinces'] = enumsData.provinces
                 auxEnums['work_schedule'] = enumsData.work_schedule
                 auxEnums['studies'] = enumsData.studies
+                auxEnums['offer'] = enumsData.offer
+                console.log(auxEnums)
                 setEnums(auxEnums)
             }
             if (data.error) {
@@ -161,15 +163,15 @@ const ManagingResumenes = ({ modal, charge }) => {
         } else {
             const token = getToken();
             const cvData = await getCVs(id, token);
-            if(!cvData.error){
+            if (!cvData.error) {
                 setUrlCv(cvData)
                 setUserSelected(userData);
-                charge(false)   
+                charge(false)
             } else {
                 charge(false)
                 modal('Error', cvData.message)
             }
-            
+
         }
 
     }
@@ -195,7 +197,7 @@ const ManagingResumenes = ({ modal, charge }) => {
         }
     }
 
-    
+
 
     return (
         <div className={styles.contenedor}>
@@ -231,13 +233,19 @@ const ManagingResumenes = ({ modal, charge }) => {
                         <label htmlFor="email">Email:</label>
                         <input type="text" id="email" name="email" value={filters.email} onChange={handleFilterChange} />
                     </div>
-                    <div>
-                        <label htmlFor="offer">Oferta:</label>
-                        <input type="text" id="offer" name="offer" value={filters.offer} onChange={handleFilterChange} />
-                    </div>
+
 
                     {!!enums &&
                         <>
+                            {/* <div>
+                                <label htmlFor="offer">Oferta:</label>
+                                <select name="offer" id="offer" onChange={handleFilterChange} value={filters.offer}>
+                                    <option value={''}>Selecciona una opción</option>
+                                    {enums.offer.map((x) => {
+                                        return <option value={x._id}>{x.job_title}</option>
+                                    })}
+                                </select>
+                            </div> */}
                             <div>
                                 <label htmlFor="work_schedule">Disponibilidad Horaria</label>
                                 <select id='work_schedule' name='work_schedule' onChange={handleFilterChange} value={filters.work_schedule}>
@@ -338,30 +346,30 @@ const ManagingResumenes = ({ modal, charge }) => {
 
 
                     <div className={styles.cajaIconosFiltro}>
-                        
-                        <div> 
+
+                        <div>
                             <span className={stylesTooltip.tooltip}>
                                 {filters.view == '' && <TbEyeDotted onClick={() => setFilters(prevFilters => ({ ...prevFilters, view: '1' }))} />}
                                 {filters.view == '1' && <TbEyeFilled onClick={() => setFilters(prevFilters => ({ ...prevFilters, view: '0' }))} />}
                                 {filters.view == '0' && <TbEyeClosed onClick={() => setFilters(prevFilters => ({ ...prevFilters, view: '' }))} />}
-                            <span className={stylesTooltip.tooltiptext}>{(filters.view == '1')?'Vistos':(filters.view == '0')?'No Vistos':'todos'}</span></span> 
-                            
+                                <span className={stylesTooltip.tooltiptext}>{(filters.view == '1') ? 'Vistos' : (filters.view == '0') ? 'No Vistos' : 'todos'}</span></span>
+
                         </div>
                         <div>
                             <span className={stylesTooltip.tooltip}>
                                 {filters.favorite == '' && <BsStarHalf onClick={() => setFilters(prevFilters => ({ ...prevFilters, favorite: '1' }))} />}
                                 {filters.favorite == '1' && <BsStarFill onClick={() => setFilters(prevFilters => ({ ...prevFilters, favorite: '0' }))} />}
                                 {filters.favorite == '0' && <BsStar onClick={() => setFilters(prevFilters => ({ ...prevFilters, favorite: '' }))} />}
-                            <span className={stylesTooltip.tooltiptext}>{(filters.favorite == '1')?'Favoritos':(filters.favorite == '0')?'No Favoritos':'todos'}</span></span> 
+                                <span className={stylesTooltip.tooltiptext}>{(filters.favorite == '1') ? 'Favoritos' : (filters.favorite == '0') ? 'No Favoritos' : 'todos'}</span></span>
                         </div>
                         <div>
                             <span className={stylesTooltip.tooltip}>
                                 {filters.reject == '' && <BsExclamationLg onClick={() => setFilters(prevFilters => ({ ...prevFilters, reject: '0' }))} />}
                                 {filters.reject == '0' && <BsExclamationOctagon onClick={() => setFilters(prevFilters => ({ ...prevFilters, reject: '1' }))} />}
                                 {filters.reject == '1' && <BsExclamationOctagonFill onClick={() => setFilters(prevFilters => ({ ...prevFilters, reject: '' }))} />}
-                            <span className={stylesTooltip.tooltiptext}>{(filters.reject == '1')?'Rechazados':(filters.reject == '0')?'No Rechazados':'Todos'}</span></span> 
+                                <span className={stylesTooltip.tooltiptext}>{(filters.reject == '1') ? 'Rechazados' : (filters.reject == '0') ? 'No Rechazados' : 'Todos'}</span></span>
                         </div>
-                        
+
                     </div>
 
                     <div>
@@ -394,15 +402,15 @@ const ManagingResumenes = ({ modal, charge }) => {
                             <div className={styles.tableCell}>{user.phone}</div>
                             <div className={styles.tableCell}>{user.jobs.join(', ')}</div>
                             <div className={styles.tableCell}>{user.studies.join(', ')}</div>
-                            <div className={styles.tableCell}>{(user.provinces.length!=11)?user.provinces.join(', '):'Todas'}</div>
-                            <div className={styles.tableCell}>{(user.offer != null) 
-                                ?<span className={stylesTooltip.tooltip}><FaCheckCircle /><span className={stylesTooltip.tooltiptext}>{ user.offer.job_title}</span></span> 
-                                :<span className={stylesTooltip.tooltip}><FaTimesCircle /><span className={stylesTooltip.tooltiptext}>No asociado a una oferta</span></span> }</div>
+                            <div className={styles.tableCell}>{(user.provinces.length != 11) ? user.provinces.join(', ') : 'Todas'}</div>
+                            <div className={styles.tableCell}>{(user.offer != null)
+                                ? <span className={stylesTooltip.tooltip}><FaCheckCircle /><span className={stylesTooltip.tooltiptext}>{user.offer.job_title}</span></span>
+                                : <span className={stylesTooltip.tooltip}><FaTimesCircle /><span className={stylesTooltip.tooltiptext}>No asociado a una oferta</span></span>}</div>
                             <div className={styles.tableCell}><span className={stylesTooltip.tooltip}>{user.numberCV}<span className={stylesTooltip.tooltiptext}>Versión</span></span></div>
                             <div className={styles.tableCell}>{
                                 (user.view)
-                                    ?<span className={stylesTooltip.tooltip}><FaEye /><span className={stylesTooltip.tooltiptext}>Visto</span></span> 
-                                    :<span className={stylesTooltip.tooltip}><FaRegEyeSlash /><span className={stylesTooltip.tooltiptext}>No Visto</span></span>  }{
+                                    ? <span className={stylesTooltip.tooltip}><FaEye /><span className={stylesTooltip.tooltiptext}>Visto</span></span>
+                                    : <span className={stylesTooltip.tooltip}><FaRegEyeSlash /><span className={stylesTooltip.tooltiptext}>No Visto</span></span>}{
                                     (user.favorite)
                                         ? <span className={stylesTooltip.tooltip}><GoStarFill /><span className={stylesTooltip.tooltiptext}>Favorito</span></span>
                                         : <span className={stylesTooltip.tooltip}><GoStar /><span className={stylesTooltip.tooltiptext}>No Favorito</span></span>}{
@@ -414,10 +422,10 @@ const ManagingResumenes = ({ modal, charge }) => {
                         </div>
                         {userSelected != null && userSelected._id == user._id &&
                             <CvPanel
-                                charge={()=>charge()}
+                                charge={() => charge()}
                                 urlpdf={urlCv}
                                 user={userSelected}
-                                changeUser={(x)=>changeUser(x)}
+                                changeUser={(x) => changeUser(x)}
                                 modal={(title, message) => modal(title, message)}>
                             </CvPanel>
                         }

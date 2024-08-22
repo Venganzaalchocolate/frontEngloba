@@ -30,10 +30,11 @@ const Header = () => {
             </div>
             <div  className={styles.contenedorIconos}>
                 <button onClick={()=>logout()}>Cerrar Sesión</button>
-                <FaEnvelope />
-                {(viewMenu)?<RiCloseLargeFill  onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}/>:<FiAlignJustify onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}></FiAlignJustify>}
+                <button onClick={()=>changeOption(null)}>Volver al menú</button>
+                {/* <FaEnvelope />
+                {(viewMenu)?<RiCloseLargeFill  onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}/>:<FiAlignJustify onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}></FiAlignJustify>} */}
             </div>
-            {viewMenu && logged.user.role!='global' &&
+            {/* {viewMenu && logged.user.role=='root' &&
             <div className={styles.menuHeader}>
                 <ul>
                     <li onClick={()=>changeOption('cv')}>GESTION CV</li>
@@ -44,7 +45,7 @@ const Header = () => {
                     <li onClick={()=>changeOption('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</li>
                 </ul>
             </div>
-            }
+            } */}
         </header>
     )
 }

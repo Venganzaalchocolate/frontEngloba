@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from "react"
 import styles from '../styles/cvPanel.module.css';
 import { FaPhoneAlt } from "react-icons/fa";
@@ -85,7 +86,13 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
                         {(user.reject!=null) ? <BsExclamationOctagonFill color="tomato" onClick={()=>changeStatus('reject')}/>: <BsExclamationOctagon  onClick={()=>changeStatus('reject')}/>}
                         <FaRegEdit  onClick={()=>viewPanelEditUser()}/>
                         {Bag!=null && !schedule && <BagPanel userSelected={user}/>}
+                        {logged.user.role=='root' && <button className='tomato'>Eliminar CV</button>}
                     </div>
+                    {/* <div>
+                        <p>¿Estas seguro? No seas cafre !!!!</p>
+                        <button>Si, lo he meditado toda la noche</button>
+                        <button>No, hoy no me he tomado el café</button>
+                    </div> */}
                     {!!panelEditUser && <div className={styles.contenedorEditar}>
                         <h2 className={styles.cerrar}>Editar Información <button className="tomato" onClick={()=>viewPanelEditUser()}>Cerrar</button></h2> 
                         <FormJob 
@@ -170,4 +177,13 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
 
 }
 
-export default CvPanel;
+export default React.memo(CvPanel, (prevProps, nextProps) => {
+    // Si las props son iguales, evita re-renderizado
+    return (
+        prevProps.urlpdf === nextProps.urlpdf &&
+        prevProps.user === nextProps.user &&
+        prevProps.charge === nextProps.charge &&
+        prevProps.modal === nextProps.modal &&
+        prevProps.changeUser === nextProps.changeUser
+    );
+});

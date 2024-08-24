@@ -1,40 +1,32 @@
-import { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { getCVs, getData, getusercvs } from "../../lib/data";
 import styles from '../styles/managingResumenes.module.css';
 import stylesTooltip from '../styles/tooltip.module.css';
-import { FaEye } from "react-icons/fa";
-import PdfV from "./PdfV";
-import { FaCheck } from "react-icons/fa";
-import { FaRegEyeSlash } from "react-icons/fa6";
-import { IoNewspaperSharp } from "react-icons/io5";
+import { FaEye, FaCheckCircle, FaTimesCircle, FaRegEyeSlash } from "react-icons/fa";
+import { GoStar, GoStarFill } from "react-icons/go";
+import { BsExclamationOctagonFill, BsExclamationLg, BsExclamationOctagon, BsStarHalf, BsStarFill, BsStar } from "react-icons/bs";
+import { TbEyeDotted, TbEyeClosed, TbEyeFilled } from "react-icons/tb";
 import { useNavigate } from "react-router-dom";
 import { getToken } from "../../lib/serviceToken";
 import { useLogin } from '../../hooks/useLogin.jsx';
-import CvPanel from "./CvPanel.jsx";
-import Modal from "../globals/Modal.jsx";
+import CvPanel from "./CvPanel";
 import BagCreate from "./BagCreate.jsx";
 import { useBag } from "../../hooks/useBag.jsx";
-import { GoStar } from "react-icons/go";
-import { GoStarFill } from "react-icons/go";
-import { BsExclamationOctagonFill, BsExclamationLg, BsExclamationOctagon } from "react-icons/bs";
-import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { formatDatetime } from "../../lib/utils.js";
-import { BsStarHalf, BsStarFill, BsStar } from "react-icons/bs";
-import { TbEyeDotted, TbEyeClosed, TbEyeFilled } from "react-icons/tb";
+import { useDebounce } from "../globals/useDebounce.jsx";
 
 
-// 
 const ManagingResumenes = ({ modal, charge }) => {
-    const { logged, changeLogged, logout } = useLogin()
-    const { Bag, schedule } = useBag()
+    const { logged, changeLogged, logout } = useLogin();
+    const { Bag, schedule } = useBag();
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(50); // Tamaño de página por defecto
     const [users, setUsers] = useState([]);
     const [totalPages, setTotalPages] = useState(0);
-    const [enums, setEnums] = useState(null)
-    const [urlCv, setUrlCv] = useState(null)
-    const [userSelected, setUserSelected] = useState(null)
+    const [enums, setEnums] = useState(null);
+    const [urlCv, setUrlCv] = useState(null);
+    const [userSelected, setUserSelected] = useState(null);
     const [filters, setFilters] = useState({
         name: '',
         email: '',
@@ -49,24 +41,31 @@ const ManagingResumenes = ({ modal, charge }) => {
         reject: '',
     });
 
-    useEffect(() => {
-        (users != 0) ? charge(true) : charge(false)
-    }, [])
+    // Derivar una versión debounced de los filtros
+    const debouncedFilters = useDebounce(filters, 300);
 
-    // Función para cargar los filters de la página actual
+    // Cargar usuarios cuando cambie la página, el tamaño de página, los filtros debounced o el schedule
+    useEffect(() => {
+        if (logged.isLoggedIn) {
+            loadUsers();
+        } else {
+            navigate('/login');
+        }
+    }, [debouncedFilters, page, limit, schedule]);
+
+    // Función para cargar los filtros de la página actual
     const loadUsers = async () => {
-        charge(true)
+        charge(true);
 
         try {
-            let data = null
+            let data = null;
             const token = getToken();
 
             if (Bag != null && !!schedule) {
-
-                const ids = { users: Bag.userCv }
+                const ids = { users: Bag.userCv };
                 data = await getusercvs(page, limit, ids, token);
             } else {
-                let auxFilters = { ...filters }
+                let auxFilters = { ...debouncedFilters };
                 for (let key in auxFilters) {
                     if (auxFilters[key] === "") {
                         delete auxFilters[key];
@@ -78,68 +77,64 @@ const ManagingResumenes = ({ modal, charge }) => {
 
             const enumsData = await getData();
             if (!enumsData.error) {
-                let auxEnums = {}
-                auxEnums['jobs'] = enumsData.jobs
-                auxEnums['provinces'] = enumsData.provinces
-                auxEnums['work_schedule'] = enumsData.work_schedule
-                auxEnums['studies'] = enumsData.studies
-                auxEnums['offer'] = enumsData.offer
-                console.log(auxEnums)
-                setEnums(auxEnums)
+                let auxEnums = {
+                    jobs: enumsData.jobs,
+                    provinces: enumsData.provinces,
+                    work_schedule: enumsData.work_schedule,
+                    studies: enumsData.studies,
+                    offer: enumsData.offer,
+                };
+                setEnums(auxEnums);
             }
+
             if (data.error) {
-                charge(false)
-                modal('Error', data.message)
+                charge(false);
+                modal('Error', data.message);
             } else {
                 setUsers(data.users); // Establece los usuarios recuperados
                 setTotalPages(data.totalPages); // Establece el número total de páginas
-                charge(false)
+                charge(false);
             }
         } catch (error) {
-            charge(false)
-            modal('Error', error)
+            charge(false);
+            modal('Error', error.message || 'Ocurrió un error inesperado.');
         }
     };
 
-
+    // Resetear URL y usuario seleccionado cuando cambie el Bag
     useEffect(() => {
-        setUrlCv(null)
-        setUserSelected(null)
-    }, [Bag])
-
-    // Cargar usuarios cuando cambie la página, el tamaño de página o los filtros
-    useEffect(() => {
-        if (logged.isLoggedIn) loadUsers();
-        else navigate('/login')
-    }, [page, limit, filters, schedule]);
+        setUrlCv(null);
+        setUserSelected(null);
+    }, [Bag]);
 
     // Función para manejar el cambio de página
-    const handlePageChange = (newPage) => {
+    const handlePageChange = useCallback((newPage) => {
         setPage(newPage);
-    };
+    }, []);
 
     // Función para manejar el cambio de tamaño de página
-    const handleLimitChange = (event) => {
-        const newLimit = parseInt(event.target.value);
+    const handleLimitChange = useCallback((event) => {
+        const newLimit = parseInt(event.target.value, 10);
         setLimit(newLimit);
         setPage(1); // Resetear a la primera página al cambiar el tamaño de página
-    };
+    }, []);
 
     // Función para manejar el cambio en los filtros
-    const handleFilterChange = (event) => {
-        setPage(1)
-        setUrlCv(null)
+    const handleFilterChange = useCallback((event) => {
+        setPage(1);
+        setUrlCv(null);
+        setUserSelected(null)
         const { name, value } = event.target;
         setFilters(prevFilters => ({
             ...prevFilters,
             [name]: value
         }));
-    };
-
+    }, []);
 
     // Función para aplicar los filtros
-    const resetFilters = () => {
-        setFilters(prevFilters => ({
+    const resetFilters = useCallback(() => {
+        setUserSelected(null);
+        setFilters({
             name: '',
             email: '',
             phone: '',
@@ -149,55 +144,79 @@ const ManagingResumenes = ({ modal, charge }) => {
             view: '',
             offer: '',
             studies: '',
-        })); // Reiniciar a la primera página al aplicar los filtros
-    };
+            favorite: '',
+            reject: '',
+        });
+    }, []);
 
-    const lookCV = async (id, userData) => {
+    const lookCV = useCallback(async (id, userData) => {
+        charge(true);
 
-        charge(true)
-
-        if (userSelected == userData) {
-            setUrlCv(null)
+        if (userSelected && userSelected._id === userData._id) {
+            setUrlCv(null);
             setUserSelected(null);
-            charge(false)
+            charge(false);
         } else {
-            const token = getToken();
-            const cvData = await getCVs(id, token);
-            if (!cvData.error) {
-                setUrlCv(cvData)
-                setUserSelected(userData);
-                charge(false)
-            } else {
-                charge(false)
-                modal('Error', cvData.message)
+            try {
+                const token = getToken();
+                const cvData = await getCVs(id, token);
+                if (!cvData.error) {
+                    setUrlCv(cvData);
+                    setUserSelected(userData);
+                } else {
+                    modal('Error', cvData.message);
+                }
+            } catch (error) {
+                modal('Error', error.message || 'Ocurrió un error inesperado.');
+            } finally {
+                charge(false);
             }
-
         }
+    }, [userSelected]);
 
-    }
+    const changeUser = useCallback((userModify) => {
+        setUsers(prevUsers => prevUsers.map(user => user._id === userModify._id ? userModify : user));
+        if (userSelected && userSelected._id === userModify._id) {
+            setUserSelected(userModify);
+        }
+    }, [userSelected]);
 
-    const changeUser = (userModify) => {
-        let usersAux = [...users]
-        usersAux.map((x, i, a) => {
-            if (x._id == userModify._id) {
-                a[i] = userModify
-                setUserSelected(userModify)
-                setUsers(usersAux)
-            }
-        })
-    }
-
-    const checkUser = (userInfo) => {
-        if (userInfo.reject != null) return 'tomato'
+    const checkUser = useCallback((userInfo) => {
+        if (userInfo.reject != null) return styles.rejected; // Asegúrate de tener una clase CSS para esto
         if (Bag != null && !!Bag.userCv) {
-            const user = Bag.userCv.find(x => x === userInfo._id)
-            if (user != undefined) {
-                return 'green'
+            const user = Bag.userCv.find(x => x === userInfo._id);
+            if (user !== undefined) {
+                return styles.selected; // Asegúrate de tener una clase CSS para esto
             }
         }
-    }
+        if(logged.user.role=='root' && userInfo.favorite != null) return styles.favoriteRoot;
+        if (userInfo.favorite != null) return styles.favorite;
+        return styles.tableRow; // Clase por defecto
+    }, [Bag]);
 
-
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => {
+            // Filtro por nombre
+            if (debouncedFilters.name && !user.name.toLowerCase().includes(debouncedFilters.name.toLowerCase())) {
+                return false;
+            }
+            // Filtro por email
+            if (debouncedFilters.email && !user.email.toLowerCase().includes(debouncedFilters.email.toLowerCase())) {
+                return false;
+            }
+            // Filtro por trabajos (jobs)
+            if (debouncedFilters.jobs && !user.jobs.includes(debouncedFilters.jobs)) {
+                return false;
+            }
+            // Filtro por provincias
+            if (debouncedFilters.provinces && !user.provinces.includes(debouncedFilters.provinces)) {
+                return false;
+            }
+            // Si pasa todos los filtros, devolver true
+            return true;
+        });
+    }, [users, debouncedFilters]);
+    
 
     return (
         <div className={styles.contenedor}>
@@ -346,7 +365,6 @@ const ManagingResumenes = ({ modal, charge }) => {
 
 
                     <div className={styles.cajaIconosFiltro}>
-
                         <div>
                             <span className={stylesTooltip.tooltip}>
                                 {filters.view == '' && <TbEyeDotted onClick={() => setFilters(prevFilters => ({ ...prevFilters, view: '1' }))} />}
@@ -393,10 +411,9 @@ const ManagingResumenes = ({ modal, charge }) => {
                     <div className={styles.tableCell}></div>
                     <div className={styles.tableCell}>Fecha</div>
                 </div>
-                {users.map(user => (
+                {filteredUsers.map(user => (
                     <div key={user._id} >
-
-                        <div className={`${styles.tableRow} ${checkUser(user)}`} onClick={() => lookCV(user._id, user)}>
+                        <div className={checkUser(user)} onClick={() => lookCV(user._id, user)}>
                             <div className={`${styles.tableCell} ${styles.capitalize}`}>{user.name}</div>
                             <div className={styles.tableCell}>{user.email}</div>
                             <div className={styles.tableCell}>{user.phone}</div>
@@ -426,7 +443,8 @@ const ManagingResumenes = ({ modal, charge }) => {
                                 urlpdf={urlCv}
                                 user={userSelected}
                                 changeUser={(x) => changeUser(x)}
-                                modal={(title, message) => modal(title, message)}>
+                                modal={(title, message) => modal(title, message)}
+                                >
                             </CvPanel>
                         }
                     </div>

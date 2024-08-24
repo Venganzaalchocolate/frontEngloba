@@ -32,6 +32,7 @@ const BagCreate = ({offer=false, style=null}) => {
             const response = await createBag(auxData, token)
             
             if (!response.error) {
+                
                 changeBag(response)
                 setView(false)
                 setViewCreate(false)
@@ -69,6 +70,7 @@ const BagCreate = ({offer=false, style=null}) => {
     const selectedBag = () => {
         const bagSelectedData = options.filter((x) => x._id == bagselected)[0]
         if (bagselected != null && bagSelectedData != null) {
+        
             setOptions(null)
             setOptionAction(null)
             changeBag(bagSelectedData)
@@ -83,6 +85,7 @@ const BagCreate = ({offer=false, style=null}) => {
         setDispositiveSelected(null)
         setOptionAction(null)
         setConfirmDeactivate(null)
+        
     }
 
     const closeProcess = () => {
@@ -109,11 +112,11 @@ const BagCreate = ({offer=false, style=null}) => {
         }
     }
 
-
+    
     if (Bag != null) {
         return <div className={styles.botonesBag}>
             <button className={`${styles.botonDestacado} ${styles.tomato}`} onClick={() => closeProcess()}>{(!offer)?'CERRAR PROCESO':`Quitar ${Bag.name}`}</button>
-            {!schedule && !!Bag.userCv && !offer &&<button className={`${styles.botonDestacado}`} onClick={() => scheduleInterview()}>COMENZAR ENTREVISTAS</button>}
+            {!schedule && !!Bag.userCv && Bag.userCv.length>0 && !offer &&<button className={`${styles.botonDestacado}`} onClick={() => scheduleInterview()}>COMENZAR ENTREVISTAS</button>}
         </div>
 
     } else {

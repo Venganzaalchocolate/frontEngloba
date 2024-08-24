@@ -105,6 +105,7 @@ const ManagingResumenes = ({ modal, charge }) => {
     useEffect(() => {
         setUrlCv(null);
         setUserSelected(null);
+        setPage(1);
     }, [Bag]);
 
     // Función para manejar el cambio de página

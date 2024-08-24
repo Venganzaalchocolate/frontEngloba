@@ -227,7 +227,7 @@
 
 #tituloProcesoActivo{
     text-align: center;
-    font-size: 30pt;
+    font-size: 20pt;
     background-color: var(--color-crema);
     color: var(--color-morado);
     padding: 1rem;

@@ -108,18 +108,18 @@ const ManagingResumenes = ({ modal, charge }) => {
         setPage(1);
     }, [Bag]);
 
-    const deleteUser=async ()=>{
-        if(userSelected._id){
-            const token=getToken()
-            const responseDelete = await deleteUserCv(token,{_id:userSelected._id});
-            if(!responseDelete.error){
-              modal('Eliminado', 'Usuario eliminado con Éxito')  
-              const userAux=users.filter((x)=>x._id!=userSelected._id)
-              setUserSelected(null)
-              setUsers(userAux)
-            } 
-            if(responseDelete.error) modal('Eliminado', 'Usuario no se ha podido eliminar')
-            
+    const deleteUser = async () => {
+        if (userSelected._id) {
+            const token = getToken()
+            const responseDelete = await deleteUserCv(token, { _id: userSelected._id });
+            if (!responseDelete.error) {
+                modal('Eliminado', 'Usuario eliminado con Éxito')
+                const userAux = users.filter((x) => x._id != userSelected._id)
+                setUserSelected(null)
+                setUsers(userAux)
+            }
+            if (responseDelete.error) modal('Eliminado', 'Usuario no se ha podido eliminar')
+
         }
     }
 
@@ -232,7 +232,6 @@ const ManagingResumenes = ({ modal, charge }) => {
             return true;
         });
     }, [users, debouncedFilters]);
-    
 
     return (
         <div className={styles.contenedor}>
@@ -257,6 +256,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                 </div>
             </div>
             {Bag != null && !schedule && <h2 id={styles.tituloProcesoActivo}>Selección activa: {Bag.name}</h2>}
+            {Bag != null && !schedule && <p>Nº de CV añadidos al proceso:{(!!Bag.userCv) ? Bag.userCv.length : '0'}</p>}
             {Bag != null && !!schedule && <h2 id={styles.tituloProcesoActivo}>Entrevistas: {Bag.name}</h2>}
             {!schedule &&
                 <div className={styles.contenedorfiltro}>
@@ -290,92 +290,92 @@ const ManagingResumenes = ({ modal, charge }) => {
                                     })}
                                 </select>
                             </div>
-                            <div className={styles.contenedorSelectionMultiple}>
+
+                            <div>
+                                <label htmlFor="jobs">Puesto de interés</label>
+                                <select id='jobs' name='jobs' onChange={handleFilterChange} value={filters.jobs}>
+                                    <option value={''}>Selecciona una opción</option>
+                                    {enums.jobs.map((x) => {
+                                        if (x.subcategories != undefined && x.subcategories.length > 0) {
+
+                                            return <optgroup label={x.name}>
+                                                {x.subcategories != undefined && x.subcategories.map((y) => {
+                                                    return <option value={y.name}>{y.name}</option>
+                                                })}
+                                            </optgroup>
+                                        }
+                                        else {
+                                            return <option value={x.name}>{x.name}</option>
+                                        }
+
+
+                                    })}
+                                </select>
                                 <div>
-                                    <label htmlFor="jobs">Puesto de interés</label>
-                                    <select id='jobs' name='jobs' onChange={handleFilterChange} value={filters.jobs}>
-                                        <option value={''}>Selecciona una opción</option>
-                                        {enums.jobs.map((x) => {
-                                            if (x.subcategories != undefined && x.subcategories.length > 0) {
-
-                                                return <optgroup label={x.name}>
-                                                    {x.subcategories != undefined && x.subcategories.map((y) => {
-                                                        return <option value={y.name}>{y.name}</option>
-                                                    })}
-                                                </optgroup>
-                                            }
-                                            else {
-                                                return <option value={x.name}>{x.name}</option>
-                                            }
-
-
-                                        })}
-                                    </select>
-                                    <div>
-
-                                    </div>
 
                                 </div>
 
                             </div>
 
-                            <div className={styles.contenedorSelectionMultiple}>
+
+
+
+                            <div>
+                                <label htmlFor="studies">Estudios realizados</label>
+                                <select id='studies' name='studies' onChange={handleFilterChange} value={filters.studies}>
+                                    <option value={''}>Selecciona una opción</option>
+                                    {enums.studies.map((x) => {
+                                        if (x.subcategories != undefined && x.subcategories.length > 0) {
+
+                                            return <optgroup label={x.name}>
+                                                {x.subcategories != undefined && x.subcategories.map((y) => {
+                                                    return <option value={y.name}>{y.name}</option>
+                                                })}
+                                            </optgroup>
+                                        }
+                                        else {
+                                            return <option value={x.name}>{x.name}</option>
+                                        }
+
+
+                                    })}
+                                </select>
                                 <div>
-                                    <label htmlFor="studies">Estudios realizados</label>
-                                    <select id='studies' name='studies' onChange={handleFilterChange} value={filters.studies}>
-                                        <option value={''}>Selecciona una opción</option>
-                                        {enums.studies.map((x) => {
-                                            if (x.subcategories != undefined && x.subcategories.length > 0) {
-
-                                                return <optgroup label={x.name}>
-                                                    {x.subcategories != undefined && x.subcategories.map((y) => {
-                                                        return <option value={y.name}>{y.name}</option>
-                                                    })}
-                                                </optgroup>
-                                            }
-                                            else {
-                                                return <option value={x.name}>{x.name}</option>
-                                            }
-
-
-                                        })}
-                                    </select>
-                                    <div>
-
-                                    </div>
 
                                 </div>
 
                             </div>
 
-                            <div className={styles.contenedorSelectionMultiple}>
+
+
+
+                            <div>
+                                <label htmlFor="provinces">Provincias</label>
+                                <select id='provinces' name='provinces' onChange={handleFilterChange} value={filters.provinces}>
+                                    <option value={''}>Selecciona una opción</option>
+                                    {enums.provinces.map((x) => {
+                                        if (x.subcategories != undefined && x.subcategories.length > 0) {
+
+                                            return <optgroup label={x.name}>
+                                                {x.subcategories != undefined && x.subcategories.map((y) => {
+                                                    return <option value={y.name}>{y.name}</option>
+                                                })}
+                                            </optgroup>
+                                        }
+                                        else {
+                                            return <option value={x.name}>{x.name}</option>
+                                        }
+
+                                    })}
+
+                                </select>
                                 <div>
-                                    <label htmlFor="provinces">Provincias</label>
-                                    <select id='provinces' name='provinces' onChange={handleFilterChange} value={filters.provinces}>
-                                        <option value={''}>Selecciona una opción</option>
-                                        {enums.provinces.map((x) => {
-                                            if (x.subcategories != undefined && x.subcategories.length > 0) {
-
-                                                return <optgroup label={x.name}>
-                                                    {x.subcategories != undefined && x.subcategories.map((y) => {
-                                                        return <option value={y.name}>{y.name}</option>
-                                                    })}
-                                                </optgroup>
-                                            }
-                                            else {
-                                                return <option value={x.name}>{x.name}</option>
-                                            }
-
-                                        })}
-
-                                    </select>
-                                    <div>
-
-                                    </div>
 
                                 </div>
 
                             </div>
+
+
                         </>
                     }
 
@@ -460,8 +460,8 @@ const ManagingResumenes = ({ modal, charge }) => {
                                 user={userSelected}
                                 changeUser={(x) => changeUser(x)}
                                 modal={(title, message) => modal(title, message)}
-                                deleteUser={()=>deleteUser()}
-                                >
+                                deleteUser={() => deleteUser()}
+                            >
                             </CvPanel>
                         }
                     </div>

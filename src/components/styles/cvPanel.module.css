@@ -1,28 +1,28 @@
-
-.contenedorCV{
+.contenedorCV {
     display: flex;
+    flex-direction: column;
     color: white;
     padding: 1rem 0rem;
     gap: 1rem;
-    flex-direction: column;
 }
 
-.contenedorCV>div{
+.contenedorCV > div {
     display: flex;
     flex-direction: column;
 }
 
-
-.contenedorCV h2, .contenedorCV h3, .contenedorCV h4{
+.contenedorCV h2,
+.contenedorCV h3,
+.contenedorCV h4 {
     color: var(--color-crema);
     text-transform: uppercase;
 }
 
-.contenedorCV .iconos{
-    padding: 1rem 0;
+.contenedorCV .iconos {
     display: flex;
-    gap: 1rem;
     justify-content: center;
+    padding: 1rem 0;
+    gap: 1rem;
 }
 
 .iconos svg {
@@ -31,73 +31,72 @@
     height: 1.5rem;
 }
 
-.iconos svg:hover{
+.iconos svg:hover {
     color: var(--color-chicle);
 }
 
-.boxComments{
-    border-bottom: 5px solid var(--color-malva);
-    border-top: 5px solid var(--color-malva);
+.boxComments {
+    /* border-top: 5px solid var(--color-malva);
+    border-bottom: 5px solid var(--color-malva); */
     padding: 0.5rem 0;
-
+    margin-bottom: 1rem;
 }
 
-.contenedorCV .contentComment{
+.contentComment{
+    margin: 1rem 0;
+}
+
+.contenedorCV .contentComment {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     color: var(--color-morado);
     background-color: var(--color-crema);
     padding: 1rem;
     border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    
 }
 
-
-
-.contentComment>h4{
+.contentComment > h4 {
     color: var(--color-morado);
 }
 
-.contentComment textarea{
+.contentComment textarea {
     display: flex;
+    flex: 1;
     border: none;
     padding: 1rem;
-    flex: 1;
-
 }
 
-.contenedorCV .about{
+.contenedorCV .about {
     padding: 1rem 0;
-   
 }
 
-.contenedorCV>div:nth-child(2){
+.contenedorCV > div:nth-child(2) {
     display: flex;
     flex: 1;
     min-height: 80vh;
 }
 
-.contenedorCV embed{
+.contenedorCV embed {
     display: flex;
     flex: 1 100%;
 }
 
-.contenedorEditar{
+.contenedorEditar {
     border-top: 5px solid var(--color-malva);
     padding: 1rem 0;
 }
 
-.cerrar{
+.cerrar {
     display: flex;
 }
 
-.cerrar>button{
+.cerrar > button {
     margin-left: 1rem;
     font-size: 10pt;
 }
 
-.deletePanel{
+.deletePanel {
     background-color: #ffe6e6;
     border: 1px solid #ffcccc;
     padding: 10px;
@@ -106,24 +105,24 @@
     color: #d9534f;
 }
 
-.deletePanel>p{
+.deletePanel > p {
     display: flex;
     justify-content: center;
 }
 
-.deletePanel>button{
+.deletePanel > button {
     margin: 0.3rem 0;
     flex: 0 100%;
     background-color: tomato;
     color: #fff;
 }
 
-.deletePanel>button:hover{
+.deletePanel > button:hover {
     background-color: var(--color-malva);
     color: var(--color-morado);
 }
 
-.commentBox{
+.commentBox {
     background-color: white;
     color: var(--color-morado);
     border-radius: 1rem;
@@ -131,15 +130,16 @@
     margin: 0.5rem 0;
 }
 
-/*
-*/
+.boxComments svg:hover{
+    color: var(--color-malva);
+}
 
 @media (min-width: 600px) {
-    .contenedorCV{
+    .contenedorCV {
         flex-direction: row;
     }
 
-    .contenedorCV .about{
+    .contenedorCV .about, .boxComments{
         max-width: 20rem;
     }
 }

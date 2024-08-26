@@ -26,7 +26,7 @@ const Header = () => {
     return (
         <header className={styles.header}>
             <div className={styles.contenedorLogotipo}>
-                <img src="/graphic/logotipo_blanco.png" alt="logotipo Engloba"/>
+                    <img src="/graphic/logotipo_blanco.png" alt="logotipo Engloba" onClick={()=>changeMenuWorker(null)}/>
             </div>
             <div  className={styles.contenedorIconos}>
                 <button onClick={()=>logout()}>Cerrar Sesión</button>

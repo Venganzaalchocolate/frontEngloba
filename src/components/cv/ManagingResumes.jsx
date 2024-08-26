@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { getCVs, getData, getusercvs } from "../../lib/data";
+import { deleteUserCv, getCVs, getData, getusercvs } from "../../lib/data";
 import styles from '../styles/managingResumenes.module.css';
 import stylesTooltip from '../styles/tooltip.module.css';
 import { FaEye, FaCheckCircle, FaTimesCircle, FaRegEyeSlash } from "react-icons/fa";
@@ -108,6 +108,21 @@ const ManagingResumenes = ({ modal, charge }) => {
         setPage(1);
     }, [Bag]);
 
+    const deleteUser=async ()=>{
+        if(userSelected._id){
+            const token=getToken()
+            const responseDelete = await deleteUserCv(token,{_id:userSelected._id});
+            if(!responseDelete.error){
+              modal('Eliminado', 'Usuario eliminado con Éxito')  
+              const userAux=users.filter((x)=>x._id!=userSelected._id)
+              setUserSelected(null)
+              setUsers(userAux)
+            } 
+            if(responseDelete.error) modal('Eliminado', 'Usuario no se ha podido eliminar')
+            
+        }
+    }
+
     // Función para manejar el cambio de página
     const handlePageChange = useCallback((newPage) => {
         setPage(newPage);
@@ -190,7 +205,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                 return styles.selected; // Asegúrate de tener una clase CSS para esto
             }
         }
-        if(logged.user.role=='root' && userInfo.favorite != null) return styles.favoriteRoot;
+        // if(logged.user.role=='root' && userInfo.favorite != null) return styles.favoriteRoot;
         if (userInfo.favorite != null) return styles.favorite;
         return styles.tableRow; // Clase por defecto
     }, [Bag]);
@@ -445,6 +460,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                                 user={userSelected}
                                 changeUser={(x) => changeUser(x)}
                                 modal={(title, message) => modal(title, message)}
+                                deleteUser={()=>deleteUser()}
                                 >
                             </CvPanel>
                         }

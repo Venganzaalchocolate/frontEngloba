@@ -9,7 +9,7 @@ import { FaRegEyeSlash } from "react-icons/fa6";
 import { GoStar } from "react-icons/go";
 import { GoStarFill } from "react-icons/go";
 import { BsExclamationOctagonFill } from "react-icons/bs";
-import { modifyUser } from "../../lib/data";
+import { deleteUserCv, modifyUser } from "../../lib/data";
 import { BsExclamationOctagon } from "react-icons/bs";
 import { formatDatetime } from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
@@ -18,15 +18,17 @@ import { useBag } from "../../hooks/useBag.jsx";
 import VisualizadorPDF from "./GoogleView.jsx";
 import { FaRegEdit  } from "react-icons/fa";
 import FormJob from "../globals/FormJob.jsx";
+import { getToken } from '../../lib/serviceToken.js';
 
 
 
-const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
+const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser}) => {
     const {logged} = useLogin()
     const {Bag, schedule}= useBag()
     const [typeComment, setTypeComment] = useState(null)
     const [textComment, setTextComment] = useState('')
     const [panelEditUser, setPanelEditUser]=useState(false)
+    const [deletePanel, setDeletePanel]=useState(false)
 
 
     const saveComment = async () => {
@@ -49,6 +51,10 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
             }
             
         }
+    }
+
+    const deleteCv=async ()=>{
+        deleteUser()
     }
 
     const changeStatus=async (typeStatus)=>{
@@ -75,6 +81,12 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
         setPanelEditUser(!panelEditUser)
     }
 
+    const deleteCvPanel=(state)=>{
+        setDeletePanel(state)
+    }
+
+
+
     if(user){
         return (
 
@@ -86,13 +98,13 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge}) => {
                         {(user.reject!=null) ? <BsExclamationOctagonFill color="tomato" onClick={()=>changeStatus('reject')}/>: <BsExclamationOctagon  onClick={()=>changeStatus('reject')}/>}
                         <FaRegEdit  onClick={()=>viewPanelEditUser()}/>
                         {Bag!=null && !schedule && <BagPanel userSelected={user}/>}
-                        {logged.user.role=='root' && <button className='tomato'>Eliminar CV</button>}
+                        {logged.user.role=='root' && <button className='tomato' onClick={()=>deleteCvPanel(true)}>Eliminar CV</button>}
                     </div>
-                    {/* <div>
+                    {deletePanel && <div className={styles.deletePanel}>
                         <p>¿Estas seguro? No seas cafre !!!!</p>
-                        <button>Si, lo he meditado toda la noche</button>
-                        <button>No, hoy no me he tomado el café</button>
-                    </div> */}
+                        <button onClick={()=>deleteCv(user)}>Si, lo he meditado toda la noche</button>
+                        <button onClick={()=>deleteCvPanel(false)}>No, hoy no me he tomado el café</button>
+                    </div> }
                     {!!panelEditUser && <div className={styles.contenedorEditar}>
                         <h2 className={styles.cerrar}>Editar Información <button className="tomato" onClick={()=>viewPanelEditUser()}>Cerrar</button></h2> 
                         <FormJob 

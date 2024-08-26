@@ -58,6 +58,8 @@ export const getCVs = async (id, token) => {
     return { url: pdfUrl };
 };
 
+export const deleteUserCv= (token, datos) => fetchData('/deleteusercv', 'DELETE', token, datos);
+
 export const modifyUser = (dataUser) => fetchData('/modifyusercv', 'PUT', null, dataUser);
 
 export const createEmployer=(data, token)=>fetchData('/createemployer', 'POST',token, data);

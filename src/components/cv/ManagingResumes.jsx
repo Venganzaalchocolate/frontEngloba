@@ -60,7 +60,6 @@ const ManagingResumenes = ({ modal, charge }) => {
         try {
             let data = null;
             const token = getToken();
-
             if (Bag != null && !!schedule) {
                 const ids = { users: Bag.userCv };
                 data = await getusercvs(page, limit, ids, token);
@@ -210,28 +209,6 @@ const ManagingResumenes = ({ modal, charge }) => {
         return styles.tableRow; // Clase por defecto
     }, [Bag]);
 
-    const filteredUsers = useMemo(() => {
-        return users.filter(user => {
-            // Filtro por nombre
-            if (debouncedFilters.name && !user.name.toLowerCase().includes(debouncedFilters.name.toLowerCase())) {
-                return false;
-            }
-            // Filtro por email
-            if (debouncedFilters.email && !user.email.toLowerCase().includes(debouncedFilters.email.toLowerCase())) {
-                return false;
-            }
-            // Filtro por trabajos (jobs)
-            if (debouncedFilters.jobs && !user.jobs.includes(debouncedFilters.jobs)) {
-                return false;
-            }
-            // Filtro por provincias
-            if (debouncedFilters.provinces && !user.provinces.includes(debouncedFilters.provinces)) {
-                return false;
-            }
-            // Si pasa todos los filtros, devolver true
-            return true;
-        });
-    }, [users, debouncedFilters]);
 
     return (
         <div className={styles.contenedor}>
@@ -427,7 +404,7 @@ const ManagingResumenes = ({ modal, charge }) => {
                     <div className={styles.tableCell}></div>
                     <div className={styles.tableCell}>Fecha</div>
                 </div>
-                {filteredUsers.map(user => (
+                {users.map(user => (
                     <div key={user._id} >
                         <div className={checkUser(user)} onClick={() => lookCV(user._id, user)}>
                             <div className={`${styles.tableCell} ${styles.capitalize}`}>{user.name}</div>

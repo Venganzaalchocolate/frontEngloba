@@ -16,9 +16,11 @@ import { useLogin } from '../../hooks/useLogin';
 import BagPanel from "./BagPanel";
 import { useBag } from "../../hooks/useBag.jsx";
 import VisualizadorPDF from "./GoogleView.jsx";
-import { FaRegEdit  } from "react-icons/fa";
+import { FaRegEdit, FaCalendarAlt   } from "react-icons/fa";
 import FormJob from "../globals/FormJob.jsx";
 import { getToken } from '../../lib/serviceToken.js';
+import { BsBookmarkPlusFill } from "react-icons/bs";
+import { PiPersonFill } from "react-icons/pi";
 
 
 
@@ -36,7 +38,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser}) => {
             const textAux = {
                 _id:user._id,
                 id:logged.user._id,
-                nameUserComment:logged.user.name,
+                nameUserComment:logged.user.firstName,
                 [typeComment]: textComment,
                 
             }
@@ -85,8 +87,6 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser}) => {
         setDeletePanel(state)
     }
 
-
-
     if(user){
         return (
 
@@ -132,10 +132,27 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser}) => {
                                     <button onClick={() => setTypeComment(null)}>Cancelar</button>
                                 </div>}
                         </div>
-                       
                     </div>
-                    
                     }
+                    <div className={styles.boxComments}>
+                        <h2>Notas <BsBookmarkPlusFill onClick={() => handleChangeType('notes')}></BsBookmarkPlusFill></h2>
+                        <div>
+                            {typeComment != null &&
+                                <div className={styles.contentComment}>
+                                    <h4>Añadir nota</h4>
+                                    <textarea name="comentarios" id="comentarios" value={textComment} onChange={(e) => handleChange(e)}></textarea>
+                                    <button onClick={() => saveComment()}>Guardar Nota</button>
+                                    <button onClick={() => setTypeComment(null)}>Cancelar</button>
+                                </div>}
+                                {!user.notes && <p>No hay notas todavía</p>}
+                                {!!user.notes && user.notes.map((x)=>{ return <div key={`notes${x._id}`} className={styles.commentBox}>
+                                    <p><PiPersonFill /> {x.nameUser}</p>
+                                    <p><FaCalendarAlt/> {formatDatetime(x.date)}</p>
+                                    <p>{x.message}</p>
+                                </div>
+                                })}
+                        </div>
+                    </div>
                     
                     {!!user.about &&
                             <div className={styles.about}>
@@ -148,34 +165,34 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser}) => {
                     {!!user.commentsPhone &&
                             <div className={styles.about}>
                                 <h3>Entrevistas Teléfonicas</h3>
-                                {user.commentsPhone.map((x)=> <div key={`commentPhone${x._id}`}>
-                                    <p>{x.nameUser}</p>
-                                    <p>{formatDatetime(x.date)}</p>
+                                {user.commentsPhone.map((x)=>{ return <div key={`commentsPhone${x._id}`} className={styles.commentBox}>
+                                    <p><PiPersonFill /> {x.nameUser}</p>
+                                    <p><FaCalendarAlt/> {formatDatetime(x.date)}</p>
                                     <p>{x.message}</p>
                                 </div>
-                                )}
+                                })}
                             </div>
                     }
                     {!!user.commentsVideo &&
                             <div className={styles.about}>
                                 <h3>Entrevistas Videollamada</h3>
-                                {user.commentsVideo.map((x)=> <div key={`commentVideo${x._id}`}>
-                                    <p>{x.nameUser}</p>
-                                    <p>{formatDatetime(x.date)}</p>
+                                {user.commentsVideo.map((x)=>{ return <div key={`commentsVideo${x._id}`} className={styles.commentBox}>
+                                    <p><PiPersonFill /> {x.nameUser}</p>
+                                    <p><FaCalendarAlt/> {formatDatetime(x.date)}</p>
                                     <p>{x.message}</p>
                                 </div>
-                                )}
+                                })}
                             </div>
                     }
                     {!!user.commentsInperson &&
                             <div className={styles.about}>
                                 <h3>Entrevistas en Persona</h3>
-                                {user.commentsInperson.map((x)=> <div key={`commentAbout${x._id}`}>
-                                    <p>{x.nameUser}</p>
-                                    <p>{formatDatetime(x.date)}</p>
+                                {user.commentsInperson.map((x)=>{ return <div key={`commentsInperson${x._id}`} className={styles.commentBox}>
+                                    <p><PiPersonFill /> {x.nameUser}</p>
+                                    <p><FaCalendarAlt/> {formatDatetime(x.date)}</p>
                                     <p>{x.message}</p>
                                 </div>
-                                )}
+                                })}
                             </div>
                     }
                                 

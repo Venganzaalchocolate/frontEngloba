@@ -123,6 +123,14 @@
     color: var(--color-morado);
 }
 
+.commentBox{
+    background-color: white;
+    color: var(--color-morado);
+    border-radius: 1rem;
+    padding: 1rem;
+    margin: 0.5rem 0;
+}
+
 /*
 */
 

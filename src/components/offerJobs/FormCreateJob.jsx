@@ -10,6 +10,7 @@ import BagCreate from '../cv/BagCreate';
 import { useBag } from "../../hooks/useBag.jsx";
 
 
+
 const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOffers=null }) => {
     
     const { logged } = useLogin()
@@ -47,6 +48,12 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
         bag:null
     })
 
+    useEffect(()=>{
+        let auxErrores = { ...errores }
+        auxErrores['mensajeError'] = null
+        if(Bag!=null || datosOferta!=null) auxErrores['bag']=null
+        setError(auxErrores)
+    }, [Bag])
 
 
     const handleChange = (e) => {
@@ -54,6 +61,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
         let auxDatos = { ...datos }
         auxErrores['mensajeError'] = null
         let valido = true;
+        if(Bag!=null || datosOferta!=null) auxErrores['bag']=null
         if(e.target.name=='program') auxDatos['dispositive']=null
         if (e.target.name == 'job_title') valido = validText(e.target.value, 3, 100)
         if (e.target.name == 'location') valido = validText(e.target.value, 3, 100)
@@ -62,7 +70,6 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
         if (e.target.name == 'conditions') valido = validText(e.target.value, 0, 1000, true)
         auxDatos[e.target.name] = e.target.value
         setDatos(auxDatos)
-
         if (!valido) {
             auxErrores[e.target.name] = textErrors(e.target.name)
         } else {
@@ -83,7 +90,8 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
             }
         }
 
-        if(noEditar && Bag==null) {
+        
+        if(Bag==null && datosOferta==null) {
             auxErrores['bag']=textErrors('vacio')
             setError(auxErrores)
             valido = false;
@@ -158,7 +166,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
                         <p>{datosOferta.bag.dispositive.name}</p>
                     </div>
                 }
-
+                {errores.bag && <span className='errorSpan'>{errores.bag}</span>}
                 
                 {!!enums &&
                     <>
@@ -251,7 +259,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
                     {(datosOferta == null) 
                         ? <button onClick={() => send()}>Crear Oferta</button>
                         : (noEditar == false) 
-                            ?<button onClick={() => setnoEditar(true)}>Cancelar</button>
+                            ?<button onClick={() => {setnoEditar(true)}}>Cancelar</button>
                             : null
                     }
                     {datosOferta == null

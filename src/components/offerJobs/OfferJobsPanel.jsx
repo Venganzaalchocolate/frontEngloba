@@ -5,12 +5,14 @@ import ViewJobs from './ViewJobs';
 import { getData, getOfferJobs} from '../../lib/data';
 import { FaSquarePlus } from "react-icons/fa6";
 import { getToken } from '../../lib/serviceToken';
+import { useBag } from "../../hooks/useBag.jsx";
 
 const OfferJobsPanel =({modal, charge})=>{
     const [action, setAction]=useState(null)
     const [enums, setEnums] = useState(null)
     const [offerSelected, setOfferSelected]=useState(null)
     const [offers, setOffers]=useState(null)
+    const { Bag, changeBag } = useBag()
 
     useEffect(()=>{
         charge(true)
@@ -64,6 +66,7 @@ const OfferJobsPanel =({modal, charge})=>{
     const back=()=>{
         setOfferSelected(null)
         setAction(null)
+        changeBag(null)
     }
 
 

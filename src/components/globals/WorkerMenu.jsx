@@ -9,8 +9,6 @@ import OfferJobsPanel from '../offerJobs/OfferJobsPanel';
 import { useLogin } from '../../hooks/useLogin';
 import ManagingPrograms from '../programs/ManagingPrograms';
 import ManagingEmployer from '../employer/ManagingEmployer';
-import { useBag } from '../../hooks/useBag';
-import { useEffect } from 'react';
 import PanelRoot from '../root/panelRoot';
 
 const WorkerMenu = ({modal, charge}) => {
@@ -44,6 +42,7 @@ const WorkerMenu = ({modal, charge}) => {
                 {logged.user.role!='root' &&
                 <>
                     <button onClick={()=>changeMenuWorker('cv')}> GESTIONAR CURRICULUMS</button>
+                    <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
                 </>
                 
                 }

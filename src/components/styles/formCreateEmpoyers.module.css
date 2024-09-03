@@ -1,0 +1,155 @@
+.ventana {
+    display: flex;
+    flex: 1 100%;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    min-width: 100vw;
+    min-height: 100vh;
+    background-color: rgba(79, 82, 161, 0.643);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    overflow-x: hidden;
+    
+}
+
+.contenedor {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-morado);
+    flex-direction: column;
+    padding: 2rem;
+    gap: 2rem;
+    border-radius: 1rem;
+    color: var(--color-malva);
+    max-width: 90vw; /* Limita el ancho del contenedor para pantallas más pequeñas */
+    max-height: 90vh; /* Limita la altura del contenedor */
+}
+
+.contenedor h2 {
+    text-transform: uppercase;
+    border-bottom: 4px solid var(--color-malva);
+    width: 100%;
+}
+
+.contenedor p {
+    color: var(--color-morado);
+}
+
+.contenedor > .contenedorForm {
+    overflow-y: auto;
+    > div {
+        display: flex;
+        flex-wrap: wrap;
+        flex: 1 100%;
+        > input,
+        > label,
+        > span,
+        > select,
+        > textarea {
+            flex: 1 100%;
+        }
+    }
+}
+
+.botones {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* Añade espacio entre los botones */
+}
+
+.botones button,
+.botones > a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    padding: 0.5rem 1rem; /* Añade padding para hacer los botones más grandes */
+}
+
+.contenedor > .contenedorForm > div,
+.contenedor > .contenedorForm > input,
+.contenedor > .contenedorForm > select,
+.contenedor > .contenedorForm > textarea {
+    box-sizing: border-box; /* Asegura que el padding y el border se incluyan en el tamaño total */
+}
+
+#formButton{
+    display: flex;
+    gap: 1rem;
+}
+@media (min-width: 1200px) {
+    .contenedor {
+        margin: 2rem 0;
+    }
+
+
+    .contenedor>.contenedorForm{
+        > h2#formtitle {
+            grid-area: title;
+        }
+        > #formFirstName {
+            grid-area: firstName;
+        }
+        > #formLastName {
+            grid-area: lastName;
+        }
+        > #formDni {
+            grid-area: dni;
+        }
+        > #formEmail {
+            grid-area: email;
+        }
+        > #formPhone {
+            grid-area: phone;
+        }
+        > #formCV {
+            grid-area: cv;
+        }
+        > #formSex {
+            grid-area: sex;
+        }
+        > #form145 {
+            grid-area: M145;
+        }
+        > #formFire {
+            grid-area: fire;
+        }
+        > #formContract {
+            grid-area: contract;
+        }
+        > #formHistory {
+            grid-area: history;
+        }
+        > #formProtection {
+            grid-area: protection;
+        }
+        > #formEthic {
+            grid-area: ethic;
+        }
+        > #formDniFile {
+            grid-area: dnifile;
+        }
+        > #formButton {
+            grid-area: button;
+        }
+    }
+    .contenedor > .contenedorForm {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr; /* Define tres columnas de igual ancho */
+        grid-template-rows: 1fr;
+        gap: 1rem;
+        grid-template-areas: 
+            "title title title"
+            "firstName lastName phone"
+            "dni email email"
+            "cv sex dnifile"
+            "M145 contract fire"
+            "protection ethic history"
+            "button button button";    
+    }
+}

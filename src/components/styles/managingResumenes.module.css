@@ -29,35 +29,6 @@
     gap: 0.5rem;
 }
 
-.contenedorfiltro{
-    display: flex;
-    flex-wrap: wrap;
-    background-color: var(--color-malva);
-    padding: 1rem;
-    border-radius: 1rem;
-    gap: 1rem;
-    align-items: end;
-}
-
-.contenedorfiltro>h3{
-    flex: 1 100%;
-}
-
-.contenedorfiltro button{
-    color: var(--color-yema);
-    background-color: var(--color-morado);
-}
-
-.contenedorfiltro button:hover{
-    background-color: var(--color-yema);
-    color: var(--color-morado);
-}
-
-.contenedorfiltro>div{
-    display: flex;
-    flex-direction: column;
-    flex: 1 8rem;
-}
 
 
 .tableContainer {
@@ -239,6 +210,37 @@
 
 .capitalize{
     text-transform: capitalize;
+}
+
+
+.contenedorfiltro{
+    display: flex;
+    flex-wrap: wrap;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    border-radius: 1rem;
+    gap: 1rem;
+    align-items: end;
+}
+
+.contenedorfiltro>h3{
+    flex: 1 100%;
+}
+
+.contenedorfiltro button{
+    color: var(--color-yema);
+    background-color: var(--color-morado);
+}
+
+.contenedorfiltro button:hover{
+    background-color: var(--color-yema);
+    color: var(--color-morado);
+}
+
+.contenedorfiltro>div{
+    display: flex;
+    flex-direction: column;
+    flex: 1 8rem;
 }
 
 .contenedorfiltro > div.cajaIconosFiltro{

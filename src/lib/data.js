@@ -42,6 +42,9 @@ export const tokenUser = async (token) => {
 
 export const getData = () => fetchData('/infodata', 'GET');
 
+export const getDataEmployer = () => fetchData('/infodataemployer', 'GET');
+
+
 export const changeData = (token, datos) => fetchData('/changedata', 'PUT', token, datos);
 
 export const deleteData = (token, datos) => fetchData('/deletedata', 'DELETE', token, datos);
@@ -62,13 +65,47 @@ export const deleteUserCv= (token, datos) => fetchData('/deleteusercv', 'DELETE'
 
 export const modifyUser = (dataUser) => fetchData('/modifyusercv', 'PUT', null, dataUser);
 
-export const createEmployer=(data, token)=>fetchData('/createemployer', 'POST',token, data);
+export const createEmployer=async (data, token)=>{
+    const formData = new FormData();
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+            formData.append(key, data[key]);
+        }
+    }
+
+    // Configuramos el fetch manualmente porque necesitamos modificar los encabezados y no podemos modificar fetchData
+    const endpoint = '/createemployer';
+    const method = 'POST';
+    const url = `${urlApi}${endpoint}`;
+    
+    const options = {
+        method,
+        headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: formData // Se envía el FormData directamente
+    };
+
+    const response = await fetch(url, options);
+    const result = await response.json();
+    
+    if (result.error) return result;
+    return result.data;
+
+}
 
 export const getEmployers=(token)=>fetchData('/users', 'GET', token)
 
 export const loginUser = (email, password) => fetchData('/login', 'POST', null, { email, password });
 
 export const getusercvs = (page, limit, filters, token) => fetchData('/usercvs', 'POST', token, { page, limit, ...filters });
+
+export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
+
+
+// BORRAR
+export const createUserTest = () => fetchData('/createusertest', 'GET');
+//
 
 export const sendFormCreateOffer = (datos, token) => fetchData('/createofferjob', 'POST', token, datos);
 

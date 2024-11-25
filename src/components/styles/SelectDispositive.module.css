@@ -1,0 +1,6 @@
+.contenedor{
+    display: flex;
+    >div{
+        display: flex;
+    }
+}

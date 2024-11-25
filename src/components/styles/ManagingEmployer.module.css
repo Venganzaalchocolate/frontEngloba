@@ -1,67 +1,122 @@
-.contenedor{
+.contenedor {
     display: flex;
     flex-direction: row;
-    flex: 1 100% ;
+    flex: 1 100%;
     background-color: var(--color-morado);
-    padding: 0 4rem;
     gap: 1rem;
 }
 
-.contenedor>div.contenido{
-    flex-direction: column;
+.contenido {
     display: flex;
+    flex-direction: column;
     flex: 1;
     background-color: white;
     padding: 2rem;
     border-radius: 1rem;
     flex-wrap: wrap;
     color: var(--color-morado);
-    >div.titulo{
-        display: flex;
-        padding-bottom: 2rem;
-        >h2{
-            padding: 0.5rem 2rem 0 1rem;
-            border-left: 10px solid var(--color-morado);
-            display: flex;
-    
-        }
-        >svg{
-            width: 3rem;
-            height: 3rem;
-            justify-content: end;
-            align-self: self-end;
-        };
-    };
-    >div.caja{
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 3%;
-    }
 }
 
-.paginacion{
+.contendor select{
+    flex: 0;
+    max-width: auto;
+    width: 100%;
+}
+
+.titulo {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 2rem;
+}
+
+.titulo h2 {
+    padding: 0.5rem 2rem 0 1rem;
+    border-left: 10px solid var(--color-morado);
+    display: flex;
+    flex: 0;
+}
+
+.titulo svg {
+    width: 3rem;
+    height: 3rem;
+    justify-content: end;
+    align-self: flex-end;
+}
+
+.titulo div{
+    display: flex;
+}
+
+.paginacion select {
+    flex: 0 2rem;
+}
+
+.caja {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.cajaSeleccion {
+    display: flex;
+    align-self: center;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: var(--color-malva);
+    padding: 2rem;
+    border-radius: 1rem;
+}
+
+.cajaSeleccion select {
+    border: solid 1px var(--color-morado);
+    border-radius: 0.5rem;
+}
+
+.cajaSeleccionActiva {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    align-items: flex-end;
+}
+
+.cajaSeleccionActiva select {
+    border: 1px solid white;
+    background-color: var(--color-chicle);
+    color: white;
+    font-weight: bold;
+    width: fit-content;
+    text-align: center;
+}
+
+.paginacion {
     display: flex;
     flex: 1;
-    justify-content: end;
+    justify-content: flex-end;
     gap: 0.5rem;
     align-items: center;
-    >label{
-        color: var(--color-morado);
-        display: flex;
-        align-self: auto;
-    }
+    flex-direction: column;
 }
 
-.containerTableContainer{
+.paginacion>div{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.paginacion label {
+    color: var(--color-morado);
+    display: flex;
+    align-self: auto;
+}
+
+.containerTableContainer {
     display: flex;
     flex: 1 100%;
     flex-direction: column;
     font-size: 12pt;
 }
 
-
-.tableContainer{
+.tableContainer {
     color: var(--color-morado);
     flex: 1;
     border: 1px solid var(--color-morado);
@@ -69,71 +124,104 @@
     padding: 1rem;
     margin: 0.5rem 0;
     transition: all 0.3s ease;
-    display: grid;
-    align-items: center;
-        grid-template-columns: 8rem 1fr 1fr 12rem 9rem 15rem;
-        grid-auto-rows: minmax(auto, 2rem); /* Definimos el tamaño de las filas */
-        gap: 0.5em 0px;
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
 }
 
-.tableContainer:hover{
-    transform: scale(1.02); /* Efecto de zoom al hacer hover */
+.tableContainer:hover {
+    transform: scale(1.02);
     background-color: var(--color-malva);
     border: none;
 }
 
-
-.contenedorfiltro{
+.contenedorfiltro {
     display: flex;
     flex-wrap: wrap;
     background-color: var(--color-malva);
     padding: 1rem;
     border-radius: 1rem;
     gap: 1rem;
-    align-items: end;
+    align-items: flex-end;
     flex: 1 100%;
 }
 
-.contenedorfiltro>h3{
+.contenedorfiltro h3 {
     flex: 1 100%;
 }
 
-.contenedorfiltro button{
+.contenedorfiltro button {
     color: var(--color-yema);
     background-color: var(--color-morado);
 }
 
-.contenedorfiltro button:hover{
+.contenedorfiltro button:hover {
     background-color: var(--color-yema);
     color: var(--color-morado);
 }
 
-.contenedorfiltro>div{
+.contenedorfiltro div {
     display: flex;
     flex-direction: column;
-    flex: 1 8rem;
+
 }
 
-.contenedorfiltro > div.cajaIconosFiltro{
+.cajaIconosFiltro {
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
 }
 
-.contenedorfiltro > div.cajaIconosFiltro>div>span>svg{
+.cajaIconosFiltro svg {
     width: 2rem;
     height: 2rem;
     color: var(--color-morado);
 }
 
-#cabeceraTabla{
+#cabeceraTabla {
     font-weight: bold;
     background-color: var(--color-morado);
     color: white;
     transition: none;
 }
 
+#cabeceraTabla:hover {
+    transform: none;
+}
 
-#cabeceraTabla:hover{
-    scale: none;
+@media (min-width: 1080px) {
+
+    .contenedor{
+        padding: 0 4rem;
+    }
+
+    .contendor select{
+        flex: 1;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .titulo {
+        flex-direction: row;
+    }
+
+    .tableContainer {
+        flex-direction: row;
+    }
+
+    .tableCell {
+        display: flex;
+        flex: 0 20rem;
+    }
+
+    .tableCellStatus {
+        flex: 1;
+        text-align: right;
+    }
+
+    .paginacion{
+
+        flex-direction: row;
+
+    }
 }

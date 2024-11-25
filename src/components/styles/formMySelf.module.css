@@ -1,0 +1,176 @@
+.ventana {
+    display: flex;
+    flex: 1 100%;
+}
+
+.contenedorMySelfForm {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 2rem;
+    border-radius: 1rem;
+    color: var(--color-morado);
+    max-width: 1300px;
+}
+
+.contenedorForm {
+    display: grid;
+    grid-template-columns: 1fr; /* Una columna por defecto para pantallas pequeñas */
+    gap: 1rem;
+    flex: 1 100%;
+}
+
+.contenedorForm h2 {
+    grid-column: 1 / -1; /* Hace que el h2 ocupe todo el ancho */
+    text-transform: uppercase;
+    border-bottom: 4px solid var(--color-malva);
+    margin-bottom: 1rem;
+    color: var(--color-morado);
+}
+
+.contenedorForm .formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.contenedorForm label {
+    font-weight: bold;
+    color: var(--color-morado);
+}
+
+.contenedorForm input, 
+.contenedorForm select, 
+.contenedorForm textarea {
+    padding: 0.5rem;
+    border: 1px solid var(--color-morado);
+    border-radius: 0.5rem;
+    background-color: white;
+    color: var(--color-morado);
+}
+
+.contenedorForm input[type='file'] {
+    border: none;
+}
+
+.contenedorForm input:disabled,
+.contenedorForm select:disabled,
+.contenedorForm textarea:disabled {
+    padding-left: 0;
+    border: none;
+    color: var(--color-morado);
+}
+
+.contenedorForm .errorSpan {
+    color: red;
+    font-size: 0.8rem;
+}
+
+.formButton {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.deviceSelect{
+    margin: 1rem 0;
+}
+
+.deviceSelect select{
+    max-width: 100%;
+}
+
+.deviceSelect, .deviceSelect div, .deviceSelect ul{
+    display: flex;
+    flex-direction: column;
+}
+
+.deviceSelect li{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.3rem;
+}
+
+.deviceSelect button{
+    font-size: 8pt;
+    padding: 0.3rem;
+}
+
+.deviceSelected{
+    background-color: var(--color-malva);
+    border-radius: 1rem;
+    padding-bottom: 1rem;
+    >h3{
+        padding: 1rem;
+    }
+    >p{
+        padding: 1rem;
+    }
+    >ul{
+        display: flex;
+        flex-direction: column;
+        >li{
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            justify-content: space-between;
+            >button{
+                padding: 0.3rem 0.5rem;
+                font-size: 8pt;
+            }
+        }
+        >li:nth-child(odd){
+            background-color: var(--color-malva-oscuro);
+            color: white;
+        }
+    }
+}
+
+
+/* Estilos para pantallas grandes: 3 columnas */
+@media (min-width: 768px) {
+    .contenedorMySelfForm{
+        padding: 2rem;
+    }
+
+    .contenedorForm {
+        grid-template-columns: repeat(3, 1fr); /* Definir 3 columnas para pantallas grandes */
+        gap: 1rem;
+    }
+
+    .contenedorForm .formGroup {
+        margin-bottom: 1rem;
+    }
+
+    .hiringPeriodForm {
+        grid-column: 1 / span 3; /* Hace que el formulario ocupe las 3 columnas */
+    }
+
+    .deviceSelect{
+        grid-column: 1 / span 2;
+    }
+
+    
+}
+
+@media (min-width: 1200px) {
+    
+
+    .contenedorForm {
+        grid-template-columns: repeat(3, 1fr); /* Mantener 3 columnas en pantallas más grandes */
+        gap: 1rem;
+    }
+
+    .contenedorForm h2 {
+        grid-column: 1 / -1; /* El h2 sigue ocupando todo el ancho */
+    }
+
+    .hiringPeriodForm {
+        grid-column: 1 / span 3; /* El formulario ocupará las 3 columnas */
+    }
+}

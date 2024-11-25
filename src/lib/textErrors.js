@@ -1,8 +1,9 @@
 export const textErrors = (tipo) => {
     switch (tipo) {
         case "name":
+        case "firstName":
         case "nombre":
-            return "El nombre no es correcto, no debe contener números ni carácteres especiales";
+            return "El nombre no es correcto, no debe contener números ni carácteres especiales y debe tener mínimo 3 carácteres";
         case "phone":
             return "El teléfono debe contener 9 números y no puede empezar por 0";
         case "from":
@@ -54,6 +55,18 @@ export const textErrors = (tipo) => {
             return "El texto no es correcto, carácteres permitidos (º:/()-), debe tener mínimo 3 carácteres y máximo 1000 ";
         case "fileError":
             return "El archivo no es válido, debe ser un pdf";
+        case "dni":
+            return "El DNI O NIE no es correcto"
+        case "bankAccountNumber":
+            return "El IBAN debe comenzar con 'ES' seguido de 22 dígitos y debe pasar la validación de control";
+        case "socialSecurityNumber":
+            return "El número de la seguridad social no es válido"
+        case "payrollMonth":
+            return "Debe ser un número entero entre 1 y 12"
+        case "payrollYear":
+            return "Debe tener el formato YYYY y estar comprendido entre el 2000 hasta el año actual"
+        case "futureDate":
+            return "La fecha no debe ser posterior a la fecha actual"
         default:
             return null;
     }

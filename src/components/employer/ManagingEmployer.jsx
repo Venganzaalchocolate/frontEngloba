@@ -5,8 +5,10 @@ import { FaSquarePlus } from "react-icons/fa6";
 import Filters from "./Filters";
 import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
-import { getDataEmployer, getusers } from '../../lib/data';
+import { getDataEmployer, getDispositiveResponsable, getusers } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
+import ViewEmployers from './ViewEmployers.jsx';
+import { deepClone } from '../../lib/utils.js';
 
 const ManagingEmployer = ({ modal, charge }) => {
     const { logged, changeLogged, logout } = useLogin();
@@ -17,7 +19,8 @@ const ManagingEmployer = ({ modal, charge }) => {
     const [page, setPage] = useState(1);
     const [users, setUsers] = useState([]);
     const [totalPages, setTotalPages] = useState(0);
-
+    const [dispositiveNow, setDispositiveNow] = useState(null)
+    const [listDispositive, setListDispositive] = useState([])
     const [filters, setFilters] = useState({
         firstName: '',
         email: '',
@@ -29,11 +32,20 @@ const ManagingEmployer = ({ modal, charge }) => {
 
     useEffect(() => {
         if (logged.isLoggedIn) {
-            loadUsers();
+            if(logged.user.role=='root' || logged.user.role=='global') loadUsers();
+            else loadDispositive();
         } else {
             navigate('/login');
         }
     }, [debouncedFilters, page, limit]);
+
+
+    useEffect(() => {
+        if (dispositiveNow != null) {
+            loadUsers(true)
+        }
+    }, [dispositiveNow])
+
 
     const changeAction = () => {
         setIsModalOpen(true); // Abre el modal
@@ -43,7 +55,18 @@ const ManagingEmployer = ({ modal, charge }) => {
         setIsModalOpen(false); // Cierra el modal
     };
 
-    const loadUsers = async () => {
+    const loadDispositive = async () => {
+        charge(true)
+        const token = getToken();
+        const id = logged.user._id;
+        const disp = await getDispositiveResponsable({ _id: id }, token)
+        const allDevices = disp.flatMap(program => program.devices);
+        if (allDevices.length > 1) setListDispositive(allDevices);
+        else setDispositiveNow(allDevices[0])
+        charge(false)
+    }
+
+    const loadUsers = async (filter = false) => {
         charge(true);
         try {
             let data = null;
@@ -55,9 +78,11 @@ const ManagingEmployer = ({ modal, charge }) => {
                 }
             }
 
+            if (!!filter) auxFilters['dispositiveNow'] = dispositiveNow
             data = await getusers(page, limit, auxFilters, token);
 
             const enumsData = await getDataEmployer();
+            console.log(enumsData)
             if (!enumsData.error) {
                 let auxEnums = {
                     provinces: enumsData.provinces,
@@ -128,66 +153,119 @@ const ManagingEmployer = ({ modal, charge }) => {
         });
     }, []);
 
+    const handleChange = (e) => {
+        setDispositiveNow(e.target.value);  // Actualizamos el estado con el valor seleccionado
+    };
+
+    const changeUser=(user)=>{
+        let auxUser=deepClone(users)
+        auxUser.map((x, i, a)=>{
+            if(x._id==user._id) a[i]=user
+        })
+        setUserSelected(user)
+        setUsers(auxUser)
+    }
+
+
     return (
         <div className={styles.contenedor}>
             <div className={styles.contenido}>
-                <div className={styles.titulo}>
-                    <h2>GESTIÓN DE EMPLEADOS</h2>
-                    <FaSquarePlus onClick={changeAction} />
-                    {isModalOpen && 
-                        <FormCreateEmployers modal={modal} charge={charge} user={userSelected} closeModal={closeModal} />
-                    }
-                    <div className={styles.paginacion}>
-                        <label htmlFor="limit">Usuarios por página:</label>
-                        <select id="limit" value={limit} onChange={handleLimitChange}>
-                            <option value={5}>5</option>
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                        </select>
-                        <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
-                            {'<'}
-                        </button>
-                        <span>Página {page}</span>
-                        <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
-                            {'>'}
-                        </button>
-                    </div>
-                </div>
-                <div className={styles.caja}>
-                    <Filters
-                        filters={filters}
-                        enums={enums}
-                        handleFilterChange={handleFilterChange}
-                        resetFilters={resetFilters}
-                        setFilters={setFilters}
-                    />
-                    <div className={styles.containerTableContainer}>
-                        <div>
-                            <div className={styles.tableContainer} id={styles.cabeceraTabla}>
-                                <div className={styles.tableCell}>Nombre</div>
-                                <div className={styles.tableCell}>Apellidos</div>
-                                <div className={styles.tableCell}>Email</div>
-                                <div className={styles.tableCell}>Teléfono</div>
-                                <div className={styles.tableCell}>DNI</div>
-                                <div className={styles.tableCell}>Status</div>
-                            </div>
-                            {users.map(user => (
-                                <div key={user._id}>
-                                    <div className={styles.tableContainer}>
-                                        <div className={styles.tableCell}>{user.firstName}</div>
-                                        <div className={styles.tableCell}>{user.lastName}</div>
-                                        <div className={styles.tableCell}>{user.email}</div>
-                                        <div className={styles.tableCell}>{user.phone}</div>
-                                        <div className={styles.tableCell}>{user.dni}</div>
-                                        <div className={styles.tableCell}>{user.employmentStatus}</div>
-                                    </div>
-                                    {userSelected != null && userSelected._id === user._id}
-                                </div>
+                {(!dispositiveNow && listDispositive.length > 0)
+                    ? <div className={styles.cajaSeleccion}>
+                        <h2>Selecciona un dispositivo</h2>
+                        <select name='dispositiveNow' value={dispositiveNow} onChange={handleChange}>
+                            <option value="">Selecciona un dispositivo</option>  {/* Primera opción */}
+                            {listDispositive.map(x => (
+                                <option key={x._id} value={x._id}>{x.name}</option>
                             ))}
-                        </div>
+                        </select>
                     </div>
-                </div>
+                    : <>
+                        <div className={styles.titulo}>
+                            <div>
+                            <h2>GESTIÓN DE EMPLEADOS</h2>
+                            <FaSquarePlus onClick={changeAction} />
+                            {isModalOpen &&
+                                <FormCreateEmployers modal={modal} charge={charge} user={userSelected} closeModal={closeModal} />
+                            }
+                            </div>
+                           
+                            {(logged.user.role == 'root' || logged.user.role == 'global') ?
+                                <div className={styles.paginacion}>
+                                    <div>
+                                    <label htmlFor="limit">Usuarios por página:</label>
+                                    <select id="limit" value={limit} onChange={handleLimitChange}>
+                                        <option value={5}>5</option>
+                                        <option value={10}>10</option>
+                                        <option value={20}>20</option>
+                                        <option value={50}>50</option>
+                                    </select>    
+                                    </div>
+                                    
+                                    <div>
+                                     <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
+                                        {'<'}
+                                    </button>
+                                    <span>Página {page}</span>
+                                    <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
+                                        {'>'}
+                                    </button>   
+                                    </div>
+                                    
+                                </div>
+                                : <div className={styles.cajaSeleccionActiva}>
+                                    <h4>Dispositivo Activo</h4>
+                                    <select name='dispositiveNow' value={dispositiveNow} onChange={handleChange}>
+                                        <option value="">Selecciona un dispositivo</option>  {/* Primera opción */}
+                                        {listDispositive.map(x => (
+                                            <option key={x._id} value={x._id}>{x.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+
+                            }
+
+
+                        </div>
+                        <div className={styles.caja}>
+                            {(logged.user.role == 'root' || logged.user.role == 'global') &&
+                                <Filters
+                                    filters={filters}
+                                    enums={enums}
+                                    handleFilterChange={handleFilterChange}
+                                    resetFilters={resetFilters}
+                                    setFilters={setFilters}
+                                />
+                            }
+                            
+
+                            <div className={styles.containerTableContainer}>
+                                <div>
+                                    <div className={styles.tableContainer} id={styles.cabeceraTabla}>
+                                        <div className={styles.tableCell}>Nombre</div>
+                                        <div className={styles.tableCell}>Apellidos</div>
+                                        <div className={styles.tableCellStatus}>Status</div>
+                                    </div>
+                                    {users.map(user => (
+                                        <div key={user._id} onClick={()=>setUserSelected(user)}>
+                                            <div className={styles.tableContainer}>
+                                                <div className={styles.tableCell}>{user.firstName}</div>
+                                                <div className={styles.tableCell}>{user.lastName}</div>
+                                                <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
+                                            </div>
+                                            {userSelected!=null && userSelected._id === user._id &&
+                                            <ViewEmployers user={userSelected} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+                                            }
+                                       
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                }
+
             </div>
         </div>
     );

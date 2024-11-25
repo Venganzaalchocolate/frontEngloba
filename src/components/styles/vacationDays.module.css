@@ -1,0 +1,161 @@
+.contenedor{
+    display: flex;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem 0.5rem;
+    border-radius: 1rem;
+    
+}
+
+.contenedor>h2{
+    display: flex;
+    flex: 1 100%;
+    border-bottom: 3px solid var(--color-morado);
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    align-items: center;
+}
+
+
+.contenedorSelectorvista{
+    display: flex;
+    flex: 1 100%;
+    gap: 1rem;
+    align-items: center;
+    >svg{
+        width: 1.5rem;
+        height: 1.5rem;
+        padding-bottom: 0.3rem;
+    }
+    >.contenedorSelectorVistaMes{
+        color: white;
+        border-bottom: 2px solid white;
+    }
+    >select{
+        flex: 0 4rem;
+        background-color: var(--color-morado);
+        color: white;
+        text-align: center;
+        font-weight: bold;
+    }
+    
+}
+
+
+  .selectionBox {
+    background-color: var(--color-crema);
+    padding: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 1rem;
+    gap: 10px;
+    flex: 1 100%;
+    >h3{
+      text-align: center;
+      flex: 1 100%;
+      text-transform: uppercase;
+    }
+    >select{
+        flex: 0 15rem;
+        background-color: var(--color-morado);
+        color: white;
+        text-align: center;
+        font-weight: bold;
+    }
+    >div{
+      flex: 1 100%;
+    }
+  }
+
+  .selectionTypeBox{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    >button.NotSelectedTypeButton{
+      border: solid 1px var(--color-morado);
+    }
+    >button.SelectedTypeButton{
+      background-color: var(--color-verde-hoja);
+      color: white;
+    }
+  }
+  
+  .dayCell {
+    cursor: pointer;
+    padding: 10px;
+    text-align: center;
+    transition: background-color 0.3s;
+  }
+
+  .navigationContainer{
+    display: flex;
+    flex: 1 100%;
+    align-items: center;
+    gap: 1rem;
+    text-transform: uppercase;
+    >button{
+      background-color: var(--color-morado);
+      color: var(--color-malva);
+    }
+  }
+  
+  .navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  .navButton {
+    background-color: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  
+  .navButton:hover {
+    color: #007bff;
+  }
+
+  .calendarBox{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+
+  .calendarMonth{
+    background-color: #f0f0f0;
+    padding: 1rem;
+    box-shadow: 1rem 1rem 1.5rem rgba(0, 0, 0, 0.2); /* Sombra en rem */
+    border-radius: 0.5rem; /* Esquinas redondeadas */
+    >h3{
+      text-align: center;
+      padding-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+  }
+
+  .dayCell {
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+}
+
+.dayVacation {
+    background-color: lightgreen; /* Días normales de vacaciones */
+}
+
+.dayPersonal {
+    background-color: lightblue; /* Días normales de asuntos propios */
+}
+
+.dayExceeded {
+    background-color: red; /* Días excedidos */
+    color: white; /* Texto blanco para mejor visibilidad */
+}
+
+
+  

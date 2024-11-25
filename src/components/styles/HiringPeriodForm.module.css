@@ -1,0 +1,39 @@
+.hiringPeriodForm {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-malva);
+    flex: 1 100%;
+    padding: 2rem;
+    border-radius: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: stretch; /* Asegura que todos los hijos tengan la misma altura */
+    
+    >h3 {
+        flex: 1 100%;
+    }
+    >button{
+        display: flex;
+        flex: 1 100%;
+    }
+    .dispositive{
+        flex: 1 100%;
+    }
+}
+
+.hiringPeriodForm div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribuye los elementos dentro del div */
+    align-items: stretch; /* Hace que todos los divs tengan la misma altura */
+    >label {
+        color: var(--color-morado);
+    }
+}
+
+@media (min-width: 1200px) {
+    .hiringPeriodForm {
+        flex-direction: row;
+    }
+}

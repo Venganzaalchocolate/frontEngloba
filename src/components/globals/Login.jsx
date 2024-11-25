@@ -1,5 +1,4 @@
 import styles from '../styles/form.module.css';
-import { FaUserCircle, FaEnvelope   } from "react-icons/fa";
 import { Link, useNavigate } from 'react-router-dom';
 import { useLogin } from '../../hooks/useLogin';
 import { textErrors } from '../../lib/textErrors';
@@ -8,96 +7,92 @@ import { validEmail, validPassword } from '../../lib/valid';
 import { loginUser } from '../../lib/data';
 import { saveToken } from '../../lib/serviceToken';
 
-
-
-const Login = ({charge}) => {
-    const { logged,  changeLogged } = useLogin()
-    const [datos,setDatos]=useState({
+const Login = ({ charge }) => {
+    const { logged, changeLogged } = useLogin();
+    const [datos, setDatos] = useState({
         email: null,
         password: null,
-    })
+    });
     const [errores, setError] = useState({
         email: null,
         password: null,
-    })
+    });
 
-    const navigate=useNavigate();
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
-        let auxErrores = { ...errores }
-        let auxDatos= {...datos}
-        auxErrores['mensajeError'] = null
+        let auxErrores = { ...errores };
+        let auxDatos = { ...datos };
+        auxErrores['mensajeError'] = null;
         let valido = false;
 
-        if (e.target.name == 'email') valido = validEmail(e.target.value)
-        if (e.target.name == 'password')valido = validPassword(e.target.value)
+        if (e.target.name === 'email') valido = validEmail(e.target.value);
+        if (e.target.name === 'password') valido = validPassword(e.target.value);
 
-        auxDatos[e.target.name]=e.target.value
-        setDatos(auxDatos)
+        auxDatos[e.target.name] = e.target.value;
+        setDatos(auxDatos);
+
         if (!valido) {
-            auxErrores[e.target.name] = textErrors(e.target.name)
+            auxErrores[e.target.name] = textErrors(e.target.name);
         } else {
-            auxErrores[e.target.name] = null
+            auxErrores[e.target.name] = null;
         }
-        setError(auxErrores)
-    }
+        setError(auxErrores);
+    };
 
     const login = async () => {
         let valido = true;
-        let auxErrores = { ...errores }
+        let auxErrores = { ...errores };
         for (const key in datos) {
-            if (datos[key] == null) {
-                auxErrores[key] = textErrors('vacio')
-                setError(auxErrores)
+            if (datos[key] === null) {
+                auxErrores[key] = textErrors('vacio');
                 valido = false;
             }
         }
+        setError(auxErrores);
 
         if (valido) {
-            charge(true)
+            charge(true);
             const login = await loginUser(datos.email, datos.password);
             if (login.error) {
-                let auxErrores = { ...errores }
                 auxErrores['mensajeError'] = login.message;
-                setError(auxErrores)
-                charge(false)
+                setError(auxErrores);
+                charge(false);
             } else {
-                charge(false)
-                changeLogged(login.user)
-                saveToken(login.token)
-                navigate('/')
-
+                charge(false);
+                changeLogged(login.user);
+                saveToken(login.token);
+                navigate('/');
             }
         }
-    }
-
+    };
 
     return (
         <div className={styles.contenedorLogin}>
             <div>
                 <img src="/graphic/logotipo_blanco.png" alt="logotipo engloba" />
             </div>
-            <div  className={styles.contenedorForm}>
+            <div className={styles.contenedorForm}>
                 <div className={styles.inputs}>
                     <label htmlFor="email">Email</label>
-                    <input type="email" id='email' name='email'onChange={(e)=>handleChange(e)} value={datos.email==null?'':datos.email}/>
-                    {!!errores.email && <span className='errorSpan'>{errores.email}</span>}
+                    <input type="email" id="email" name="email" onChange={handleChange} value={datos.email || ''} />
+                    {!!errores.email && <span className="errorSpan">{errores.email}</span>}
                 </div>
                 <div className={styles.inputs}>
                     <label htmlFor="password">Contraseña</label>
-                    <input type="password" id='password' name='password' onChange={(e)=>handleChange(e)} value={datos.password==null?'':datos.password}/>
-                    {!!errores.password && <span className='errorSpan'>{errores.password}</span>}
+                    <input type="password" id="password" name="password" onChange={handleChange} value={datos.password || ''} />
+                    {!!errores.password && <span className="errorSpan">{errores.password}</span>}
                 </div>
-                <button onClick={()=>login()}>
+                <button onClick={login}>
                     Entrar
                 </button>
                 <Link to={'/'}>
                     <button>Cancelar</button>
                 </Link>
-                {!!errores.mensajeError && <span className='errorSpan'>{errores.mensajeError}</span>}
+                {!!errores.mensajeError && <span className="errorSpan">{errores.mensajeError}</span>}
             </div>
         </div>
-    )
+    );
 }
 
 export default Login;

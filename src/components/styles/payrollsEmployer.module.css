@@ -1,0 +1,189 @@
+.contenedor{
+    display: flex;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem 0.5rem;
+    border-radius: 1rem;
+    
+}
+
+.contenedor>h2{
+    display: flex;
+    flex: 1 100%;
+    border-bottom: 3px solid var(--color-morado);
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    align-items: center;
+}
+
+.contenedor>h2>svg{
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.contenedor div{
+    display: flex;
+}
+
+
+.contenedor svg{
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.createPayroll{
+    flex-direction: column;
+    display: flex;
+    flex-wrap: wrap;
+    background-color: var(--color-crema);
+    padding: 1rem;
+    border-radius: 1rem;
+    gap: 1rem;
+    flex: 20rem 0;
+}
+
+.createPayroll>div{
+    display: flex;
+    flex-direction: column;
+}
+
+.createPayroll>div>label{
+    color: var(--color-morado);
+}
+
+.createPayroll>div.contenedorBotones{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 1rem;
+    >button{
+        width: fit-content;
+
+    }
+}
+
+.lista_nominas{
+    flex: 1 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.lista_detalleNominas{
+    flex-direction: column;
+    padding-top: 1rem;
+    >h3{
+        padding-bottom: 0.5rem;
+
+    }
+}
+
+h3.titleYear{
+    padding: 1rem 0;
+}
+
+li.payrollItem:nth-child(1){
+    margin-top: 1rem;
+}
+
+li.payrollItem{
+    align-content: center;
+    padding: 0.2rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    >div.payrollmonth{
+        display: flex;
+        flex: 10rem 0;
+        background-color: var(--color-verde-hoja);
+        padding: 5px 1rem;
+        border: 1px solid var(--color-verde-hoja);
+        border-radius: 1rem;
+        color: white;   
+        >div:nth-child(1){
+            flex: 1;
+        }
+        >div:nth-child(2){
+            gap: 0.3rem;
+            
+        }
+    }
+}
+
+li.payrollItem>div.payrollmonth:hover{
+    background-color: var(--color-morado);
+    border: 1px solid var(--color-morado);
+}
+
+div.confirmacionBorrar{
+    padding: 5px 1rem;
+    border: 1px solid var(--color-morado);
+    border-radius: 1rem;
+    display: flex;
+    flex: 1 100%;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    background-color: tomato;
+    color: white;
+    gap: 1rem;
+    align-items: center;
+    border: tomato;
+    >button{
+        background-color: tomato;
+        color: white;
+    }
+    >button:hover{
+        color: var(--color-morado);
+    }
+}
+
+
+.lista_botonesAnios{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.botonesSeleccionado{
+    color: tomato;
+    background-color: var(--color-morado);
+}
+
+.botonesNoSeleccionado{
+    border: var(--color-morado) 1px solid;
+}
+
+.botonBorrar{
+    display: flex;
+    margin-left: 0.5rem;
+    padding: 0 0.4rem;
+    border: solid 1px tomato;
+    border-radius: 1rem;
+    background-color: tomato;
+    >svg.botonNomina{
+        color: white;
+    }
+}
+
+.botonBorrar:hover{
+    background-color: var(--color-morado);
+    border: var(--color-morado);
+    >svg.botonNomina{
+        color: tomato;
+    }
+}
+
+svg.botonNomina{
+    width: 1rem;
+    height: 1rem;
+    align-self: center;
+}
+
+.firma{
+    align-items: center;
+    margin-left: 0.5rem;
+}
+
+
+@media(width>1000px){
+
+}

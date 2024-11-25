@@ -1,27 +1,53 @@
 
 const urlApi = import.meta.env.VITE_API_URL;
 
+
 const fetchData = async (endpoint, method, token = null, body = null, isBlob = false) => {
     const url = `${urlApi}${endpoint}`;
+
+    // Verificamos si el cuerpo es FormData para no añadir Content-Type
+    const isFormData = body instanceof FormData;
+
     const options = {
         method,
         headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+            // Solo añadimos 'Content-Type' si no es FormData
+            ...(body && !isFormData && { 'Content-Type': 'application/json' }),
         },
-        ...(body && { body: JSON.stringify(body) })
+        // Si es FormData, no lo convertimos a JSON
+        ...(body && { body: isFormData ? body : JSON.stringify(body) })
     };
 
-    const response = await fetch(url, options);
-    if (isBlob) {
-        if (!response.ok) throw new Error(`Error al obtener el archivo: ${response.statusText}`);
-        return await response.blob();
-    } else {
+    try {
+        const response = await fetch(url, options);
+
+        // Verificar si la respuesta no fue exitosa
+        if (!response.ok) {
+            throw new Error(`Error en la solicitud: ${response.status} ${response.statusText}`);
+        }
+
+        // Manejo de blob si se espera un archivo
+        if (isBlob) {
+            
+            return await response.blob(); // Devolver el blob si es un archivo
+        }
+
+        // Manejo de JSON para otro tipo de respuestas
         const data = await response.json();
-        if (data.error) return data;
-        return data.data;
+        if (data.error) {
+            return { error: true, message: data.error };
+        }
+
+        return data.data ? data.data : data; // Devolver el resultado o el objeto completo si no hay `data.data`
+
+    } catch (error) {
+        // Capturar errores de fetch o de lógica
+        return { error: true, message: error.message };
     }
 };
+
+
 
 export const addEmployerBag = (datos, token) => fetchData('/addemployerbag', 'POST', token, datos);
 
@@ -31,7 +57,7 @@ export const createBag = (datos, token) => fetchData('/createbag', 'POST', token
 
 export const getBags = (token) => fetchData('/getbags', 'GET', token);
 
-export const deactivateBagId=(datos, token)=>fetchData('/bagdeactivate', 'POST', token, datos)
+export const deactivateBagId = (datos, token) => fetchData('/bagdeactivate', 'POST', token, datos)
 
 export const getPrograms = () => fetchData('/programs', 'GET');
 
@@ -61,23 +87,156 @@ export const getCVs = async (id, token) => {
     return { url: pdfUrl };
 };
 
-export const deleteUserCv= (token, datos) => fetchData('/deleteusercv', 'DELETE', token, datos);
+
+export const getFile = async (id, token) => {
+    const pdfBlob = await fetchData('/getFile', 'POST', token, { id }, true);
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    return { url: pdfUrl };
+};
+
+
+export const deleteUserCv = (token, datos) => fetchData('/deleteusercv', 'DELETE', token, datos);
 
 export const modifyUser = (dataUser) => fetchData('/modifyusercv', 'PUT', null, dataUser);
 
-export const createEmployer=async (data, token)=>{
-    const formData = new FormData();
-    for (const key in data) {
-        if (data.hasOwnProperty(key)) {
-            formData.append(key, data[key]);
-        }
-    }
 
-    // Configuramos el fetch manualmente porque necesitamos modificar los encabezados y no podemos modificar fetchData
+export const createEmployer = async (data, token) => {
+    const formData = new FormData();
+
+    // Campos de archivo que queremos subir
+    const fileFields = [
+        'cv', 'sexualOffenseCertificate', 'model145', 'firePrevention',
+        'contract', 'employmentHistory', 'dataProtection', 'ethicalChannel', 'dniCopy'
+    ];
+
+    // Añadir los campos al FormData
+    Object.keys(data).forEach(key => {
+        if (fileFields.includes(key)) {
+            // Si el campo es un archivo y existe, lo añadimos al FormData
+            if (data[key] instanceof File) {
+                formData.append(key, data[key], data[key].name);  // Agregar el archivo al FormData
+            }
+        } else if (key === 'hiringPeriods' || key === 'responsibleDevices') {
+            // Serializar arrays y objetos antes de enviarlos
+            formData.append(key, JSON.stringify(data[key]));
+        } else {
+            // Añadir los demás campos de texto
+            formData.append(key, data[key] !== null ? data[key] : '');  // Manejar valores nulos
+        }
+    });
+
     const endpoint = '/createemployer';
     const method = 'POST';
     const url = `${urlApi}${endpoint}`;
-    
+
+    const options = {
+        method,
+        headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: formData
+    };
+
+    const response = await fetch(url, options);
+    const result = await response.json();
+
+    if (result.error) return result;
+    return result.data;
+};
+
+
+
+export const getEmployers = (token) => fetchData('/users', 'GET', token)
+
+export const loginUser = (email, password) => fetchData('/login', 'POST', null, { email, password });
+
+export const getusercvs = (page, limit, filters, token) => fetchData('/usercvs', 'POST', token, { page, limit, ...filters });
+
+export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
+/*
+export const editUser = async (data, token) => {
+    const formData = new FormData();
+
+    // Campos de archivo que queremos subir
+    const fileFields = [
+        'cv', 'sexualOffenseCertificate', 'model145', 'firePrevention',
+        'contract', 'employmentHistory', 'dataProtection', 'ethicalChannel', 'dniCopy'
+    ];
+
+
+    // Añadir los campos al FormData
+    Object.keys(data).forEach(key => {
+        if (fileFields.includes(key)) {
+            // Si el campo es un archivo y existe, lo añadimos al FormData
+            if (data[key] instanceof File) {
+                formData.append(key, data[key], data[key].name);  // Agregar el archivo al FormData
+            }
+        } else if (key === 'hiringPeriods' || key === 'responsibleDevices') {
+            // Serializar arrays y objetos antes de enviarlos
+            formData.append(key, JSON.stringify(data[key]));
+        } else {
+            // Añadir los demás campos de texto
+            formData.append(key, data[key] !== null ? data[key] : '');  // Manejar valores nulos
+        }
+    });
+
+    // Configuramos el fetch manualmente porque necesitamos modificar los encabezados y no podemos modificar fetchData
+    const endpoint = '/modifyuser';
+    const method = 'PUT';
+    const url = `${urlApi}${endpoint}`;
+
+    const options = {
+        method,
+        headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: formData // Se envía el FormData directamente
+    };
+
+
+    const response = await fetch(url, options);
+    const result = await response.json();
+
+    if (result.error) return result;
+    return result.data;
+
+}
+
+*/
+export const editUser = async (data, token) => {
+    const formData = new FormData();
+
+    // Campos de archivo que queremos subir
+    const fileFields = [
+        'cv', 'sexualOffenseCertificate', 'model145', 'firePrevention',
+        'contract', 'employmentHistory', 'dataProtection', 'ethicalChannel', 'dniCopy'
+    ];
+
+    // Añadir los campos al FormData
+    Object.keys(data).forEach(key => {
+        if (fileFields.includes(key)) {
+            // Si el campo es un archivo y existe, lo añadimos al FormData
+            if (data[key] instanceof File) {
+                formData.append(key, data[key], data[key].name);  // Agregar el archivo al FormData
+            }
+        } else if (key === 'hiringPeriods' || key === 'responsibleDevices') {
+            // Serializar arrays y objetos antes de enviarlos
+            formData.append(key, JSON.stringify(data[key]));
+        } else if (key === 'vacationDays' || key === 'personalDays') {
+            // Convertir fechas a cadenas ISO si son arrays de fechas
+            const datesArray = data[key]?.map(date => (date instanceof Date ? date.toISOString() : date));
+            formData.append(key, JSON.stringify(datesArray));
+        } else {
+            // Añadir los demás campos de texto
+            formData.append(key, data[key] !== null ? data[key] : '');  // Manejar valores nulos
+        }
+    });
+
+    // Configuramos el fetch manualmente porque necesitamos modificar los encabezados y no podemos modificar fetchData
+    const endpoint = '/modifyuser';
+    const method = 'PUT';
+    const url = `${urlApi}${endpoint}`;
+
     const options = {
         method,
         headers: {
@@ -88,19 +247,10 @@ export const createEmployer=async (data, token)=>{
 
     const response = await fetch(url, options);
     const result = await response.json();
-    
+
     if (result.error) return result;
     return result.data;
-
-}
-
-export const getEmployers=(token)=>fetchData('/users', 'GET', token)
-
-export const loginUser = (email, password) => fetchData('/login', 'POST', null, { email, password });
-
-export const getusercvs = (page, limit, filters, token) => fetchData('/usercvs', 'POST', token, { page, limit, ...filters });
-
-export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
+};
 
 
 // BORRAR
@@ -154,553 +304,42 @@ export const deleteDispositive = (dispositiveData, token) => fetchData('/deleted
 
 export const getDispositive = (dispositiveData, token) => fetchData('/programs', 'POST', token, dispositiveData);
 
+export const getDispositiveResponsable = (datos, token) => fetchData('/dispositiveresponsable', 'POST', token, datos);
+
 export const deleteProgram = (datos, token) => fetchData('/deleteprogram', 'DELETE', token, datos);
 
 export const updateProgram = (datos, token) => fetchData('/updateprogram', 'PUT', token, datos);
 
+// payrolls
+export const updatePayroll = async (data, token) => {
+    const formData = new FormData();
+
+
+    Object.keys(data).forEach(key => {
+        // Si el campo es un archivo y existe, lo añadimos al FormData
+        if (data[key] instanceof File) {
+            formData.append(key, data[key], data[key].name);  // Agregar el archivo al FormData
+        } else {
+            // Añadir los demás campos de texto
+            formData.append(key, data[key] !== null ? data[key] : '');  // Manejar valores nulos
+        }
+    });
+
+
+    const endpoint = '/payroll';
+    const method = 'POST';
+
+    let result=null;
+    // Usamos fetchData sin especificar el 'Content-Type' porque es un FormData
+
+    if(data.type=='get'){
+      result = await fetchData(endpoint, method, token, formData, true);
+      if (result.error) return result;
+    } 
+    else result = await fetchData(endpoint, method, token, formData);
+    console.log(result)
+    return result;
+};
+
+export const hirings=async(data,token)=>fetchData('/hirings', 'POST', token, data)
 
-
-// CODIGO SIN REFACTORIZAR POR SI ACASO
-
-// let urlApi = import.meta.env.VITE_API_URL;
-
-
-// export const addEmployerBag=async(datos,token)=>{
-//     const url = `${urlApi}/addemployerbag`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const deleteEmployerBag=async(datos,token)=>{
-//     const url = `${urlApi}/deleteemployerbag`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const createBag=async(datos, token)=>{
-
-//     const url = `${urlApi}/createbag`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const getBags=async(token)=>{
-//     const url = `${urlApi}/getbags`
-//     const response = await fetch(url, {
-//         method: 'GET',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const getPrograms=async()=>{
-//     const url = `${urlApi}/programs`
-//     const response = await fetch(url, {
-//         method: 'GET',
-//         headers: {
-//             'Content-Type': 'application/json',
-//         },
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const tokenUser = async (token) => {
-//     const datos = {
-//         token,
-//     };
-//     const url = `${urlApi}/validtoken`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-    
-    
-//     if (response.status == 401) return { error: true, message: 'Token no valido' }
-//     const data = await response.json();
-
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const getData = async () => {
-//     const url = `${urlApi}/infodata`
-//     const response = await fetch(url, {
-//         method: 'GET',
-//     });
-//     const data = await response.json();
-
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const changeData = async (token, datos) => {
-//     const url = `${urlApi}/changedata`
-//     const response = await fetch(url, {
-//         method: 'PUT',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-//     const data = await response.json();
-
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const deleteData = async (token, datos) => {
-//     const url = `${urlApi}/deletedata`
-//     const response = await fetch(url, {
-//         method: 'DELETE',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-//     const data = await response.json();
-
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const createData = async (token, datos) => {
-//     const url = `${urlApi}/createdata`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-//     const data = await response.json();
-
-//     if (data.error) return data
-//     return data.data
-// }
-
-
-// export const createSubData = async (token, datos) => {
-//     const url = `${urlApi}/createsubcategory`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-//     const data = await response.json();
-
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const deleteSubData = async (token, datos) => {
-//     const url = `${urlApi}/deletesubdata`
-//     const response = await fetch(url, {
-//         method: 'DELETE',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-//     const data = await response.json();
-
-//     if (data.error) return data
-//     return data.data
-// }
-
-
-
-// export const getCVs = async (id, token) => {
-//     const datos = {
-//       id
-//     };
-  
-//     const url = `${urlApi}/getFile`; // Endpoint para obtener el archivo PDF
-//     try {
-//       const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//       });
-  
-//       if (!response.ok) {
-//         throw new Error(`Error al obtener el archivo PDF: ${response.statusText}`);
-//       }
-//       // Obtener el contenido del archivo como un arraybuffer
-//       const pdfBlob = await response.arrayBuffer();
-  
-//       // Crear un Blob a partir del arraybuffer recibido
-//       const blob = new Blob([pdfBlob], { type: 'application/pdf' });
-  
-//       // Convertir el Blob a URL para usarlo en el visor de PDF
-//       const pdfUrl = URL.createObjectURL(blob);
-//       return {url:pdfUrl}; // Devolver la URL del PDF para mostrarlo en el frontend
-//     } catch (error) {
-      
-//       return {error: true, message: 'Error al obtener el pdf'}; // Manejo del error según sea necesario en tu aplicación
-//     }
-//   };
-  
-//   export const modifyUser=async(dataUser)=>{
-
-//     const url = `${urlApi}/modifyusercv`
-//     const response = await fetch(url, {
-//         method: 'PUT',
-//         headers: {
-//             'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify(dataUser)
-//     });
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-//   }
-
-
-// export const loginUser = async (email, password) => {
-//     const datos = {
-//         email,
-//         password,
-//     };
-//     const url = `${urlApi}/login`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify(datos)
-//     });
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const getusercvs=async (page, limit, filters, token)=>{
-
-//     const datos = {
-//         page,
-//         limit,
-//         ...filters
-//     };
-
-//     const url = `${urlApi}/usercvs`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const sendFormCreateOffer=async (datos, token)=>{
-//     const url = `${urlApi}/createofferjob`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const updateOffer=async (datos, token)=>{
-
-//     const url = `${urlApi}/modifyofferjob`
-//     const response = await fetch(url, {
-//         method: 'PUT',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-
-//     const data = await response.json();
-
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const getOfferJobs=async ()=>{
-//     const url = `${urlApi}/offerjobs`
-//     const response = await fetch(url, {
-//         method: 'GET',
-//         headers: {
-//             'Content-Type': 'application/json',
-//         },
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-// export const getOfferJobId=async (datos)=>{
-//     const url = `${urlApi}/offerjob`
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(datos)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data
-//     return data.data
-// }
-
-
-// export const sendFormCv = async (dataForm, file, editUser=false) => {
-//     const formData = new FormData();
-
-//     // Check for file presence
-//     if (file) {
-//         formData.append('file', file);
-//     }
-
-//     let url = `${urlApi}/filterusercv`
-//     let response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify((editUser)?{id:dataForm.id}:dataForm)
-//     });
-
-
-//     const userExist = await response.json()
-//     let data='';
-
-//     if (userExist.data==undefined || userExist.data.length == 0) {
-//         const url = `${urlApi}/createusercv`
-//         const response = await fetch(url, {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json'
-//             },
-//             body: JSON.stringify(dataForm)
-//         });
-//         data = await response.json();
-//         if (data.error) return data
-//         else {
-//             if (!!data.data._id) {
-//                 formData.append('nameFile', data.data._id);
-//             }
-//         }
-//     } else {
-//         if (!!userExist.data[0]._id) {
-//             const url = `${urlApi}/modifyusercv`
-//             dataForm['_id']=userExist.data[0]._id;
-//             if(file!=null) dataForm['numberCV']=userExist.data[0].numberCV+1;          
-//             const response = await fetch(url, {
-//                 method: 'PUT',
-//                 headers: {
-//                     'Content-Type': 'application/json'
-//                 },
-//                 body: JSON.stringify(dataForm)
-//             });
-
-//             data = await response.json();
-//             if (data.error) return data
-//             else if(file!=null){
-//                 if (!!data.data._id) {
-//                     formData.append('nameFile', data.data._id);
-//                 }
-//             }
-//         }
-//     }
-
-//     if(file!=null){
-//         const uploadUrl = `${urlApi}/uploadcv`;
-
-//         const uploadResponse = await fetch(uploadUrl, {
-//             method: 'POST',
-//             body: formData,
-//         });
-
-//         const uploadData = await uploadResponse.json();
-//         if (uploadData.error) {
-//             return uploadData
-//         }
-//         // Assuming upload response contains relevant data (e.g., uploaded file info)
-   
-//     }
-//     return data
-    
-// }
-
-
-// export const createProgram = async (datos, token) => {
-//     const url = `${urlApi}/createprogram`;
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data;
-//     return data.data;
-// };
-
-// export const createDispositive = async (dispositiveData, token) => {
-//     const url = `${urlApi}/programs/devices`;
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(dispositiveData)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data;
-//     return data.data;
-// };
-
-// export const updateDispositive = async (dispositiveData, token) => {
-//     const url = `${urlApi}/programs/device`;
-//     const response = await fetch(url, {
-//         method: 'PUT',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(dispositiveData)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data;
-//     return data.data;
-// };
-
-// export const deleteDispositive = async (dispositiveData, token) => {
-//     const url = `${urlApi}/programs/device`;
-//     const response = await fetch(url, {
-//         method: 'DELETE',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(dispositiveData)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data;
-//     return data.data;
-// };
-
-// export const getDispositive = async (dispositiveData, token) => {
-//     const url = `${urlApi}/programs/device`;
-//     const response = await fetch(url, {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(dispositiveData)
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data;
-//     return data.data;
-// };
-
-// export const deleteProgram = async (datos, token) => {
-//     const url = `${urlApi}/programs/delete`; // Ajusta la URL si es necesario
-//     const response = await fetch(url, {
-//         method: 'DELETE',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos) // Se espera que 'datos' contenga el 'programId'
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data;
-//     return data.data;
-// };
-
-// export const updateProgram = async (datos, token) => {
-//     const url = `${urlApi}/programs/update`; // Ajusta la URL según tu API
-//     const response = await fetch(url, {
-//         method: 'PUT',
-//         headers: {
-//             'Content-Type': 'application/json',
-//             'Authorization': `Bearer ${token}`
-//         },
-//         body: JSON.stringify(datos) // Se espera que 'datos' contenga el 'programId' y los campos a actualizar
-//     });
-
-//     const data = await response.json();
-//     if (data.error) return data;
-//     return data.data;
-// };

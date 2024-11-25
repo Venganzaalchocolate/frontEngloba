@@ -1,0 +1,106 @@
+.contenedor{
+    display: flex;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem 0.5rem;
+    border-radius: 1rem;
+    
+}
+
+.contenedor>h2{
+    display: flex;
+    flex: 1 100%;
+    border-bottom: 3px solid var(--color-morado);
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    align-items: center;
+}
+
+.contenedor>h2>svg{
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.contenedor div{
+    display: flex;
+}
+
+
+.contenedor svg{
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.listaperiodos{
+    display: flex;
+    flex: 1 100%;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.cajaperiodo, .cajaperiodoCabecera{
+    display: flex;
+    flex: 1 100%;
+    padding: 1rem;
+    background-color: white;
+    border: 1px solid var(--color-morado);
+    border-radius: 1rem;
+    flex-direction: column;
+}
+
+.cajaperiodoCabecera{
+    background-color: var(--color-morado);
+    color: white;
+    border: none;
+}
+
+.periodo, .leaves{
+    display: flex;
+    flex: 1 100%;
+
+}
+
+.fechainicio, .fechafin, .jornada, .dispositivo{
+    display: flex;
+    flex: 0 8rem;
+    padding-left: 0.5rem;
+    border-right: 1px solid var(--color-malva);
+}
+
+.dispositivo{
+    flex: 0 15rem;
+}
+
+.posicion{
+    display: flex;
+    flex: 1;
+    padding-left: 0.5rem;
+}
+
+.cajaleaveCabecera{
+    background-color: var(--color-chicle);
+    padding: 1rem;
+    border-radius: 1rem 1rem 0 0;
+    color: white;
+}
+
+.leaves{
+    margin: 1rem;
+    border-radius: 1rem;
+    flex-direction: column;
+    background-color: var(--color-rosa-palo);
+}
+
+.leave{
+    padding: 1rem;
+}
+
+.iconos{
+    display: flex;
+    gap: 0.5rem;
+}
+
+.iconos>:nth-child(3){
+    color: tomato;
+}

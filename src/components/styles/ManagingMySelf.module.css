@@ -1,0 +1,71 @@
+.contenedor{
+    display: flex;
+    flex-direction: row;
+    flex: 1 100% ;
+    background-color: var(--color-morado);
+    
+    gap: 1rem;
+}
+
+.contenedor>div.contenido{
+    flex-direction: column;
+    display: flex;
+    flex: 1;
+    background-color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    flex-wrap: wrap;
+    color: var(--color-morado);
+    >div.titulo{
+        display: flex;
+        padding-bottom: 2rem;
+        >h2{
+            padding: 0.5rem 2rem 0 1rem;
+            border-left: 10px solid var(--color-morado);
+            display: flex;
+    
+        }
+        >svg{
+            width: 3rem;
+            height: 3rem;
+            justify-content: end;
+            align-self: self-end;
+        };
+    };
+    >div.caja{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 3%;
+    }
+}
+
+.paginacion{
+    display: flex;
+    flex: 1;
+    justify-content: end;
+    gap: 0.5rem;
+    align-items: center;
+    >label{
+        color: var(--color-morado);
+        display: flex;
+        align-self: auto;
+    }
+}
+#cabeceraTabla{
+    font-weight: bold;
+    background-color: var(--color-morado);
+    color: white;
+    transition: none;
+}
+
+
+#cabeceraTabla:hover{
+    scale: none;
+}
+
+@media (min-width: 600px) {
+    .contenedor{
+        padding: 0 4rem;
+    }    
+}

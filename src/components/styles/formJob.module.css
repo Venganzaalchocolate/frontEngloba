@@ -7,7 +7,7 @@
     background-size: cover;
     justify-content: center;
     align-items: center;
-    padding: 2rem;
+    /* padding: 2rem; */
     flex-wrap: wrap;
     gap: 2rem;
     /* From https://css.glass */
@@ -23,9 +23,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
-    max-width: 20rem;
+    /* flex-direction: column; */
+    /* max-width: 20rem; */
     flex: 0;
+    >img{
+        max-width: 20rem;
+    }
 }
 
 .contenedor>div>div{
@@ -64,10 +67,11 @@
     padding: 1rem;
     color: var(--color-morado);
     margin-bottom: 0.5rem;
+    flex-direction: column;
 }
 
 .contenedorForm>.contenedorSelectionMultiple select{
-    flex:0
+    /* flex:0 */
 }
 
 .contenedorForm>.contenedorSelectionMultiple>div{
@@ -190,8 +194,13 @@
 
     }
 
+    .contenedorForm>.contenedorSelectionMultiple{
+        flex-direction: row;
+    }
+
     .contenedor>div>div{
         flex: 1 40%;
+        padding: 0 1rem;
     }
 
     .contenedor>div>div.inputGrande{

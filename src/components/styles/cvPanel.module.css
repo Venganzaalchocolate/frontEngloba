@@ -1,3 +1,4 @@
+/* Estilos base para móviles */
 .contenedorCV {
     display: flex;
     flex-direction: column;
@@ -36,13 +37,11 @@
 }
 
 .boxComments {
-    /* border-top: 5px solid var(--color-malva);
-    border-bottom: 5px solid var(--color-malva); */
     padding: 0.5rem 0;
     margin-bottom: 1rem;
 }
 
-.contentComment{
+.contentComment {
     margin: 1rem 0;
 }
 
@@ -85,6 +84,9 @@
 .contenedorEditar {
     border-top: 5px solid var(--color-malva);
     padding: 1rem 0;
+    display: flex;
+    flex: 1 100%;
+    flex-direction: column;
 }
 
 .cerrar {
@@ -130,16 +132,17 @@
     margin: 0.5rem 0;
 }
 
-.boxComments svg:hover{
+.boxComments svg:hover {
     color: var(--color-malva);
 }
 
+/* Estilos para pantallas más grandes */
 @media (min-width: 600px) {
     .contenedorCV {
         flex-direction: row;
     }
 
-    .contenedorCV .about, .boxComments{
+    .contenedorCV .about, .boxComments {
         max-width: 20rem;
     }
 }

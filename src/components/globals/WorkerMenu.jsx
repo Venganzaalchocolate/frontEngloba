@@ -10,6 +10,7 @@ import { useLogin } from '../../hooks/useLogin';
 import ManagingPrograms from '../programs/ManagingPrograms';
 import ManagingEmployer from '../employer/ManagingEmployer';
 import PanelRoot from '../root/panelRoot';
+import ManagingMySelf from '../myself/ManagingMySelf';
 
 const WorkerMenu = ({modal, charge}) => {
     const {MenuWorker,changeMenuWorker} =useMenuWorker()
@@ -21,6 +22,7 @@ const WorkerMenu = ({modal, charge}) => {
         if( MenuWorker=='offersJobs') return <OfferJobsPanel closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message) } charge={(x)=>charge(x)}/>;
         if( MenuWorker=='programs') return <ManagingPrograms closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='employer') return <ManagingEmployer closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
+        if( MenuWorker=='myself') return <ManagingMySelf closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='root') return <PanelRoot closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
     } else return (
         <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
@@ -36,13 +38,16 @@ const WorkerMenu = ({modal, charge}) => {
                     <button onClick={()=>changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
                     <button onClick={()=>changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
                     <button onClick={()=>changeMenuWorker('root')}> PANEL ROOT</button>
+                    <button onClick={()=>changeMenuWorker('myself')}>Mi Perfil</button>
                 </>
                 
                 }
                 {logged.user.role!='root' &&
                 <>
-                    <button onClick={()=>changeMenuWorker('cv')}> GESTIONAR CURRICULUMS</button>
+                    <button onClick={()=>changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                     <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
+                    <button onClick={()=>changeMenuWorker('myself')}>Mi Perfil</button>
+                    <button onClick={()=>changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
                 </>
                 
                 }

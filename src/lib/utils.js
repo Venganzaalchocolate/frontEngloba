@@ -7,6 +7,12 @@ export const formatDatetime=(date)=>{
     return dateAux
 }
 
+export const formatDate=(date)=>{
+    const dateAux=DateTime.fromISO(date)
+    .toFormat('dd-MM-yyyy');
+    return dateAux
+}
+
 export const deepClone = (obj) => {
     if (obj === null || typeof obj !== 'object') {
         return obj;

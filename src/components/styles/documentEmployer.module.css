@@ -26,6 +26,26 @@
     width: 1.5rem;
     height: 1.5rem;
 }
+.infoFile {
+    display: flex;
+    flex-direction: column;
+}
+
+.dateFile {
+    display: flex;
+    align-items: end;
+    >p{
+        font-family: 'Courier New', Courier, monospace;
+        color: var(--color-morado);
+        font-size: 10pt;
+        font-weight: 900;
+        text-transform: initial; 
+        align-self: baseline;  
+        
+    }
+    
+
+}
 
 
 @media(width>1000px){

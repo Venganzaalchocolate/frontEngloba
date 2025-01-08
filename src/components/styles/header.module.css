@@ -64,11 +64,16 @@
 
 .contenedorIconos{
     align-items: center;
-    gap: 1rem;
+    gap: 3rem;
 }
 
+
 .contenedorIconos svg{
-    color: var(--color-malva);
-    width: 3rem;
-    height: 3rem;
+    color: var(--color-crema);
+    width: 1.5rem;
+    height: 1.5rem;
 }
+
+.contenedorIconos > span:hover>svg {
+    color: tomato;
+  }

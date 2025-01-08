@@ -1,185 +1,250 @@
-import { useState } from 'react';
-import styles from '../styles/formCreateEmpoyers.module.css';
-import { validEmail, validNumber, validText } from '../../lib/valid';
-import { textErrors } from '../../lib/textErrors';
-import { getToken } from '../../lib/serviceToken';
-import { createEmployer } from '../../lib/data';
+import React, { useEffect, useState } from "react";
+import ModalForm from "../globals/ModalForm";
+import { createEmployer, tokenUser } from "../../lib/data";
+import { getToken } from "../../lib/serviceToken";
+import { isNotFutureDateString, validateDNIorNIE, validEmail, validNumber, validText } from "../../lib/valid";
+import { textErrors } from "../../lib/textErrors";
+import { useLogin } from "../../hooks/useLogin";
+// Supongamos que tienes una función para crear el usuario en el servidor
 
-const FormCreateEmployers = ({ modal, charge, user = null, changeUser = null, closeModal }) => {
-    const [multipleData, setMultipleData] = useState({
-        hiringPeriods: user ? user.hiringPeriods : [],
-        leavePeriods: user ? user.leavePeriods : [],
-        degree: user ? user.degree : [],
-        payrolls: user ? user.payrolls : [],
-    });
 
-    const [datos, setDatos] = useState({
-        firstName: user ? user.firstName : null,
-        lastName: user ? user.lastName : null,
-        dni: user ? user.dni : null,
-        email: user ? user.email : null,
-        phone: user ? user.phone : null,
-        employmentStatus: user ? user.employmentStatus : 'en proceso de contratación',
-        dispositiveNow: user ? user.dispositiveNow : null,
-        socialSecurityNumber: user ? user.socialSecurityNumber : null,
-        bankAccountNumber: user ? user.bankAccountNumber : null,
-        cv: user ? user.cv : null,
-        sexualOffenseCertificate: user ? user.sexualOffenseCertificate : null,
-        model145: user ? user.model145 : null,
-        firePrevention: user ? user.firePrevention : null,
-        contract: user ? user.contract : null,
-        employmentHistory: user ? user.employmentHistory : null,
-        dataProtection: user ? user.dataProtection : null,
-        ethicalChannel: user ? user.ethicalChannel : null,
-        dniCopy: user ? user.dniCopy : null,
-        id: user ? user._id : ""
-    });
+/**
+ * Componente que muestra un formulario para crear un nuevo usuario
+ * (datos básicos) + su primer periodo de contratación (position, device, etc.).
+ *
+ * Usa un objeto "enums" para generar las opciones de select (programs, jobs, etc.).
 
-    const [errores, setError] = useState({
-        firstName: null,
-        lastName: null,
-        dni: null,
-        email: null,
-        phone: null,
-        employmentStatus: null,
-        dispositiveNow: null,
-        socialSecurityNumber: null,
-        bankAccountNumber: null,
-        cv: null,
-        sexualOffenseCertificate: null,
-        model145: null,
-        firePrevention: null,
-        contract: null,
-        employmentHistory: null,
-        dataProtection: null,
-        ethicalChannel: null,
-        dniCopy: null
-    });
+ */
+export default function FormCreateEmployer({ enumsData, modal, charge, closeModal,chargeUser }) {
+  const { logged } = useLogin()
+  /**
+   * 1) Genera el array de "fields" para el `ModalForm`,
+   *    mezclando campos de "User" y un primer "hiringPeriod".
+   */
+  const buildFields = () => {
 
-    const handleChange = (e) => {
-        let auxErrores = { ...errores };
-        let auxDatos = { ...datos };
-        auxErrores['mensajeError'] = null;
-        let valido = false;
-
-        // Validar según el tipo de input
-        if (e.target.name === 'firstName' || e.target.name === 'lastName') valido = validText(e.target.value, 3, 100);
-        if (e.target.name === 'email') valido = validEmail(e.target.value);
-        if (e.target.name === 'phone') valido = validNumber(e.target.value);
-
-        auxDatos[e.target.name] = e.target.value;
-        setDatos(auxDatos);
-
-        // Manejo de errores
-        if (!valido) {
-            auxErrores[e.target.name] = textErrors(e.target.name);
-        } else {
-            auxErrores[e.target.name] = null;
-        }
-        setError(auxErrores);
-    };
-
-    const handleChangeFile = (e) => {
-        const { name, files } = e.target;
-        const file = files[0];
-
-        if (file.type === 'application/pdf') {
-            setError({ ...errores, [name]: null });
-            setDatos({ ...datos, [name]: file });
-        } else {
-            setError({ ...errores, [name]: textErrors('fileError') });
-        }
-    };
-
-    const sendFormCreateOffer=async ()=>{
-        const token= getToken();
-        const response=await createEmployer(datos,token)
+    // Construimos las opciones de "device" a partir de enumsData.programs
+    // 1. Tomamos todos los devices de cada program
+    // 2. Creamos un array de { value: device._id, label: device.name }
+    let deviceOptions = [];
+    if (enumsData?.programs) {
+      deviceOptions = enumsData.programs.flatMap(program =>
+        program.devices.map(device => ({
+          value: device._id,
+          label: device.name
+        }))
+      );
     }
 
-    return (
-        <div className={styles.ventana}>
-            <div className={styles.contenedor}>
-                <div className={styles.contenedorForm}>
-                    <h2 id={styles.formtitle}>Añadir Empleado</h2>
-                    <div id={styles.formFirstName}>
-                        <label htmlFor="firstName">Nombre</label>
-                        <input type="text" id="firstName" name="firstName" onChange={handleChange} value={datos.firstName} />
-                        <span className="errorSpan">{errores.firstName}</span>
-                    </div>
-                    <div id={styles.formLastName}>
-                        <label htmlFor="lastName">Apellidos</label>
-                        <input type="text" id="lastName" name="lastName" onChange={handleChange} value={datos.lastName} />
-                        <span className="errorSpan">{errores.lastName}</span>
-                    </div>
-                    <div id={styles.formDni}>
-                        <label htmlFor="dni">DNI</label>
-                        <input type="text" id="dni" name="dni" onChange={handleChange} value={datos.dni} />
-                        <span className="errorSpan">{errores.dni}</span>
-                    </div>
-                    <div id={styles.formEmail}>
-                        <label htmlFor="email">Email</label>
-                        <input type="email" id="email" name="email" onChange={handleChange} value={datos.email} />
-                        <span className="errorSpan">{errores.email}</span>
-                    </div>
-                    <div id={styles.formPhone}>
-                        <label htmlFor="phone">Teléfono</label>
-                        <input type="text" id="phone" name="phone" onChange={handleChange} value={datos.phone} />
-                        <span className="errorSpan">{errores.phone}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.formCV}>
-                        <label htmlFor="cv">Curriculum</label>
-                        <input type="file" id="cv" name="cv" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.cv}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.formSex}>
-                        <label htmlFor="sexualOffenseCertificate">Certificado de delitos sexuales</label>
-                        <input type="file" id="sexualOffenseCertificate" name="sexualOffenseCertificate" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.sexualOffenseCertificate}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.form145}>
-                        <label htmlFor="model145">Modelo 145</label>
-                        <input type="file" id="model145" name="model145" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.model145}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.formFire}>
-                        <label htmlFor="firePrevention">Prevención de incendios</label>
-                        <input type="file" id="firePrevention" name="firePrevention" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.firePrevention}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.formContract}>
-                        <label htmlFor="contract">Contrato</label>
-                        <input type="file" id="contract" name="contract" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.contract}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.formHistory}>
-                        <label htmlFor="employmentHistory">Vida Laboral</label>
-                        <input type="file" id="employmentHistory" name="employmentHistory" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.employmentHistory}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.formProtection}>
-                        <label htmlFor="dataProtection">Protección de datos</label>
-                        <input type="file" id="dataProtection" name="dataProtection" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.dataProtection}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.formEthic}>
-                        <label htmlFor="ethicalChannel">Canal Ético</label>
-                        <input type="file" id="ethicalChannel" name="ethicalChannel" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.ethicalChannel}</span>
-                    </div>
-                    <div className={styles.inputGrande} id={styles.formDniFile}>
-                        <label htmlFor="ethicalChannel">DNI</label>
-                        <input type="file" id="dniCopy" name="dniCopy" onChange={handleChangeFile} />
-                        <span className="errorSpan">{errores.dniCopy}</span>
-                    </div>
-                </div>
-                <div id={styles.formButton}>
-                    <button onClick={()=>sendFormCreateOffer()}>Crear</button>
-                    <button onClick={closeModal}>Cerrar</button>
-                </div>
-                
-            </div>
-        </div>
-    );
-};
+    // Construimos las opciones de "position" a partir de enumsData.jobs
+    // Tienes “jobs” con subcategories. Cada subcategory es un { name, _id }.
+    let positionOptions = [];
+    if (enumsData?.jobs) {
+      positionOptions = enumsData.jobs.flatMap(job => {
+        if (job.subcategories) {
+          return job.subcategories.map(sub => ({
+            value: sub._id,
+            label: sub.name
+          }));
+        } else {
+          // job sin subcategorías
+          return [{ value: job._id, label: job.name }];
+        }
+      });
+    }
+    return [
+      // =========== DATOS DEL USUARIO ===========
 
-export default FormCreateEmployers;
+      {
+        name: "firstName",
+        label: "Nombre",
+        type: "text",
+        required: true,
+        isValid: (texto) => {
+          const valid = validText(texto);
+          return (!valid) ? textErrors('name') : valid; // asume que regresa "" si es válido, o un string con el mensaje de error
+        }
+      },
+      {
+        name: "lastName",
+        label: "Apellidos",
+        type: "text",
+        required: false,
+        isValid: (texto) => {
+          const valid = validText(texto);
+          return (!valid) ? textErrors('name') : valid; // asume que regresa "" si es válido, o un string con el mensaje de error
+        }
+      },
+      ...(logged.user.role === "root" // Solo incluir este campo si el rol es "root"
+        ? [
+          {
+            name: "role",
+            label: "Rol",
+            type: "select",
+            required: true,
+            options: [
+              { value: "", label: "Seleccione un rol" },
+              { value: "root", label: "Root" },
+              { value: "global", label: "Global" },
+              { value: "auditor", label: "Auditor" },
+              { value: "employer", label: "Employer" },
+              { value: "responsable", label: "Responsable" },
+            ],
+          },
+          {
+            name: "pass",
+            label: "Contraseña",
+            type: "text",
+            required: true,
+          },
+        ]
+        : []),
+      {
+        name: "dni",
+        label: "DNI",
+        type: "text",
+        required: true,
+        isValid: (valorDNI) => {
+          const valid = validateDNIorNIE(valorDNI);
+          return (!valid) ? textErrors('dni') : valid; // asume que regresa "" si es válido, o un string con el mensaje de error
+        }
+      },
+      {
+        name: "email",
+        label: "Email",
+        type: "text",
+        required: true,
+        isValid: (texto) => {
+          const valid = validEmail(texto);
+          return (!valid) ? textErrors('email') : valid; // asume que regresa "" si es válido, o un string con el mensaje de error
+        }
+      },
+      {
+        name: "phone",
+        label: "Teléfono",
+        type: "text",
+        required: true,
+        isValid: (texto) => {
+          const valid = validNumber(texto);
+          return (!valid) ? textErrors('phone') : valid; // asume que regresa "" si es válido, o un string con el mensaje de error
+        }
+      },
+
+      // =========== PRIMER HIRING PERIOD ===========
+      {
+        name: "startDate",
+        label: "Fecha de Inicio",
+        type: "date",
+        required: true,
+        
+      },
+      {
+        name: "device",
+        label: "Dispositivo",
+        type: "select",
+        required: true,
+        options: [
+          { value: "", label: "Seleccione una opción" },
+          ...deviceOptions], // a partir de enumsData.programs
+      },
+      {
+        name: "workShift",
+        label: "Jornada",
+        type: "select",
+        required: true,
+        options: [
+          { value: "", label: "Seleccione una opción" },
+          { value: "completa", label: "Completa" },
+          { value: "parcial", label: "Parcial" },
+        ],
+      },
+      {
+        name: "category",
+        label: "Categoría",
+        type: "select",
+        required: false,
+        options: [
+          { value: "1", label: "Categoría 1" },
+          { value: "2", label: "Categoría 2" },
+          { value: "3", label: "Categoría 3" },
+          // ajusta con tus 15 categorías si deseas
+        ],
+      },
+      {
+        name: "position",
+        label: "Cargo (puesto)",
+        type: "select",
+        required: true,
+        options: [
+          { value: "", label: "Seleccione una opción" },
+          ...positionOptions], // a partir de enumsData.jobs
+      },
+    ];
+  };
+
+  /**
+   * 2) Manejar el envío (submit) del formulario
+   */
+  const handleSubmit = async (formData) => {
+    try {
+      // Muestra el loader
+      charge(true);
+
+      // Construimos el objeto "User" con el primer "hiringPeriod"
+      const newUser = {
+        pass: formData.pass || null,
+        role: formData.role || "user",
+        email:formData.email,
+        dni: formData.dni,
+        firstName: formData.firstName,
+        lastName: formData.lastName || "",
+        phone: formData.phone,
+        // otros campos si los deseas
+
+        hiringPeriods: [
+          {
+            startDate: formData.startDate,
+            endDate: formData.endDate || null,
+            device: formData.device,   // ObjectId (Device)
+            workShift: {
+              type: formData.workShift,
+              nota: "",
+            },
+            category: formData.category || "",
+            position: formData.position, // ObjectId (job / subcategory)
+            active: true,
+          },
+        ],
+      };
+      const token = getToken();
+      // Llamar a tu API para guardar en DB
+      const result = await createEmployer(token, newUser);
+      if (result.error) {
+        modal("Error", result.message || "No se pudo crear el usuario");
+      } else {
+        modal("Usuario Creado", "El usuario se ha creado con éxito");
+        chargeUser();
+        closeModal();
+      }
+    } catch (error) {
+      modal("Error", error.message || "Ocurrió un error al crear el usuario");
+      closeModal();
+    } finally {
+      charge(false);
+    }
+  };
+
+  // 3) Preparamos los fields
+  const fields = buildFields();
+
+  // 4) Retornamos ModalForm con los campos y la función handleSubmit
+  return (
+    <ModalForm
+      title="Añadir Empleado"
+      message="Complete los datos del nuevo empleado y su primer período de contratación."
+      fields={fields}
+      onSubmit={handleSubmit}
+      onClose={closeModal}
+    />
+  );
+}

@@ -207,3 +207,37 @@ export const isNotFutureDate=(month, year)=>{
 
   return true;
 }
+
+
+export const isNotFutureDateString = (dateString) => {
+  // Validar que el string no esté vacío
+  if (!dateString) return false;
+
+  // Intentar dividir el string en partes de fecha (asumiendo formato "YYYY-MM" o "YYYY/MM")
+  const parts = dateString.split(/[-/]/); // Separar por '-' o '/'
+  if (parts.length !== 2) return false; // Esperamos exactamente dos partes (año y mes)
+
+  const year = parseInt(parts[0], 10); // Convertir el año a entero
+  const month = parseInt(parts[1], 10); // Convertir el mes a entero
+
+  // Validar que los números sean válidos
+  if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+    return false; // Mes inválido o números no válidos
+  }
+
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1; // Los meses van de 0 a 11
+
+  // Verificar si el año es posterior al actual
+  if (year > currentYear) {
+    return false;
+  }
+
+  // Si el año es el actual, verificar el mes
+  if (year === currentYear && month > currentMonth) {
+    return false;
+  }
+
+  return true; // Es una fecha válida y no está en el futuro
+};

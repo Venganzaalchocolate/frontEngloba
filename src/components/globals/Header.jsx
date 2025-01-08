@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { useMenuWorker } from '../../hooks/useMenuWorker';
 import { RiCloseLargeFill } from "react-icons/ri";
 import { useBag } from '../../hooks/useBag';
+import { FaUserAlt } from "react-icons/fa";
+import stylesTooltip from '../styles/tooltip.module.css';
 
 
 
@@ -15,7 +17,7 @@ const Header = () => {
     const [viewMenu, setViewMenu]=useState(false)
     const {logout, logged } = useLogin()
     const {resetBag}=useBag()
-    const {changeMenuWorker} =useMenuWorker()
+    const {changeMenuWorker, MenuWorker} =useMenuWorker()
 
     const changeOption=(option)=>{
         resetBag(); 
@@ -29,8 +31,10 @@ const Header = () => {
                     <img src="/graphic/logotipo_blanco.png" alt="logotipo Engloba" onClick={()=>changeMenuWorker(null)}/>
             </div>
             <div  className={styles.contenedorIconos}>
-                <button onClick={()=>logout()}>Cerrar Sesión</button>
-                <button onClick={()=>changeOption(null)}>Volver al menú</button>
+                {MenuWorker!=null && <button onClick={()=>changeOption(null)}>Volver al menú</button>}
+                <span className={stylesTooltip.tooltip}><FaUserAlt onClick={()=>logout()}/><span className={stylesTooltip.tooltiptext}>cerrar sesión</span></span>
+                
+                
                 {/* <FaEnvelope />
                 {(viewMenu)?<RiCloseLargeFill  onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}/>:<FiAlignJustify onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}></FiAlignJustify>} */}
             </div>

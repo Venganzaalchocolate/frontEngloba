@@ -6,8 +6,6 @@ import { deepClone } from '../../lib/utils';
 import LeavePeriodNew from './LeavePeriodNew';
 
 const LeavePeriods=({leavePeriods, handleChange, isEditing, hiringPeriodId, saveAndReset, editCancel, editHiring, positionHiring, enums, deleteHirindorLeave})=>{
-    
-    
         return (
             <div className={styles.leaves}>
             <div className={styles.cajaleaveCabecera}>

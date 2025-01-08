@@ -8,7 +8,6 @@ import stylesTooltip from '../styles/tooltip.module.css';
 const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll }) => {
     const [wDelete, setWDelete] = useState(false);
     const name = `${payroll.payrollMonth}_${payroll.payrollYear}`
-    console.log(payroll)
     return (
         <li className={styles.payrollItem}>
             <div className={styles.payrollmonth} onClick={() => downloadPayroll(payroll.pdf, name)}>

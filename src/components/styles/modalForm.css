@@ -1,0 +1,135 @@
+#modalVentana.modalVentana {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(79, 82, 161, 0.643);
+  z-index: 10000;
+  justify-content: center;
+  align-items: center;
+}
+
+#modalContenedor.modalContenedor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+  max-width: 30rem; /* Ajusta según sea necesario */
+  width: 90%;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  color: var(--color-morado);
+  gap: 1;
+
+  /* Clave para scroll: límite de altura + solo scroll vertical */
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden; /* Así evitas el scroll horizontal */
+}
+
+#modalVentana.modalVentana #modalContenedor.modalContenedor h3#modalTitle.modalTitle {
+  text-transform: uppercase;
+  border-bottom: 4px solid var(--color-malva);
+  width: 100%;
+  text-align: center;
+  font-size: 1.5rem; /* EJEMPLO: Ajusta según desees */
+  color: var(--color-morado); /* tu color principal */
+
+}
+
+
+#modalContenedor.modalContenedor p {
+  color: var(--color-morado);
+  text-align: center;
+  padding: 0.5rem;
+}
+
+/* GRUPOS DE INPUT */
+#modalInputGroup.modalInputGroup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+
+}
+
+/* BOTONES */
+#modalActions.modalActions {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+
+/* ARCHIVOS (file input) */
+#modalFileInputWrapper.modalFileInputWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 100%;
+}
+
+.modalHiddenInput {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+
+#modalFileButton.modalFileButton {
+  display: inline-block;
+  background: var(--color-crema);
+  color: #fff;
+  padding: 0.5em 1em;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  user-select: none;
+}
+
+#modalFileButton.modalFileButton:hover {
+  background: var(--color-yema);
+}
+
+#modalFileName.modalFileName {
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: inline-block;
+  font-size: 0.875rem;
+  color: #555;
+}
+
+#modalVentana.modalVentana #modalContenedor.modalContenedor label{
+  color: var(--color-morado);
+}
+
+#modalVentana.modalVentana #modalContenedor.modalContenedor input{
+  border-radius: 0;
+  padding: 0.25rem;
+  border-bottom: solid 1px var(--color-malva);
+}
+
+#modalVentana.modalVentana #modalContenedor.modalContenedor select{
+  padding: 0.25rem;
+  border: solid 1px var(--color-malva);
+}
+
+#modalVentana.modalVentana #modalContenedor.modalContenedor input:focus {
+  outline: none;
+}
+
+#modalVentana.modalVentana #modalContenedor.modalContenedor p.modalError{
+  padding-top: 0.25rem;
+  color: tomato;
+  font-size: 8pt;
+  font-style: italic;
+}
+
+

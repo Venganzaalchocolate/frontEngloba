@@ -4,6 +4,7 @@ import {getOfferJobs } from '../../lib/data';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import OfferDetail from './OfferDetail';
+import { FaArrowLeft } from "react-icons/fa";
 
 const JobsPanel=({ modal, charge })=>{
     const [offers, setOffers]=useState(null)
@@ -57,6 +58,8 @@ const JobsPanel=({ modal, charge })=>{
     return  <div className={styles.contenedor}>
                 
                 <div className={styles.contenedorForm}>
+                    <button className={styles.atras} onClick={()=>navigate(`/`)}><FaArrowLeft/></button>
+                
                     <h2>OFERTAS DISPONIBLES</h2>
                     { !!offers && offers.length>0 && offers.map((x)=>{
                         return <div className={(offerSelected && offerSelected._id==x._id) ?`${styles.contenedorOferta} crema`:styles.contenedorOferta} onClick={()=>selectOffer(x)}>

@@ -1,152 +1,110 @@
 import React, { useEffect, useState } from 'react';
 import { FaSave } from "react-icons/fa";
 import { MdEditOff } from "react-icons/md";
-import styles from '../styles/hiringperiods.module.css';
 import { getDataEmployer } from '../../lib/data';
+import ModalForm from '../globals/ModalForm';
 
-const LeavePeriodNew = ({ enumsData = null, saveHiring = null, close, idHiring }) => {
-    const [enums, setEnums] = useState({});
-    const [leaveNew, setLeaveNew] = useState({
+
+export default function LeavePeriodNew({
+    enumsData = null,
+    saveHiring = null,
+    close,
+    idHiring
+  }) {
+    /**
+     * 1) Construir array de `fields` para tu ModalForm.
+     *    Cada campo corresponde a lo que antes hacías con <input> o <select>.
+     */
+    const buildFields = () => {
+      // Obtenemos opciones para `leaveType` (Tipos de Excedencia) desde `enumsData`
+      const leaveTypeOptions = enumsData?.leavetype?.map((type) => ({
+        value: type._id,
+        label: type.name,
+      })) || [];
+      //
+  
+      return [
+        {
+          name: "leaveType",
+          label: "Tipo de Excedencia",
+          type: "select",
+          required: true,
+          options: [
+            { value: "", label: "Seleccione una opción" },
+            ...leaveTypeOptions
+          ],
+        },
+        {
+          name: "startLeaveDate",
+          label: "Fecha de Inicio",
+          type: "date",
+          required: true,
+        },
+        {
+          name: "expectedEndLeaveDate",
+          label: "Fecha de Fin Prevista",
+          type: "date",
+          required: false, // si deseas que no sea obligatoria
+        },
+        {
+          name: "actualEndLeaveDate",
+          label: "Fecha de Fin Real",
+          type: "date",
+          required: false,
+        },
+      ];
+    };
+  
+    /**
+     * 2) onSubmit del ModalForm: 
+     *    Valida fechas si es necesario, y llama `saveHiring(...)`.
+     */
+    const handleSubmit = (formData) => {
+      // Validación específica: "fecha de fin prevista" >= "fecha de inicio"
+      if (
+        formData.startLeaveDate &&
+        formData.expectedEndLeaveDate &&
+        new Date(formData.startLeaveDate) > new Date(formData.expectedEndLeaveDate)
+      ) {
+        // NO podemos mostrar inline en este punto (ModalForm no tiene validate extra),
+        // así que lanzamos un alert, o no permitimos cerrar:
+        alert("La fecha de fin prevista debe ser posterior a la fecha de inicio");
+        return;
+      }
+  
+      // Construir el objeto con la misma estructura que usabas en tu LeavePeriodNew anterior
+      const leaveData = {
         idHiring: idHiring,
         leaveNew: {
-            leaveType: null,
-            startLeaveDate: null,
-            expectedEndLeaveDate: null,
-            actualEndLeaveDate: null,
-            active:true,
-        }
-    });
-    const [errors, setErrors] = useState({});
-
-    const chargeData = async () => {
-        const dataEnum = await getDataEmployer();
-        setEnums(dataEnum);
+          leaveType: formData.leaveType,
+          startLeaveDate: formData.startLeaveDate,
+          expectedEndLeaveDate: formData.expectedEndLeaveDate || null,
+          actualEndLeaveDate: formData.actualEndLeaveDate || null,
+          active: true,
+        },
+      };
+  
+      // Llamamos a la función del padre para guardar
+      if (saveHiring) {
+        saveHiring(leaveData, "createLeave");
+      }
+  
+      // Finalmente, cierra el modal
+      close();
     };
-
-    useEffect(() => {
-        if (enumsData) {
-            setEnums(enumsData);
-        } else {
-            chargeData();
-        }
-    }, [enumsData]);
-
-    const handleChange = (e) => {
-        const { id, value } = e.target;
-
-        // Actualiza los valores anidados dentro de leaveNew.leaveNew
-        setLeaveNew((prev) => ({
-            ...prev,
-            leaveNew: {
-                ...prev.leaveNew,
-                [id]: value
-            }
-        }));
-    };
-
-    const validateForm = () => {
-        const errors = {};
-
-        if (!leaveNew.leaveNew.leaveType) errors['leaveType'] = "Debe seleccionar un tipo de excedencia.";
-        if (!leaveNew.leaveNew.startLeaveDate) errors['startLeaveDate'] = "La fecha de inicio es obligatoria.";
-        if (
-            leaveNew.leaveNew.startLeaveDate &&
-            leaveNew.leaveNew.expectedEndLeaveDate &&
-            new Date(leaveNew.leaveNew.startLeaveDate) > new Date(leaveNew.leaveNew.expectedEndLeaveDate)
-        ) {
-            errors['expectedEndLeaveDate'] = "La fecha de fin prevista debe ser posterior a la fecha de inicio.";
-        }
-
-        setErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const saveAndReset = (data, type) => {
-        if (!validateForm()) return;
-        if (saveHiring != null) {
-            saveHiring(data, type);
-        }
-        // Resetea el formulario
-        setLeaveNew({
-            idHiring: idHiring,
-            leaveNew: {
-                leaveType: null,
-                startLeaveDate: null,
-                expectedEndLeaveDate: null,
-                actualEndLeaveDate: null,
-                active:true
-            }
-        });
-        setErrors({});
-    };
-
+  
+    // 3) Generamos los `fields`:
+    const fields = buildFields();
+  
     return (
-        <div className={styles.cajaperiodoNuevoCabeceraLeaves}>
-            <h3>Añadir Período de Excedencia</h3>
-            <div className={styles.cajaperiodo}>
-                <div className={styles.periodo}>
-                    <div className={styles.fechainicio}>
-                        <label htmlFor='startLeaveDate'>Fecha de Inicio</label>
-                        <input
-                            type="date"
-                            id="startLeaveDate"
-                            name="startLeaveDate"
-                            value={leaveNew.leaveNew.startLeaveDate || ''}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className={styles.fechainicio}>
-                        <label htmlFor='expectedEndLeaveDate'>Fecha de Fin Prevista</label>
-                        <input
-                            type="date"
-                            id="expectedEndLeaveDate"
-                            name="expectedEndLeaveDate"
-                            value={leaveNew.leaveNew.expectedEndLeaveDate || ''}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className={styles.fechainicio}>
-                        <label htmlFor='actualEndLeaveDate'>Fecha de Fin Real</label>
-                        <input
-                            type="date"
-                            id="actualEndLeaveDate"
-                            name="actualEndLeaveDate"
-                            value={leaveNew.leaveNew.actualEndLeaveDate || ''}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className={styles.excedencia}>
-                        <label htmlFor='leaveType'>Tipo de Excedencia</label>
-                        <select
-                            id="leaveType"
-                            name="leaveType"
-                            value={leaveNew.leaveNew.leaveType || ''}
-                            onChange={handleChange}
-                        >
-                            <option value="">Selecciona una opción</option>
-                            {!!enums.leavetype && enums.leavetype.map((type) => (
-                                <option key={type._id} value={type._id}>
-                                    {type.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-                <div className={styles.buttonsContainer}>
-                    <button onClick={()=>saveAndReset(leaveNew, 'createLeave')}>Guardar</button>
-                    <button className='tomato' onClick={close}>Cancelar</button>
-                </div>
-                <div className={styles.errorsContainer}>
-                    {Object.keys(errors).map((key) => (
-                        <div key={key} className="errorSpan">
-                            {errors[key]}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
+      <ModalForm
+        title="Añadir Período de Excedencia"
+        message="Completa los siguientes campos"
+        fields={fields}
+        onSubmit={handleSubmit}
+        onClose={close}
+      />
     );
-};
-
-export default LeavePeriodNew;
-
+  }
+  
+  

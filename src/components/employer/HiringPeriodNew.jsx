@@ -1,209 +1,170 @@
-import React, { useEffect, useState } from 'react';
-import { FaSave } from "react-icons/fa";
-import { MdEditOff } from "react-icons/md";
-import styles from '../styles/hiringperiods.module.css';
-import { getDataEmployer } from '../../lib/data';
+import React, { useState, useEffect } from 'react';
+import ModalForm from '../globals/ModalForm';
+import { getDataEmployer } from '../../lib/data'; // o la función que uses para cargar enums
 
-const HiringPeriodNew = ({ enumsData = null, save = null, close }) => {
-    const [enums, setEnums] = useState({});
-    const [hiringNew, setHiringNew] = useState({
-        startDate: null,
-        endDate: null,
-        workShift: {
-            type: null
-        },
-        position: null,
-        device: null,
-        active:true
-    });
-    const [errores, setErrores] = useState({});
-
-    // Carga los datos de los enums si no son proporcionados por props
-    const chargeData = async () => {
-        const dataEnum = await getDataEmployer();
-        setEnums(dataEnum);
-    };
-
-    useEffect(() => {
-        if (enumsData) {
-            setEnums(enumsData);
-        } else {
-            chargeData();
-        }
-    }, [enumsData]);
-
-    const handleChange = (e) => {
-        const { id, value } = e.target;
-
-        // Actualiza el estado para el input correspondiente
-        if (id.includes("workShift")) {
-            setHiringNew((prev) => ({
-                ...prev,
-                workShift: {
-                    ...prev.workShift,
-                    type: value
-                }
-            }));
-        } else {
-            setHiringNew((prev) => ({
-                ...prev,
-                [id]: value
-            }));
-        }
-    };
-
-    const validateForm = () => {
-        const errors = {};
-
-        if (!hiringNew.startDate) errors['startDate'] = "La fecha de inicio es obligatoria.";
-        if (!hiringNew.endDate) errors['endDate'] = "La fecha de fin es obligatoria.";
-        if (hiringNew.startDate && hiringNew.endDate && new Date(hiringNew.startDate) > new Date(hiringNew.endDate)) {
-            errors['endDate'] = "La fecha de fin debe ser posterior a la fecha de inicio.";
-        }
-        if (!hiringNew.device) errors['device'] = "Debe seleccionar un dispositivo.";
-        if (!hiringNew.workShift.type) errors['workShift.type'] = "Debe seleccionar un tipo de jornada.";
-        if (!hiringNew.position) errors['position'] = "Debe seleccionar un puesto.";
-
-        setErrores(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const saveAndReset = () => {
-        if (!validateForm()) return;
-        if (save != null) {
-            save(hiringNew, 'create');
-        }
-        // Resetea el formulario
-        setHiringNew({
-            startDate: null,
-            endDate: null,
-            workShift: {
-                type: null
-            },
-            position: null,
-            device: null,
-            active:true,
-        });
-        setErrores({});
-    };
-
-    return (
-        <div className={styles.cajaperiodoNuevoCabecera}>
-            <h3>Añadir Periodo de Contratación</h3>
-            <div className={styles.cajaperiodo}>
-                <div className={styles.periodo}>
-                    <div className={styles.fechainicio}>
-                        <label htmlFor='startDate'>Fecha de Inicio</label>
-                        <input
-                            type="date"
-                            id="startDate"
-                            name="startDate"
-                            value={hiringNew.startDate || ''}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className={styles.fechainicio}>
-                        <label htmlFor='endDate'>Fecha de Fin</label>
-                        <input
-                            type="date"
-                            id="endDate"
-                            name="endDate"
-                            value={hiringNew.endDate || ''}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className={styles.dispositivo}>
-                        <label htmlFor='Device'>Dispositivo</label>
-                        <select
-                            id="device"
-                            name="device"
-                            value={hiringNew.device || ''}
-                            onChange={handleChange}
-                        >
-                            <option value="">Selecciona una opción</option>
-                            {!!enums.programs && enums.programs.map((program) => (
-                                <optgroup key={program._id} label={program.name}>
-                                    {program.devices.map((device) => (
-                                        <option key={device._id} value={device._id}>
-                                            {device.name}
-                                        </option>
-                                    ))}
-                                </optgroup>
-                            ))}
-                        </select>
-                    </div>
-                    <div className={styles.jornada}>
-                        <label htmlFor='workShift.type'>Jornada</label>
-                        <select
-                            id="workShift.type"
-                            name="workShift.type"
-                            value={hiringNew.workShift.type || ''}
-                            onChange={handleChange}
-                        >
-                            <option value="">Selecciona una opción</option>
-                            <option value="completa">Completa</option>
-                            <option value="parcial">Parcial</option>
-                        </select>
-                    </div>
-                    <div className={styles.jornada}>
-                        <label htmlFor='category'>Categoria</label>
-                        <select
-                            id="category"
-                            name="category"
-                            value={hiringNew.category || ''}
-                            onChange={handleChange}
-                        >
-                            <option value="">Selecciona una opción</option>
-                            <option value="1">Categoria 1</option>
-                            <option value="2">Categoria 2</option>
-                            <option value="3">Categoria 3</option>
-                        </select>
-                    </div>
-
-                    <div className={styles.posicion}>
-                        <label htmlFor='position'>Cargo</label>
-                        <select
-                            id="position"
-                            name="position"
-                            value={hiringNew.position || ''}
-                            onChange={handleChange}
-                        >
-                            <option value="">Selecciona una opción</option>
-                            {!!enums.jobs && enums.jobs.map((job) => (
-                                job.subcategories ? (
-                                    <optgroup key={job._id} label={job.name}>
-                                        {job.subcategories.map((subcategory) => (
-                                            <option key={subcategory._id} value={subcategory._id}>
-                                                {subcategory.name}
-                                            </option>
-                                        ))}
-                                    </optgroup>
-                                ) : (
-                                    <option key={job._id} value={job._id}>
-                                        {job.name}
-                                    </option>
-                                )
-                            ))}
-                        </select>
-                    </div>
-                    
-                    
-                </div>
-                <div className={styles.buttonsContainer}>
-                        <button onClick={saveAndReset}>Guardar</button>
-                        <button className='tomato' onClick={close}>Cancelar</button>
-                </div>
-                <div className={styles.errorsContainer}>
-                    {Object.keys(errores).map((key) => (
-                        <div key={key} className="errorSpan">
-                            {errores[key]}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
+// Ejemplo: Generar fields dinámicamente
+function buildHiringFields(enums) {
+  // Construimos las opciones de "device" a partir de enumsData.programs
+  // 1. Tomamos todos los devices de cada program
+  // 2. Creamos un array de { value: device._id, label: device.name }
+  let deviceOptions = [];
+  if (enums?.programs) {
+    deviceOptions = enums.programs.flatMap(program =>
+      program.devices.map(device => ({
+        value: device._id,
+        label: device.name
+      }))
     );
-};
+  }
 
-export default HiringPeriodNew;
+  // Construimos las opciones de "position" a partir de enumsData.jobs
+  // Tienes “jobs” con subcategories. Cada subcategory es un { name, _id }.
+  let positionOptions = [];
+  if (enums?.jobs) {
+    positionOptions = enums.jobs.flatMap(job => {
+      if (job.subcategories) {
+        return job.subcategories.map(sub => ({
+          value: sub._id,
+          label: sub.name
+        }));
+      } else {
+        // job sin subcategorías
+        return [{ value: job._id, label: job.name }];
+      }
+    });
+  }
+  // Ejemplo de fields
+  return [
+    {
+      name: "startDate",
+      label: "Fecha de Inicio",
+      type: "date",
+      required: true,
+
+    },
+    {
+      name: 'endDate',
+      label: 'Fecha de Fin',
+      type: 'date',
+    },
+    {
+      name: "device",
+      label: "Dispositivo",
+      type: "select",
+      required: true,
+      options: [
+        { value: "", label: "Seleccione una opción" },
+        ...deviceOptions], // a partir de enumsData.programs
+    },
+    {
+      name: "workShift",
+      label: "Jornada",
+      type: "select",
+      required: true,
+      options: [
+        { value: "", label: "Seleccione una opción" },
+        { value: "completa", label: "Completa" },
+        { value: "parcial", label: "Parcial" },
+      ],
+    },
+    {
+      name: "category",
+      label: "Categoría",
+      type: "select",
+      required: true,
+      options: [
+        { value: "", label: "Seleccione una opción" },
+        { value: "1", label: "Categoría 1" },
+        { value: "2", label: "Categoría 2" },
+        { value: "3", label: "Categoría 3" },
+        // ajusta con tus 15 categorías si deseas
+      ],
+    },
+    {
+      name: "position",
+      label: "Cargo (puesto)",
+      type: "select",
+      required: true,
+      options: [
+        { value: "", label: "Seleccione una opción" },
+        ...positionOptions], // a partir de enumsData.jobs
+    },
+  ];
+};
+//
+
+export default function HiringPeriodNew({ user, enumsData = null, save = () => { }, onClose }) {
+  // Estado local para guardar los enumerados, si no los pasan por props
+  const [enums, setEnums] = useState(null);
+  // Generamos "fields" a partir de enums
+  const [fields, setFields] = useState([]);
+
+  // Cargar enums si no se pasaron
+  useEffect(() => {
+    async function chargeData() {
+      const dataEnum = await getDataEmployer();
+      setEnums(dataEnum);
+    }
+    if (enumsData) {
+      setEnums(enumsData);
+    } else {
+      chargeData();
+    }
+  }, [enumsData]);
+
+  // Cada vez que `enums` cambie, regeneramos fields
+  useEffect(() => {
+    if (enums) {
+      const newFields = buildHiringFields(enums);
+      setFields(newFields);
+    }
+  }, [enums]);
+
+  /**
+   * onSubmit: se llama cuando el usuario hace clic en "Aceptar" dentro del ModalForm
+   */
+  const handleSubmit = (formData) => {
+    // Construimos el objeto "User" con el primer "hiringPeriod"
+
+    // 1) Validaciones específicas:
+    if (new Date(formData.startDate) > new Date(formData.endDate)) {
+      alert("La fecha de fin debe ser posterior a la fecha de inicio.");
+      return; // Cancela el envío
+    }
+
+    // 2) Construir la estructura "hiringNew" similar a la que usabas en HiringPeriodNew
+    const hiringNew =
+    {
+      startDate: formData.startDate,
+      endDate: formData.endDate || null,
+      device: formData.device,   // ObjectId (Device)
+      workShift: {
+        type: formData.workShift,
+        nota: "",
+      },
+      category: formData.category || "",
+      position: formData.position, // ObjectId (job / subcategory)
+      active: true,
+    };
+    // 3) Llamar a tu función "save", pasando (hiringNew, 'create')
+    save(hiringNew, 'create');
+
+    // 4) Cerrar el modal
+    onClose();
+  };
+
+  // Si aún no tenemos fields listos (porque está cargando enumerados), retornamos null o un loader
+  if (!fields.length) {
+    return null;
+  }
+
+  return (
+    <ModalForm
+      title="Añadir Periodo de Contratación"
+      message="Completa los siguientes campos"
+      fields={fields}
+      onSubmit={handleSubmit}
+      onClose={onClose}
+    />
+  );
+}

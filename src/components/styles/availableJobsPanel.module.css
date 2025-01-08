@@ -56,6 +56,10 @@
     display: none;
 }
 
+.atras{
+    max-width: 3rem;
+}
+
 
 @media (width < 1080px) { 
     .contenedorSelect{

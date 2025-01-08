@@ -5,13 +5,44 @@ import { MdEditOff } from "react-icons/md";
 import { deepClone } from '../../lib/utils';
 import LeavePeriods from './LeavePeriods';
 import LeavePeriodNew from './LeavePeriodNew';
+import ModalConfirmation from '../globals/ModalConfirmation';
 
-const HiringList = ({ hirings, enums, saveHiring }) => {
+const  HiringList = ({ hirings, enums, saveHiring }) => {
     const [isEditing, setIsEditing] = useState(null); // Controla si estamos en modo de edición
     const [errores, setErrores] = useState('');
     const [hiringsEditing, setHiringsEditing] = useState([])
     const [buttonCreateLeave, setButtonCreateLeave] = useState(false)
+    // =========== CONFIRMACIÓN MODAL ===========
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+  const handleDelete = () => {
+    setShowConfirmModal(true);
+  };
+  
+  const onConfirm = () => {
+    //FUNCION QUE LLAMA A LA BBDD Y REALIZA EL DELETE
+    deleteHirindorLeave(showConfirmModal)
+    setShowConfirmModal(false);
+  };
+  
+  const onCancel = () => {
+    // Cancelar la acción
+    setShowConfirmModal(false);
+  };
+    // ============================================
+    const modalConfirmation=()=>{
+        const type=(showConfirmModal.split('-')[2]=='leavePeriods')?'excedencia':'contratación'
+        const title=`Eliminar periodo de ${type}`
+        const messageAux=`¿Estás seguro de que deseas eliminar este periodo de ${type}?`
+        return (
+          <ModalConfirmation
+            title={title}
+            message={messageAux}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+          />
+        )
+      }
 
     useEffect(() => {
         hirings.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
@@ -89,11 +120,11 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
             dataAux[dataAuxPosition[0]][dataAuxPosition[2]] = value;
 
         }
-        console.log(dataAux)
         saveHiring(dataAux, 'put')
     }
 
     return (
+        <>
         <div className={styles.listaperiodos}>
             <div className={styles.cajaperiodoCabecera}>
                 <div className={styles.periodo}>
@@ -204,13 +235,19 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
                                         <FaSave onClick={() => saveAndReset()}></FaSave>
                                     </>
                                         : <FaEdit onClick={() => editHiring(hiringPeriod._id)}></FaEdit>}
-                                    <FaTrashAlt onClick={()=>deleteHirindorLeave(`${i}-${hiringPeriod._id}-active`)}></FaTrashAlt>
+                                    <FaTrashAlt onClick={()=>setShowConfirmModal(`${i}-${hiringPeriod._id}-active`)}></FaTrashAlt>
                                 </div>
                             </div>
-                            {!!buttonCreateLeave && buttonCreateLeave == hiringPeriod._id &&
-                                <LeavePeriodNew enumsData={enums} saveHiring={(leave, type) => saveHiring(leave, type)} close={() => setButtonCreateLeave(false)} idHiring={hiringPeriod._id} />
+                            {buttonCreateLeave && buttonCreateLeave == hiringPeriod._id &&
+                            <LeavePeriodNew 
+                                enumsData={enums} 
+                                saveHiring={(leave, type) => saveHiring(leave, type)} 
+                                close={() => setButtonCreateLeave(false)} 
+                                idHiring={hiringPeriod._id} 
+                            />
                             }
-                            {!!hiringPeriod.leavePeriods && hiringPeriod.leavePeriods.length > 0 &&
+
+                            {!!hiringPeriod.leavePeriods &&  hiringPeriod.leavePeriods.filter(lp => lp.active).length > 0 && 
                                 <LeavePeriods
                                     leavePeriods={hiringPeriod.leavePeriods}
                                     handleChange={handleChange}
@@ -221,7 +258,7 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
                                     editHiring={(x) => editHiring(x)}
                                     enums={enums}
                                     positionHiring={i}
-                                    deleteHirindorLeave={(x)=>deleteHirindorLeave(x)}
+                                    deleteHirindorLeave={(x)=>setShowConfirmModal(x)}
                                 />
                             }
 
@@ -233,6 +270,9 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
 
                 })}
         </div>
+        {showConfirmModal && modalConfirmation()}
+        </>
+        
     );
 };
 

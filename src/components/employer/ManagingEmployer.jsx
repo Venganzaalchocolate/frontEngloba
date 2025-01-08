@@ -14,6 +14,7 @@ const ManagingEmployer = ({ modal, charge }) => {
     const { logged, changeLogged, logout } = useLogin();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [enums, setEnums] = useState(null);
+    const [enumsEmployer, setEnumsEmployer] = useState(null);
     const [userSelected, setUserSelected] = useState(null);
     const [limit, setLimit] = useState(50);
     const [page, setPage] = useState(1);
@@ -30,13 +31,17 @@ const ManagingEmployer = ({ modal, charge }) => {
     // Derivar una versión debounced de los filtros
     const debouncedFilters = useDebounce(filters, 300);
 
-    useEffect(() => {
+    const chargeUser=()=>{
         if (logged.isLoggedIn) {
             if(logged.user.role=='root' || logged.user.role=='global') loadUsers();
             else loadDispositive();
         } else {
             navigate('/login');
         }
+    }
+
+    useEffect(() => {
+        chargeUser();
     }, [debouncedFilters, page, limit]);
 
 
@@ -56,6 +61,7 @@ const ManagingEmployer = ({ modal, charge }) => {
     };
 
     const loadDispositive = async () => {
+        
         charge(true)
         const token = getToken();
         const id = logged.user._id;
@@ -64,6 +70,12 @@ const ManagingEmployer = ({ modal, charge }) => {
         if (allDevices.length > 1) setListDispositive(allDevices);
         else setDispositiveNow(allDevices[0])
         charge(false)
+    }
+
+    const chargeEnums=async()=>{
+        const enumsData = await getDataEmployer();
+        setEnumsEmployer(enumsData)
+        return enumsData
     }
 
     const loadUsers = async (filter = false) => {
@@ -81,8 +93,7 @@ const ManagingEmployer = ({ modal, charge }) => {
             if (!!filter) auxFilters['dispositiveNow'] = dispositiveNow
             data = await getusers(page, limit, auxFilters, token);
 
-            const enumsData = await getDataEmployer();
-            console.log(enumsData)
+            const enumsData=await chargeEnums();
             if (!enumsData.error) {
                 let auxEnums = {
                     provinces: enumsData.provinces,
@@ -186,7 +197,7 @@ const ManagingEmployer = ({ modal, charge }) => {
                             <h2>GESTIÓN DE EMPLEADOS</h2>
                             <FaSquarePlus onClick={changeAction} />
                             {isModalOpen &&
-                                <FormCreateEmployers modal={modal} charge={charge} user={userSelected} closeModal={closeModal} />
+                                <FormCreateEmployers enumsData={enumsEmployer} modal={modal} charge={charge} user={userSelected} closeModal={closeModal} chargeUser={chargeUser}/>
                             }
                             </div>
                            
@@ -248,14 +259,16 @@ const ManagingEmployer = ({ modal, charge }) => {
                                         <div className={styles.tableCellStatus}>Status</div>
                                     </div>
                                     {users.map(user => (
-                                        <div key={user._id} onClick={()=>setUserSelected(user)}>
+                                        //<div key={user._id} onClick={()=>(userSelected==null || user._id!=userSelected._id)?setUserSelected(user):setUserSelected(null)}>
+
+                                        <div key={user._id} onClick={()=>(setUserSelected(user))}>
                                             <div className={styles.tableContainer}>
                                                 <div className={styles.tableCell}>{user.firstName}</div>
                                                 <div className={styles.tableCell}>{user.lastName}</div>
                                                 <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
                                             </div>
                                             {userSelected!=null && userSelected._id === user._id &&
-                                            <ViewEmployers user={userSelected} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+                                            <ViewEmployers chargeEnums={chargeEnums} enumsData={enumsEmployer} user={userSelected} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
                                             }
                                        
                                         </div>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import PayrollItem from './PayrollItem.jsx';
 import styles from '../styles/payrollsEmployer.module.css';
 
-const PayrollList = ({ payrolls, deletePayroll, downloadPayroll }) => {
+const PayrollList = ({ payrolls, deletePayroll, downloadPayroll, listResponsability, signPayroll}) => {
     const [selectedYear, setSelectedYear] = useState(null);
 
     const stringMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -13,6 +13,8 @@ const PayrollList = ({ payrolls, deletePayroll, downloadPayroll }) => {
         : [];
 
     if (payrolls.length === 0) return <p>No hay nóminas disponibles</p>;
+
+    
 
     return (
         <div className={styles.lista_nominas}>
@@ -37,6 +39,8 @@ const PayrollList = ({ payrolls, deletePayroll, downloadPayroll }) => {
                             stringMeses={stringMeses}
                             deletePayroll={deletePayroll}
                             downloadPayroll={downloadPayroll}
+                            listResponsability={listResponsability}
+                            signPayroll={signPayroll}
                         />
                     ))}
                 </ul>

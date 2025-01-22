@@ -95,7 +95,6 @@ const onCancel = () => {
 
 
   const responsabilityFor = () => {
-
     const programs = enumsData.programsIndex
     let listDispositiveAux = []
     for (const idDispositive in programs) {
@@ -112,8 +111,7 @@ const onCancel = () => {
   }
 
   useEffect(() => {
-    responsabilityFor();
-    console.log(enumsData)
+  responsabilityFor();
   }, [enumsData])
 
   const fields = buildFields();

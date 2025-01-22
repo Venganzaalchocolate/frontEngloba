@@ -8,6 +8,13 @@
     
 }
 
+.contenedorModuloNominas{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 0.5rem;
+    border-radius: 1rem;
+}
+
 .contenedor>h2{
     display: flex;
     flex: 1 100%;
@@ -64,7 +71,7 @@
 }
 
 .lista_nominas{
-    flex: 1 100%;
+    flex: 1;
     display: flex;
     flex-direction: column;
 }
@@ -154,7 +161,7 @@ div.confirmacionBorrar{
 
 .botonBorrar{
     display: flex;
-    margin-left: 0.5rem;
+    margin-left: 2rem;
     padding: 0 0.4rem;
     border: solid 1px tomato;
     border-radius: 1rem;
@@ -162,6 +169,24 @@ div.confirmacionBorrar{
     >svg.botonNomina{
         color: white;
     }
+}
+
+.botonSubir{
+    display: flex;
+    margin-left: 0.5rem;
+    padding: 0 0.4rem;
+    border: solid 1px var(--color-chicle);
+    border-radius: 1rem;
+    background-color: var(--color-chicle);
+    >svg.botonNomina{
+        color: white;
+    }
+}
+
+.botonSubir:hover{
+    background-color: var(--color-morado);
+    border: var(--color-morado);
+  
 }
 
 .botonBorrar:hover{
@@ -179,8 +204,14 @@ svg.botonNomina{
 }
 
 .firma{
+    
     align-items: center;
     margin-left: 0.5rem;
+}
+
+.firma svg{
+    width: 1.5rem;
+    height: 1.5rem;
 }
 
 

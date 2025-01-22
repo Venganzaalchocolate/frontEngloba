@@ -6,7 +6,7 @@ import HiringList from './HiringList.jsx';
 import HiringPeriodNew from './HiringPeriodNew.jsx'; // <-- nuevo
 import { getDataEmployer, getPrograms, hirings } from '../../lib/data.js';
 
-const Hiringperiods = ({ user, modal, charge, changeUser,enumsData }) => {
+const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) => {
     const [buttonCreateHiring, setButtonCreateHiring] = useState(false);
     /**
      * Función principal para guardar/actualizar hiring.
@@ -52,6 +52,7 @@ const Hiringperiods = ({ user, modal, charge, changeUser,enumsData }) => {
         if (!userNow.error) {
             modal('Periodo guardado', 'Periodo guardado con éxito');
             changeUser(userNow); // Actualizar el estado del user
+            chargeUser();
         } else {
             modal('Error', 'Error al guardar el periodo');
             setButtonCreateHiring(false);

@@ -22,7 +22,6 @@ export default function FormCreateEmployer({ enumsData, modal, charge, closeModa
    *    mezclando campos de "User" y un primer "hiringPeriod".
    */
   const buildFields = () => {
-
     // Construimos las opciones de "device" a partir de enumsData.programs
     // 1. Tomamos todos los devices de cada program
     // 2. Creamos un array de { value: device._id, label: device.name }
@@ -90,13 +89,7 @@ export default function FormCreateEmployer({ enumsData, modal, charge, closeModa
               { value: "employer", label: "Employer" },
               { value: "responsable", label: "Responsable" },
             ],
-          },
-          {
-            name: "pass",
-            label: "Contraseña",
-            type: "text",
-            required: true,
-          },
+          }
         ]
         : []),
       {

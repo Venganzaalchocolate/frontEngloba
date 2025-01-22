@@ -105,71 +105,20 @@ export const deleteUserCv = (token, datos) => fetchData('/deleteusercv', 'DELETE
 
 export const modifyUser = (dataUser) => fetchData('/modifyusercv', 'PUT', null, dataUser);
 
-
-
 export const createEmployer = (token, datos) => fetchData('/createemployer', 'POST', token, datos);
 
 export const getEmployers = (token) => fetchData('/users', 'GET', token)
 
 export const loginUser = (email, password) => fetchData('/login', 'POST', null, { email, password });
+export const loginUserCode=(email) => fetchData('/login', 'POST', null, { email});
+export const tokenGenerate=(data)=> fetchData('/validCode', 'POST', null, data);
 
 export const getusercvs = (page, limit, filters, token) => fetchData('/usercvs', 'POST', token, { page, limit, ...filters });
 
 export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
-/*
+
 export const editUser = async (data, token) => {
     const formData = new FormData();
-
-    // Campos de archivo que queremos subir
-    const fileFields = [
-        'cv', 'sexualOffenseCertificate', 'model145', 'firePrevention',
-        'contract', 'employmentHistory', 'dataProtection', 'ethicalChannel', 'dniCopy'
-    ];
-
-
-    // Añadir los campos al FormData
-    Object.keys(data).forEach(key => {
-        if (fileFields.includes(key)) {
-            // Si el campo es un archivo y existe, lo añadimos al FormData
-            if (data[key] instanceof File) {
-                formData.append(key, data[key], data[key].name);  // Agregar el archivo al FormData
-            }
-        } else if (key === 'hiringPeriods' || key === 'responsibleDevices') {
-            // Serializar arrays y objetos antes de enviarlos
-            formData.append(key, JSON.stringify(data[key]));
-        } else {
-            // Añadir los demás campos de texto
-            formData.append(key, data[key] !== null ? data[key] : '');  // Manejar valores nulos
-        }
-    });
-
-    // Configuramos el fetch manualmente porque necesitamos modificar los encabezados y no podemos modificar fetchData
-    const endpoint = '/modifyuser';
-    const method = 'PUT';
-    const url = `${urlApi}${endpoint}`;
-
-    const options = {
-        method,
-        headers: {
-            ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: formData // Se envía el FormData directamente
-    };
-
-
-    const response = await fetch(url, options);
-    const result = await response.json();
-
-    if (result.error) return result;
-    return result.data;
-
-}
-
-*/
-export const editUser = async (data, token) => {
-    const formData = new FormData();
-
-    console.log(data)
     // Añadir los campos al FormData
     Object.keys(data).forEach(key => {
         if (key === 'files') {
@@ -307,10 +256,13 @@ export const updatePayroll = async (data, token) => {
 
     if(data.type=='get'){
       result = await fetchData(endpoint, method, token, formData, true);
+      const pdfUrl = URL.createObjectURL(result);
       if (result.error) return result;
-    } 
-    else result = await fetchData(endpoint, method, token, formData);
-    console.log(result)
+      return { url: pdfUrl }; 
+    } else {
+     result = await fetchData(endpoint, method, token, formData); 
+      
+    }
     return result;
 };
 

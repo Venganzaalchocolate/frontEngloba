@@ -9,6 +9,7 @@ export const textErrors = (tipo) => {
         case "from":
         case "email":
             return "El email no está bien escrito ej: email@gmail.com";
+        case "pass":
         case "password":
             return "8 carácteres, una minúscula, una mayúscula, un número y un carácter especial";
         case "direccion":

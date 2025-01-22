@@ -1,13 +1,13 @@
 import { useState } from "react";
 import InfoEmployer from "./InfoEmployer";
 import DocumentEmployer from "./DocumentEmployer";
-import Payrolls from "./Payrolls";
+import Payrolls from "../payroll/Payrolls";
 import styles from '../styles/viewEmployer.module.css';
 import VacationDays from "./VacationDays";
 import Hiringperiods from "./HiringsPeriods";
 import Responsability from "./Responsability";
 
-const ViewEmployers = ({ user, modal, charge, changeUser, enumsData, chargeEnums }) => {
+const ViewEmployers = ({ user, modal, charge, changeUser, enumsData, chargeEnums,chargeUser, listResponsability }) => {
 
     const handleChangeFile = (e) => {
         const { name, files } = e.target;
@@ -44,9 +44,9 @@ const ViewEmployers = ({ user, modal, charge, changeUser, enumsData, chargeEnums
             <InfoEmployer user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
             <Responsability chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>   
             <DocumentEmployer user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
-            <Payrolls user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+            <Payrolls user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} listResponsability={listResponsability}/>
             <VacationDays  user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
-            <Hiringperiods enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+            <Hiringperiods enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} chargeUser={chargeUser}/>
             {/* Otros detalles que quieras mostrar */}
         </div>
     );

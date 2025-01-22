@@ -179,7 +179,7 @@ const FormCreateJob = ({enums, modal, charge, back, datosOferta = null, changeOf
                             <label htmlFor="functions">Funciones</label>
                             <select id='functions' name='functions' onChange={(e) => handleChange(e)} value={datos.functions} disabled={noEditar}>
                                 <option value={'noOption'} key='functions-1'>Selecciona una opción</option>
-                                {enums.jobs.map((x, i) => {
+                                {enums.studies.map((x, i) => {
                                      if (x.subcategories != undefined && x.subcategories.length > 0) {
                                         return (
                                             <optgroup label={x.name} key={x._id}>

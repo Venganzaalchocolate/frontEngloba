@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from '../styles/infoEmployer.module.css';
 import { FaEdit } from "react-icons/fa";
-import { validateBankAccount, validateDNIorNIE, validateSocialSecurityNumber, validEmail, validNumber, validText } from "../../lib/valid";
+import { validateBankAccount, validateDNIorNIE, validateSocialSecurityNumber, validEmail, validNumber, validPassword, validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 import { getToken } from "../../lib/serviceToken";
 import { editUser } from "../../lib/data";
@@ -11,6 +11,7 @@ const InfoEmployer = ({ user,modal, charge, changeUser }) => {
     const [isEditing, setIsEditing] = useState(false); // Controla si estamos en modo de edición
     const [datos, setDatos] = useState(user); // Estado local para los datos del usuario
     const [errores, setErrores] = useState({}); // Estado local para los errores
+
 
     // Maneja los cambios en los campos de texto
     const handleChange = (e) => {
@@ -47,6 +48,14 @@ const InfoEmployer = ({ user,modal, charge, changeUser }) => {
                 valido = validateSocialSecurityNumber(value)
             } else {
                auxErrores['socialSecurityNumber']=null; 
+               valido=true; 
+            }
+        } else if(name=='pass'){
+            
+            if(value!='') {
+                valido = validPassword(value)
+            } else {
+               auxErrores['pass']=null; 
                valido=true; 
             }
         }
@@ -118,7 +127,7 @@ const InfoEmployer = ({ user,modal, charge, changeUser }) => {
         ['phone', 'Teléfono'],
         ['employmentStatus', 'Estado Laboral'],
         ['socialSecurityNumber', 'Número de Seguridad Social'],
-        ['bankAccountNumber', 'Número de Cuenta Bancaria']
+        ['bankAccountNumber', 'Número de Cuenta Bancaria'],
     ];
 
     const reset=()=>{
@@ -155,6 +164,7 @@ const InfoEmployer = ({ user,modal, charge, changeUser }) => {
                         onChange={handleChange}
                         disabled={(field[0]=='employmentStatus')?true:!isEditing}
                     />
+                    
                     {errores[field[0]] && <span className="errorSpan">{errores[field[0]]}</span>}
                 </div>
             ))}

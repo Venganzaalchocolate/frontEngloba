@@ -4,7 +4,7 @@
     padding: 1rem;
     flex-wrap: wrap;
     gap: 1rem 0.5rem;
-    border-radius: 1rem;
+
     
 }
 
@@ -23,8 +23,9 @@
 }
 
 .contenedor svg{
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 3rem;
+    height: 3rem;
+    margin: 0 1rem;
 }
 .infoFile {
     display: flex;
@@ -49,9 +50,18 @@
 
 
 @media(width>1000px){
+    .contenedor{
+        border-radius: 1rem;
+    }
     .contenedor div{
         flex: 32%;
 
+    }
+
+    .contenedor svg{
+        width: 1.5rem;
+        height: 1.5rem;
+        margin: 0;
     }
 
 }

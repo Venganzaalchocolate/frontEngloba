@@ -132,4 +132,11 @@
   font-style: italic;
 }
 
+#modalVentana.modalVentana h4{
+  padding-top: 1.5rem;
+  margin-bottom: 1rem;
+}
 
+#modalVentana.modalVentana button{
+  margin-top: 1rem;
+}

@@ -7,7 +7,7 @@ import { getToken } from "../../lib/serviceToken";
 import { editUser } from "../../lib/data";
 import { deepClone } from "../../lib/utils";
 
-const InfoEmployer = ({ user,modal, charge, changeUser }) => {
+const InfoEmployer = ({ user,modal, charge, changeUser, listResponsability }) => {
     const [isEditing, setIsEditing] = useState(false); // Controla si estamos en modo de edición
     const [datos, setDatos] = useState(user); // Estado local para los datos del usuario
     const [errores, setErrores] = useState({}); // Estado local para los errores
@@ -137,6 +137,7 @@ const InfoEmployer = ({ user,modal, charge, changeUser }) => {
     }
 
     const boton=()=>{
+        if(!!listResponsability && listResponsability.length<1) return ''
         const component= !isEditing ? (
             <FaEdit onClick={handleEdit}></FaEdit>
         ) : (

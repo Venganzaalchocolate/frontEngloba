@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ModalForm from "../globals/ModalForm";
 import { createEmployer, tokenUser } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
-import { isNotFutureDateString, validateDNIorNIE, validEmail, validNumber, validText } from "../../lib/valid";
+import {validateDNIorNIE, validEmail, validNumber, validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 import { useLogin } from "../../hooks/useLogin";
 // Supongamos que tienes una función para crear el usuario en el servidor
@@ -122,6 +122,7 @@ export default function FormCreateEmployer({ enumsData, modal, charge, closeModa
           return (!valid) ? textErrors('phone') : valid; // asume que regresa "" si es válido, o un string con el mensaje de error
         }
       },
+      { type: "section", label: "PERIODO DE CONTRATACIÓN" },
 
       // =========== PRIMER HIRING PERIOD ===========
       {

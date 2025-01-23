@@ -4,7 +4,7 @@
     padding: 1rem;
     flex-wrap: wrap;
     gap: 1rem 0.5rem;
-    border-radius: 1rem;
+
     
 }
 
@@ -46,6 +46,9 @@
 }
 
 @media(width>1000px){
+    .contenedor{
+        border-radius: 1rem;
+    }
     .contenedor div{
         flex: 30%;
     }

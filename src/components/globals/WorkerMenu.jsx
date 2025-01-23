@@ -40,41 +40,47 @@ const WorkerMenu = ({modal, charge}) => {
         if( MenuWorker=='offersJobs') return <OfferJobsPanel closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message) } charge={(x)=>charge(x)}/>;
         if( MenuWorker=='programs') return <ManagingPrograms closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='employer') return <ManagingEmployer listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
-        if( MenuWorker=='myself') return <ManagingMySelf closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
+        if( MenuWorker=='myself') return <ManagingMySelf listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='root') return <PanelRoot closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
     } else return (
         <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
             <div>
                 <h2>Bienvenido, {logged.user.firstName}</h2>
                 
-                {logged.user.role=='root' &&
+                {logged.user.role=='root' 
+                ?
                 <>
                     <button onClick={()=>changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                     <button onClick={()=>changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>    
-                    <button onClick={()=>changeMenuWorker('payroll')}> GESTIONAR NÓMINAS</button>
+                    <button onClick={()=>changeMenuWorker('payroll')}> NÓMINAS</button>
                     <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
                     <button onClick={()=>changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
                     <button onClick={()=>changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
                     <button onClick={()=>changeMenuWorker('root')}> PANEL ROOT</button>
-                    <button onClick={()=>changeMenuWorker('myself')}>Mi Perfil</button>
+                    <button onClick={()=>changeMenuWorker('myself')}>MIS DATOS</button>
                 </>
                 
-                }
-                {logged.user.email=='responsable@engloba.org.es' &&
+                
+                :logged.user.email=='responsable@engloba.org.es' 
+                ?
                 <>
                     <button onClick={()=>changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                     <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
                 </>
-                }
-                {listResponsability.length>0 
+                :listResponsability.length>0 
                 ?
                     <>
+                        <button onClick={()=>changeMenuWorker('myself')}>MIS DATOS</button>
                         <button onClick={()=>changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
-                        <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
+                        <button onClick={()=>changeMenuWorker('offersJobs')}>GESTIONAR OFERTAS</button>
                         <button onClick={()=>changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
                     </>
                 :
-                    <button onClick={()=>changeMenuWorker('payroll')}> GESTIONAR NÓMINAS</button>
+                    <>
+                    <button onClick={()=>changeMenuWorker('myself')}>MIS DATOS</button>
+                    <button onClick={()=>changeMenuWorker('payroll')}>NÓMINAS</button>
+                    </>
+                    
                 }
                 
 

@@ -68,7 +68,7 @@ export default function FormCreateEmployer({ enumsData, modal, charge, closeModa
         name: "lastName",
         label: "Apellidos",
         type: "text",
-        required: false,
+        required: true,
         isValid: (texto) => {
           const valid = validText(texto);
           return (!valid) ? textErrors('name') : valid; // asume que regresa "" si es válido, o un string con el mensaje de error
@@ -155,8 +155,9 @@ export default function FormCreateEmployer({ enumsData, modal, charge, closeModa
         name: "category",
         label: "Categoría",
         type: "select",
-        required: false,
+        required: true,
         options: [
+          { value: "", label: "Seleccione una opción" },
           { value: "1", label: "Categoría 1" },
           { value: "2", label: "Categoría 2" },
           { value: "3", label: "Categoría 3" },

@@ -8,6 +8,7 @@ const SelectedJobs = ({ data, type, errores, removeOption }) => {
             <ul>
                 {data[type].map((x, i) => (
                     <li key={`${type}-${i}`}>
+                        
                         <p>{x}</p>
                         <IoCloseCircle className='iconTomato' onClick={() => removeOption(type, i)}/>
                     </li>

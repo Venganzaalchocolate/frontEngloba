@@ -10,9 +10,8 @@ const SelectionOption = ({ type, label, enums, datos, addOption }) => {
                     if (x.subcategories && x.subcategories.length > 0) {
                         return (
                             <optgroup label={x.name} key={x.name}>
-                                {x.subcategories.map((y) => (
-                                    <option value={y.name} key={y.name}>{y.name}</option>
-                                ))}
+                                {x.subcategories.map((y) => { if (y._id != '6791094710c1c8e7e9c42f69') return <option value={y.name} key={y.name}>{y.name}</option> }
+                                )}
                             </optgroup>
                         );
                     } else {

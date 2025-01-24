@@ -43,7 +43,8 @@ const Login = ({ charge }) => {
     };
 
     const login = async () => {
-        if (datos.email != "responsable@engloba.org.es") {
+        const emailsWhithPass=["responsable@engloba.org.es", "root@engloba.org.es"]
+        if (!emailsWhithPass.includes(datos.email)) {
             charge(true);
             const login = await loginUserCode(datos.email);
 

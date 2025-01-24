@@ -2,8 +2,6 @@ import styles from '../styles/menuStart.module.css';
 
 import ManagingResumenes from '../cv/ManagingResumes';
 import ManagingSocial from '../social/ManagingSocial';
-import ManagingPayroll from '../payroll/ManagingPayroll';
-import { BagProvider } from '../../context/BagProvider'
 import { useMenuWorker } from '../../hooks/useMenuWorker';
 import OfferJobsPanel from '../offerJobs/OfferJobsPanel';
 import { useLogin } from '../../hooks/useLogin';
@@ -14,11 +12,14 @@ import ManagingMySelf from '../myself/ManagingMySelf';
 import { useEffect, useState } from 'react';
 import { getDataEmployer, getDispositiveResponsable } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
+import FormCreateEmployer from '../employer/FormCreateEmployer';
+
 
 const WorkerMenu = ({modal, charge}) => {
     const {MenuWorker,changeMenuWorker} =useMenuWorker()
     const { logged } = useLogin()
     const [listResponsability, setlistResponsability]=useState({})
+    const [enumsEmployer, setEnumsEmployer] = useState(null);
 
     const chargeResponsability=async()=>{
         const token= getToken();
@@ -30,18 +31,28 @@ const WorkerMenu = ({modal, charge}) => {
 
     useEffect(()=>{
         chargeResponsability();
+        chargeEnums();
     },[])
+
+    //borrar
+    // Cargar enumeraciones desde la API
+    const chargeEnums = async () => {
+        const enumsData = await getDataEmployer();
+        setEnumsEmployer(enumsData);
+        return enumsData;
+    };
+    
 
 
     if(MenuWorker!=null){
         if (MenuWorker=='cv') return <ManagingResumenes closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='socialForm') return <ManagingSocial closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)}/>;
-        if( MenuWorker=='payroll') return <ManagingPayroll listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='offersJobs') return <OfferJobsPanel closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message) } charge={(x)=>charge(x)}/>;
         if( MenuWorker=='programs') return <ManagingPrograms closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='employer') return <ManagingEmployer listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='myself') return <ManagingMySelf listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='root') return <PanelRoot closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
+        if(MenuWorker=='formCreatePersonal') return <FormCreateEmployer enumsData={enumsEmployer} modal={modal} charge={charge} user={logged.user} closeModal={()=>changeMenuWorker(null)} chargeUser={()=>changeMenuWorker(null)} />
     } else return (
         <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
             <div>
@@ -52,7 +63,6 @@ const WorkerMenu = ({modal, charge}) => {
                 <>
                     <button onClick={()=>changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                     <button onClick={()=>changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>    
-                    <button onClick={()=>changeMenuWorker('payroll')}> NÓMINAS</button>
                     <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
                     <button onClick={()=>changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
                     <button onClick={()=>changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
@@ -66,6 +76,7 @@ const WorkerMenu = ({modal, charge}) => {
                 <>
                     <button onClick={()=>changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                     <button onClick={()=>changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
+                    <button onClick={()=>changeMenuWorker('formCreatePersonal')}>FORMULARIO RESPONSABLE</button>
                 </>
                 :listResponsability.length>0 
                 ?
@@ -78,7 +89,6 @@ const WorkerMenu = ({modal, charge}) => {
                 :
                     <>
                     <button onClick={()=>changeMenuWorker('myself')}>MIS DATOS</button>
-                    <button onClick={()=>changeMenuWorker('payroll')}>NÓMINAS</button>
                     </>
                     
                 }

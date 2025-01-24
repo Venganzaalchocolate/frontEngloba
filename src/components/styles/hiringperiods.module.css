@@ -73,7 +73,7 @@
     margin-bottom: 1rem;      /* Espacio entre tarjetas */
     border: 1px solid #ccc;   /* Borde global de la tarjeta */
     border-radius: 0.5rem;
-    padding: 0.5rem;
+    padding: 0.2rem;
     background-color: #fff;   /* Ajusta según tu diseño */
 }
 
@@ -81,7 +81,7 @@
 .myTable td {
     display: block;
     position: relative;       /* Para el ::before */
-    padding: 0.5rem 1rem;
+    padding: 0.2rem 1rem;
     text-align: left;
     border: none;             /* Sin bordes internos en modo card */
 }
@@ -105,6 +105,16 @@
 
 .myTable input, .myTable select{
     padding: 0;
+}
+
+.leaveTableWrapper{
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background-color: var(--color-crema);
+}
+
+.leaveTableWrapper h3{
+    padding: 0.5rem;
 }
 
 
@@ -144,6 +154,11 @@
         content: none;
     }
 
+    .myTable>tbody>tr:nth-child(1){
+        border-top: 2px solid var(--color-malva);
+        border-bottom: 2px solid var(--color-malva);
+    }
+
     /* Redondeamos el contenedor en pantallas grandes */
     .contenedor {
         border-radius: 1rem;
@@ -152,5 +167,32 @@
     /* Ajustamos la distribución de divs dentro del contenedor en escritorio */
     .contenedor div {
         flex: 30%;
+    }
+
+    .leaveTableWrapper{
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        background-color: var(--color-crema);
+    }
+    
+    .myTable .leaveTableWrapper tr{
+        background-color: var(--color-crema);
+    }
+
+    .myTable .leaveTableWrapper tr>th{
+        background-color: var(--color-yema);
+    }
+
+    .myTable .leaveTableWrapper tr>td{
+        border-top: solid 1px white;
+        border-bottom:  solid 1px white;
+    }
+
+    .myTable .leaveTableWrapper tr>td select{
+        background-color: var(--color-crema);
+    }
+
+    .tableResponsive{
+        padding: 1rem;
     }
 }

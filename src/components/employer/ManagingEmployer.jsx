@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import styles from '../styles/ManagingEmployer.module.css';
-import FormCreateEmployers from './FormCreateEmployer';
 import { FaSquarePlus } from "react-icons/fa6";
 import Filters from "./Filters";
 import { useDebounce } from '../../hooks/useDebounce.jsx';
@@ -9,6 +8,7 @@ import { getDataEmployer, getDispositiveResponsable, getusers } from '../../lib/
 import { getToken } from '../../lib/serviceToken.js';
 import ViewEmployers from './ViewEmployers.jsx';
 import { deepClone } from '../../lib/utils.js';
+import FormCreateEmployer from './FormCreateEmployer';
 
 const ManagingEmployer = ({ modal, charge, listResponsability }) => {
     const { logged} = useLogin();
@@ -212,7 +212,7 @@ const chargeEnums = async () => {
                                 <h2>GESTIÓN DE EMPLEADOS</h2>
                                 <FaSquarePlus onClick={openModal} />
                                 {isModalOpen &&
-                                    <FormCreateEmployers enumsData={enumsEmployer} modal={modal} charge={charge} user={userSelected} closeModal={closeModal} chargeUser={()=>loadUsers(true)} />
+                                    <FormCreateEmployer enumsData={enumsEmployer} modal={modal} charge={charge} user={userSelected} closeModal={closeModal} chargeUser={()=>loadUsers(true)} />
                                 }
                             </div>
 

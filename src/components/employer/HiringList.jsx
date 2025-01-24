@@ -130,7 +130,7 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
             if (!hiringPeriod.active) return null; // Si el periodo no está activo, no lo mostramos
     
             return (
-              <div key={hiringPeriod._id} className={styles.tableResponsive} style={{ marginBottom: '2rem' }}>
+              <div key={hiringPeriod._id} className={styles.tableResponsive}>
                 {/* Título o identificador si quieres */}
                 {/* <h3>Contratación {i+1}</h3> */}
     

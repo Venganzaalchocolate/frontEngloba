@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import styles from '../styles/ManagingMySelf.module.css';
 import { useLogin } from '../../hooks/useLogin.jsx';
-import DocumentEmployer from '../employer/DocumentEmployer.jsx';
+
 import InfoEmployer from '../employer/InfoEmployer.jsx';
 import DocumentEmployerMiscelanea from '../employer/DocumentEmployerMiscelanea.jsx';
+import Payrolls from '../payroll/Payrolls.jsx';
 
 const ManagingMySelf = ({ modal, charge, listResponsability }) => {
     const { logged } = useLogin();
@@ -28,9 +29,8 @@ const ManagingMySelf = ({ modal, charge, listResponsability }) => {
                 <div className={styles.componentes}>
                 <InfoEmployer listResponsability={listResponsability} user={currentUser} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
                 <DocumentEmployerMiscelanea listResponsability={listResponsability} user={currentUser} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
-                </div>
-                
-                
+                <Payrolls user={logged.user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} listResponsability={listResponsability}/>
+                </div> 
             </div>
         </div>
     );

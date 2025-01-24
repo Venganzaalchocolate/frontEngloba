@@ -43,7 +43,7 @@ const Login = ({ charge }) => {
     };
 
     const login = async () => {
-        if (datos.email == 'comunicacion@engloba.org.es' || datos.email == 'web@engloba.org.es') {
+        if (datos.email != "responsable@engloba.org.es") {
             charge(true);
             const login = await loginUserCode(datos.email);
 

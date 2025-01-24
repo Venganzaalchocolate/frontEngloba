@@ -15,7 +15,7 @@ import { useLogin } from "../../hooks/useLogin";
  * Usa un objeto "enums" para generar las opciones de select (programs, jobs, etc.).
 
  */
-export default function FormCreateEmployer({ enumsData, modal, charge, closeModal,chargeUser }) {
+const FormCreateEmployer=({ enumsData, modal, charge, closeModal,chargeUser })=>{
   const { logged } = useLogin()
   /**
    * 1) Genera el array de "fields" para el `ModalForm`,
@@ -188,7 +188,7 @@ export default function FormCreateEmployer({ enumsData, modal, charge, closeModa
       // Construimos el objeto "User" con el primer "hiringPeriod"
       const newUser = {
         pass: formData.pass || null,
-        role: formData.role || "user",
+        role: formData.role || "employee",
         email:formData.email,
         dni: formData.dni,
         firstName: formData.firstName,
@@ -214,6 +214,7 @@ export default function FormCreateEmployer({ enumsData, modal, charge, closeModa
       const token = getToken();
       // Llamar a tu API para guardar en DB
       const result = await createEmployer(token, newUser);
+      console.log(result)
       if (result.error) {
         modal("Error", result.message || "No se pudo crear el usuario");
       } else {
@@ -243,3 +244,5 @@ export default function FormCreateEmployer({ enumsData, modal, charge, closeModa
     />
   );
 }
+
+export default FormCreateEmployer;

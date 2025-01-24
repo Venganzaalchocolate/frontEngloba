@@ -198,7 +198,7 @@ const DocumentEmployerMiscelanea = ({ user, modal, charge, changeUser }) => {
             })}
 
             {/* Sección de archivos "extra" */}
-            <h2>RESTO DE DOCUMENTACIÓN <AiOutlineCloudUpload onClick={handleNewFileUpload} /></h2>
+            <h2>DOCUMENTACIÓN COMPLEMENTARIA <AiOutlineCloudUpload onClick={handleNewFileUpload} /></h2>
             {extraFiles.length === 0 && (
                 <p>No hay archivos adicionales subidos.</p>
             )}

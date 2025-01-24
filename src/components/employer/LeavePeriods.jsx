@@ -18,6 +18,7 @@ const LeavePeriods = ({
 }) => {
   return (
     <div className={styles.leaveTableWrapper}>
+        <h3>BAJAS O EXCEDENCIAS</h3>
       {/* Envolver la tabla en un div si quieres controlar overflow o estilos */}
       <table className={styles.myLeaveTable}>
         <thead>

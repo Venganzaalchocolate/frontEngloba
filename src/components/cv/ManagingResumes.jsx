@@ -2,15 +2,9 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { deleteUserCv, getCVs, getData, getusercvs, getuserscvs } from "../../lib/data";
 import styles from '../styles/managingResumenes.module.css';
-import stylesTooltip from '../styles/tooltip.module.css';
-import { FaEye, FaCheckCircle, FaTimesCircle, FaRegEyeSlash } from "react-icons/fa";
-import { GoStar, GoStarFill } from "react-icons/go";
-import { BsExclamationOctagonFill, BsExclamationLg, BsExclamationOctagon, BsStarHalf, BsStarFill, BsStar } from "react-icons/bs";
-import { TbEyeDotted, TbEyeClosed, TbEyeFilled } from "react-icons/tb";
 import { useNavigate } from "react-router-dom";
 import { getToken } from "../../lib/serviceToken";
 import { useLogin } from '../../hooks/useLogin.jsx';
-import CvPanel from "./CvPanel";
 // import BagCreate from "./BagCreate.jsx";
 import { useDebounce } from "../../hooks/useDebounce.jsx"
 import { useBag } from "../../hooks/useBag.jsx";
@@ -217,6 +211,8 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
         if (userInfo.favorite != null) return styles.favorite;
         return styles.tableRow; // Clase por defecto
     }, [Bag]);
+
+    //p
 
     const bagUsersData=async()=>{
         const token=getToken();

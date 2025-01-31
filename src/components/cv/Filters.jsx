@@ -8,6 +8,7 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters 
 
     return (
         <div className={styles.contenedorfiltro}>
+        <h3>FILTROS</h3>
             <div>
                 <label htmlFor="name">Nombre:</label>
                 <input type="text" id="name" name="name" value={filters.name} onChange={handleFilterChange} />
@@ -128,6 +129,7 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters 
                 <button onClick={resetFilters}>Reset Filtros</button>
             </div>
         </div>
+        
     );
 };
 

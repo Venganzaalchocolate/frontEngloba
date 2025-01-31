@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { deleteUserCv, getCVs, getData, getusercvs } from "../../lib/data";
+import { deleteUserCv, getCVs, getData, getusercvs, getuserscvs } from "../../lib/data";
 import styles from '../styles/managingResumenes.module.css';
 import stylesTooltip from '../styles/tooltip.module.css';
 import { FaEye, FaCheckCircle, FaTimesCircle, FaRegEyeSlash } from "react-icons/fa";
@@ -12,15 +12,16 @@ import { getToken } from "../../lib/serviceToken";
 import { useLogin } from '../../hooks/useLogin.jsx';
 import CvPanel from "./CvPanel";
 // import BagCreate from "./BagCreate.jsx";
-import {useDebounce} from "../../hooks/useDebounce.jsx"
+import { useDebounce } from "../../hooks/useDebounce.jsx"
 import { useBag } from "../../hooks/useBag.jsx";
 import { formatDatetime } from "../../lib/utils.js";
 import Filters from "./Filters"; // Importa el nuevo componente
 import BagSelect from "./BagSelect.jsx";
+import DivEmployers from "./DivEmployers.jsx";
 
-const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
+const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
     const { logged, changeLogged, logout } = useLogin();
-    const { Bag, schedule,changeBag } = useBag();
+    const { Bag, schedule, changeBag } = useBag();
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(50); // Tamaño de página por defecto
@@ -29,7 +30,9 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
     const [enums, setEnums] = useState(null);
     const [urlCv, setUrlCv] = useState(null);
     const [userSelected, setUserSelected] = useState(null);
-    const [modalBag, setModalBag]=useState(false)
+    const [modalBag, setModalBag] = useState(false)
+    const [bagUsers, setBagUsers]=useState([])
+    const [seeUserBag, setseeUsaerBag]=useState(false)
     const [filters, setFilters] = useState({
         name: '',
         email: '',
@@ -47,6 +50,9 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
 
     // Derivar una versión debounced de los filtros
     const debouncedFilters = useDebounce(filters, 300);
+
+    
+
 
     // Cargar usuarios cuando cambie la página, el tamaño de página, los filtros debounced o el schedule
     useEffect(() => {
@@ -212,6 +218,29 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
         return styles.tableRow; // Clase por defecto
     }, [Bag]);
 
+    const bagUsersData=async()=>{
+        const token=getToken();
+        if(!!Bag && Bag.process.userCv && Bag.process.userCv.length>0){
+            const data={
+                ids:Bag.process.userCv
+            }
+         const users= await getuserscvs(data,token)   
+         setBagUsers(users)
+        }  else {
+            setBagUsers([])
+        }
+    }
+
+    const userBag=async ()=>{
+        if(!seeUserBag){
+          await bagUsersData(); 
+          setseeUsaerBag(true) 
+        } else {
+            setseeUsaerBag(false)
+        }
+        
+    }
+
 
     return (
         <div className={styles.contenedor}>
@@ -232,11 +261,11 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
                     <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
                         {'>'}
                     </button>
-                    
+
                 </div>
-                
+
             </div>
-            
+
             {!schedule &&
                 <Filters
                     filters={filters}
@@ -247,11 +276,47 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
                 />
             }
 
-            <div>
-                {modalBag ? <BagSelect offers={enums.offer} closeModal={()=>setModalBag(false)} /> : <button onClick={()=>setModalBag(true)}>{(Bag!=null)?'Cambiar Oferta':'Selecciona una oferta'}</button>}
-                {(Bag!=null)&& <button onClick={()=>changeBag(null)}>Salir de la oferta</button>}
-                {Bag != null  && <h2 id={styles.tituloProcesoActivo}>Selección activa: {Bag.nameOffer}</h2>}
-                {Bag != null && <p>Nº de CV añadidos al proceso:{(!!Bag.process.userCv) ? Bag.process.userCv.length : '0'}</p>}
+            <div className={styles.cajaOfertas}>
+                {Bag != null && <h2 className={styles.tituloProcesoActivo}>Selección activa: {Bag.nameOffer}</h2>}
+                <div className={styles.cajaOfertasBotones}>
+                    {modalBag ? <BagSelect offers={enums.offer} closeModal={() => setModalBag(false)} /> : <button onClick={() => setModalBag(true)}>{(Bag != null) ? 'Cambiar Oferta' : 'Selecciona una oferta'}</button>}
+                    {(Bag != null) && <button onClick={() => changeBag(null)}>Salir de la oferta</button>}
+                    {(Bag != null) && !!Bag.process.userCv &&
+                    <button onClick={()=>userBag()}>Ver Personas añadidas</button>
+                    }
+                    
+                </div>
+                {Bag != null && (
+  <div className={styles.cvAddBolsa}>
+    <p>
+      Nº de CV añadidos a la oferta:
+      {!!Bag.process.userCv ? Bag.process.userCv.length : '0'}
+    </p>
+    
+    {/* Mapeo de los usuarios que están en Bag.process.userCv */}
+    {
+        seeUserBag &&  <DivEmployers
+        users={bagUsers}
+        keySuffix="bag"
+        checkUser={checkUser}
+        lookCV={lookCV}
+        formatDatetime={formatDatetime}
+        userSelected={userSelected}
+        charge={charge}
+        urlCv={urlCv}
+        changeUser={changeUser}
+        modal={modal}
+        deleteUser={deleteUser}
+        enums={enums}
+        enumsEmployer={enumsEmployer}
+    />
+    }
+   
+    
+  </div>
+)}
+
+
             </div>
 
             <div className={styles.tableContainer}>
@@ -267,47 +332,23 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
                     <div className={styles.tableCell}></div>
                     <div className={styles.tableCell}>Fecha</div>
                 </div>
-                {users.map(user => (
-                    <div key={user._id} >
-                        <div className={checkUser(user)} onClick={() => lookCV(user._id, user)}>
-                            <div className={`${styles.tableCell} ${styles.capitalize}`}>{user.name}</div>
-                            <div className={styles.tableCell}>{user.email}</div>
-                            <div className={styles.tableCell}>{user.phone}</div>
-                            <div className={styles.tableCell}>{user.jobs.join(', ')}</div>
-                            <div className={styles.tableCell}>{user.studies.join(', ')}</div>
-                            <div className={styles.tableCell}>{(user.provinces.length != 11) ? user.provinces.join(', ') : 'Todas'}</div>
-                            <div className={styles.tableCell}>{(user.offer != null)
-                                ? <span className={stylesTooltip.tooltip}><FaCheckCircle /><span className={stylesTooltip.tooltiptext}>{user.offer.job_title}</span></span>
-                                : <span className={stylesTooltip.tooltip}><FaTimesCircle /><span className={stylesTooltip.tooltiptext}>No asociado a una oferta</span></span>}</div>
-                            <div className={styles.tableCell}><span className={stylesTooltip.tooltip}>{user.numberCV}<span className={stylesTooltip.tooltiptext}>Versión</span></span></div>
-                            <div className={styles.tableCell}>{
-                                (user.view)
-                                    ? <span className={stylesTooltip.tooltip}><FaEye /><span className={stylesTooltip.tooltiptext}>Visto</span></span>
-                                    : <span className={stylesTooltip.tooltip}><FaRegEyeSlash /><span className={stylesTooltip.tooltiptext}>No Visto</span></span>}{
-                                    (user.favorite)
-                                        ? <span className={stylesTooltip.tooltip}><GoStarFill /><span className={stylesTooltip.tooltiptext}>Favorito</span></span>
-                                        : <span className={stylesTooltip.tooltip}><GoStar /><span className={stylesTooltip.tooltiptext}>No Favorito</span></span>}{
-                                    (user.reject)
-                                        ? <span className={stylesTooltip.tooltip}><BsExclamationOctagonFill /><span className={stylesTooltip.tooltiptext}>Rechazado</span></span>
-                                        : <span className={stylesTooltip.tooltip}><BsExclamationOctagon /><span className={stylesTooltip.tooltiptext}>No Rechazado</span></span>}
-                            </div>
-                            <div className={styles.tableCell}>{formatDatetime(user.date)}</div>
-                        </div>
-                        {userSelected != null && userSelected._id == user._id &&
-                            <CvPanel
-                                charge={() => charge()}
-                                urlpdf={urlCv}
-                                user={userSelected}
-                                changeUser={(x) => changeUser(x)}
-                                modal={(title, message) => modal(title, message)}
-                                deleteUser={() => deleteUser()}
-                                offers={enums.offer} 
-                                enumsEmployer={enumsEmployer}
-                            >
-                            </CvPanel>
-                        }
-                    </div>
-                ))}
+                
+                <DivEmployers
+        users={users}
+        keySuffix="bag"
+        checkUser={checkUser}
+        lookCV={lookCV}
+        formatDatetime={formatDatetime}
+        userSelected={userSelected}
+        charge={charge}
+        urlCv={urlCv}
+        changeUser={changeUser}
+        modal={modal}
+        deleteUser={deleteUser}
+        enums={enums}
+        enumsEmployer={enumsEmployer}
+    />
+                
 
 
             </div>

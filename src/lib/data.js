@@ -117,6 +117,8 @@ export const getusercvs = (page, limit, filters, token) => fetchData('/usercvs',
 
 export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
 
+export const getuserscvs=(datos,token)=> fetchData('/userscv', 'POST', token, datos)
+
 export const editUser = async (data, token) => {
     const formData = new FormData();
     // Añadir los campos al FormData

@@ -15,6 +15,7 @@
     border-radius: 1rem;
     flex-wrap: wrap;
     color: var(--color-morado);
+
 }
 
 .contendor select{
@@ -189,6 +190,14 @@
 #cabeceraTabla:hover {
     transform: none;
 }
+
+.contenedor>.contenido>select.selectInicial{
+    margin-top: 1rem;
+    border: solid 1px var(--color-morado);
+    flex: initial;
+    appearance: auto;
+}
+
 
 @media (min-width: 1080px) {
 

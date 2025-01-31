@@ -4,296 +4,446 @@ import { FaSquarePlus } from "react-icons/fa6";
 import Filters from "./Filters";
 import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
-import { getDataEmployer, getDispositiveResponsable, getusers } from '../../lib/data';
+import { getDataEmployer, getusers } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
 import ViewEmployers from './ViewEmployers.jsx';
 import { deepClone } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
 
+/**
+ * Ejemplo de listResponsability:
+ * [
+ *   {
+ *     "idProgram": "66c433e93213e72d7e253e15",
+ *     "programName": "Dispositivos de Emergencia",
+ *     "isProgramResponsible": false,
+ *     "dispositiveName": "DE Estepona",
+ *     "dispositiveId": "679b363108f2794750cb9936",
+ *     "isDeviceResponsible": true,
+ *     "isDeviceCoordinator": false
+ *   },
+ *   ...
+ * ]
+ */
+
 const ManagingEmployer = ({ modal, charge, listResponsability }) => {
-    const { logged} = useLogin();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [enums, setEnums] = useState(null);
-    const [enumsEmployer, setEnumsEmployer] = useState(null);
-    const [userSelected, setUserSelected] = useState(null);
-    const [limit, setLimit] = useState(50);
-    const [page, setPage] = useState(1);
-    const [users, setUsers] = useState([]);
-    const [totalPages, setTotalPages] = useState(0);
-    const [dispositiveNow, setDispositiveNow] = useState(null)
-    const [listDispositive, setListDispositive] = useState(listResponsability)
-    const [filters, setFilters] = useState({
-        firstName: '',
-        email: '',
-        phone: '',
-    });
+  const { logged } = useLogin();
+  const isRootOrGlobal = (logged.user.role === 'root' || logged.user.role === 'global');
 
-    // Derivar una versión debounced de los filtros
-    const debouncedFilters = useDebounce(filters, 300);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [enums, setEnums] = useState(null);
+  const [enumsEmployer, setEnumsEmployer] = useState(null);
+  const [userSelected, setUserSelected] = useState(null);
+  const [limit, setLimit] = useState(50);
+  const [page, setPage] = useState(1);
+  const [users, setUsers] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
 
-// Cargar usuarios basados en el rol del usuario actual
-const chargeUser = useCallback(() => {
-    if (logged.isLoggedIn) {
-        if (logged.user.role === 'root' || logged.user.role === 'global') {
-            loadUsers();
-        }
-    } else {
-        navigate('/login');
-    }
-}, [logged]);
+  // Análogo a "dispositiveNow", pero guardamos un objeto con info:
+  // { type: 'program'|'device', programId, deviceId (opcional) }
+  const [selectedResponsibility, setSelectedResponsibility] = useState(null);
 
-     // Cargar enumeraciones necesarias
-     const chargeEnumsData = useCallback(async () => {
-        const enumsData = await chargeEnums();
-        if (!enumsData.error) {
-            let auxEnums = {
-                provinces: enumsData.provinces,
-                programs: enumsData.programs,
-                status: enumsData.status,
-            };
-            setEnums(auxEnums);
-        }
-    }, []);
+  const [filters, setFilters] = useState({
+    firstName: '',
+    email: '',
+    phone: '',
+  });
 
-    // Inicializar datos al montar el componente
-    useEffect(() => {
-        const initialize = async () => {
-            await chargeEnumsData();
-        };
-        initialize();
-    }, []);
+  const debouncedFilters = useDebounce(filters, 300);
 
-    // Actualizar usuarios cuando cambien filtros o página
-    useEffect(() => {
-        if(dispositiveNow!=null || (logged.user.role === 'root' || logged.user.role === 'global')){
-          loadUsers(true);  
-        }
-    }, [debouncedFilters, page, limit, dispositiveNow]);
-
-    // Cerrar modal
-    const closeModal = () => {
-        setIsModalOpen(false);
-    };
-
-    const openModal=()=>{
-        setIsModalOpen(true)
-    }
-
-// Cargar enumeraciones desde la API
-const chargeEnums = async () => {
+  // Cargar enums (programs, provinces, etc.)
+  const chargeEnums = useCallback(async () => {
     const enumsData = await getDataEmployer();
     setEnumsEmployer(enumsData);
     return enumsData;
-};
+  }, []);
 
-    const loadUsers = async (filter = false) => {
-        charge(true);
-        try {
-            let data = null;
-            const token = getToken();
-            let auxFilters = { ...debouncedFilters };
-            for (let key in auxFilters) {
-                if (auxFilters[key] === "") {
-                    delete auxFilters[key];
-                }
-            }
-
-            
-            if (dispositiveNow != null) {
-                let ids = dispositiveNow.split('-')
-                const idProgram = ids[0]
-                const idDispositive = ids[1]
-                auxFilters['programId']= idProgram,
-                auxFilters['dispositive']= idDispositive
-            }
-
-            console.log(auxFilters)
-            data = await getusers(page, limit, auxFilters, token);
-
-            if (data.error) {
-                charge(false);
-                modal('Error', data.message);
-            } else {
-                setUsers(data.users); // Establece los usuarios recuperados
-                setTotalPages(data.totalPages); // Establece el número total de páginas
-                charge(false);
-            }
-        } catch (error) {
-            charge(false);
-            modal('Error', error.message || 'Ocurrió un error inesperado.');
-        }
-    };
-
-    // Función para manejar el cambio de página
-    const handlePageChange = useCallback((newPage) => {
-        setPage(newPage);
-    }, []);
-
-    // Función para manejar el cambio de tamaño de página
-    const handleLimitChange = useCallback((event) => {
-        const newLimit = parseInt(event.target.value, 10);
-        setLimit(newLimit);
-        setPage(1); // Resetear a la primera página al cambiar el tamaño de página
-    }, []);
-
-    // Función para manejar el cambio en los filtros
-    const handleFilterChange = useCallback((event) => {
-        setPage(1);
-        setUserSelected(null);
-        const { name, value } = event.target;
-        if (name === 'programId') {
-            setFilters(prevFilters => ({
-                ...prevFilters,
-                [name]: value || '', // Evita valores null,
-                ['dispositive']: null
-            }));
-        } else {
-            setFilters(prevFilters => ({
-                ...prevFilters,
-                [name]: value || '', // Evita valores null
-            }));
-        }
-    }, []);
-
-    
-
-    // Función para aplicar los filtros
-    const resetFilters = useCallback(() => {
-        setUserSelected(null);
-        setFilters({
-            firstName: '',
-            lastName: '',
-            dni: '',
-            email: '',
-            phone: '',
-            dispositive: '',
-            programId: '',
-            status: '',
-            provinces: ''
+  useEffect(() => {
+    const init = async () => {
+      const enumsData = await chargeEnums();
+      if (!enumsData.error) {
+        setEnums({
+          provinces: enumsData.provinces,
+          programs: enumsData.programs,
+          status: enumsData.status,
         });
-    }, []);
-
-    const handleChange = (e) => {
-        if(e.target.value!='') setDispositiveNow(e.target.value);  // Actualizamos el estado con el valor seleccionado
+      }
     };
+    init();
+  }, []);
 
-    const changeUser = (user) => {
-        let auxUser = deepClone(users)
-        auxUser.map((x, i, a) => {
-            if (x._id == user._id) a[i] = user
-        })
-        setUserSelected(user)
-        setUsers(auxUser)
+  // ==================================================
+  // =============== LÓGICA DE RESPONSABILIDAD ========
+  // ==================================================
+
+  // Convertimos listResponsability en opciones de "program" o "device":
+  // Mismo approach que tu "SelectDispositive", pero unificado
+  const getResponsibilityOptions = () => {
+    const options = [];
+
+    listResponsability.forEach((item) => {
+      // Si es responsable de programa
+      if (item.isProgramResponsible) {
+        // Podemos concatenar "programId" con "type"
+        const label = `(Programa) ${item.programName}`;
+        const valueObj = {
+          type: "program",
+          programId: item.idProgram
+        };
+        const value = JSON.stringify(valueObj);
+        options.push({ label, value });
+      }
+
+      // Si es responsable (o coordinador) de un dispositivo
+      if (item.isDeviceResponsible || item.isDeviceCoordinator) {
+        const label = `(Dispositivo) ${item.dispositiveName} [${item.programName}]`;
+        const valueObj = {
+          type: "device",
+          programId: item.idProgram,
+          deviceId: item.dispositiveId
+        };
+        const value = JSON.stringify(valueObj);
+        options.push({ label, value });
+      }
+    });
+
+    // Filtrar duplicados, si quieres. 
+    // O dejar así, por si un item puede ser a la vez device y program en la misma row.
+    return options;
+  };
+
+  // Si NO eres root/global, forzamos la selección
+  // 1) Si listResponsability.length === 0 => no tienes acceso
+  // 2) Si listResponsability.length === 1 => autoseleccionamos
+  // 3) Si >1 => mostramos select
+  useEffect(() => {
+    if (!isRootOrGlobal) {
+      if (!listResponsability || listResponsability.length === 0) {
+        // Sin acceso
+        setSelectedResponsibility(null);
+      } else if (listResponsability.length === 1) {
+        // Autoseleccionar
+        const item = listResponsability[0];
+        if (item.isProgramResponsible) {
+          setSelectedResponsibility(JSON.stringify({
+            type: "program",
+            programId: item.idProgram
+          }));
+        } else if (item.isDeviceResponsible || item.isDeviceCoordinator) {
+          setSelectedResponsibility(JSON.stringify({
+            type: "device",
+            programId: item.idProgram,
+            deviceId: item.dispositiveId
+          }));
+        }
+      }
+      // Si hay más de uno, lo gestionamos en el render. 
+    }
+  }, [isRootOrGlobal, listResponsability]);
+
+  const handleSelectResponsibility = (e) => {
+    setSelectedResponsibility(e.target.value || null);
+    setPage(1);
+    setUserSelected(null);
+  };
+
+  // =====================================================
+  // =============== CARGA DE USUARIOS ===================
+  // =====================================================
+  const loadUsers = async (showLoader = false) => {
+    if (showLoader) charge(true);
+    try {
+      const token = getToken();
+      let auxFilters = { ...debouncedFilters };
+      for (let key in auxFilters) {
+        if (auxFilters[key] === "") {
+          delete auxFilters[key];
+        }
+      }
+
+      // Si eres root/global, no restringimos nada
+      if (!isRootOrGlobal) {
+        // Comprobamos selectedResponsibility
+        if (!selectedResponsibility) {
+          // Sin selección => no cargamos nada
+          if (showLoader) charge(false);
+          return;
+        }
+        const resp = JSON.parse(selectedResponsibility);
+        if (resp.type === "program") {
+          auxFilters.programId = resp.programId;
+        } else if (resp.type === "device") {
+          auxFilters.programId = resp.programId;
+          auxFilters.dispositive = resp.deviceId;
+        }
+      }
+
+      const data = await getusers(page, limit, auxFilters, token);
+      if (data.error) {
+        modal("Error", data.message);
+      } else {
+        setUsers(data.users);
+        setTotalPages(data.totalPages);
+      }
+    } catch (error) {
+      modal('Error', error.message || 'Ocurrió un error inesperado.');
+    } finally {
+      if (showLoader) charge(false);
+    }
+  };
+
+  // Cada vez que cambien los filtros, la pag, la limit, la selectedResponsibility => recargamos
+  useEffect(() => {
+    if (logged.isLoggedIn) {
+      loadUsers(true);
+    }
+  }, [debouncedFilters, page, limit, selectedResponsibility]);
+
+  // ====================================================
+  // ============= MANEJADORES DE PAGINACIÓN Y FILTROS ==
+  // ====================================================
+
+  const handlePageChange = useCallback((newPage) => {
+    setPage(newPage);
+  }, []);
+
+  const handleLimitChange = useCallback((event) => {
+    const newLimit = parseInt(event.target.value, 10);
+    setLimit(newLimit);
+    setPage(1);
+  }, []);
+
+  const handleFilterChange = useCallback((event) => {
+    setPage(1);
+    setUserSelected(null);
+    const { name, value } = event.target;
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [name]: value || ''
+    }));
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setUserSelected(null);
+    setFilters({
+      firstName: '',
+      lastName: '',
+      dni: '',
+      email: '',
+      phone: '',
+      dispositive: '',
+      programId: '',
+      status: '',
+      provinces: ''
+    });
+  }, []);
+
+  // ====================================================
+  // ============= MANEJO DE MODAL Y USERS LOCALES ======
+  // ====================================================
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const changeUserLocally = (u) => {
+    let aux = deepClone(users);
+    aux.forEach((x, i) => {
+      if (x._id === u._id) aux[i] = u;
+    });
+    setUserSelected(u);
+    setUsers(aux);
+  };
+
+  // ====================================================
+  // ============= RENDER LÓGICA ========================
+  // ====================================================
+
+  // 1) Si NO eres root/global y hay multiples responsabilidades, pedimos selección
+  if (!isRootOrGlobal) {
+    // Si no tienes ninguna
+    if (!listResponsability || listResponsability.length === 0) {
+      return (
+        <div className={styles.contenedor}>
+          <div className={styles.contenido}>
+            <h2>No tienes programas o dispositivos asignados.</h2>
+          </div>
+        </div>
+      );
     }
 
-    if((!dispositiveNow && listDispositive.length > 0)){
-        return(
-            <div className={styles.contenedor}>
-                <div className={styles.contenido}>
-                    <div className={styles.cajaSeleccion}>
-                            <h2>Selecciona un dispositivo</h2>
-                            <select name='dispositiveNow' value={dispositiveNow} onChange={handleChange}>
-                                <option value=''>Selecciona un dispositivo</option>  {/* Primera opción */}
-                                {listDispositive.map(x => (
-                                    <option key={`${x.idProgram}-${x.dispositiveId}`} value={`${x.idProgram}-${x.dispositiveId}`}>{x.dispositiveName}</option>
-                                ))}
-                            </select>
+    // Si tienes varias y no has seleccionado => mostramos un select 
+    // (si length===1 lo autoseleccionamos en el useEffect)
+    if (listResponsability.length > 1 && !selectedResponsibility) {
+      const options = [];
+      // Recorremos listResponsability y generamos <option>
+      listResponsability.forEach((item, idx) => {
+        // Chequeamos si es un programa o dispositivo
+        if (item.isProgramResponsible) {
+          options.push({
+            label: `(Programa) ${item.programName}`,
+            value: JSON.stringify({ 
+              type: "program", 
+              programId: item.idProgram 
+            })
+          });
+        }
+        if (item.isDeviceResponsible || item.isDeviceCoordinator) {
+          options.push({
+            label: `(Dispositivo) ${item.dispositiveName} [${item.programName}]`,
+            value: JSON.stringify({
+              type: "device",
+              programId: item.idProgram,
+              deviceId: item.dispositiveId
+            })
+          });
+        }
+      });
+
+      return (
+        <div className={styles.contenedor}>
+          <div className={styles.contenido}>
+            <h2>Selecciona un Programa o Dispositivo</h2>
+            <select onChange={handleSelectResponsibility} defaultValue="" className={styles.selectInicial}>
+              <option value="">Seleccionar una opción</option>
+              {options.map((opt, i) => (
+                <option key={i} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      );
+    }
+
+    // Si llegamos aquí y no se ha seleccionado => no renderizamos la lista
+    if (!selectedResponsibility) {
+      return null;
+    }
+  }
+
+  // 2) Eres root/global O ya tenemos selectedResponsibility => Render normal
+  return (
+    <div className={styles.contenedor}>
+      <div className={styles.contenido}>
+        <>
+          <div className={styles.titulo}>
+            <div>
+              <h2>GESTIÓN DE EMPLEADOS</h2>
+              <FaSquarePlus onClick={openModal} />
+              {isModalOpen &&
+                <FormCreateEmployer
+                  enumsData={enumsEmployer}
+                  modal={modal}
+                  charge={charge}
+                  user={userSelected}
+                  closeModal={closeModal}
+                  chargeUser={() => loadUsers(true)}
+                />
+              }
+            </div>
+
+            {/* 
+              Si root/global => paginación
+              Si NO, muestra la "cajaSeleccionActiva" (o nada) 
+            */}
+            {isRootOrGlobal ? (
+              <div className={styles.paginacion}>
+                <div>
+                  <label htmlFor="limit">Usuarios por página:</label>
+                  <select id="limit" value={limit} onChange={handleLimitChange}>
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+                <div>
+                  <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>{'<'}</button>
+                  <span>Página {page}</span>
+                  <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>{'>'}</button>
+                </div>
+              </div>
+            ) : (
+              // Para roles "employer", mostramos un select de "activo" 
+              // si quieres mantener tu "cajaSeleccionActiva"
+              // O un label "Seleccionado" con el item actual
+              <div className={styles.cajaSeleccionActiva}>
+                <h4>Activo</h4>
+                {/* 
+                  Extra: Permitimos cambiar la responsibility en caliente 
+                  (opcional). Si no lo quieres, quita este <select>. 
+                */}
+                <select
+                  onChange={handleSelectResponsibility}
+                  value={selectedResponsibility || ""}
+                >
+                  {getResponsibilityOptions().map((opt, i) => (
+                    <option key={i} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+          </div>
+
+          <div className={styles.caja}>
+            {(isRootOrGlobal) && (
+              <Filters
+                filters={filters}
+                enums={enums}
+                handleFilterChange={handleFilterChange}
+                resetFilters={resetFilters}
+                setFilters={setFilters}
+              />
+            )}
+
+            <div className={styles.containerTableContainer}>
+              <div>
+                <div className={styles.tableContainer} id={styles.cabeceraTabla}>
+                  <div className={styles.tableCell}>Nombre</div>
+                  <div className={styles.tableCell}>Apellidos</div>
+                  <div className={styles.tableCellStatus}>Status</div>
+                </div>
+
+                {users.map(user => (
+                  <div key={user._id}>
+                    <div
+                      className={styles.tableContainer}
+                      onClick={() => (userSelected == null || userSelected._id !== user._id)
+                        ? setUserSelected(user)
+                        : setUserSelected(null)
+                      }
+                    >
+                      <div className={styles.tableCell}>{user.firstName}</div>
+                      <div className={styles.tableCell}>{user.lastName}</div>
+                      <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
                     </div>
-                </div>
+
+                    {userSelected && userSelected._id === user._id && (
+                      <ViewEmployers
+                        listResponsability={listResponsability}
+                        chargeEnums={chargeEnums}
+                        enumsData={enumsEmployer}
+                        user={userSelected}
+                        modal={modal}
+                        charge={charge}
+                        changeUser={(x) => changeUserLocally(x)}
+                        chargeUser={() => loadUsers(true)}
+                      />
+                    )}
+                  </div>
+                ))}
+
+              </div>
             </div>
-        )
-    } else{
-        return(
-            <div className={styles.contenedor}>
-                <div className={styles.contenido}>
-                <>
-                        <div className={styles.titulo}>
-                            <div>
-                                <h2>GESTIÓN DE EMPLEADOS</h2>
-                                <FaSquarePlus onClick={openModal} />
-                                {isModalOpen &&
-                                    <FormCreateEmployer enumsData={enumsEmployer} modal={modal} charge={charge} user={userSelected} closeModal={closeModal} chargeUser={()=>loadUsers(true)} />
-                                }
-                            </div>
-
-                            {(logged.user.role == 'root' || logged.user.role == 'global') ?
-                                <div className={styles.paginacion}>
-                                    <div>
-                                        <label htmlFor="limit">Usuarios por página:</label>
-                                        <select id="limit" value={limit} onChange={handleLimitChange}>
-                                            <option value={5}>5</option>
-                                            <option value={10}>10</option>
-                                            <option value={20}>20</option>
-                                            <option value={50}>50</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
-                                            {'<'}
-                                        </button>
-                                        <span>Página {page}</span>
-                                        <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
-                                            {'>'}
-                                        </button>
-                                    </div>
-
-                                </div>
-                                : <div className={styles.cajaSeleccionActiva}>
-                                    <h4>Dispositivo Activo</h4>
-                                    <select name='dispositiveNow' value={dispositiveNow} onChange={handleChange}>
-                                        <option value="">Selecciona un dispositivo</option>  {/* Primera opción */}
-                                        {listDispositive.map(x => (
-                                            <option key={`${x.idProgram}-${x.dispositiveId}`} value={`${x.idProgram}-${x.dispositiveId}`}>{x.dispositiveName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-
-                            }
-
-
-                        </div>
-                        <div className={styles.caja}>
-                            {(logged.user.role == 'root' || logged.user.role == 'global') &&
-                                <Filters
-                                    filters={filters}
-                                    enums={enums}
-                                    handleFilterChange={handleFilterChange}
-                                    resetFilters={resetFilters}
-                                    setFilters={setFilters}
-                                />
-                            }
-
-
-                            <div className={styles.containerTableContainer}>
-                                <div>
-                                    <div className={styles.tableContainer} id={styles.cabeceraTabla}>
-                                        <div className={styles.tableCell}>Nombre</div>
-                                        <div className={styles.tableCell}>Apellidos</div>
-                                        <div className={styles.tableCellStatus}>Status</div>
-                                    </div>
-                                    {users.map(user => (
-                                        <div key={user._id} >
-                                            <div className={styles.tableContainer} onClick={() =>(userSelected==null || userSelected!=user)?setUserSelected(user):setUserSelected(null)}>
-                                                <div className={styles.tableCell}>{user.firstName}</div>
-                                                <div className={styles.tableCell}>{user.lastName}</div>
-                                                <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
-                                            </div>
-                                            {userSelected != null && userSelected._id === user._id &&
-                                                <ViewEmployers listResponsability={listResponsability} chargeEnums={chargeEnums} enumsData={enumsEmployer} user={userSelected} modal={modal} charge={charge} changeUser={(x) => changeUser(x)} chargeUser={chargeUser}/>
-                                            }
-
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                </div>
-            </div>
-        )
-    }
-}
+          </div>
+        </>
+      </div>
+    </div>
+  );
+};
 
 export default ManagingEmployer;

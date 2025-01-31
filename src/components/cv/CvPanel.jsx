@@ -21,10 +21,11 @@ import FormJob from "../globals/FormJob.jsx";
 import { BsBookmarkPlusFill } from "react-icons/bs";
 import { PiPersonFill } from "react-icons/pi";
 import { RiDeleteBin6Line } from "react-icons/ri";
+import ToHireEmployee from './ToHireEmployee.jsx';
 
 
 
-const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser }) => {
+const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser, offers, enumsEmployer }) => {
     const { logged } = useLogin()
     const { Bag, schedule } = useBag()
     const [typeComment, setTypeComment] = useState(null)
@@ -104,8 +105,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser }) => {
                         {(user.reject != null) ? <BsExclamationOctagonFill color="tomato" onClick={() => changeStatus('reject')} /> : <BsExclamationOctagon onClick={() => changeStatus('reject')} />}
                         {logged.user.role == 'root' && <RiDeleteBin6Line  onClick={() => deleteCvPanel(true)}>Eliminar CV</RiDeleteBin6Line>}
                         <FaRegEdit onClick={() => viewPanelEditUser()} />
-                        {Bag != null && !schedule && <BagPanel userSelected={user} />}
-                        
+                        <BagPanel offers={offers} userSelected={user} />
                     </div>
                     {deletePanel && <div className={styles.deletePanel}>
                         <p>¿Estas seguro? No seas cafre !!!!</p>
@@ -122,6 +122,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser }) => {
                         />
 
                     </div>}
+                    <ToHireEmployee enumsEmployer={enumsEmployer} offers={offers} userSelected={user}  modal={(title, message) => modal(title, message)} charge={() => charge()} />
                     <div className={styles.boxComments}>
                         <h2>Notas <BsBookmarkPlusFill onClick={() => handleChangeType('notes')}></BsBookmarkPlusFill></h2>
                         <div>
@@ -144,9 +145,9 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser }) => {
                     </div>
 
                         <div className={styles.boxComments}>
-                            <h2>Comentarios {(schedule) && <><FaPhoneAlt onClick={() => handleChangeType('commentsPhone')} /> <MdVideoCall onClick={() => handleChangeType('commentsVideo')} /> <IoPersonSharp onClick={() => handleChangeType('commentsInperson')}/></>}</h2>
+                            <h2>Comentarios {<><FaPhoneAlt onClick={() => handleChangeType('commentsPhone')} /> <MdVideoCall onClick={() => handleChangeType('commentsVideo')} /> <IoPersonSharp onClick={() => handleChangeType('commentsInperson')}/></>}</h2>
                             <div>
-                                {Bag != null && schedule && typeComment != null && typeComment != 'notes' &&
+                                {Bag != null && typeComment != null && typeComment != 'notes' &&
                                     <div className={styles.contentComment}>
                                         <h4>Entrevista {(typeComment == 'commentsPhone') ? 'por Telefónica' : (typeComment == 'commentsVideo') ? 'por Videollamada' : 'en Persona'}</h4>
                                         <textarea name="comentarios" id="comentarios" value={textComment} onChange={(e) => handleChange(e)}></textarea>

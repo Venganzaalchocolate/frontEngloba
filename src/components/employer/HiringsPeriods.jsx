@@ -60,21 +60,15 @@ const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) 
     };
 
     return (
-        <div className={styles.contenedor}>
+        <>
+         <div className={styles.contenedor}>
             <h2>
                 PERIODOS DE CONTRATACIÓN
                 <FaSquarePlus onClick={() => setButtonCreateHiring(true)} />
             </h2>
             
             {/* Si buttonCreateHiring es true, mostramos el nuevo modal */}
-            {buttonCreateHiring && (
-                <HiringPeriodNew
-                    user={user}
-                    enumsData={enumsData}               // pasamos enumerados si ya cargaron
-                    save={(x, y) => saveHiring(x, y)} // llamamos a la misma función
-                    onClose={() => setButtonCreateHiring(false)}
-                />
-            )}
+           
 
             {/* Lista con HiringList */}
             <HiringList
@@ -84,6 +78,16 @@ const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) 
               
             />
         </div>
+         {buttonCreateHiring && (
+            <HiringPeriodNew
+                user={user}
+                enumsData={enumsData}               // pasamos enumerados si ya cargaron
+                save={(x, y) => saveHiring(x, y)} // llamamos a la misma función
+                onClose={() => setButtonCreateHiring(false)}
+            />
+        )}
+        </>
+       
     );
 };
 

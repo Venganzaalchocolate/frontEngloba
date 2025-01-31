@@ -31,3 +31,46 @@ export const deepClone = (obj) => {
     }
     return copy;
 };
+
+export const splitName=(fullName)=>{
+    // Quitar espacios sobrantes al inicio y al final
+    const trimmed = fullName.trim();
+  
+    // Dividir por espacios (uno o más)
+    const parts = trimmed.split(/\s+/);
+  
+    // El primer elemento será el "firstName"
+    const firstName = parts.shift() || "";
+  
+    // El resto de las partes (si las hay) se unen como "lastName"
+    const lastName = parts.join(" ") || "";
+  
+    return { firstName, lastName };
+  }
+
+  export const  getJobIdFromNameOffer=(nameOffer, jobsIndex)=>{
+    if (!nameOffer) return null;
+  
+    // 1) Separar la parte antes del guion si existe
+    //    "Atención Sociosanitaria - Almería Norte"
+    //    => ["Atención Sociosanitaria", "Almería Norte"]
+    const [jobName] = nameOffer.split("-").map((x) => x.trim());
+    // jobName = "Atención Sociosanitaria"
+  
+    // 2) Buscar en jobsIndex un objeto cuyo job.name coincida EXACTAMENTE
+    //    con jobName
+    //    Object.entries(jobsIndex) => [ [key, {name, _id}], [key2, {name, _id}]... ]
+    const found = Object.entries(jobsIndex).find(
+      ([, job]) => job.name === jobName
+    );
+  
+    if (!found) {
+      // No se encontró trabajo con ese nombre
+      return null;
+    }
+  
+    // found = [ "66a765e946af20840262d1da", { name:"Atención Sociosanitaria", ... } ]
+    // El primer elemento del array es la key (ID)
+    const jobId = found[0];
+    return jobId;
+  }

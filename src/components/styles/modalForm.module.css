@@ -135,8 +135,14 @@
 .modalVentana h4{
   padding-top: 1.5rem;
   margin-bottom: 1rem;
+  color: var(--color-morado);
 }
 
 .modalVentana button{
   margin-top: 1rem;
 }
+
+.modalVentana :disabled{
+  background-color: lightgray;
+}
+

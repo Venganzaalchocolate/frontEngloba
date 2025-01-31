@@ -6,9 +6,9 @@ export function BagProvider({ children }) {
     const [Bag, setBag] = useState(null)
     const [schedule, setSchedule] = useState(false)
 
-    const changeBag=(bag)=>{
+    const changeBag=(data)=>{
         setSchedule(false)
-        setBag(bag)
+        setBag(data)
     }
 
     const resetBag=()=>{

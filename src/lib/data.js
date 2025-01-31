@@ -232,6 +232,9 @@ export const deleteProgram = (datos, token) => fetchData('/deleteprogram', 'DELE
 
 export const updateProgram = (datos, token) => fetchData('/updateprogram', 'PUT', token, datos);
 
+export const coordinators = (datos, token) => fetchData('/coordinators', 'POST', token, datos);
+export const responsibles = (datos, token) => fetchData('/responsibles', 'POST', token, datos);
+
 // payrolls
 export const updatePayroll = async (data, token) => {
     const formData = new FormData();

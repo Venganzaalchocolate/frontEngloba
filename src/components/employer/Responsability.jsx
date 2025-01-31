@@ -1,207 +1,310 @@
 import { useEffect, useState } from 'react';
 import styles from '../styles/responsability.module.css';
 import { FaSquarePlus } from "react-icons/fa6";
-import { FaTrashAlt, FaEdit, FaSave } from "react-icons/fa";
+import { FaTrashAlt } from "react-icons/fa";
 import ModalForm from "../globals/ModalForm";
-import { updateDispositive } from '../../lib/data';
-import { getToken } from '../../lib/serviceToken';
-import ModalConfirmation from '../globals/ModalConfirmation';
+import ModalConfirmation from "../globals/ModalConfirmation";
+import { getToken } from "../../lib/serviceToken";
+import { responsibles } from "../../lib/data"; // Función que hace fetch a /responsibles
 
-const Responsability = ({ user, modal, charge, changeUser, enumsData, chargeEnums }) => {
-  const [listDispositive, setListDispositive] = useState([])
-  const [openModal, setOpenModal] = useState(false)
-  // =========== CONFIRMACIÓN MODAL ===========
+const Responsability = ({ user, modal, charge, enumsData, chargeEnums }) => {
+  const [listResponsabilities, setListResponsabilities] = useState([]);
+  const [openModal, setOpenModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-const handleDelete = () => {
-  setShowConfirmModal(true);
-};
-
-const onConfirm = () => {
-  //FUNCION QUE LLAMA A LA BBDD Y REALIZA EL DELETE
-  deleteDispositiveResponsable(showConfirmModal)
-  setShowConfirmModal(false);
-};
-
-const onCancel = () => {
-  // Cancelar la acción
-  setShowConfirmModal(false);
-};
-  // ============================================
-
-  const deleteDispositiveResponsable=async(idDispositive)=>{try {
-    // Muestra el loader
-    charge(true);
-    const dataAux=listDispositive.filter((dispositive)=>dispositive._id==idDispositive)[0]
-
-    const programId=dataAux.programId
-    const dispositiveId=dataAux._id
-    // Construimos el objeto "User" con el primer "hiringPeriod"
-    const updateDispositiveData = {
-      programId,
-      dispositiveId,
-      responsible: 'delete',   // ObjectId (Device)
-    };
-
-
-    const token = getToken();
-    // Llamar a tu API para guardar en DB
-    const result = await updateDispositive(updateDispositiveData, token);
-
-    if (result.error) {
-      modal("Error", result.message || "No se pudo eliminar el responsable del dispositivo");
-    } else {
-      modal("Responsable Añadido", "El usuario ya no es responsable del dispositivo");
-      chargeEnums();
-      closeModal();
-    }
-  } catch (error) {
-    modal("Error", error.message || "Ocurrió un error al eliminar el responsable del dispositivo");
-    closeModal();
-  } finally {
-    charge(false);
-  }
-};
-
-  const buildFields = () => {
-
-    // Construimos las opciones de "device" a partir de enumsData.programs
-    // 1. Tomamos todos los devices de cada program
-    // 2. Creamos un array de { value: device._id, label: device.name }
-    let deviceOptions = [];
-    if (enumsData?.programs) {
-      deviceOptions = enumsData.programs.flatMap(program =>
-        program.devices.map(device => ({
-          value:  `${program._id}-${device._id}`,
-          label: device.name
-        }))
-      );
-    }
-
-
-    return [
-      // =========== DATOS DEL USUARIO ===========
-      {
-        name: "device",
-        label: "Dispositivo",
-        type: "select",
-        required: true,
-        options: [
-          { value: "", label: "Seleccione una opción" },
-          ...deviceOptions], // a partir de enumsData.programs
-      }
-    ];
+  // 1. Abrir modal de confirmación de eliminación
+  const handleDelete = (id) => {
+    setShowConfirmModal(id);
   };
 
+  // 2. Confirmar la eliminación
+  const onConfirm = () => {
+    deleteResponsability(showConfirmModal);
+    setShowConfirmModal(false);
+  };
 
-  const responsabilityFor = () => {
-    const programs = enumsData.programsIndex
-    let listDispositiveAux = []
-    for (const idDispositive in programs) {
+  // 3. Cancelar la eliminación
+  const onCancel = () => {
+    setShowConfirmModal(false);
+  };
 
-      if (!!programs[idDispositive].responsible) {
-        programs[idDispositive].responsible.map((idPerson) => {
-          if (idPerson == user._id) {
-            listDispositiveAux.push(programs[idDispositive])
-          }
-        })
-      }
-    }
-    setListDispositive(listDispositiveAux)
-  }
-
-  useEffect(() => {
-  responsabilityFor();
-  }, [enumsData])
-
-  const fields = buildFields();
-
-  const addDispositive = () => {
-    return <ModalForm
-      title="Añadir Dispositivo"
-      message="Seleccione un dispositivo el cual es responsable"
-      fields={fields}
-      onSubmit={handleSubmit}
-      onClose={closeModal}
-    />
-  }
-
-  const closeModal = () => {
-    setOpenModal(false)
-  }
-
-  const handleSubmit = async (formData) => {
+  /**
+   * Elimina la responsabilidad (programa o dispositivo)
+   */
+  const deleteResponsability = async (responsabilityId) => {
     try {
-      // Muestra el loader
-      charge(true);
-      const programId=formData.device.split('-')[0]
-      const dispositiveId=formData.device.split('-')[1]
-      // Construimos el objeto "User" con el primer "hiringPeriod"
-      const newDispositive = {
-        programId,
-        dispositiveId,
-        responsible: user._id,   // ObjectId (Device)
-      };
-
-      console.log(newDispositive)
-      const token = getToken();
-      // Llamar a tu API para guardar en DB
-      const result = await updateDispositive(newDispositive, token);
-      // const result=''
-      if (result.error) {
-        modal("Error", result.message || "No se pudo añadir el dispositivo");
-      } else {
-        modal("Responsable Añadido", "El usuario es responsable de un nuevo dispositivo");
-        chargeEnums();
-        closeModal();
+      charge(true); // Muestra loader
+      const item = listResponsabilities.find(r => r._id === responsabilityId);
+      if (!item) {
+        modal("Error", "No se encontró el elemento a eliminar.");
+        return;
       }
+
+      const token = getToken();
+
+      // Distinguimos si es un programa o un dispositivo a partir de item.type
+      if (item.type === "program") {
+        // Eliminar al user como responsable del PROGRAMA
+        const payload = {
+          type: "program",
+          action: "remove",
+          programId: item._id,
+          responsibleId: user._id
+        };
+        const result = await responsibles(payload, token);
+        if (result.error) {
+          modal("Error", result.message || "No se pudo eliminar la responsabilidad de programa.");
+        } else {
+          modal("Responsabilidad Eliminada", "El usuario ya no es responsable del programa.");
+          chargeEnums();
+          closeModal();
+        }
+
+      } else {
+        // Eliminar al user como responsable del DISPOSITIVO
+        const payload = {
+          type: "device",
+          action: "remove",
+          programId: item.programId,
+          deviceId: item._id,
+          responsibleId: user._id
+        };
+        const result = await responsibles(payload, token);
+        if (result.error) {
+          modal("Error", result.message || "No se pudo eliminar la responsabilidad del dispositivo.");
+        } else {
+          modal("Responsable Eliminado", "El usuario ya no es responsable del dispositivo.");
+          chargeEnums();
+          closeModal();
+        }
+      }
+
     } catch (error) {
-      modal("Error", error.message || "Ocurrió un error al añadir el dispositivo");
+      modal("Error", error.message || "Ocurrió un error al eliminar la responsabilidad.");
       closeModal();
     } finally {
       charge(false);
     }
   };
 
-  const modalConfirmation=()=>{
-    const dataAux=listDispositive.filter((dispositive)=>dispositive._id==showConfirmModal)[0]
-    const messageAux=`¿Estás seguro de que deseas que ${user.firstName} ${user.lastName} deje de ser responsable de ${dataAux.name}?`
+  /**
+   * Construye las opciones del SELECT (Programas + Dispositivos)
+   * Value: "program:<programId>" o "device:<programId>:<deviceId>"
+   */
+  const buildFields = () => {
+    let options = [{ value: "", label: "Seleccione Programa o Dispositivo" }];
+    if (!enumsData?.programs) return [
+      { name: "responsibility", label: "Responsabilidad", type: "select", required: true, options }
+    ];
+
+    // 1. Opciones de PROGRAMAS
+    enumsData.programs.forEach(program => {
+      options.push({
+        value: `program:${program._id}`,
+        label: `(Programa) ${program.name}`
+      });
+    });
+
+    // 2. Opciones de DISPOSITIVOS
+    enumsData.programs.forEach(program => {
+      program.devices.forEach(device => {
+        options.push({
+          value: `device:${program._id}:${device._id}`,
+          label: `(Dispositivo) ${device.name} [${program.name}]`
+        });
+      });
+    });
+
+    return [
+      {
+        name: "responsibility",
+        label: "Responsabilidad",
+        type: "select",
+        required: true,
+        options
+      }
+    ];
+  };
+
+  /**
+   * Filtra de enumsData.programsIndex todos los items (program + device)
+   * donde el user figure en "responsible"
+   */
+  const responsabilityFor = () => {
+    if (!enumsData?.programsIndex) return;
+
+    const index = enumsData.programsIndex; // Diccionario con { id -> object }
+    const list = [];
+
+    // Recorremos todos los items en programsIndex
+    // Si "responsible" existe y contiene user._id, lo añadimos a list
+    for (const key in index) {
+      const item = index[key];
+      if (Array.isArray(item.responsible) && item.responsible.includes(user._id)) {
+        list.push(item);
+      }
+    }
+
+    setListResponsabilities(list);
+  };
+
+  /**
+   * useEffect: cada vez que cambie enumsData, recargamos la lista
+   */
+  useEffect(() => {
+    responsabilityFor();
+    // eslint-disable-next-line
+  }, [enumsData]);
+
+  const fields = buildFields();
+
+  /**
+   * Muestra el modal para añadir responsabilidad
+   */
+  const addResponsibilityModal = () => {
+    return (
+      <ModalForm
+        title="Añadir Responsabilidad"
+        message="Seleccione un programa o dispositivo"
+        fields={fields}
+        onSubmit={handleSubmitAdd}
+        onClose={closeModal}
+      />
+    );
+  };
+
+  /**
+   * Cierra el modal principal
+   */
+  const closeModal = () => {
+    setOpenModal(false);
+  };
+
+  /**
+   * Maneja el submit para AÑADIR responsabilidad (program/device)
+   */
+  const handleSubmitAdd = async (formData) => {
+    try {
+      charge(true);
+
+      const selectedValue = formData.responsibility;
+      if (!selectedValue) {
+        modal("Error", "Debe seleccionar una opción válida.");
+        return;
+      }
+
+      const parts = selectedValue.split(":");  // ["program", <programId>] o ["device", <programId>, <deviceId>]
+      const type = parts[0];
+      const token = getToken();
+      let payload = {};
+
+      if (type === "program") {
+        const programId = parts[1];
+        payload = {
+          type: "program",
+          action: "add",
+          programId,
+          responsible: user._id
+        };
+
+      } else if (type === "device") {
+        const programId = parts[1];
+        const deviceId = parts[2];
+        payload = {
+          type: "device",
+          action: "add",
+          programId,
+          deviceId,
+          responsible: user._id
+        };
+
+      } else {
+        modal("Error", "Selección inválida: no se reconoce el tipo.");
+        return;
+      }
+
+      // Llamamos al backend
+      const result = await responsibles(payload, token);
+      if (result.error) {
+        modal("Error", result.message || "No se pudo añadir la responsabilidad.");
+      } else {
+        modal("Responsable Añadido", "El usuario se ha añadido correctamente.");
+        chargeEnums();
+        closeModal();
+      }
+
+    } catch (error) {
+      modal("Error", error.message || "Ocurrió un error al añadir la responsabilidad.");
+      closeModal();
+    } finally {
+      charge(false);
+    }
+  };
+
+  /**
+   * Modal de confirmación para eliminar
+   */
+  const modalConfirmation = () => {
+    const item = listResponsabilities.find(el => el._id === showConfirmModal);
+    if (!item) return null;
+
+    const prefix = (item.type === "program") ? "programa" : "dispositivo";
+    const messageAux = `¿Estás seguro de que deseas que ${user.firstName} ${user.lastName} deje de ser responsable de este ${prefix}: ${item.name}?`;
+
     return (
       <ModalConfirmation
-        title="Eliminar responsable"
+        title="Eliminar responsabilidad"
         message={messageAux}
         onConfirm={onConfirm}
         onCancel={onCancel}
       />
-    )
-  }
+    );
+  };
 
-
+  /**
+   * Render principal
+   */
   return (
     <>
       <div className={styles.contenedor}>
-
-        <h2>Responsable {<FaSquarePlus onClick={() => setOpenModal(true)} />}</h2>
+        <h2>
+          Responsabilidades{" "}
+          <FaSquarePlus
+            onClick={() => setOpenModal(true)}
+            style={{ cursor: "pointer" }}
+          />
+        </h2>
         <div className={styles.contenedorBotones}>
-          {(listDispositive.length > 0)
-            ? <ul>
-              {listDispositive.map((x) => {
-                return <li className={styles.dispositivos}><p>{x.name}</p><span><FaTrashAlt onClick={()=>setShowConfirmModal(x._id)}/></span></li>
+          {listResponsabilities.length > 0 ? (
+            <ul>
+              {listResponsabilities.map((item) => {
+                const tipo = (item.type === "program") ? "Programa" : "Dispositivo";
+                return (
+                  <li
+                    key={`${item._id}-${item.type}`}
+                    className={styles.dispositivos}
+                  >
+                    <p>[{tipo}] {item.name}</p>
+                    <span>
+                      <FaTrashAlt
+                        onClick={() => handleDelete(item._id)}
+                        style={{ cursor: "pointer" }}
+                      />
+                    </span>
+                  </li>
+                );
               })}
             </ul>
-
-            : <p>No es responsable de ningún dispositivo</p>
-          }
-
+          ) : (
+            <p>No es responsable de ningún programa o dispositivo</p>
+          )}
         </div>
       </div>
-      {!!openModal && addDispositive()}
+
+      {openModal && addResponsibilityModal()}
       {showConfirmModal && modalConfirmation()}
-
     </>
-
-
   );
-}
+};
 
 export default Responsability;

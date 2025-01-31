@@ -11,15 +11,16 @@ import { useNavigate } from "react-router-dom";
 import { getToken } from "../../lib/serviceToken";
 import { useLogin } from '../../hooks/useLogin.jsx';
 import CvPanel from "./CvPanel";
-import BagCreate from "./BagCreate.jsx";
+// import BagCreate from "./BagCreate.jsx";
 import {useDebounce} from "../../hooks/useDebounce.jsx"
 import { useBag } from "../../hooks/useBag.jsx";
 import { formatDatetime } from "../../lib/utils.js";
 import Filters from "./Filters"; // Importa el nuevo componente
+import BagSelect from "./BagSelect.jsx";
 
-const ManagingResumenes = ({ modal, charge }) => {
+const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
     const { logged, changeLogged, logout } = useLogin();
-    const { Bag, schedule } = useBag();
+    const { Bag, schedule,changeBag } = useBag();
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(50); // Tamaño de página por defecto
@@ -28,6 +29,7 @@ const ManagingResumenes = ({ modal, charge }) => {
     const [enums, setEnums] = useState(null);
     const [urlCv, setUrlCv] = useState(null);
     const [userSelected, setUserSelected] = useState(null);
+    const [modalBag, setModalBag]=useState(false)
     const [filters, setFilters] = useState({
         name: '',
         email: '',
@@ -41,6 +43,7 @@ const ManagingResumenes = ({ modal, charge }) => {
         favorite: '',
         reject: '',
     });
+
 
     // Derivar una versión debounced de los filtros
     const debouncedFilters = useDebounce(filters, 300);
@@ -62,9 +65,8 @@ const ManagingResumenes = ({ modal, charge }) => {
             let data = null;
             const token = getToken();
             if (Bag != null && !!schedule) {
-                const ids = { users: Bag.userCv };
+                const ids = { users: Bag.process.userCv };
                 data = await getusercvs(page, limit, ids, token);
-                console.log(data)
             } else {
                 let auxFilters = { ...debouncedFilters };
                 for (let key in auxFilters) {
@@ -73,7 +75,6 @@ const ManagingResumenes = ({ modal, charge }) => {
                     }
                 }
                 data = await getusercvs(page, limit, auxFilters, token);
-                console.log(data)
             }
 
             const enumsData = await getData();
@@ -200,8 +201,8 @@ const ManagingResumenes = ({ modal, charge }) => {
 
     const checkUser = useCallback((userInfo) => {
         if (userInfo.reject != null) return styles.rejected; // Asegúrate de tener una clase CSS para esto
-        if (Bag != null && !!Bag.userCv) {
-            const user = Bag.userCv.find(x => x === userInfo._id);
+        if (Bag != null && !!Bag.process.userCv) {
+            const user = Bag.process.userCv.find(x => x === userInfo._id);
             if (user !== undefined) {
                 return styles.selected; // Asegúrate de tener una clase CSS para esto
             }
@@ -231,12 +232,11 @@ const ManagingResumenes = ({ modal, charge }) => {
                     <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
                         {'>'}
                     </button>
-                    <BagCreate />
+                    
                 </div>
+                
             </div>
-            {Bag != null && !schedule && <h2 id={styles.tituloProcesoActivo}>Selección activa: {Bag.name}</h2>}
-            {Bag != null && !schedule && <p>Nº de CV añadidos al proceso:{(!!Bag.userCv) ? Bag.userCv.length : '0'}</p>}
-            {Bag != null && !!schedule && <h2 id={styles.tituloProcesoActivo}>Entrevistas: {Bag.name}</h2>}
+            
             {!schedule &&
                 <Filters
                     filters={filters}
@@ -247,6 +247,12 @@ const ManagingResumenes = ({ modal, charge }) => {
                 />
             }
 
+            <div>
+                {modalBag ? <BagSelect offers={enums.offer} closeModal={()=>setModalBag(false)} /> : <button onClick={()=>setModalBag(true)}>{(Bag!=null)?'Cambiar Oferta':'Selecciona una oferta'}</button>}
+                {(Bag!=null)&& <button onClick={()=>changeBag(null)}>Salir de la oferta</button>}
+                {Bag != null  && <h2 id={styles.tituloProcesoActivo}>Selección activa: {Bag.nameOffer}</h2>}
+                {Bag != null && <p>Nº de CV añadidos al proceso:{(!!Bag.process.userCv) ? Bag.process.userCv.length : '0'}</p>}
+            </div>
 
             <div className={styles.tableContainer}>
                 <div className={`${styles.tableRow} ${styles.header}`}>
@@ -295,6 +301,8 @@ const ManagingResumenes = ({ modal, charge }) => {
                                 changeUser={(x) => changeUser(x)}
                                 modal={(title, message) => modal(title, message)}
                                 deleteUser={() => deleteUser()}
+                                offers={enums.offer} 
+                                enumsEmployer={enumsEmployer}
                             >
                             </CvPanel>
                         }

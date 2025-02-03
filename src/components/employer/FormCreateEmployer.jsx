@@ -215,7 +215,7 @@ const FormCreateEmployer = ({
       {
         name: "notes",
         label: "Escribe si es responsable, director o coordinador de algún programa o dispositivo",
-        type: "text",
+        type: "textarea",
         required: false,
         defaultValue: user?.notes || "",
         disabled: lockedFields.includes("notes"),

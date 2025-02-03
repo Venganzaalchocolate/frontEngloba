@@ -206,8 +206,23 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                   </>
                 )}
 
+                {field.type === "textarea" && (
+                  <>
+                    <textarea
+                      name={field.name}
+                      value={formData[field.name] || ""}
+                      onChange={handleChange}
+                      disabled={field.disabled}
+                    />
+                    {errors[field.name] && (
+                      <p className={styles.modalError}>{errors[field.name]}</p>
+                    )}
+                  </>
+                )}
+
+
                 {/* OTROS TIPOS: text, email, etc. */}
-                {!["file", "select", "date"].includes(field.type) && (
+                {!["file", "select", "date", "textarea"].includes(field.type) && (
                   <>
                     <input
                       name={field.name}

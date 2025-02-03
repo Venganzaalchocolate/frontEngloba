@@ -15,8 +15,6 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
   // =========== CONFIRMACIÓN MODAL ===========
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  console.log(hirings)
-  console.log(enums)
   const handleDelete = () => {
     setShowConfirmModal(true);
   };

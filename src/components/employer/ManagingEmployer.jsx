@@ -26,13 +26,13 @@ import FormCreateEmployer from './FormCreateEmployer';
  * ]
  */
 
-const ManagingEmployer = ({ modal, charge, listResponsability }) => {
+const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
   const { logged } = useLogin();
   const isRootOrGlobal = (logged.user.role === 'root' || logged.user.role === 'global');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [enums, setEnums] = useState(null);
-  const [enumsEmployer, setEnumsEmployer] = useState(null);
+  const [enumsEmployer, setEnumsEmployer] = useState(enumsData);
   const [userSelected, setUserSelected] = useState(null);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(1);
@@ -60,7 +60,6 @@ const ManagingEmployer = ({ modal, charge, listResponsability }) => {
 
   useEffect(() => {
     const init = async () => {
-      const enumsData = await chargeEnums();
       if (!enumsData.error) {
         setEnums({
           provinces: enumsData.provinces,

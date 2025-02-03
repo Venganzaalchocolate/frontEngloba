@@ -77,7 +77,9 @@ const BagPanel = ({ userSelected, offers }) => {
     const modifyBagEmployer = async (dataBagAux=null) => {
 
         let data=null
-        if(dataBagAux==null && Bag!=null){
+        console.log(dataBagAux)
+        console.log(Bag)
+        if(Bag!=null){
             data={
                 _id:Bag.process._id,
                 user:userSelected

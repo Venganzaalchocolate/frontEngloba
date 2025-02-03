@@ -23,7 +23,6 @@
 /* Bloques dentro del contenedor, en columna por defecto */
 .contenedor div {
     display: flex;
-    flex-direction: column;
     flex: 1 100%;
 }
 

@@ -7,8 +7,10 @@ import VacationDays from "./VacationDays";
 import Hiringperiods from "./HiringsPeriods";
 import Responsability from "./Responsability";
 import Coordination from "./Coordination";
+import { useLogin } from '../../hooks/useLogin.jsx';
 
 const ViewEmployers = ({ user, modal, charge, changeUser, enumsData, chargeEnums,chargeUser, listResponsability }) => {
+      const { logged } = useLogin();
 
     const handleChangeFile = (e) => {
         const { name, files } = e.target;
@@ -37,19 +39,21 @@ const ViewEmployers = ({ user, modal, charge, changeUser, enumsData, chargeEnums
         }
     };
 
-    
-
-
     return (
         <div className={styles.contenedor}>
-            <InfoEmployer user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+            <InfoEmployer user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} enumsData={enumsData}/>
             <Responsability chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>   
             <Coordination chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/> 
             <DocumentEmployer user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
             <Payrolls user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} listResponsability={listResponsability}/>
-            <VacationDays  user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
-            <Hiringperiods enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} chargeUser={chargeUser}/>
-            {/* Otros detalles que quieras mostrar */}
+            {user.employmentStatus!='en proceso de contratación' && (user.role!='global' || user.role!='root') &&
+            <>
+           <VacationDays  user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+            <Hiringperiods enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} chargeUser={chargeUser}/> 
+            </>
+            
+            }
+            
         </div>
     );
 };

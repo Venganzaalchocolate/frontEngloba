@@ -6,12 +6,13 @@ import { textErrors } from "../../lib/textErrors";
 import { getToken } from "../../lib/serviceToken";
 import { editUser } from "../../lib/data";
 import { deepClone } from "../../lib/utils";
+import { useLogin } from '../../hooks/useLogin';
 
-const InfoEmployer = ({ user,modal, charge, changeUser, listResponsability }) => {
+const InfoEmployer = ({ user,modal, charge, changeUser, listResponsability, enumsData }) => {
     const [isEditing, setIsEditing] = useState(false); // Controla si estamos en modo de edición
     const [datos, setDatos] = useState(user); // Estado local para los datos del usuario
     const [errores, setErrores] = useState({}); // Estado local para los errores
-
+    const { logged } = useLogin()
 
     // Maneja los cambios en los campos de texto
     const handleChange = (e) => {
@@ -149,7 +150,7 @@ const InfoEmployer = ({ user,modal, charge, changeUser, listResponsability }) =>
         )
         return component
     }
-
+    
     return (
         <div className={styles.contenedor}>
             <h2>DATOS {boton()}</h2>
@@ -157,7 +158,20 @@ const InfoEmployer = ({ user,modal, charge, changeUser, listResponsability }) =>
                 
                 <div key={field[0]} >
                     <label htmlFor={field[0]}>{field[1]}</label>
-                    <input
+                    {(field[0]=='employmentStatus' && (logged.user.role=='global'||logged.user.role=='root')) 
+                        ?
+                         <select
+                         id={field[0]}
+                         name={field[0]}
+                         value={datos[field[0]] || ''}
+                         onChange={handleChange}
+                         disabled={!isEditing}
+                         >
+                        {enumsData.status.map((x)=>{
+                            return <option value={x}>{x}</option>
+                        })}
+                        </select>
+                        : <input
                         type="text"
                         id={field[0]}
                         name={field[0]}
@@ -165,6 +179,9 @@ const InfoEmployer = ({ user,modal, charge, changeUser, listResponsability }) =>
                         onChange={handleChange}
                         disabled={(field[0]=='employmentStatus')?true:!isEditing}
                     />
+                    
+                    }
+                   
                     
                     {errores[field[0]] && <span className="errorSpan">{errores[field[0]]}</span>}
                 </div>

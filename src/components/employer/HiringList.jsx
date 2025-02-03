@@ -293,19 +293,7 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
                 </tr>
 
                 {/* Form nuevo LeavePeriod, si se pulsa el botón + */}
-                {buttonCreateLeave === hiringPeriod._id && (
-                  <tr>
-                    <td colSpan={6}>
-                      <LeavePeriodNew
-                        enumsData={enums}
-                        saveHiring={(leave, type) => saveHiring(leave, type)}
-                        close={() => setButtonCreateLeave(false)}
-                        idHiring={hiringPeriod._id}
-                      />
-                    </td>
-                  </tr>
-                )}
-
+                
                 {/* LeavePeriods activos */}
                 {hiringPeriod.leavePeriods &&
                   hiringPeriod.leavePeriods.filter((lp) => lp.active).length > 0 && (
@@ -336,6 +324,16 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
       {errores && <p style={{ color: 'red' }}>{errores}</p>}
       {/* Modal confirmación */}
       {showConfirmModal && modalConfirmation()}
+
+      {buttonCreateLeave && (
+                      <LeavePeriodNew
+                        enumsData={enums}
+                        saveHiring={(leave, type) => saveHiring(leave, type)}
+                        close={() => setButtonCreateLeave(false)}
+                        idHiring={buttonCreateLeave}
+                      />
+                )}
+
     </>
   );
 };

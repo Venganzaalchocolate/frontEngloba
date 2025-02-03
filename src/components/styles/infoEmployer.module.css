@@ -33,6 +33,13 @@
     padding-bottom: 0.5rem;
 }
 
+.contenedor div select:disabled{
+    background-color: transparent;
+    padding: 0;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+}
+
 
 .contenedor button{
     background-color: var(--color-morado);

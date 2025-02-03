@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useJobFormData } from '../../hooks/useJobFormData';
 import { sendFormCv } from '../../lib/data';
-import { validEmail, validNumber, validText } from '../../lib/valid';
+import { validateDNIorNIE, validEmail, validNumber, validText } from '../../lib/valid';
 import { textErrors } from '../../lib/textErrors';
 import styles from '../styles/formJob.module.css';
 import { Link, useNavigate } from 'react-router-dom';
@@ -17,7 +17,9 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         work_schedule: user ? user.work_schedule : [],
     });
     const [datos, setDatos] = useState({
-        name: (user != null) ? user.name : null, 
+        firstName: (user != null) ? user.firstName : null, 
+        lastName: (user != null) ? user.lastName : null, 
+        dni: (user != null) ? user.dni : null, 
         email: (user != null) ? user.email : null, 
         phone: (user != null) ? user.phone : null, 
         jobs: null, 
@@ -29,7 +31,9 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         id: (user != null) ? user._id : "" 
     });
     const [errores, setError] = useState({
-        name: null, 
+        firstName:  null, 
+        lastName: null, 
+        dni: null,  
         email: null, 
         phone: null, 
         jobs: null, 
@@ -58,9 +62,11 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         let valido = false;
 
         // Validar según el tipo de input
-        if (e.target.name == 'name') valido = validText(e.target.value, 3, 100); 
+        if (e.target.name == 'firstName') valido = validText(e.target.value, 3, 100); 
+        if (e.target.name == 'lastName') valido = validText(e.target.value, 3, 100); 
         if (e.target.name == 'email') valido = validEmail(e.target.value); 
         if (e.target.name == 'phone') valido = validNumber(e.target.value);
+        if (e.target.name == 'dni') valido = validateDNIorNIE(e.target.value);
         
         auxDatos[e.target.name] = e.target.value; 
         setDatos(auxDatos);
@@ -139,7 +145,9 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         if (valido) {
             charge(true);
             const auxDatos = { ...datos };
-            auxDatos['name'] = auxDatos['name'].toLowerCase();
+            auxDatos['firstName'] = auxDatos['firstName'].toLowerCase();
+            auxDatos['lastName'] = auxDatos['lastName'].toLowerCase();
+            auxDatos['dni'] = auxDatos['dni'].toLowerCase();
             auxDatos['email'] = auxDatos['email'].toLowerCase();
             auxDatos.jobs = multipleData.jobs;
             auxDatos.provinces = multipleData.provinces;
@@ -177,9 +185,19 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
             )}
             <div className={styles.contenedorForm}>
                 <div>
-                    <label htmlFor="name">Nombre Completo</label>
-                    <input type="text" id="name" name="name" onChange={handleChange} value={datos.name} />
-                    <span className="errorSpan">{errores.name}</span>
+                    <label htmlFor="firstName">Nombre</label>
+                    <input type="text" id="firstName" name="firstName" onChange={handleChange} value={datos.firstName} />
+                    <span className="errorSpan">{errores.firstName}</span>
+                </div>
+                <div>
+                    <label htmlFor="lastName">Apellidos</label>
+                    <input type="text" id="lastName" name="lastName" onChange={handleChange} value={datos.lastName} />
+                    <span className="errorSpan">{errores.lastName}</span>
+                </div>
+                <div>
+                    <label htmlFor="dni">DNI/NIE</label>
+                    <input type="text" id="dni" name="dni" onChange={handleChange} value={datos.dni} />
+                    <span className="errorSpan">{errores.dni}</span>
                 </div>
                 <div>
                     <label htmlFor="email">Email</label>

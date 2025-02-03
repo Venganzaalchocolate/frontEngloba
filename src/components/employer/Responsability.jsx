@@ -222,7 +222,6 @@ const Responsability = ({ user, modal, charge, enumsData, chargeEnums }) => {
         modal("Error", "Selección inválida: no se reconoce el tipo.");
         return;
       }
-
       // Llamamos al backend
       const result = await responsibles(payload, token);
       if (result.error) {

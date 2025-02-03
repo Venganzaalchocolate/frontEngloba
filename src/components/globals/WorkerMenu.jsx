@@ -21,12 +21,15 @@ const WorkerMenu = ({modal, charge}) => {
     const [listResponsability, setlistResponsability]=useState({})
     const [enumsEmployer, setEnumsEmployer] = useState(null);
 
+
     const chargeResponsability=async()=>{
-        const token= getToken();
-        const idUser=logged.user._id
-        const dataAux={_id:idUser}
-        const responsability = await getDispositiveResponsable(dataAux,token);
-        setlistResponsability(responsability)
+        if(logged.user.role!='root' && logged.user.role!='global'){
+            const token= getToken();
+            const idUser=logged.user._id
+            const dataAux={_id:idUser}
+            const responsability = await getDispositiveResponsable(dataAux,token);
+            setlistResponsability(responsability)   
+        }
         }
 
     useEffect(()=>{
@@ -49,8 +52,8 @@ const WorkerMenu = ({modal, charge}) => {
         if( MenuWorker=='socialForm') return <ManagingSocial closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)}/>;
         if( MenuWorker=='offersJobs') return <OfferJobsPanel closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message) } charge={(x)=>charge(x)}/>;
         if( MenuWorker=='programs') return <ManagingPrograms closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
-        if( MenuWorker=='employer') return <ManagingEmployer listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
-        if( MenuWorker=='myself') return <ManagingMySelf listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
+        if( MenuWorker=='employer') return <ManagingEmployer enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
+        if( MenuWorker=='myself') return <ManagingMySelf  listResponsability={listResponsability} closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if( MenuWorker=='root') return <PanelRoot closeAction={()=>changeMenuWorker(null)} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)}/>;
         if(MenuWorker=='formCreatePersonal') return <FormCreateEmployer enumsData={enumsEmployer} modal={modal} charge={charge} closeModal={()=>changeMenuWorker(null)} chargeUser={()=>changeMenuWorker(null)}/>
     } else return (

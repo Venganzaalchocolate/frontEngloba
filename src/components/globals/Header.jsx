@@ -7,20 +7,20 @@ import { FiAlignJustify } from "react-icons/fi";
 import { useState } from 'react';
 import { useMenuWorker } from '../../hooks/useMenuWorker';
 import { RiCloseLargeFill } from "react-icons/ri";
-import { useBag } from '../../hooks/useBag';
 import { FaUserAlt } from "react-icons/fa";
 import stylesTooltip from '../styles/tooltip.module.css';
+import { useOffer } from '../../hooks/useOffer';
 
 
 
 const Header = () => {
     const [viewMenu, setViewMenu]=useState(false)
     const {logout, logged } = useLogin()
-    const {resetBag}=useBag()
     const {changeMenuWorker, MenuWorker} =useMenuWorker()
+    const {changeOffer}=useOffer()
 
     const changeOption=(option)=>{
-        resetBag(); 
+        changeOffer(null)
         changeMenuWorker(option)
         setViewMenu(false)
     }
@@ -38,18 +38,7 @@ const Header = () => {
                 {/* <FaEnvelope />
                 {(viewMenu)?<RiCloseLargeFill  onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}/>:<FiAlignJustify onClick={()=>{resetBag(); setViewMenu(!viewMenu)}}></FiAlignJustify>} */}
             </div>
-            {/* {viewMenu && logged.user.role=='root' &&
-            <div className={styles.menuHeader}>
-                <ul>
-                    <li onClick={()=>changeOption('cv')}>GESTION CV</li>
-                    <li onClick={()=>changeOption('socialForm')}>IMPACTO SOCIAL</li>
-                    <li onClick={()=>changeOption('payroll')}>GESTION NOMINAS</li>
-                    <li onClick={()=>changeOption('offersJobs')}>GESTION OFERTAS</li>
-                    <li onClick={()=>changeOption('employer')}>GESTION TRABAJADORES</li>
-                    <li onClick={()=>changeOption('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</li>
-                </ul>
-            </div>
-            } */}
+            
         </header>
     )
 }

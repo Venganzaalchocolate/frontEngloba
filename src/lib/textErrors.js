@@ -68,6 +68,8 @@ export const textErrors = (tipo) => {
             return "Debe tener el formato YYYY y estar comprendido entre el 2000 hasta el año actual"
         case "futureDate":
             return "La fecha no debe ser posterior a la fecha actual"
+        case "oldDate":
+            return "La fecha no debe ser anterior a la fecha actual"
         default:
             return null;
     }

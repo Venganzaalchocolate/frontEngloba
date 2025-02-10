@@ -25,7 +25,6 @@ import stylesTooltip from '../styles/tooltip.module.css';
  * @param {Function} changeUser - Función para actualizar el usuario (en CvPanel)
  * @param {Boolean} modal - Estado de un modal (si aplica)
  * @param {Function} deleteUser - Función para eliminar el usuario (si aplica)
- * @param {Object} enums - Objeto con enumeraciones, que incluye { offer } (u otras props)
  * @param {Object} enumsEmployer - Objeto con enumeraciones para el empleador
  */
 function DivEmployers({
@@ -40,9 +39,17 @@ function DivEmployers({
   changeUser,
   modal,
   deleteUser,
-  enums,
-  enumsEmployer
-}) {
+  enumsEmployer,
+  offerSelected, 
+  changeOffer,
+  modalBagView, 
+  listOffers,
+  chargeOffers
+}) 
+
+
+{
+  
   return (
     <>
       {users.length > 0 &&
@@ -59,11 +66,13 @@ function DivEmployers({
                 {user.provinces.length !== 11 ? user.provinces.join(', ') : 'Todas'}
               </div>
               <div className={styles.tableCell}>
+           
                 {user.offer != null ? (
                   <span className={stylesTooltip.tooltip}>
                     <FaCheckCircle />
                     <span className={stylesTooltip.tooltiptext}>
-                      {user.offer.job_title}
+                    {listOffers.find((x) => x._id === user.offer)?.job_title || 'Oferta desconocida'}
+
                     </span>
                   </span>
                 ) : (
@@ -118,18 +127,22 @@ function DivEmployers({
               </div>
               <div className={styles.tableCell}>{formatDatetime(user.date)}</div>
             </div>
-
+       
             {/* Renderiza el panel si el usuario está seleccionado */}
             {userSelected && userSelected._id === user._id && (
               <CvPanel
+              chargeOffers={chargeOffers}
+                modalBagView={modalBagView}
                 charge={charge}
                 urlpdf={urlCv}
                 user={userSelected}
                 changeUser={changeUser}
                 modal={modal}
                 deleteUser={deleteUser}
-                offers={enums.offer}
+                offers={listOffers}
                 enumsEmployer={enumsEmployer}
+                offerSelected={offerSelected} 
+                changeOffer={(x)=>changeOffer(x)}
               />
             )}
           </div>

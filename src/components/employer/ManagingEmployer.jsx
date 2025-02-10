@@ -337,7 +337,6 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
                   enumsData={enumsEmployer}
                   modal={modal}
                   charge={charge}
-                  user={userSelected}
                   closeModal={closeModal}
                   chargeUser={() => loadUsers(true)}
                 />

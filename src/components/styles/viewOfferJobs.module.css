@@ -7,49 +7,71 @@
     color: var(--color-morado);
 }
 
-
-.contenedorOferta>.oferta{
-    background-color: var(--color-malva);
-    color: var(--color-morado);
-    display: flex;
-    justify-content: space-between;
-    flex: 1 100%;
-    min-width: 20rem;
-    gap: 1rem;
-    padding: 1rem;
-    border-radius: 1rem;
-    align-items: center;
-}
-
-.contenedorOferta>.oferta>div{
+.cardContainer {
     display: flex;
     flex-wrap: wrap;
-    flex: 1 100%;
-    gap: 0.3rem;
-    >p{
-        display: flex;
-        flex: 1 100%;
-    };
-    >h3{
-        display: flex;
-        flex: 1 100%;
-    }
-    >div{
-        display: flex;
-        flex: 1 100%;
-        align-items: center;
-        >div{
-            background-color: var(--color-morado);
-            color: white;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            margin-right: 1rem;
-        }
-    }
+    gap: 20px;
+    justify-content: center;
+    padding: 20px;
+}
 
+.card {
+    width: 280px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.cardTitle {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--color-morado);
+}
+
+.cardInfo {
+    font-size: 0.9rem;
+    color: black;
+    margin: 5px 0;
+    >strong{
+        color: var(--color-morado);
+    }
+}
+
+.cardStatus {
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.active {
+    color: var(--color-verde-hoja);
+}
+
+.inactive {
+    color: tomato;
+}
+
+.cardActions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
 }
 
 
-.contenedorOferta>.oferta:hover{
-    background-color: var(--color-crema);
+.activateButton {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
 }
+
+.activateButton:hover {
+    background: #218838;
+}
+

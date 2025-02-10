@@ -5,11 +5,13 @@ import { useLogin } from '../../hooks/useLogin.jsx';
 import InfoEmployer from '../employer/InfoEmployer.jsx';
 import DocumentEmployerMiscelanea from '../employer/DocumentEmployerMiscelanea.jsx';
 import Payrolls from '../payroll/Payrolls.jsx';
+import { getDataEmployer } from '../../lib/data.js';
 
-const ManagingMySelf = ({ modal, charge, listResponsability }) => {
+const ManagingMySelf = ({ modal, charge, listResponsability, enumsData }) => {
     const { logged } = useLogin();
     const [isEditing, setIsEditing] = useState(false);  // Estado de edición
     const [currentUser, setCurrentUser] = useState(logged.user);  // Por defecto, mostramos el usuario logueado
+    const [enumsEmployer, setEnumsEmployer] = useState(enumsData);
     
     // Usamos useEffect para actualizar el usuario cuando logged.user cambie
     useEffect(() => {
@@ -20,6 +22,8 @@ const ManagingMySelf = ({ modal, charge, listResponsability }) => {
         setCurrentUser(user)
     }
 
+
+
     return (
         <div className={styles.contenedor}>
             <div className={styles.contenido}>
@@ -27,9 +31,9 @@ const ManagingMySelf = ({ modal, charge, listResponsability }) => {
                     <h2>Mi Perfil</h2>
                 </div>
                 <div className={styles.componentes}>
-                <InfoEmployer listResponsability={listResponsability} user={currentUser} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+                <InfoEmployer enumsData={enumsData} listResponsability={listResponsability} user={currentUser} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
                 <DocumentEmployerMiscelanea listResponsability={listResponsability} user={currentUser} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
-                <Payrolls user={logged.user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} listResponsability={listResponsability}/>
+                <Payrolls  user={logged.user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} listResponsability={listResponsability}/>
                 </div> 
             </div>
         </div>

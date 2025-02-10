@@ -6,7 +6,7 @@
   width: 100vw;
   height: 100vh;
   background-color: rgba(79, 82, 161, 0.643);
-  z-index: 10000;
+  z-index: 100000000;
   justify-content: center;
   align-items: center;
 }

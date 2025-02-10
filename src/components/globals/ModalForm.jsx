@@ -5,6 +5,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
   // =========== CONSTANTES ===============
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const ALLOWED_FILE_TYPES = ["application/pdf"];
+  const [showDropdown, setShowDropdown] = useState({}); // Estado para múltiples desplegables
 
   // =========== ESTADOS ===============
   const [formData, setFormData] = useState(() =>
@@ -75,8 +76,10 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
       setErrors((prev) => ({ ...prev, [name]: "Este campo es obligatorio." }));
     } else {
       // 2) validación isValid
+
       if (typeof fieldConfig?.isValid === "function") {
         const errorMsg = fieldConfig.isValid(value); // Dev "" o msg error
+
         setErrors((prev) => ({ ...prev, [name]: errorMsg }));
       } else {
         setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -87,15 +90,43 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleChangeMultiple = (name, value) => {
+    setFormData((prev) => {
+      const prevValues = prev[name] || [];
+      const newValues = prevValues.includes(value)
+        ? prevValues.filter((v) => v !== value) // Si ya está, lo quita
+        : [...prevValues, value]; // Si no está, lo añade
+  
+      // Eliminar error si ahora hay al menos una opción seleccionada
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [name]: newValues.length > 0 ? "" : "Este campo es obligatorio.",
+      }));
+  
+      return { ...prev, [name]: newValues };
+    });
+  };
+  
+  const toggleDropdown = (name) => {
+    setShowDropdown((prev) => ({
+      ...prev,
+      [name]: !prev[name], // Alternar estado de cada desplegable de forma independiente
+    }));
+  };
+  
+
+
+
   // =========== MANEJAR SUBMIT ===============
   const handleSubmit = (event) => {
     event.preventDefault();
-
+  
     let newErrors = { ...errors };
-
+  
     // Validación final
     fields.forEach((field) => {
       if (field.type === "section") return;
+  
       if (field.required) {
         if (field.type === "file" && !formData[field.name]) {
           newErrors[field.name] = "Este campo es obligatorio.";
@@ -105,19 +136,26 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
             newErrors[field.name] = "Este campo es obligatorio.";
           }
         }
+        // Validar selectMultiple correctamente
+        if (field.type === "selectMultiple") {
+          if (!formData[field.name] || formData[field.name].length === 0) {
+            newErrors[field.name] = "Este campo es obligatorio.";
+          }
+        }
       }
     });
-
+  
     setErrors(newErrors);
-
+  
     const hasErrors = Object.values(newErrors).some((err) => err !== null && err !== "");
     if (hasErrors) {
       return;
     }
-
+  
     // Todo OK
     onSubmit(formData);
   };
+  
 
   // =========== RENDER ===============
   return (
@@ -189,6 +227,47 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                     )}
                   </>
                 )}
+                {/* CAMPO SELECT MULTIPLE - DESPLEGABLE */}
+                {field.type === "selectMultiple" && (
+                  <>
+                    <div className={styles.selectMultipleWrapper}>
+                      <div
+                        className={styles.selectMultipleButton}
+                        onClick={() => toggleDropdown(field.name)}
+                      >
+                        {formData[field.name]?.length > 0
+                          ? formData[field.name]
+                            .map((val) => field.options.find((opt) => opt.value === val)?.label)
+                            .join(", ")
+                          : "Selecciona opciones"}
+                        <span className={styles.arrow}>&#9662;</span>
+                      </div>
+
+                      {showDropdown[field.name] && (
+                        <div className={styles.selectMultipleDropdown}>
+                          {field.options.map((option, idx) => (
+                            <div
+                              key={idx}
+                              className={`${styles.selectMultipleOption} ${formData[field.name]?.includes(option.value) ? styles.selected : ""
+                                } ${option.value === "" ? styles.disabled : ""}`} // Agrega una clase CSS para deshabilitarla visualmente
+                              onClick={() => {
+                                if (option.value !== "") {
+                                  handleChangeMultiple(field.name, option.value);
+                                }
+                              }}
+                            >
+                              {option.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {errors[field.name] && <p className={styles.modalError}>{errors[field.name]}</p>}
+                  </>
+                )}
+
+
+
 
                 {/* CAMPO TIPO DATE */}
                 {field.type === "date" && (
@@ -222,7 +301,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
 
 
                 {/* OTROS TIPOS: text, email, etc. */}
-                {!["file", "select", "date", "textarea"].includes(field.type) && (
+                {!["file", "select", "date", "textarea", "selectMultiple"].includes(field.type) && (
                   <>
                     <input
                       name={field.name}
@@ -243,7 +322,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
 
           <div className={styles.modalActions}>
             <button type="submit">Aceptar</button>
-            <button className={styles.tomato} type="button" onClick={onClose}>
+            <button className='tomato' type="button" onClick={onClose}>
               Cancelar
             </button>
           </div>

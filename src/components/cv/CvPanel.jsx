@@ -1,38 +1,53 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useState } from "react"
 import styles from '../styles/cvPanel.module.css';
 import { FaPhoneAlt } from "react-icons/fa";
 import { MdVideoCall } from "react-icons/md";
-import { IoPersonSharp } from "react-icons/io5";
+import { IoBagCheck, IoPersonSharp } from "react-icons/io5";
 import { FaEye } from "react-icons/fa";
 import { FaRegEyeSlash } from "react-icons/fa6";
 import { GoStar } from "react-icons/go";
 import { GoStarFill } from "react-icons/go";
 import { BsExclamationOctagonFill } from "react-icons/bs";
-import { modifyUser } from "../../lib/data";
+import { modifyUser, updateOffer } from "../../lib/data";
 import { BsExclamationOctagon } from "react-icons/bs";
-import { formatDatetime } from "../../lib/utils";
+import { deepClone, formatDatetime } from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
-import BagPanel from "./BagPanel";
-import { useBag } from "../../hooks/useBag.jsx";
 import VisualizadorPDF from "./GoogleView.jsx";
 import { FaRegEdit, FaCalendarAlt } from "react-icons/fa";
 import FormJob from "../globals/FormJob.jsx";
 import { BsBookmarkPlusFill } from "react-icons/bs";
 import { PiPersonFill } from "react-icons/pi";
+import { IoBagAdd } from "react-icons/io5";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import ToHireEmployee from './ToHireEmployee.jsx';
+import { getToken } from "../../lib/serviceToken";
+import { useOffer } from '../../hooks/useOffer.jsx';
 
 
 
-const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser, offers, enumsEmployer }) => {
+const CvPanel = ({modalBagView, urlpdf, user, changeUser, modal, charge, deleteUser, offers, enumsEmployer, chargeOffers}) => {
     const { logged } = useLogin()
-    const { Bag, schedule } = useBag()
     const [typeComment, setTypeComment] = useState(null)
     const [textComment, setTextComment] = useState('')
     const [panelEditUser, setPanelEditUser] = useState(false)
     const [deletePanel, setDeletePanel] = useState(false)
+    const [inOffer,setInOffer]=useState(false)
+    const {Offer, changeOffer}=useOffer()
 
+    const isInOffer=()=>{
+        if(!!Offer){
+        const exist=Offer.userCv.some((idUser)=>idUser==user._id)
+        setInOffer(exist)    
+        }
+        
+    }
+
+
+ 
+useEffect(()=>{
+    isInOffer();
+},[Offer])
 
     const saveComment = async () => {
         if (textComment != '' && typeComment != null) {
@@ -76,6 +91,9 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser, offers, 
     }
 
     const handleChangeType = (type) => {
+        if(!Offer){
+            modalBagView()
+        }
         if (typeComment == type) {
             setTypeComment(null)
             setTextComment('')
@@ -94,6 +112,36 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser, offers, 
         setDeletePanel(state)
     }
 
+    const addUserInOffer = async () => {
+        let offerAux = deepClone(Offer);
+        if (!Array.isArray(offerAux.userCv)) {
+            offerAux.userCv = [];
+        }
+        offerAux.userCv.push(user._id);
+        offerAux['id'] = offerAux._id;
+        const token = getToken();
+        const upOffer = await updateOffer(offerAux, token);
+        if(!upOffer.error){
+            changeOffer(upOffer); // Actualiza la oferta en el estado principal
+            setInOffer(true); // Fuerza la actualización del estado   
+        }
+        
+    };
+  
+
+    const deleteUserInOffer = async () => {
+        let offerAux = deepClone(Offer);
+        offerAux['userCv'] = offerAux.userCv.filter((id) => id !== user._id);
+        offerAux['id'] = offerAux._id;
+        const token = getToken();
+        const upOffer = await updateOffer(offerAux, token);
+        
+        changeOffer(upOffer); // Actualiza la oferta en el estado principal
+        setInOffer(false); // Fuerza la actualización del estado
+    };
+
+    
+
     if (user) {
         return (
 
@@ -105,7 +153,14 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser, offers, 
                         {(user.reject != null) ? <BsExclamationOctagonFill color="tomato" onClick={() => changeStatus('reject')} /> : <BsExclamationOctagon onClick={() => changeStatus('reject')} />}
                         {logged.user.role == 'root' && <RiDeleteBin6Line  onClick={() => deleteCvPanel(true)}>Eliminar CV</RiDeleteBin6Line>}
                         <FaRegEdit onClick={() => viewPanelEditUser()} />
-                        <BagPanel offers={offers} userSelected={user} />
+                        {(!Offer)
+                            ?<IoBagAdd onClick={() => modalBagView()}></IoBagAdd>
+                            :(inOffer)
+                                ?<IoBagCheck onClick={() => deleteUserInOffer()} color='lightgreen'></IoBagCheck>
+                                :<IoBagAdd onClick={() => addUserInOffer()}></IoBagAdd>
+                            }
+   
+
                     </div>
                     {deletePanel && <div className={styles.deletePanel}>
                         <p>¿Estas seguro? No seas cafre !!!!</p>
@@ -122,7 +177,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser, offers, 
                         />
 
                     </div>}
-                    <ToHireEmployee enumsEmployer={enumsEmployer} offers={offers} userSelected={user}  modal={(title, message) => modal(title, message)} charge={() => charge()} />
+                    <ToHireEmployee chargeOffers={chargeOffers} enumsEmployer={enumsEmployer} offers={offers} userSelected={user}  modal={(title, message) => modal(title, message)} charge={() => charge()} />
                     <div className={styles.boxComments}>
                         <h2>Notas <BsBookmarkPlusFill onClick={() => handleChangeType('notes')}></BsBookmarkPlusFill></h2>
                         <div>
@@ -147,7 +202,7 @@ const CvPanel = ({ urlpdf, user, changeUser, modal, charge, deleteUser, offers, 
                         <div className={styles.boxComments}>
                             <h2>Comentarios {<><FaPhoneAlt onClick={() => handleChangeType('commentsPhone')} /> <MdVideoCall onClick={() => handleChangeType('commentsVideo')} /> <IoPersonSharp onClick={() => handleChangeType('commentsInperson')}/></>}</h2>
                             <div>
-                                {Bag != null && typeComment != null && typeComment != 'notes' &&
+                                {Offer != null && typeComment != null && typeComment != 'notes' &&
                                     <div className={styles.contentComment}>
                                         <h4>Entrevista {(typeComment == 'commentsPhone') ? 'por Telefónica' : (typeComment == 'commentsVideo') ? 'por Videollamada' : 'en Persona'}</h4>
                                         <textarea name="comentarios" id="comentarios" value={textComment} onChange={(e) => handleChange(e)}></textarea>

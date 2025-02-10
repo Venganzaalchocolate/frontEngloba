@@ -1,0 +1,114 @@
+/* === OVERLAY DEL MODAL (FONDO OSCURO) === */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(79, 82, 161, 0.643); /* Color adaptado */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+/* === CONTENEDOR DEL MODAL === */
+.modalContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+    max-width: 30rem;
+    width: 90%;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    color: var(--color-morado);
+    gap: 1rem;
+    max-height: 80vh; /* Límite de altura */
+    overflow-y: auto;
+}
+
+/* === TÍTULO DEL MODAL === */
+.modalTitle {
+    text-transform: uppercase;
+    border-bottom: 4px solid var(--color-malva);
+    width: 100%;
+    text-align: center;
+    font-size: 1.5rem;
+    color: var(--color-morado);
+}
+
+/* === TEXTO DEL MODAL === */
+.modalInfo {
+    font-size: 1rem;
+    color: var(--color-morado);
+    text-align: left;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.modalInfo strong {
+    font-weight: bold;
+}
+
+/* === ESTILOS PARA ESTADOS (ACTIVO/INACTIVO) === */
+.active {
+    color: var(--color-verde-hoja);
+    font-weight: bold;
+    padding-left: 0.5rem;
+}
+
+.inactive {
+    color: var(--color-naranja);
+    font-weight: bold;
+}
+
+/* === BOTONES DEL MODAL === */
+.modalActions {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* === BOTÓN DE EDITAR === */
+
+/* === BOTÓN DE CERRAR === */
+
+/* === FORMULARIO DENTRO DEL MODAL === */
+.modalContent input,
+.modalContent select {
+    border-radius: 0;
+    padding: 0.25rem;
+    border-bottom: solid 1px var(--color-malva);
+    width: 100%;
+}
+
+.modalContent textarea {
+    width: 100%;
+    border: solid 1px var(--color-malva);
+    padding: 0.5rem;
+    font-size: 1rem;
+}
+
+/* === ERRORES EN FORMULARIO === */
+.modalError {
+    padding-top: 0.25rem;
+    color: tomato;
+    font-size: 8pt;
+    font-style: italic;
+}
+
+/* === BOTÓN DESHABILITADO === */
+.modalContent :disabled {
+    background-color: lightgray;
+}
+
+/* === ESPACIADO ENTRE GRUPOS === */
+.modalContent h4 {
+    padding-top: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--color-morado);
+}

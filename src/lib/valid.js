@@ -1,3 +1,5 @@
+import { textErrors } from "./textErrors";
+
 export const validEmail = (email) => {
   // Expresión regular para validar una dirección de correo electrónico
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -203,7 +205,6 @@ export const isNotFutureDateString = (dateString) => {
 
   const parts = dateString.split(/[-/]/);
   if (parts.length !== 2) return false;
-
   const year = parseInt(parts[0], 10);
   const month = parseInt(parts[1], 10);
 
@@ -217,6 +218,28 @@ export const isNotFutureDateString = (dateString) => {
 
   if (year > currentYear) return false;
   if (year === currentYear && month > currentMonth) return false;
+
+  return true;
+};
+
+export const isNotFutureDateStringMsg = (dateString) => {
+  if (!dateString) return false;
+
+  const parts = dateString.split(/[-/]/);
+  if (parts.length !== 2) return textErrors('oldDate');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+
+  if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+    return textErrors('oldDate');
+  }
+
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+
+  if (year > currentYear) return false;
+  if (year === currentYear && month > currentMonth) return textErrors('oldDate');
 
   return true;
 };

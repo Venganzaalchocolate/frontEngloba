@@ -4,7 +4,7 @@ import { BsExclamationOctagonFill, BsExclamationLg, BsExclamationOctagon, BsStar
 import styles from '../styles/managingResumenes.module.css';
 import stylesTooltip from '../styles/tooltip.module.css';
 
-const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters }) => {
+const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters, listOffers }) => {
 
     return (
         <div className={styles.contenedorfiltro}>
@@ -18,13 +18,13 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters 
                 <input type="text" id="email" name="email" value={filters.email} onChange={handleFilterChange} />
             </div>
 
-            {!!enums &&
+            {!!listOffers && !!enums &&
                 <>
                     <div>
                         <label htmlFor="offer">Oferta:</label>
                         <select name="offer" id="offer" onChange={handleFilterChange} value={filters.offer}>
                             <option value={''}>Selecciona una opción</option>
-                            {enums.offer.map((x) => {
+                            {listOffers.map((x) => {
                                 return <option value={x._id} key={x._id}>{x.job_title}</option>
                             })}
                         </select>

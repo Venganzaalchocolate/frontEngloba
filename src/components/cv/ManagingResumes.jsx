@@ -1,32 +1,33 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { deleteUserCv, getCVs, getData, getusercvs, getuserscvs } from "../../lib/data";
+import { deleteUserCv, getCVs, getOfferJobs, getusercvs, getuserscvs } from "../../lib/data";
 import styles from '../styles/managingResumenes.module.css';
 import { useNavigate } from "react-router-dom";
 import { getToken } from "../../lib/serviceToken";
 import { useLogin } from '../../hooks/useLogin.jsx';
-// import BagCreate from "./BagCreate.jsx";
 import { useDebounce } from "../../hooks/useDebounce.jsx"
-import { useBag } from "../../hooks/useBag.jsx";
 import { formatDatetime } from "../../lib/utils.js";
 import Filters from "./Filters"; // Importa el nuevo componente
-import BagSelect from "./BagSelect.jsx";
+// import BagSelect from "./BagSelect.jsx";
 import DivEmployers from "./DivEmployers.jsx";
+import OfferSelect from "./OfferSelect.jsx";
+import { useOffer } from "../../hooks/useOffer.jsx";
 
-const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
+
+const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
     const { logged, changeLogged, logout } = useLogin();
-    const { Bag, schedule, changeBag } = useBag();
+    const { Offer, changeOffer } = useOffer();
+    const [listOffers, setListOffers]=useState([]);
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(50); // Tamaño de página por defecto
     const [users, setUsers] = useState([]);
     const [totalPages, setTotalPages] = useState(0);
-    const [enums, setEnums] = useState(null);
     const [urlCv, setUrlCv] = useState(null);
     const [userSelected, setUserSelected] = useState(null);
     const [modalBag, setModalBag] = useState(false)
-    const [bagUsers, setBagUsers]=useState([])
-    const [seeUserBag, setseeUsaerBag]=useState(false)
+    const [bagUsers, setBagUsers] = useState([])
+    const [seeUserBag, setseeUsaerBag] = useState(false)
     const [filters, setFilters] = useState({
         name: '',
         email: '',
@@ -41,12 +42,28 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
         reject: '',
     });
 
-
     // Derivar una versión debounced de los filtros
     const debouncedFilters = useDebounce(filters, 300);
 
-    
+    const chargeOffers=async ()=>{
+        const offers = await getOfferJobs();
 
+        if(!offers.error){
+            const offersActive=offers.filter((x)=>x.active)
+            setListOffers(offersActive)
+        }
+    }
+    
+    useEffect(()=>{
+        chargeOffers();
+        if (Offer) {
+            bagUsersData();  // Recargar usuarios de la nueva oferta
+            
+        } else {
+            setBagUsers([]);  // Vaciar la lista si no hay oferta
+        }
+        setseeUsaerBag(false);
+    },[Offer])
 
     // Cargar usuarios cuando cambie la página, el tamaño de página, los filtros debounced o el schedule
     useEffect(() => {
@@ -55,7 +72,7 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
         } else {
             navigate('/login');
         }
-    }, [debouncedFilters, page, limit, schedule]);
+    }, [debouncedFilters, page, limit]);
 
     // Función para cargar los filtros de la página actual
     const loadUsers = async () => {
@@ -64,8 +81,8 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
         try {
             let data = null;
             const token = getToken();
-            if (Bag != null && !!schedule) {
-                const ids = { users: Bag.process.userCv };
+            if (Offer != null ) {
+                const ids = { users: Offer.userCv };
                 data = await getusercvs(page, limit, ids, token);
             } else {
                 let auxFilters = { ...debouncedFilters };
@@ -75,18 +92,6 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
                     }
                 }
                 data = await getusercvs(page, limit, auxFilters, token);
-            }
-
-            const enumsData = await getData();
-            if (!enumsData.error) {
-                let auxEnums = {
-                    jobs: enumsData.jobs,
-                    provinces: enumsData.provinces,
-                    work_schedule: enumsData.work_schedule,
-                    studies: enumsData.studies,
-                    offer: enumsData.offer,
-                };
-                setEnums(auxEnums);
             }
 
             if (data.error) {
@@ -108,7 +113,7 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
         setUrlCv(null);
         setUserSelected(null);
         setPage(1);
-    }, [Bag]);
+    }, []);
 
     const deleteUser = async () => {
         if (userSelected._id) {
@@ -201,8 +206,8 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
 
     const checkUser = useCallback((userInfo) => {
         if (userInfo.reject != null) return styles.rejected; // Asegúrate de tener una clase CSS para esto
-        if (Bag != null && !!Bag.process.userCv) {
-            const user = Bag.process.userCv.find(x => x === userInfo._id);
+        if (Offer != null && !!Offer.userCv) {
+            const user = Offer.userCv.find(x => x === userInfo._id);
             if (user !== undefined) {
                 return styles.selected; // Asegúrate de tener una clase CSS para esto
             }
@@ -210,33 +215,37 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
         // if(logged.user.role=='root' && userInfo.favorite != null) return styles.favoriteRoot;
         if (userInfo.favorite != null) return styles.favorite;
         return styles.tableRow; // Clase por defecto
-    }, [Bag]);
+    }, [Offer]);
 
     //p
 
-    const bagUsersData=async()=>{
-        const token=getToken();
-        if(!!Bag && Bag.process.userCv && Bag.process.userCv.length>0){
-            const data={
-                ids:Bag.process.userCv
+    const bagUsersData = async () => {
+        const token = getToken();
+        if (!!Offer && Offer.userCv && Offer.userCv.length > 0) {
+            const data = {
+                ids: Offer.userCv
             }
-         const users= await getuserscvs(data,token)   
-         setBagUsers(users)
-        }  else {
+            const users = await getuserscvs(data, token)
+            setBagUsers(users)
+        } else {
             setBagUsers([])
         }
     }
 
-    const userBag=async ()=>{
-        if(!seeUserBag){
-          await bagUsersData(); 
-          setseeUsaerBag(true) 
+    const userBag = async () => {
+        if (!seeUserBag) {
+            await bagUsersData();
+            setUserSelected(null)
+            setseeUsaerBag(true)
         } else {
             setseeUsaerBag(false)
         }
-        
+
     }
 
+    const modalOfferView=()=>{
+        setModalBag(true)
+    }
 
     return (
         <div className={styles.contenedor}>
@@ -262,55 +271,60 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
 
             </div>
 
-            {!schedule &&
-                <Filters
+
+            <Filters
                     filters={filters}
-                    enums={enums}
+                    listOffers={listOffers}
+                    enums={enumsEmployer}
                     handleFilterChange={handleFilterChange}
                     resetFilters={resetFilters}
                     setFilters={setFilters}
-                />
-            }
+            />
+            
 
             <div className={styles.cajaOfertas}>
-                {Bag != null && <h2 className={styles.tituloProcesoActivo}>Selección activa: {Bag.nameOffer}</h2>}
+                {Offer != null && <h2 className={styles.tituloProcesoActivo}>Selección activa: {Offer.job_title}</h2>}
                 <div className={styles.cajaOfertasBotones}>
-                    {modalBag ? <BagSelect offers={enums.offer} closeModal={() => setModalBag(false)} /> : <button onClick={() => setModalBag(true)}>{(Bag != null) ? 'Cambiar Oferta' : 'Selecciona una oferta'}</button>}
-                    {(Bag != null) && <button onClick={() => changeBag(null)}>Salir de la oferta</button>}
-                    {(Bag != null) && !!Bag.process.userCv &&
-                    <button onClick={()=>userBag()}>Ver Personas añadidas</button>
+                  
+                    {modalBag ? <OfferSelect  offers={listOffers} closeModal={() => setModalBag(false)} userSelected={userSelected} type={'select'}/> : <button onClick={() => modalOfferView()}>{(Offer != null) ? 'Cambiar Oferta' : 'Selecciona una oferta'}</button>}
+                    {(Offer != null) && <button onClick={() => changeOffer(null)}>Salir de la oferta</button>}
+                    {(Offer != null) && !!Offer.userCv &&
+                        <button onClick={() => userBag()}>Ver Personas añadidas</button>
                     }
-                    
+
                 </div>
-                {Bag != null && (
-  <div className={styles.cvAddBolsa}>
-    <p>
-      Nº de CV añadidos a la oferta:
-      {!!Bag.process.userCv ? Bag.process.userCv.length : '0'}
-    </p>
-    
-    {/* Mapeo de los usuarios que están en Bag.process.userCv */}
-    {
-        seeUserBag &&  <DivEmployers
-        users={bagUsers}
-        keySuffix="bag"
-        checkUser={checkUser}
-        lookCV={lookCV}
-        formatDatetime={formatDatetime}
-        userSelected={userSelected}
-        charge={charge}
-        urlCv={urlCv}
-        changeUser={changeUser}
-        modal={modal}
-        deleteUser={deleteUser}
-        enums={enums}
-        enumsEmployer={enumsEmployer}
-    />
-    }
-   
-    
-  </div>
-)}
+                {Offer != null && (
+                    <div className={styles.cvAddBolsa}>
+                        <p>
+                            Nº de CV añadidos a la oferta:
+                            {!!Offer.userCv ? Offer.userCv.length : '0'}
+                        </p>
+
+                        {/* Mapeo de los usuarios que están en Bag.process.userCv */}
+                        {
+                            seeUserBag && <DivEmployers
+                                chargeOffers={chargeOffers}
+                                listOffers={listOffers}
+                                modalBagView={modalOfferView}
+                                users={bagUsers}
+                                keySuffix="offer"
+                                checkUser={checkUser}
+                                lookCV={lookCV}
+                                formatDatetime={formatDatetime}
+                                userSelected={userSelected}
+                                charge={charge}
+                                urlCv={urlCv}
+                                changeUser={changeUser}
+                                modal={modal}
+                                deleteUser={deleteUser}
+                                enumsEmployer={enumsEmployer}
+                          
+                            />
+                        }
+
+
+                    </div>
+                )}
 
 
             </div>
@@ -328,23 +342,28 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer }) => {
                     <div className={styles.tableCell}></div>
                     <div className={styles.tableCell}>Fecha</div>
                 </div>
-                
+
                 <DivEmployers
-        users={users}
-        keySuffix="bag"
-        checkUser={checkUser}
-        lookCV={lookCV}
-        formatDatetime={formatDatetime}
-        userSelected={userSelected}
-        charge={charge}
-        urlCv={urlCv}
-        changeUser={changeUser}
-        modal={modal}
-        deleteUser={deleteUser}
-        enums={enums}
-        enumsEmployer={enumsEmployer}
-    />
-                
+                listOffers={listOffers}
+                modalBagView={modalOfferView}
+                chargeOffers={chargeOffers}
+                    users={users}
+                    keySuffix="offer"
+                    checkUser={checkUser}
+                    lookCV={lookCV}
+                    formatDatetime={formatDatetime}
+                    userSelected={userSelected}
+                    charge={charge}
+                    urlCv={urlCv}
+                    changeUser={changeUser}
+                    modal={modal}
+                    deleteUser={deleteUser}
+                    enumsEmployer={enumsEmployer}
+                    Offer={Offer}
+                    changeOffer={(x) => changeOffer(x)}
+           
+                />
+
 
 
             </div>

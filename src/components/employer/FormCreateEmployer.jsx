@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ModalForm from "../globals/ModalForm";
-import { createEmployer, getDataEmployer } from "../../lib/data";
+import { createEmployer, getDataEmployer, updateOffer } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import {
   validateDNIorNIE,
@@ -10,6 +10,8 @@ import {
 } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 import { useLogin } from "../../hooks/useLogin";
+import ModalConfirmation from "../globals/ModalConfirmation";
+import { useOffer } from "../../hooks/useOffer";
 
 /**
  * FormCreateEmployer
@@ -17,16 +19,23 @@ import { useLogin } from "../../hooks/useLogin";
  * Muestra un formulario para crear/editar un usuario y su primer período de contratación.
  */
 const FormCreateEmployer = ({
+
   modal,
   charge,
   closeModal,
   chargeUser,
   enumsData = null,
   user = null,
-  lockedFields = []
+  lockedFields = [],
+  chargeOffers=()=>{}
 }) => {
   const { logged } = useLogin();
   const [enums, setEnumsEmployer] = useState(enumsData);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+const [pendingFormData, setPendingFormData] = useState(null);
+const { changeOffer } = useOffer();
+
+
 
   // ========== CARGA DE ENUMS =============
   const chargeEnums = async () => {
@@ -44,7 +53,7 @@ const FormCreateEmployer = ({
   // ========== BUILD DE CAMPOS =============
   const buildFields = () => {
     const hPeriod = user?.hiringPeriods?.[0] || {};
-
+  
     // Dispositivo: options a partir de enums.programs
     let deviceOptions = [];
     if (enums?.programs) {
@@ -55,6 +64,7 @@ const FormCreateEmployer = ({
         }))
       );
     }
+
 
     // Position: options a partir de enums.jobs
     let positionOptions = [];
@@ -171,7 +181,7 @@ const FormCreateEmployer = ({
         label: "Dispositivo",
         type: "select",
         required: true,
-        defaultValue: hPeriod.device || "",
+        defaultValue: hPeriod.dispositive || "",
         disabled: lockedFields.includes("device"),
         options: [{ value: "", label: "Seleccione una opción" }, ...deviceOptions],
       },
@@ -223,12 +233,34 @@ const FormCreateEmployer = ({
     ];
   };
 
-  // ========== SUBMIT =============
   const handleSubmit = async (formData) => {
+
+    if (user?.offer) {
+        // Mostrar la ventana de confirmación
+        setPendingFormData(formData);
+        setShowConfirmation(true);
+    } else {
+        // Si no hay oferta, crear el usuario directamente
+        await handleConfirmOfferChange(formData);
+    }
+};
+
+
+  // ========== SUBMIT =============
+  const handleConfirmOfferChange  = async (formData) => {
     try {
       charge(true);
 
-      const newUser = {
+      if (user?.offer) {
+        const token = getToken();
+        const updatedOffer = { id: user.offer, active: 'no' };
+        const res=await updateOffer(updatedOffer, token);
+        chargeOffers();
+        changeOffer(null);
+    }
+
+
+      let newUser = {
         role: formData.role || "employee",
         email: formData.email,
         dni: formData.dni,
@@ -236,6 +268,7 @@ const FormCreateEmployer = ({
         lastName: formData.lastName || "",
         phone: formData.phone,
         notes: formData.notes || "",
+
         hiringPeriods: [
           {
             startDate: formData.startDate,
@@ -253,34 +286,61 @@ const FormCreateEmployer = ({
       };
 
       const token = getToken();
+
+      if (user?.offer) {
+        newUser["offer"] = user.offer;
+    }
+
+      
       const result = await createEmployer(token, newUser);
 
       if (result.error) {
-        modal("Error", result.message || "No se pudo crear/actualizar el usuario");
+        modal("Error", result.message || "No se pudo crear el usuario");
       } else {
-        modal("Usuario", "El usuario se ha creado/actualizado con éxito");
+        modal("Usuario", "El usuario se ha creado con éxito");
         chargeUser();
         closeModal();
       }
     } catch (error) {
-      modal("Error", error.message || "Ocurrió un error al crear/actualizar el usuario");
+      modal("Error", error.message || "Ocurrió un error al crear el usuario");
       closeModal();
     } finally {
       charge(false);
+      setShowConfirmation(false);
+      setPendingFormData(null);
     }
   };
+
+  const handleCancelOfferChange = () => {
+    setShowConfirmation(false);
+    setPendingFormData(null);
+};
+
 
   // Build fields
   const fields = buildFields();
 
   return (
-    <ModalForm
-      title="Añadir/Editar Empleado"
-      message="Complete los datos del empleado y su primer periodo de contratación."
-      fields={fields}
-      onSubmit={handleSubmit}
-      onClose={closeModal}
-    />
+    <>
+      {/* Modal de Confirmación */}
+      {showConfirmation && (
+        <ModalConfirmation
+          title="Cambio de Oferta"
+          message="Este usuario ya tiene una oferta asociada. ¿Desea desactivarla y continuar?"
+          onConfirm={() => handleConfirmOfferChange(pendingFormData)}
+          onCancel={handleCancelOfferChange}
+        />
+      )}
+
+      {/* Modal Form */}
+      <ModalForm
+        title="Añadir Empleado"
+        message="Complete los datos del empleado y su primer periodo de contratación."
+        fields={fields}
+        onSubmit={handleSubmit}
+        onClose={closeModal}
+      />
+    </>
   );
 };
 

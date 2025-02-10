@@ -14,7 +14,8 @@ import Modal from './components/globals/Modal.jsx';
 import NotFound from './components/globals/NotFound.jsx';
 import Spinnning from './components/globals/Spinning.jsx';
 import { MenuWorkerProvider } from './context/MenuWorkerProvider.jsx'
-import { BagProvider } from './context/BagProvider.jsx';
+import { OfferProvider } from './context/OfferProvider.jsx';
+
 
 
 function App() {
@@ -56,21 +57,22 @@ function App() {
       }
     }
     isLogged();
-   
+
   }, [])
 
 
   if (logged.isLoggedIn) {
     return (
-      <BagProvider>
+      <OfferProvider>
         <MenuWorkerProvider>
           <BrowserRouter>
-            <Header/>
+            <Header />
             <Routes>
               <Route path="/" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
               <Route path="/*" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
-              <Route path="/ofertas"  element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-              <Route path="/ofertas/:id"  element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
+              <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
+              <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
+
               <Route path="/trabajaconnosotros" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
               <Route path="/trabajaconnosotros/:id" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
             </Routes>
@@ -78,7 +80,7 @@ function App() {
             {charge && <Spinnning status={charge}></Spinnning>}
           </BrowserRouter>
         </MenuWorkerProvider>
-      </BagProvider>
+      </OfferProvider>
     )
 
   } else {
@@ -89,8 +91,8 @@ function App() {
           <Route path="/login" element={<Login charge={(x) => setCharge(x)} />}></Route>
           <Route path="/trabajaconnosotros" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
           <Route path="/trabajaconnosotros/:id" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-          <Route path="/ofertas"  element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-          <Route path="/ofertas/:id"  element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
+          <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
+          <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
           <Route path="/*" element={<NotFound />}></Route>
         </Routes>
         {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}

@@ -1,97 +1,107 @@
 import { useEffect, useState } from 'react';
 import styles from '../styles/offerJobsPanel.module.css';
-import FormCreateJob from './FormCreateJob';
 import ViewJobs from './ViewJobs';
-import { getData, getOfferJobs} from '../../lib/data';
+import { getOfferJobs } from '../../lib/data';
 import { FaSquarePlus } from "react-icons/fa6";
 import { getToken } from '../../lib/serviceToken';
-import { useBag } from "../../hooks/useBag.jsx";
+import FormOffer from './FormOffer.jsx';
+import JobDetails from './JobDetails.jsx';
 
-const OfferJobsPanel =({modal, charge})=>{
-    const [action, setAction]=useState(null)
-    const [enums, setEnums] = useState(null)
-    const [offerSelected, setOfferSelected]=useState(null)
-    const [offers, setOffers]=useState(null)
-    const { Bag, changeBag } = useBag()
+const OfferJobsPanel = ({ modal, charge, enumsData }) => {
+    const [action, setAction] = useState(null);
+    const [offerSelected, setOfferSelected] = useState(null);
+    const [offers, setOffers] = useState(null);
 
-    useEffect(()=>{
-        charge(true)
-        const cargarDatos = async () => {
-            const enumsData = await getData();
-            const token=getToken();
-            const data=await getOfferJobs(token)
-            if (!enumsData.error && !data.error) {
-                let auxEnums = {}
-                auxEnums['jobs'] = enumsData.jobs
-                auxEnums['provinces'] = enumsData.provinces
-                auxEnums['work_schedule'] = enumsData.work_schedule
-                auxEnums['studies'] = enumsData.studies
-                setOffers(data)
-                setEnums(auxEnums)
-                charge(false)
-            } else {
-                modal('Error', 'Servicio no disponible, porfavor inténtelo más tarde')
-                navigate('/')
-                charge(false)
-            }
+    const cargarDatos = async () => {
+        const token = getToken();
+        const data = await getOfferJobs(token);
+        if (!data.error) {
+            setOffers(data);
+        } else {
+            modal('Error', 'Servicio no disponible, por favor inténtelo más tarde');
         }
+        charge(false);
+    };
+
+    useEffect(() => {
+        charge(true);
+        
         cargarDatos();
-    }, [])
+    }, []);
 
+    // Seleccionar una oferta y mostrar detalles
+    const offerSelect = (offer) => {
+        setAction(null); // No está en modo edición
+        setOfferSelected(offer);
+    };
 
-    const offerSelect=(offer)=>{
-        setAction(null)
-        setOfferSelected(offer)
-    }
+    // Cambiar a modo de creación
+    const changeAction = () => {
+        setOfferSelected(null);
+        setAction('create');
+    };
 
-    const changeAction=()=>{
-        setOfferSelected(null)
-        setAction('create')
-    }
+    // Actualizar lista de ofertas tras edición o creación
+    const changeOffers = (offer) => {
+        let exists = false;
+        const offersAux = [...offers];
+        offersAux.forEach((x, i, a) => {
+            if (x._id === offer._id) {
+                a[i] = offer;
+                exists = true;
+            }
+        });
+        if (!exists) offersAux.push(offer);
+        setOfferSelected(null);
+        setOffers(offersAux);
+    };
 
-    const changeOffers=(offer)=>{
-        let exists=false
-        const offersAux=[...offers]
-        offersAux.map((x,i,a)=>{
-            if(x._id==offer._id){
-              a[i]=offer;  
-              exists=true;
-            } 
-        })
-        if(!exists)offersAux.push(offer)
-        setOfferSelected(null)
-        setOffers(offersAux)
-    }
+    // Volver al panel principal
+    const back = () => {
+        setOfferSelected(null);
+        setAction(null);
+    };
 
-    const back=()=>{
-        setOfferSelected(null)
-        setAction(null)
-        changeBag(null)
-    }
-
-
-    return <div className={styles.contenedor}>
-        <div className={styles.contenido}>
-            <div className={styles.titulo}>
-                <h2>GESTIÓN DE OFERTAS</h2>
-                <FaSquarePlus onClick={()=>changeAction()}/>
-            </div>  
-            <div className={styles.caja}>
-                <ViewJobs charge={(x)=>charge(x)} offerSelect={(x)=>offerSelect(x)} offers={offers}  changeOffers={(offer)=>changeOffers(offer)}></ViewJobs>
-                {offerSelected!=null &&
-                    <FormCreateJob enums={enums} back={()=>back()} modal={(title, message)=>modal(title, message)} charge={(x)=>charge(x)} datosOferta={offerSelected} changeOffers={(offer)=>changeOffers(offer)}></FormCreateJob>    
-                }
-                {
-                action=='create' &&
-                    <FormCreateJob enums={enums} modal={(title, message)=>modal(title, message)} back={()=>back()} charge={(x)=>charge(x)} changeOffers={(offer)=>changeOffers(offer)}></FormCreateJob>
-                }
-                
+    return (
+        <>
+            <div className={styles.contenedor}>
+                <div className={styles.contenido}>
+                    <div className={styles.titulo}>
+                        <h2>GESTIÓN DE OFERTAS</h2>
+                        <FaSquarePlus onClick={changeAction} />
+                    </div>
+                    <div className={styles.caja}>
+                        {!!offers && <ViewJobs enumsData={enumsData} charge={charge} offerSelect={offerSelect} offers={offers} changeOffers={changeOffers} />}
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        
-    </div>
-    
-}
+
+            {/* Mostrar detalles de la oferta con JobDetails */}
+            {offerSelected && (
+                <JobDetails
+                    offer={offerSelected}
+                    onClose={back}
+                    enumsData={enumsData}
+                    modal={modal}
+                    charge={charge}
+                    changeOffers={changeOffers}
+                />
+            )}
+
+            {/* Mostrar formulario de creación */}
+            {action === 'create' && (
+                <FormOffer
+                    
+                    offer={null}  // En modo creación no hay oferta previa
+                    closeModal={back}
+                    enumsData={enumsData}
+                    modal={modal}
+                    charge={charge}
+                    changeOffers={changeOffers}
+                />
+            )}
+        </>
+    );
+};
 
 export default OfferJobsPanel;

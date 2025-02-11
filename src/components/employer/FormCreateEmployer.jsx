@@ -6,6 +6,7 @@ import {
   validateDNIorNIE,
   validEmail,
   validNumber,
+  validNumberPercentage,
   validText,
 } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
@@ -19,7 +20,6 @@ import { useOffer } from "../../hooks/useOffer";
  * Muestra un formulario para crear/editar un usuario y su primer período de contratación.
  */
 const FormCreateEmployer = ({
-
   modal,
   charge,
   closeModal,
@@ -27,7 +27,8 @@ const FormCreateEmployer = ({
   enumsData = null,
   user = null,
   lockedFields = [],
-  chargeOffers=()=>{}
+  chargeOffers=()=>{},
+  listResponsability
 }) => {
   const { logged } = useLogin();
   const [enums, setEnumsEmployer] = useState(enumsData);
@@ -165,6 +166,51 @@ const { changeOffer } = useOffer();
           return isOk ? "" : textErrors("phone");
         },
       },
+      {
+        name: "gender",
+        label: "Género",
+        type: "select",
+        required: true,
+        defaultValue: user?.gender || "",
+        disabled: lockedFields.includes("gender"),
+        options: [
+          { value: "", label: "Seleccione una opción" },
+          { value: "male", label: "Masculino" },
+          { value: "female", label: "Femenino" },
+        ],
+      },
+      {
+        name: "fostered",
+        label: "Ex Tutelado",
+        type: "select",
+        required: true,
+        defaultValue: user?.formerWard === true ? "si" : "no",
+        disabled: lockedFields.includes("formerWard"),
+        options: [
+          { value: "si", label: "Sí" },
+          { value: "no", label: "No" },
+        ],
+      },
+      {
+        name: "disPercentage",
+        label: "Porcentaje de Discapacidad",
+        type: "number",
+        required: false,
+        defaultValue: user?.disability?.percentage ?? 0,
+        disabled: lockedFields.includes("disability.percentage"),
+        isValid: (texto) => {
+          const isOk = validNumberPercentage(texto);  // true/false
+          return isOk ? "" : textErrors("percentage");
+        },
+      },
+      {
+        name: "disNotes",
+        label: "Notas sobre Discapacidad",
+        type: "textarea",
+        required: false,
+        defaultValue: user?.disability?.notes || "",
+        disabled: lockedFields.includes("disability.notes"),
+      },
       { type: "section", label: "PRIMER PERIODO DE CONTRATACIÓN" },
       {
         name: "startDate",
@@ -268,7 +314,12 @@ const { changeOffer } = useOffer();
         lastName: formData.lastName || "",
         phone: formData.phone,
         notes: formData.notes || "",
-
+        gender: formData.gender,
+        fostered: formData.fostered || 'no',
+        disability: {
+          percentage: formData.disPercentage,
+          notes: formData.disNotes,
+        },
         hiringPeriods: [
           {
             startDate: formData.startDate,

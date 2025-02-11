@@ -59,10 +59,19 @@ export const validNumber = (texto) => {
   return regex.test(texto);
 };
 
+export const validNumberPercentage = (texto) => {
+  let regex = /^(100|[1-9]?[0-9])$/; 
+  return regex.test(texto);
+};
+
+
+
 export const validDecimalNumber = (texto) => {
   const regex = /^[0-9]+(\.[0-9]+)?$/;
   return regex.test(texto);
 };
+
+
 
 export const validCategory = (categorias, texto) => {
   const texAux =

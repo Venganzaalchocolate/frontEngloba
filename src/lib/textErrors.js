@@ -70,6 +70,8 @@ export const textErrors = (tipo) => {
             return "La fecha no debe ser posterior a la fecha actual"
         case "oldDate":
             return "La fecha no debe ser anterior a la fecha actual"
+         case "percentage":
+            return "Debe ser un número de 0 a 99"
         default:
             return null;
     }

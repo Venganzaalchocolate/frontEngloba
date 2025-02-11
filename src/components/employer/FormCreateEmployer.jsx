@@ -266,16 +266,7 @@ const { changeOffer } = useOffer();
         defaultValue: hPeriod.position || "",
         disabled: lockedFields.includes("position"),
         options: [{ value: "", label: "Seleccione una opción" }, ...positionOptions],
-      },
-      { type: "section", label: "RESPONSABILIDADES" },
-      {
-        name: "notes",
-        label: "Escribe si es responsable, director o coordinador de algún programa o dispositivo",
-        type: "textarea",
-        required: false,
-        defaultValue: user?.notes || "",
-        disabled: lockedFields.includes("notes"),
-      },
+      }
     ];
   };
 

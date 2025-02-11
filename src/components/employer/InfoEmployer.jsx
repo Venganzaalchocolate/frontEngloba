@@ -7,7 +7,6 @@ import {
   validateSocialSecurityNumber,
   validEmail,
   validNumber,
-  validPassword,
   validText
 } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
@@ -17,37 +16,46 @@ import { deepClone } from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
 
 const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enumsData }) => {
-  // Convertimos el campo "fostered" boolean a "si"/"no" para manejarlo en el frontend como string
+  // Convertimos fostered boolean a "si"/"no" en el estado inicial
   const initialState = {
     ...user,
-    fostered: user.fostered ? 'si' : 'no'  // Aseguramos que siempre sea 'si' o 'no'
+    fostered: user.fostered ? 'si' : 'no'
   };
 
-  const [isEditing, setIsEditing] = useState(false);      // Modo edición
-  const [datos, setDatos] = useState(initialState);       // Estado local para los datos (incluye fostered='si'|'no')
-  const [errores, setErrores] = useState({});             // Errores locales
+  // Guardamos una copia inmutable para saber cómo estaban los datos antes de editar
+  const [originalData] = useState(() => deepClone(initialState));
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [datos, setDatos] = useState(initialState);
+  const [errores, setErrores] = useState({});
   const { logged } = useLogin();
 
-  // Maneja cambios en los campos
-  const handleChange = (e) => {
-    let { name, value, type, checked } = e.target;
-    let auxErrores = { ...errores };
-    let auxDatos = { ...datos };
-    auxErrores['mensajeError'] = null;
-    let valido = true; // Suponemos que es válido hasta que alguna validación falle.
+  // --- FUNCIONES AUXILIARES ---
+  // Cancelar edición: revertir a los datos originales
+  const reset = () => {
+    setErrores({});
+    setIsEditing(false);
+    setDatos(deepClone(originalData));
+  };
 
-    // Si es un select de fostered, simplemente asignamos el valor "si" / "no"
-    // Si es un checkbox (si tuvieras alguno más), haríamos:
-    // if (type === 'checkbox') { ... } -- pero aquí no lo necesitamos para fostered
-    // Manejamos anidación en fields (p.ej. disability.percentage)
+  // Manejo de cambios en campos
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const auxErrores = { ...errores };
+    const auxDatos = { ...datos };
+
+    auxErrores['mensajeError'] = null;
+    let valido = true;
+
     if (name.includes('.')) {
+      // Manejo de campos anidados (ej: "disability.percentage")
       const [parentKey, childKey] = name.split('.');
       if (!auxDatos[parentKey]) {
         auxDatos[parentKey] = {};
       }
       auxDatos[parentKey][childKey] = value;
 
-      // Validaciones específicas para disability.percentage
+      // Validación para disability.percentage
       if (parentKey === 'disability' && childKey === 'percentage') {
         valido = validNumber(value);
         auxErrores[name] = valido ? null : textErrors('disPercentage');
@@ -84,15 +92,8 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
         } else {
           auxErrores[name] = null;
         }
-      } else if (name === 'pass') {
-        if (value !== '') {
-          valido = validPassword(value);
-          auxErrores[name] = !valido ? textErrors(name) : null;
-        } else {
-          auxErrores[name] = null;
-        }
       } else {
-        // 'gender', 'fostered', etc. sin validaciones específicas
+        // gender, fostered, etc. sin validaciones específicas
         auxErrores[name] = null;
       }
       auxDatos[name] = value;
@@ -102,17 +103,18 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     setErrores(auxErrores);
   };
 
-  // Validar campos requeridos
+  // Validar campos antes de guardar
   const validateFields = () => {
     const newErrors = {};
 
-    // Si hay errores activos en 'errores', retornamos false
+    // Comprobamos si ya existen errores en "errores"
     for (let key in errores) {
       if (errores[key] != null && datos[key] !== '') {
         return false;
       }
     }
 
+    // Campos requeridos básicos
     if (!datos.firstName) newErrors.firstName = 'El nombre es requerido.';
     if (!datos.email) newErrors.email = 'El email es requerido.';
     if (!datos.phone) newErrors.phone = 'El teléfono es requerido.';
@@ -121,41 +123,82 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     return Object.keys(newErrors).length === 0;
   };
 
-  // Cambiar modo edición
+  // Determina qué campos se han modificado comparando "datos" vs "originalData"
+  // y mapeando disability -> disPercentage / disNotes
+  const getModifiedFields = () => {
+    const changed = {};
+
+    // Campos simples
+    const fieldsToCompare = [
+      'firstName','lastName','dni','email','phone',
+      'employmentStatus','socialSecurityNumber','bankAccountNumber',
+      'gender','fostered'
+    ];
+
+    fieldsToCompare.forEach(field => {
+      if (datos[field] !== originalData[field]) {
+        changed[field] = datos[field];
+      }
+    });
+
+    // Para disability, se separan en disPercentage y disNotes
+    const oldPercentage = originalData.disability?.percentage || '';
+    const oldNotes = originalData.disability?.notes || '';
+    const newPercentage = datos.disability?.percentage || '';
+    const newNotes = datos.disability?.notes || '';
+
+    if (newPercentage !== oldPercentage) {
+      changed.disPercentage = newPercentage;
+    }
+    if (newNotes !== oldNotes) {
+      changed.disNotes = newNotes;
+    }
+
+    return changed;
+  };
+
+  // Manejo de edición
   const handleEdit = () => {
     setIsEditing(!isEditing);
   };
 
-  // Guardar
+  // Guardar cambios
   const handleSave = async () => {
-    if (validateFields()) {
+    if (!validateFields()) return;
+
+    // Obtenemos sólo los campos modificados
+    const modifiedData = getModifiedFields();
+
+    // Si no hay cambios, salimos del modo edición
+    if (Object.keys(modifiedData).length === 0) {
       setIsEditing(false);
-      charge(true);
-
-      // En este punto 'datos.fostered' es "si" o "no".
-      // Se envía tal cual al back. El back lo procesará a true/false.
-      const token = getToken();
-      const response = await editUser(datos, token);
-      if (!response.error) {
-        changeUser(datos);
-      }
-      modal('Editar Usuario', 'Usuario editado con éxito');
-      charge(false);
+      return;
     }
-  };
 
-  // Cancelar edición
-  const reset = () => {
-    setErrores({});
+    // Agregamos _id para que el backend sepa a quién editar
+    modifiedData._id = originalData._id;
+
     setIsEditing(false);
-    // Restauramos al usuario original (convirtiéndolo otra vez a si/no)
-    setDatos({
-      ...user,
-      fostered: user.fostered ? 'si' : 'no'
-    });
+    charge(true);
+
+    const token = getToken();
+
+    const response = await editUser(modifiedData, token);
+
+    if (!response.error) {
+      // Actualizamos el usuario global con los datos "datos" (o lo que el back retorne)
+
+      changeUser(response);
+      modal('Editar Usuario', 'Usuario editado con éxito');
+    } else {
+      reset();
+      modal('Error al editar', response.message);
+    }
+
+    charge(false);
   };
 
-  // Botón editar/guardar
+  // Botón de edición/guardado
   const boton = () => {
     if (!!listResponsability && listResponsability.length < 1) return '';
     return !isEditing ? (
@@ -168,7 +211,7 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     );
   };
 
-  // Campos de texto top-level
+  // Campos de texto principales
   const textFields = [
     ['firstName', 'Nombre'],
     ['lastName', 'Apellidos'],
@@ -184,7 +227,7 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     <div className={styles.contenedor}>
       <h2>DATOS {boton()}</h2>
       
-      {/* Campos simples */}
+      {/* Renderizado de campos simples */}
       {textFields.map(([fieldName, label]) => (
         <div key={fieldName}>
           <label htmlFor={fieldName}>{label}</label>

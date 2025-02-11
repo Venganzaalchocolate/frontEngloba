@@ -16,7 +16,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    max-width: 20rem;
+    max-width: 25rem;
     flex: 0;
     flex-wrap: wrap;
 }
@@ -48,7 +48,37 @@
     margin-top: 1rem;
 }
 
-.contenedorForm input, .contenedorForm label, .contenedorForm span,.contenedorForm button, .contenedorForm>a, .contenedorForm>a>button{
+.contenedorForm input, .contenedorForm label, .contenedorForm span{
     display: flex;
     flex: 1 100%;
+}
+
+.contenedorForm .email{
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    display: flex;
+    >input{
+        flex: 1 100%;
+    }
+    >label{
+        padding-left: 0.5rem;
+        color: var(--color-malva);
+        text-transform: lowercase;
+        flex: 0;
+    }
+    }
+
+.contenedorForm .cajabotones{
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.contenedorForm .cajabotones>button, .cajabotones>a{
+    flex: 1;
+}
+
+.cajabotones>a>button{
+    width: 100%;
 }

@@ -4,7 +4,7 @@
   background-color: rgba(79, 82, 161, 0.643);
   min-width: 100vw;
   min-height: 100vh;
-  z-index: 10000;
+  z-index: 10000000000;
   justify-content: center;
   align-items: center;
   flex-direction: column;

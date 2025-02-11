@@ -14,6 +14,7 @@ import { useLogin } from "../../hooks/useLogin";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import { useOffer } from "../../hooks/useOffer";
 
+
 /**
  * FormCreateEmployer
  * ------------------
@@ -27,14 +28,14 @@ const FormCreateEmployer = ({
   enumsData = null,
   user = null,
   lockedFields = [],
-  chargeOffers=()=>{},
-  listResponsability
+  chargeOffers = () => { },
+  selectedResponsibility = null
 }) => {
   const { logged } = useLogin();
   const [enums, setEnumsEmployer] = useState(enumsData);
   const [showConfirmation, setShowConfirmation] = useState(false);
-const [pendingFormData, setPendingFormData] = useState(null);
-const { changeOffer } = useOffer();
+  const [pendingFormData, setPendingFormData] = useState(null);
+  const { changeOffer } = useOffer();
 
 
 
@@ -51,20 +52,35 @@ const { changeOffer } = useOffer();
     }
   }, [enumsData]);
 
+  let idSelectResponsability='';
+
+  try {
+    const parsed = JSON.parse(selectedResponsibility);
+    idSelectResponsability = parsed.deviceId;
+  } catch (error) {
+    idSelectResponsability=null
+  }
   // ========== BUILD DE CAMPOS =============
   const buildFields = () => {
     const hPeriod = user?.hiringPeriods?.[0] || {};
-  
+
     // Dispositivo: options a partir de enums.programs
     let deviceOptions = [];
-    if (enums?.programs) {
-      deviceOptions = enums.programs.flatMap((program) =>
-        program.devices.map((device) => ({
-          value: device._id,
-          label: device.name,
-        }))
-      );
+
+    if (!!selectedResponsibility && idSelectResponsability!=null) {
+      const dispositive=enums.programsIndex[idSelectResponsability]
+      deviceOptions = [{ value:idSelectResponsability, label: dispositive.name }]
+    } else {
+      if (enums?.programs) {
+        deviceOptions = enums.programs.flatMap((program) =>
+          program.devices.map((device) => ({
+            value: device._id,
+            label: device.name,
+          }))
+        );
+      }
     }
+
 
 
     // Position: options a partir de enums.jobs
@@ -94,7 +110,7 @@ const { changeOffer } = useOffer();
         // Convertimos a "" o un mensaje
         isValid: (texto) => {
           const isOk = validText(texto, 2, 100);  // por ejemplo min 2, max 100
-          return isOk ? "" : textErrors("name");  
+          return isOk ? "" : textErrors("name");
         },
       },
       {
@@ -111,23 +127,23 @@ const { changeOffer } = useOffer();
       },
       ...(logged.user.role === "root"
         ? [
-            {
-              name: "role",
-              label: "Rol",
-              type: "select",
-              required: true,
-              defaultValue: user?.role || "employee",
-              disabled: lockedFields.includes("role"),
-              options: [
-                { value: "", label: "Seleccione un rol" },
-                { value: "root", label: "Root" },
-                { value: "global", label: "Global" },
-                { value: "auditor", label: "Auditor" },
-                { value: "employee", label: "Employer" },
-                { value: "responsable", label: "Responsable" },
-              ],
-            },
-          ]
+          {
+            name: "role",
+            label: "Rol",
+            type: "select",
+            required: true,
+            defaultValue: user?.role || "employee",
+            disabled: lockedFields.includes("role"),
+            options: [
+              { value: "", label: "Seleccione un rol" },
+              { value: "root", label: "Root" },
+              { value: "global", label: "Global" },
+              { value: "auditor", label: "Auditor" },
+              { value: "employee", label: "Employer" },
+              { value: "responsable", label: "Responsable" },
+            ],
+          },
+        ]
         : []),
       {
         name: "dni",
@@ -227,7 +243,7 @@ const { changeOffer } = useOffer();
         label: "Dispositivo",
         type: "select",
         required: true,
-        defaultValue: hPeriod.dispositive || "",
+        defaultValue: hPeriod.dispositive || idSelectResponsability || "",
         disabled: lockedFields.includes("device"),
         options: [{ value: "", label: "Seleccione una opción" }, ...deviceOptions],
       },
@@ -273,28 +289,28 @@ const { changeOffer } = useOffer();
   const handleSubmit = async (formData) => {
 
     if (user?.offer) {
-        // Mostrar la ventana de confirmación
-        setPendingFormData(formData);
-        setShowConfirmation(true);
+      // Mostrar la ventana de confirmación
+      setPendingFormData(formData);
+      setShowConfirmation(true);
     } else {
-        // Si no hay oferta, crear el usuario directamente
-        await handleConfirmOfferChange(formData);
+      // Si no hay oferta, crear el usuario directamente
+      await handleConfirmOfferChange(formData);
     }
-};
+  };
 
 
   // ========== SUBMIT =============
-  const handleConfirmOfferChange  = async (formData) => {
+  const handleConfirmOfferChange = async (formData) => {
     try {
       charge(true);
 
       if (user?.offer) {
         const token = getToken();
         const updatedOffer = { id: user.offer, active: 'no' };
-        const res=await updateOffer(updatedOffer, token);
+        const res = await updateOffer(updatedOffer, token);
         chargeOffers();
         changeOffer(null);
-    }
+      }
 
 
       let newUser = {
@@ -331,9 +347,9 @@ const { changeOffer } = useOffer();
 
       if (user?.offer) {
         newUser["offer"] = user.offer;
-    }
+      }
 
-      
+
       const result = await createEmployer(token, newUser);
 
       if (result.error) {
@@ -356,7 +372,7 @@ const { changeOffer } = useOffer();
   const handleCancelOfferChange = () => {
     setShowConfirmation(false);
     setPendingFormData(null);
-};
+  };
 
 
   // Build fields

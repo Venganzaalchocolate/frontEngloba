@@ -42,12 +42,13 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
   // Análogo a "dispositiveNow", pero guardamos un objeto con info:
   // { type: 'program'|'device', programId, deviceId (opcional) }
   const [selectedResponsibility, setSelectedResponsibility] = useState(null);
-
+  
   const [filters, setFilters] = useState({
     firstName: '',
     email: '',
     phone: '',
   });
+
 
   const debouncedFilters = useDebounce(filters, 300);
 
@@ -334,6 +335,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
               <FaSquarePlus onClick={openModal} />
               {isModalOpen &&
                 <FormCreateEmployer
+                selectedResponsibility={selectedResponsibility}
                   enumsData={enumsEmployer}
                   modal={modal}
                   charge={charge}

@@ -18,10 +18,22 @@
 
 }
 
-.contendor select{
+.contendor select {
     flex: 0;
     max-width: auto;
     width: 100%;
+}
+
+.containerEmployer {
+    display: flex;
+    flex: 100%;
+    align-items: center;
+    >div:nth-child(1) {
+        flex: 1;
+    }
+    >:nth-child(2) {
+        width: 2rem;
+    }
 }
 
 .titulo {
@@ -45,7 +57,7 @@
     align-self: flex-end;
 }
 
-.titulo div{
+.titulo div {
     display: flex;
 }
 
@@ -99,7 +111,7 @@
     flex-direction: column;
 }
 
-.paginacion>div{
+.paginacion>div {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -191,7 +203,7 @@
     transform: none;
 }
 
-.contenedor>.contenido>select.selectInicial{
+.contenedor>.contenido>select.selectInicial {
     margin-top: 1rem;
     border: solid 1px var(--color-morado);
     flex: initial;
@@ -201,11 +213,11 @@
 
 @media (min-width: 1080px) {
 
-    .contenedor{
+    .contenedor {
         padding: 0 4rem;
     }
 
-    .contendor select{
+    .contendor select {
         flex: 1;
         width: 100%;
         max-width: 100%;
@@ -213,7 +225,7 @@
 
     .titulo {
         flex-direction: row;
-        
+
     }
 
     .tableContainer {
@@ -230,7 +242,7 @@
         text-align: right;
     }
 
-    .paginacion{
+    .paginacion {
 
         flex-direction: row;
 

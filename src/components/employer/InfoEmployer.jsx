@@ -15,11 +15,12 @@ import { editUser } from "../../lib/data";
 import { deepClone } from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
 
-const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enumsData }) => {
+const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enumsData, chargeUser=()=>{}}) => {
   // Convertimos fostered boolean a "si"/"no" en el estado inicial
   const initialState = {
     ...user,
-    fostered: user.fostered ? 'si' : 'no'
+    fostered: user.fostered ? 'si' : 'no',
+    apafa: user.apafa ? 'si' : 'no',
   };
 
   // Guardamos una copia inmutable para saber cómo estaban los datos antes de editar
@@ -28,7 +29,7 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
   const [isEditing, setIsEditing] = useState(false);
   const [datos, setDatos] = useState(initialState);
   const [errores, setErrores] = useState({});
-  const { logged } = useLogin();
+  const { logged, changeLogged } = useLogin();
 
   // --- FUNCIONES AUXILIARES ---
   // Cancelar edición: revertir a los datos originales
@@ -132,7 +133,7 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     const fieldsToCompare = [
       'firstName','lastName','dni','email','phone',
       'employmentStatus','socialSecurityNumber','bankAccountNumber',
-      'gender','fostered'
+      'gender','fostered', 'apafa'
     ];
 
     fieldsToCompare.forEach(field => {
@@ -190,6 +191,8 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
 
       changeUser(response);
       modal('Editar Usuario', 'Usuario editado con éxito');
+      if(logged.user==user) changeLogged(response);
+      chargeUser();
     } else {
       reset();
       modal('Error al editar', response.message);
@@ -220,7 +223,7 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     ['phone', 'Teléfono'],
     ['employmentStatus', 'Estado Laboral'],
     ['socialSecurityNumber', 'Número de Seguridad Social'],
-    ['bankAccountNumber', 'Número de Cuenta Bancaria']
+    ['bankAccountNumber', 'Número de Cuenta Bancaria'],
   ];
 
   return (
@@ -283,7 +286,22 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
         <select
           id="fostered"
           name="fostered"
-          value={datos.fostered || 'no'}
+          value={(datos.fostered) || 'no'}
+          onChange={handleChange}
+          disabled={!isEditing}
+        >
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+        </select>
+        {errores.fostered && <span className="errorSpan">{errores.fostered}</span>}
+      </div>
+
+      <div>
+        <label htmlFor="apafa">Apafa</label>
+        <select
+          id="apafa"
+          name="apafa"
+          value={datos.apafa || 'no'}
           onChange={handleChange}
           disabled={!isEditing}
         >

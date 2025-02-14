@@ -107,6 +107,8 @@ export const modifyUser = (dataUser) => fetchData('/modifyusercv', 'PUT', null, 
 
 export const createEmployer = (token, datos) => fetchData('/createemployer', 'POST', token, datos);
 
+export const deleteEmployer=(token, datos)=>fetchData('/deleteuser', 'POST', token, datos);
+
 export const getEmployers = (token) => fetchData('/users', 'GET', token)
 
 export const loginUser = (email, password) => fetchData('/login', 'POST', null, { email, password });

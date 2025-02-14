@@ -57,7 +57,7 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters 
                         <label htmlFor='programId'>Programa:</label>
                         <div>
                             <select id='programId' name='programId' onChange={handleFilterChange} value={filters.programId}>
-                                <option key=''>Selecciona una opción</option>
+                                <option>Selecciona una opción</option>
                                 {enums.programs.map((x) => {
                                     return <option value={x._id} key={`SelectProgram${x._id}`}>{x.name}</option>
                                 })}
@@ -68,13 +68,43 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters 
                         <label htmlFor='dispositive'>Dispositivo:</label>
                         <div>
                             <select id='dispositive' name='dispositive' onChange={handleFilterChange} value={handleFilterChange.dispositive}>
-                                <option key=''>Selecciona una opción</option>
+                                <option >Selecciona una opción</option>
                                 {enums.programs.filter((x) => x._id == filters.programId).map((x) => {
                                     return x.devices.map((y) => {
                                         return <option value={y._id} key={`SelectDispositive${y._id}`}>{y.name}</option>
                                     })
 
                                 })}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label htmlFor='apafa'>APAFA:</label>
+                        <div>
+                            <select id='apafa' name='apafa' onChange={handleFilterChange} value={handleFilterChange.apafa}>
+                                <option value={''}>Selecciona una opción</option>
+                                <option value='si'>Si</option>
+                                <option value='no'>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label htmlFor='gender'>Genero:</label>
+                        <div>
+                            <select id='gender' name='gender' onChange={handleFilterChange} value={handleFilterChange.gender}>
+                                <option value={''}>Selecciona una opción</option>
+                                <option value='female'>Mujer</option>
+                                <option value='male'>Hombre</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label htmlFor='fostered'>Extutelado:</label>
+                        <div>
+                            <select id='fostered' name='fostered' onChange={handleFilterChange} value={handleFilterChange.fostered}>
+                                <option value={''}>Selecciona una opción</option>
+                                <option value='si'>Si</option>
+                                <option value='no'>No</option>
                             </select>
                         </div>
                     </div>

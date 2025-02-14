@@ -9,6 +9,7 @@ import { getToken } from '../../lib/serviceToken.js';
 import ViewEmployers from './ViewEmployers.jsx';
 import { deepClone } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
+import DeleteEmployer from './DeleteEmployer.jsx';
 
 /**
  * Ejemplo de listResponsability:
@@ -42,7 +43,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
   // Análogo a "dispositiveNow", pero guardamos un objeto con info:
   // { type: 'program'|'device', programId, deviceId (opcional) }
   const [selectedResponsibility, setSelectedResponsibility] = useState(null);
-  
+
   const [filters, setFilters] = useState({
     firstName: '',
     email: '',
@@ -285,9 +286,9 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
         if (item.isProgramResponsible) {
           options.push({
             label: `(Programa) ${item.programName}`,
-            value: JSON.stringify({ 
-              type: "program", 
-              programId: item.idProgram 
+            value: JSON.stringify({
+              type: "program",
+              programId: item.idProgram
             })
           });
         }
@@ -335,7 +336,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
               <FaSquarePlus onClick={openModal} />
               {isModalOpen &&
                 <FormCreateEmployer
-                selectedResponsibility={selectedResponsibility}
+                  selectedResponsibility={selectedResponsibility}
                   enumsData={enumsEmployer}
                   modal={modal}
                   charge={charge}
@@ -408,34 +409,57 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
                   <div className={styles.tableCellStatus}>Status</div>
                 </div>
 
-                {users.map(user => (
-                  <div key={user._id}>
-                    <div
-                      className={styles.tableContainer}
-                      onClick={() => (userSelected == null || userSelected._id !== user._id)
-                        ? setUserSelected(user)
-                        : setUserSelected(null)
-                      }
-                    >
-                      <div className={styles.tableCell}>{user.firstName}</div>
-                      <div className={styles.tableCell}>{user.lastName}</div>
-                      <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
-                    </div>
+                {users.map(user => {
+                  // Si el usuario a mostrar es "apafa", se debe verificar que el usuario logueado tenga uno de estos privilegios:
+                  //  - rol 'root'
+                  //  - rol 'global'
+                  //  - o que logged.user.apafa sea true.
+                  if (
+                    user.apafa &&
+                    !(logged.user.role === 'root' || logged.user.role === 'global' || logged.user.apafa)
+                  ) {
+                    return null;
+                  }
 
-                    {userSelected && userSelected._id === user._id && (
-                      <ViewEmployers
-                        listResponsability={listResponsability}
-                        chargeEnums={chargeEnums}
-                        enumsData={enumsEmployer}
-                        user={userSelected}
-                        modal={modal}
-                        charge={charge}
-                        changeUser={(x) => changeUserLocally(x)}
-                        chargeUser={() => loadUsers(true)}
-                      />
-                    )}
-                  </div>
-                ))}
+                  // En caso contrario, se muestra el usuario
+
+                  return (
+                    <div className={styles.containerEmployer}>
+                    <div key={user._id}>
+                      <div
+                        className={styles.tableContainer}
+                        onClick={() => (userSelected == null || userSelected._id !== user._id)
+                          ? setUserSelected(user)
+                          : setUserSelected(null)
+                        }
+                      >
+                        <div className={styles.tableCell}>{user.firstName}</div>
+                        <div className={styles.tableCell}>{user.lastName}</div>
+                        <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
+                        
+                      </div>
+
+                      {userSelected && userSelected._id === user._id && (
+                        <ViewEmployers
+                          listResponsability={listResponsability}
+                          chargeEnums={chargeEnums}
+                          enumsData={enumsEmployer}
+                          user={userSelected}
+                          modal={modal}
+                          charge={charge}
+                          changeUser={(x) => changeUserLocally(x)}
+                          chargeUser={() => loadUsers(true)}
+                        />
+                      )}
+                    </div>
+                    {logged.user.role=='root' && !userSelected && <DeleteEmployer user={user} modal={modal} charge={charge} chargeUser={() => loadUsers(true)}/> }
+                    </div>
+                    
+                  )
+                }
+
+
+                )}
 
               </div>
             </div>

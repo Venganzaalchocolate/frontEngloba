@@ -145,6 +145,23 @@ const FormCreateEmployer = ({
           },
         ]
         : []),
+        ...((logged.user.role === "root" || logged.user.apafa)
+          ? [
+            {
+              name: "apafa",
+              label: "Es de APAFA?",
+              type: "select",
+              required: true,
+              defaultValue: ((user?.apafa)?'si':'no') || 'no',
+              disabled: lockedFields.includes("apafa"),
+              options: [
+                { value: "", label: "Seleccione un rol" },
+                { value: "si", label: "si" },
+                { value: "no", label: "no" },
+              ],
+            },
+          ]
+          : []),
       {
         name: "dni",
         label: "DNI",
@@ -282,7 +299,8 @@ const FormCreateEmployer = ({
         defaultValue: hPeriod.position || "",
         disabled: lockedFields.includes("position"),
         options: [{ value: "", label: "Seleccione una opción" }, ...positionOptions],
-      }
+      },
+      
     ];
   };
 
@@ -323,9 +341,10 @@ const FormCreateEmployer = ({
         notes: formData.notes || "",
         gender: formData.gender,
         fostered: formData.fostered || 'no',
+        apafa:formData.apafa || 'no',
         disability: {
-          percentage: formData.disPercentage,
-          notes: formData.disNotes,
+          percentage: formData.disPercentage || 0,
+          notes: formData.disNotes || '',
         },
         hiringPeriods: [
           {

@@ -434,15 +434,15 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
 
                         {userSelected && userSelected._id === user._id && (
                           <div className={styles.contenedorEmployer}>
-                          <InfoEmployer chargeUser={() => loadUsers(true)} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} enumsData={enumsData}/>
-                          <Responsability chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>   
-                          <Coordination chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/> 
-                          <DocumentEmployerMiscelanea user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
-                          <Payrolls user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} listResponsability={listResponsability}/>
+                          <InfoEmployer chargeUser={() => loadUsers(true)} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)} enumsData={enumsData}/>
+                          <Responsability chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)}/>   
+                          <Coordination chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)}/> 
+                          <DocumentEmployerMiscelanea user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)}/>
+                          <Payrolls user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)} listResponsability={listResponsability}/>
                           {(!!user && user.employmentStatus!='en proceso de contratación' && (user.role!='global') || user.role!='root') &&
                           <>
-                         <VacationDays  user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
-                          <Hiringperiods enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} chargeUser={() => loadUsers(true)}/> 
+                         <VacationDays  user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)}/>
+                          <Hiringperiods enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)} chargeUser={() => loadUsers(true)}/> 
                           </>
                           
                           }

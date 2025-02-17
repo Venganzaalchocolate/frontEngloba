@@ -426,16 +426,17 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
                         </div>
 
                         {userSelected && userSelected._id === user._id && (
-                          <ViewEmployers
-                            listResponsability={listResponsability}
-                            chargeEnums={chargeEnums}
-                            enumsData={enumsEmployer}
-                            user={userSelected}
-                            modal={modal}
-                            charge={charge}
-                            changeUser={(x) => changeUserLocally(x)}
-                            chargeUser={() => loadUsers(true)}
-                          />
+                          <div>holi</div>
+                          // <ViewEmployers
+                          //   listResponsability={listResponsability}
+                          //   chargeEnums={chargeEnums}
+                          //   enumsData={enumsEmployer}
+                          //   user={userSelected}
+                          //   modal={modal}
+                          //   charge={charge}
+                          //   changeUser={(x) => changeUserLocally(x)}
+                          //   chargeUser={() => loadUsers(true)}
+                          // />
                         )}
                       </div>
 

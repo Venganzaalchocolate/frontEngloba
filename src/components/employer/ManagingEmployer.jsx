@@ -11,25 +11,11 @@ import { deepClone } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
 import DeleteEmployer from './DeleteEmployer.jsx';
 
-/**
- * Ejemplo de listResponsability:
- * [
- *   {
- *     "idProgram": "66c433e93213e72d7e253e15",
- *     "programName": "Dispositivos de Emergencia",
- *     "isProgramResponsible": false,
- *     "dispositiveName": "DE Estepona",
- *     "dispositiveId": "679b363108f2794750cb9936",
- *     "isDeviceResponsible": true,
- *     "isDeviceCoordinator": false
- *   },
- *   ...
- * ]
- */
 
 const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
   const { logged } = useLogin();
-  const isRootOrGlobal = (logged.user.role === 'root' || logged.user.role === 'global');
+  const isRootOrGlobal = logged?.user?.role === 'root' || logged?.user?.role === 'global';
+
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [enums, setEnums] = useState(null);
@@ -60,18 +46,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     return enumsData;
   }, []);
 
-  useEffect(() => {
-    const init = async () => {
-      if (!enumsData.error) {
-        setEnums({
-          provinces: enumsData.provinces,
-          programs: enumsData.programs,
-          status: enumsData.status,
-        });
-      }
-    };
-    init();
-  }, []);
+
 
   // ==================================================
   // =============== LÓGICA DE RESPONSABILIDAD ========

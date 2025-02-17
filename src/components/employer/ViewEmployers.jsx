@@ -42,7 +42,7 @@ const ViewEmployers = ({ user, modal, charge, changeUser, enumsData, chargeEnums
 
     return (
         <div className={styles.contenedor}>
-            <InfoEmployer chargeUser={chargeUser} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} enumsData={enumsData}/>
+            {/* <InfoEmployer chargeUser={chargeUser} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} enumsData={enumsData}/> */}
             <Responsability chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>   
             <Coordination chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/> 
             <DocumentEmployerMiscelanea user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>

@@ -11,56 +11,56 @@ import { deepClone } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
 import DeleteEmployer from './DeleteEmployer.jsx';
 
-
 const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
   const { logged } = useLogin();
-  const isRootOrGlobal = logged?.user?.role === 'root' || logged?.user?.role === 'global';
-
+  const isRootOrGlobal =
+    logged?.user?.role === 'root' || logged?.user?.role === 'global';
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [enums, setEnums] = useState(null);
+  // Aquí guardamos los "enums" (programas, provincias, etc.)
   const [enumsEmployer, setEnumsEmployer] = useState(enumsData);
+
+  // Función para recargar los "enums" desde servidor
+  const chargeEnums = useCallback(async () => {
+    try {
+      const data = await getDataEmployer();
+      setEnumsEmployer(data);
+      return data;
+    } catch (error) {
+      modal('Error', error.message || 'Ocurrió un error recargando datos.');
+      return null;
+    }
+  }, [modal]);
+
   const [userSelected, setUserSelected] = useState(null);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(1);
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
 
-  // Análogo a "dispositiveNow", pero guardamos un objeto con info:
-  // { type: 'program'|'device', programId, deviceId (opcional) }
+  // Responsabilidad seleccionada por el usuario (solo si no eres root/global)
   const [selectedResponsibility, setSelectedResponsibility] = useState(null);
 
+  // Filtros por default
   const [filters, setFilters] = useState({
     firstName: '',
     email: '',
     phone: '',
   });
 
-
+  // Filtros con debounce
   const debouncedFilters = useDebounce(filters, 300);
-
-  // Cargar enums (programs, provinces, etc.)
-  const chargeEnums = useCallback(async () => {
-    const enumsData = await getDataEmployer();
-    setEnumsEmployer(enumsData);
-    return enumsData;
-  }, []);
-
-
 
   // ==================================================
   // =============== LÓGICA DE RESPONSABILIDAD ========
   // ==================================================
 
-  // Convertimos listResponsability en opciones de "program" o "device":
-  // Mismo approach que tu "SelectDispositive", pero unificado
+  // Convertimos listResponsability en array de opciones
   const getResponsibilityOptions = () => {
     const options = [];
-
     listResponsability.forEach((item) => {
       // Si es responsable de programa
       if (item.isProgramResponsible) {
-        // Podemos concatenar "programId" con "type"
         const label = `(Programa) ${item.programName}`;
         const valueObj = {
           type: "program",
@@ -69,7 +69,6 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
         const value = JSON.stringify(valueObj);
         options.push({ label, value });
       }
-
       // Si es responsable (o coordinador) de un dispositivo
       if (item.isDeviceResponsible || item.isDeviceCoordinator) {
         const label = `(Dispositivo) ${item.dispositiveName} [${item.programName}]`;
@@ -82,16 +81,10 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
         options.push({ label, value });
       }
     });
-
-    // Filtrar duplicados, si quieres. 
-    // O dejar así, por si un item puede ser a la vez device y program en la misma row.
     return options;
   };
 
-  // Si NO eres root/global, forzamos la selección
-  // 1) Si listResponsability.length === 0 => no tienes acceso
-  // 2) Si listResponsability.length === 1 => autoseleccionamos
-  // 3) Si >1 => mostramos select
+  // Manejo automático de responsabilidad si NO eres root/global
   useEffect(() => {
     if (!isRootOrGlobal) {
       if (!listResponsability || listResponsability.length === 0) {
@@ -101,19 +94,22 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
         // Autoseleccionar
         const item = listResponsability[0];
         if (item.isProgramResponsible) {
-          setSelectedResponsibility(JSON.stringify({
-            type: "program",
-            programId: item.idProgram
-          }));
+          setSelectedResponsibility(
+            JSON.stringify({
+              type: "program",
+              programId: item.idProgram
+            })
+          );
         } else if (item.isDeviceResponsible || item.isDeviceCoordinator) {
-          setSelectedResponsibility(JSON.stringify({
-            type: "device",
-            programId: item.idProgram,
-            deviceId: item.dispositiveId
-          }));
+          setSelectedResponsibility(
+            JSON.stringify({
+              type: "device",
+              programId: item.idProgram,
+              deviceId: item.dispositiveId
+            })
+          );
         }
       }
-      // Si hay más de uno, lo gestionamos en el render. 
     }
   }, [isRootOrGlobal, listResponsability]);
 
@@ -137,11 +133,10 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
         }
       }
 
-      // Si eres root/global, no restringimos nada
+      // Si NO eres root/global, aplicamos restricciones
       if (!isRootOrGlobal) {
-        // Comprobamos selectedResponsibility
         if (!selectedResponsibility) {
-          // Sin selección => no cargamos nada
+          // Si no hay selección de responsabilidad, no cargamos
           if (showLoader) charge(false);
           return;
         }
@@ -168,11 +163,11 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     }
   };
 
-  // Cada vez que cambien los filtros, la pag, la limit, la selectedResponsibility => recargamos
   useEffect(() => {
-    if (logged.isLoggedIn) {
+    if (logged?.isLoggedIn) {
       loadUsers(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedFilters, page, limit, selectedResponsibility]);
 
   // ====================================================
@@ -193,7 +188,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     setPage(1);
     setUserSelected(null);
     const { name, value } = event.target;
-    setFilters(prevFilters => ({
+    setFilters((prevFilters) => ({
       ...prevFilters,
       [name]: value || ''
     }));
@@ -225,8 +220,9 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     setIsModalOpen(true);
   };
 
+  // Actualiza un user en la lista (para no recargar todo)
   const changeUserLocally = (u) => {
-    let aux = deepClone(users);
+    const aux = deepClone(users);
     aux.forEach((x, i) => {
       if (x._id === u._id) aux[i] = u;
     });
@@ -238,9 +234,8 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
   // ============= RENDER LÓGICA ========================
   // ====================================================
 
-  // 1) Si NO eres root/global y hay multiples responsabilidades, pedimos selección
+  // 1) Si NO eres root/global y no tienes responsabilidades
   if (!isRootOrGlobal) {
-    // Si no tienes ninguna
     if (!listResponsability || listResponsability.length === 0) {
       return (
         <div className={styles.contenedor}>
@@ -251,13 +246,10 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
       );
     }
 
-    // Si tienes varias y no has seleccionado => mostramos un select 
-    // (si length===1 lo autoseleccionamos en el useEffect)
+    // Si hay varias responsabilidades y no está elegida => select
     if (listResponsability.length > 1 && !selectedResponsibility) {
       const options = [];
-      // Recorremos listResponsability y generamos <option>
-      listResponsability.forEach((item, idx) => {
-        // Chequeamos si es un programa o dispositivo
+      listResponsability.forEach((item) => {
         if (item.isProgramResponsible) {
           options.push({
             label: `(Programa) ${item.programName}`,
@@ -283,10 +275,16 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
         <div className={styles.contenedor}>
           <div className={styles.contenido}>
             <h2>Selecciona un Programa o Dispositivo</h2>
-            <select onChange={handleSelectResponsibility} defaultValue="" className={styles.selectInicial}>
+            <select
+              onChange={handleSelectResponsibility}
+              defaultValue=""
+              className={styles.selectInicial}
+            >
               <option value="">Seleccionar una opción</option>
               {options.map((opt, i) => (
-                <option key={i} value={opt.value}>{opt.label}</option>
+                <option key={i} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
@@ -294,7 +292,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
       );
     }
 
-    // Si llegamos aquí y no se ha seleccionado => no renderizamos la lista
+    // Si no hay selección => no renderiza la lista
     if (!selectedResponsibility) {
       return null;
     }
@@ -309,7 +307,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
             <div>
               <h2>GESTIÓN DE EMPLEADOS</h2>
               <FaSquarePlus onClick={openModal} />
-              {isModalOpen &&
+              {isModalOpen && (
                 <FormCreateEmployer
                   selectedResponsibility={selectedResponsibility}
                   enumsData={enumsEmployer}
@@ -318,13 +316,10 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
                   closeModal={closeModal}
                   chargeUser={() => loadUsers(true)}
                 />
-              }
+              )}
             </div>
 
-            {/* 
-              Si root/global => paginación
-              Si NO, muestra la "cajaSeleccionActiva" (o nada) 
-            */}
+            {/* Paginación si eres root/global */}
             {isRootOrGlobal ? (
               <div className={styles.paginacion}>
                 <div>
@@ -337,39 +332,45 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
                   </select>
                 </div>
                 <div>
-                  <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>{'<'}</button>
+                  <button
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1}
+                  >
+                    {'<'}
+                  </button>
                   <span>Página {page}</span>
-                  <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>{'>'}</button>
+                  <button
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page === totalPages}
+                  >
+                    {'>'}
+                  </button>
                 </div>
               </div>
             ) : (
-              // Para roles "employer", mostramos un select de "activo" 
-              // si quieres mantener tu "cajaSeleccionActiva"
-              // O un label "Seleccionado" con el item actual
+              // Si no eres root/global => mostrar select "Activo"
               <div className={styles.cajaSeleccionActiva}>
                 <h4>Activo</h4>
-                {/* 
-                  Extra: Permitimos cambiar la responsibility en caliente 
-                  (opcional). Si no lo quieres, quita este <select>. 
-                */}
                 <select
                   onChange={handleSelectResponsibility}
                   value={selectedResponsibility || ""}
                 >
                   {getResponsibilityOptions().map((opt, i) => (
-                    <option key={i} value={opt.value}>{opt.label}</option>
+                    <option key={i} value={opt.value}>
+                      {opt.label}
+                    </option>
                   ))}
                 </select>
               </div>
             )}
-
           </div>
 
           <div className={styles.caja}>
-            {(isRootOrGlobal) && (
+            {/* Solo mostramos Filtros si eres root/global */}
+            {isRootOrGlobal && (
               <Filters
                 filters={filters}
-                enums={enums}
+                enums={enumsEmployer} // se pasa enumsEmployer
                 handleFilterChange={handleFilterChange}
                 resetFilters={resetFilters}
                 setFilters={setFilters}
@@ -378,64 +379,78 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
 
             <div className={styles.containerTableContainer}>
               <div>
-                <div className={styles.tableContainer} id={styles.cabeceraTabla}>
+                {/* Cabecera de la tabla */}
+                <div
+                  className={styles.tableContainer}
+                  id={styles.cabeceraTabla}
+                >
                   <div className={styles.tableCell}>Nombre</div>
                   <div className={styles.tableCell}>Apellidos</div>
                   <div className={styles.tableCellStatus}>Status</div>
                 </div>
 
-                {users.map(user => {
-                  // Si el usuario a mostrar es "apafa", se debe verificar que el usuario logueado tenga uno de estos privilegios:
-                  //  - rol 'root'
-                  //  - rol 'global'
-                  //  - o que logged.user.apafa sea true.
+                {/* Listado de usuarios */}
+                {users.map((user) => {
+                  // Filtrar usuarios apafa si no tienes permisos
                   if (
                     user.apafa &&
-                    !(logged.user.role === 'root' || logged.user.role === 'global' || logged.user.apafa)
+                    !(
+                      logged?.user?.role === 'root' ||
+                      logged?.user?.role === 'global' ||
+                      logged?.user?.apafa
+                    )
                   ) {
                     return null;
                   }
 
-                  // En caso contrario, se muestra el usuario
-
                   return (
-                    <div className={styles.containerEmployer}>
-                    <div key={user._id}>
-                      <div
-                        className={styles.tableContainer}
-                        onClick={() => (userSelected == null || userSelected._id !== user._id)
-                          ? setUserSelected(user)
-                          : setUserSelected(null)
-                        }
-                      >
-                        <div className={styles.tableCell}>{user.firstName}</div>
-                        <div className={styles.tableCell}>{user.lastName}</div>
-                        <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
-                        
+                    <div className={styles.containerEmployer} key={user._id}>
+                      <div>
+                        <div
+                          className={styles.tableContainer}
+                          onClick={() =>
+                            !userSelected || userSelected._id !== user._id
+                              ? setUserSelected(user)
+                              : setUserSelected(null)
+                          }
+                        >
+                          <div className={styles.tableCell}>
+                            {user.firstName}
+                          </div>
+                          <div className={styles.tableCell}>
+                            {user.lastName}
+                          </div>
+                          <div className={styles.tableCellStatus}>
+                            {user.employmentStatus}
+                          </div>
+                        </div>
+
+                        {userSelected && userSelected._id === user._id && (
+                          <ViewEmployers
+                            listResponsability={listResponsability}
+                            chargeEnums={chargeEnums}
+                            enumsData={enumsEmployer}
+                            user={userSelected}
+                            modal={modal}
+                            charge={charge}
+                            changeUser={(x) => changeUserLocally(x)}
+                            chargeUser={() => loadUsers(true)}
+                          />
+                        )}
                       </div>
 
-                      {userSelected && userSelected._id === user._id && (
-                        <ViewEmployers
-                          listResponsability={listResponsability}
-                          chargeEnums={chargeEnums}
-                          enumsData={enumsEmployer}
-                          user={userSelected}
+                      {/* Si eres root y no hay usuario seleccionado => botón de borrar */}
+                      {logged?.user?.role === 'root' && !userSelected && (
+                        <DeleteEmployer
+                          user={user}
                           modal={modal}
                           charge={charge}
-                          changeUser={(x) => changeUserLocally(x)}
                           chargeUser={() => loadUsers(true)}
                         />
                       )}
                     </div>
-                    {logged.user.role=='root' && !userSelected && <DeleteEmployer user={user} modal={modal} charge={charge} chargeUser={() => loadUsers(true)}/> }
-                    </div>
-                    
-                  )
-                }
-
-
-                )}
-
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -210,6 +210,13 @@
     appearance: auto;
 }
 
+.contenedorEmployer{
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
 
 @media (min-width: 1080px) {
 

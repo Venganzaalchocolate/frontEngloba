@@ -10,6 +10,13 @@ import ViewEmployers from './ViewEmployers.jsx';
 import { deepClone } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
 import DeleteEmployer from './DeleteEmployer.jsx';
+import InfoEmployer from './InfoEmployer.jsx';
+import Responsability from './Responsability.jsx';
+import Coordination from './Coordination.jsx';
+import DocumentEmployerMiscelanea from './DocumentEmployerMiscelanea.jsx';
+import Payrolls from '../payroll/Payrolls.jsx';
+import VacationDays from './VacationDays.jsx';
+import Hiringperiods from './HiringsPeriods.jsx';
 
 const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
   const { logged } = useLogin();
@@ -426,17 +433,21 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
                         </div>
 
                         {userSelected && userSelected._id === user._id && (
-                          <div>holi</div>
-                          // <ViewEmployers
-                          //   listResponsability={listResponsability}
-                          //   chargeEnums={chargeEnums}
-                          //   enumsData={enumsEmployer}
-                          //   user={userSelected}
-                          //   modal={modal}
-                          //   charge={charge}
-                          //   changeUser={(x) => changeUserLocally(x)}
-                          //   chargeUser={() => loadUsers(true)}
-                          // />
+                          <div className={styles.contenedorEmployer}>
+                          <InfoEmployer chargeUser={() => loadUsers(true)} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} enumsData={enumsData}/>
+                          <Responsability chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>   
+                          <Coordination chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/> 
+                          <DocumentEmployerMiscelanea user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+                          <Payrolls user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} listResponsability={listResponsability}/>
+                          {(!!user && user.employmentStatus!='en proceso de contratación' && (user.role!='global') || user.role!='root') &&
+                          <>
+                         <VacationDays  user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)}/>
+                          <Hiringperiods enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUser(x)} chargeUser={() => loadUsers(true)}/> 
+                          </>
+                          
+                          }
+                          
+                      </div>
                         )}
                       </div>
 

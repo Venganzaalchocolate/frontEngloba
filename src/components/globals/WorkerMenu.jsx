@@ -21,14 +21,14 @@ const WorkerMenu = ({ modal, charge }) => {
     const [listResponsability, setlistResponsability] = useState({})
     const [enumsEmployer, setEnumsEmployer] = useState(null);
 
-
+    console.log(logged.user)
     const chargeResponsability = async () => {
         if (logged.user.role != 'root' && logged.user.role != 'global') {
             const token = getToken();
             const idUser = logged.user._id
             const dataAux = { _id: idUser }
             const responsability = await getDispositiveResponsable(dataAux, token);
-            console.log(responsability)
+            
             setlistResponsability(responsability)
         }
     }
@@ -75,25 +75,27 @@ const WorkerMenu = ({ modal, charge }) => {
                     </>
 
 
-                    : logged.user.email == 'responsable@engloba.org.es'
+                    : logged.user.role == 'global'
                         ?
-                        <>
-                            <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
-                            <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
-                            <button onClick={() => changeMenuWorker('formCreatePersonal')}>FORMULARIO RESPONSABLE</button>
-                        </>
-                        : listResponsability.length > 0
-                            ?
                             <>
-                                <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
                                 <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
-                                <button onClick={() => changeMenuWorker('offersJobs')}>GESTIONAR OFERTAS</button>
+                                <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
                                 <button onClick={() => changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
-                            </>
-                            :
-                            <>
                                 <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
                             </>
+                        
+                        : listResponsability.length > 0
+                                ?
+                                <>
+                                    <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
+                                    <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
+                                    <button onClick={() => changeMenuWorker('offersJobs')}>GESTIONAR OFERTAS</button>
+                                    <button onClick={() => changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
+                                </>
+                                :
+                                <>
+                                    <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
+                                </>
 
                 }
 

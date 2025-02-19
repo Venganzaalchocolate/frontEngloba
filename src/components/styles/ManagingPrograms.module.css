@@ -101,9 +101,7 @@
     background-color: var(--color-verde-hoja);
     color: white;
 }
-.no_identificado{
 
-}
 .personas_con_discapacidad{
     background-color: var(--color-yema);
     color: white;
@@ -113,7 +111,7 @@
     display: flex;
     flex-direction: column;
     padding: 0 2rem;
-    gap: 2rem;
+    gap: 1rem;
     
 }
 
@@ -124,5 +122,22 @@
 }
 
 .titulines{
+    color: white;
     font-weight: 900;
+}
+
+.containerInfo{
+    display: flex;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem 0.5rem;
+    border-radius: 1rem;
+    >h2{
+        display: flex;
+  flex: 1 100%;
+  border-bottom: 3px solid var(--color-morado);
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+    }
 }

@@ -11,6 +11,7 @@ const FormProgram = ({
   closeModal,
   enumsData,
   program = null, // si viene un objeto, es edición
+  handleProgramSaved
 }) => {
   // Detectamos si estamos en modo edición
   const isEditing = !!program;
@@ -128,6 +129,7 @@ const FormProgram = ({
         if (result.error) {
           modal("Error", result.message || "No se pudo crear el programa");
         } else {
+          handleProgramSaved(result)
           modal("Programa", "El programa se ha creado con éxito");
           closeModal();
         }
@@ -187,6 +189,7 @@ const FormProgram = ({
         if (result.error) {
           modal("Error", result.message || "No se pudo actualizar el programa");
         } else {
+          handleProgramSaved(result)
           modal("Programa", "El programa se ha actualizado con éxito");
           closeModal();
         }

@@ -26,6 +26,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
     }
   }, [enumsData]);
 
+
   // Crear un programa nuevo
   const openCreateProgram = () => {
     setEditingProgram(null);
@@ -45,6 +46,29 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
     setShowProgramModal(false);
   };
 
+  const handleProgramSaved = (savedProgram) => {
+    // Si el programa ya existe en la lista, lo sobreescribimos
+    // Si no existe, lo agregamos
+
+    setSortedPrograms((prev) => {
+      const idx = prev.findIndex((p) => p._id === savedProgram._id);
+      if (idx >= 0) {
+        // Sobrescribimos
+        const newArr = [...prev];
+        newArr[idx] = savedProgram;
+        return newArr;
+      } else {
+        // Añadimos
+        return [...prev, savedProgram];
+      }
+    });
+
+    // Si estábamos viendo un programa que coincide con el que se guardó, lo actualizamos también
+    if (selectedProgram && selectedProgram._id === savedProgram._id) {
+      setSelectedProgram(savedProgram);
+    }
+  };
+
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
@@ -61,6 +85,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
             modal={modal}
             charge={charge}
             closeModal={closeFormModal}
+            handleProgramSaved={(p)=>handleProgramSaved(p)}
           />
         )}
 
@@ -70,6 +95,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
             <DeviceDetails
               device={selectedDevice}
               onClose={() => setSelectedDevice(null)}
+              handleProgramSaved={(p)=>handleProgramSaved(p)}
             />
           ) : selectedProgram ? (
             // -- VISTA DETALLES DE PROGRAMA --
@@ -80,6 +106,8 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
               onSelectDevice={(device) => setSelectedDevice(device)}
               modal={modal}
               charge={charge}
+              enumsData={enumsData}
+              handleProgramSaved={(p)=>handleProgramSaved(p)}
             />
           ) : (
             // -- LISTA DE PROGRAMAS --

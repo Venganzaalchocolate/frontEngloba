@@ -1,98 +1,97 @@
+import React, { useEffect, useState } from "react";
 import { FaSquarePlus } from "react-icons/fa6";
+import FormProgram from "./FormProgram";
+import ProgramList from "./ProgramList";
+import ProgramDetails from "./ProgramDetails";
+import DeviceDetails from "./DeviceDetails";
 import styles from "../styles/ManagingPrograms.module.css";
-import { useState } from "react";
 
-const ManagingPrograms = ({ enumsData }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [programSelected, setProgramSelected] = useState(null);
-    const [deviceSelected, setDeviceSelected] = useState(null);
+const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} }) => {
+  // Controla la visualización del Modal
+  const [showProgramModal, setShowProgramModal] = useState(false);
+  // Programa seleccionado (para ver detalles)
+  const [selectedProgram, setSelectedProgram] = useState(null);
+  // Dispositivo seleccionado
+  const [selectedDevice, setSelectedDevice] = useState(null);
+  // Programa en edición (si no es null, se edita)
+  const [editingProgram, setEditingProgram] = useState(null);
 
-    const openModal = () => {
-        setIsModalOpen(true);
-    };
+  // Lista ordenada de programas
+  const [sortedPrograms, setSortedPrograms] = useState([]);
 
-    const selectProgram = (id) => {
-        setProgramSelected(id);
-        setDeviceSelected(null); // Resetear selección de dispositivo
-    };
+  useEffect(() => {
+    if (enumsData?.programs) {
+      const sorted = [...enumsData.programs].sort((a, b) => a.area.localeCompare(b.area));
+      setSortedPrograms(sorted);
+    }
+  }, [enumsData]);
 
-    const selectDevice = (deviceId) => {
-        setDeviceSelected(deviceId);
-    };
+  // Crear un programa nuevo
+  const openCreateProgram = () => {
+    setEditingProgram(null);
+    setShowProgramModal(true);
+  };
 
-    return (
-        <div className={styles.contenedor}>
-            <div className={styles.contenido}>
-                <div className={styles.titulo}>
-                    <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
-                    <FaSquarePlus onClick={openModal} />
-                    {isModalOpen && <div>Modal Abierto</div>}
-                </div>
+  // Editar un programa existente
+  const openEditProgram = (programId) => {
+    const program = enumsData.programs.find((p) => p._id === programId);
+    if (program) {
+      setEditingProgram(program);
+      setShowProgramModal(true);
+    }
+  };
 
-                <div>
-                    {/* Si hay un dispositivo seleccionado, mostramos sus detalles */}
-                    {deviceSelected ? (
-                        <>
-                            <button onClick={() => setDeviceSelected(null)}>Volver a dispositivos</button>
-                            <h3>Detalles del Dispositivo</h3>
-                            {programSelected &&
-                                enumsData.programs
-                                    .find((program) => program._id === programSelected)
-                                    ?.devices
-                                    .find((device) => device._id === deviceSelected) && (
-                                    <div className={styles.deviceDetails}>
-                                        <h4>Nombre: {enumsData.programs.find(p => p._id === programSelected).devices.find(d => d._id === deviceSelected)?.name}</h4>
-                                        <p>Dirección: {enumsData.programs.find(p => p._id === programSelected).devices.find(d => d._id === deviceSelected)?.address || "No disponible"}</p>
-                                        <p>Email: {enumsData.programs.find(p => p._id === programSelected).devices.find(d => d._id === deviceSelected)?.email || "No disponible"}</p>
-                                        <p>Teléfono: {enumsData.programs.find(p => p._id === programSelected).devices.find(d => d._id === deviceSelected)?.phone || "No disponible"}</p>
-                                    </div>
-                                )}
-                        </>
-                    ) : programSelected ? (
-                        // Si hay un programa seleccionado, mostramos sus detalles y dispositivos
-                        <>
-                            <button onClick={() => setProgramSelected(null)}>Volver a programas</button>
-                            <h3>Detalles del Programa</h3>
-                            {enumsData.programs.find((p) => p._id === programSelected) && (
-                                <div className={styles.programDetails}>
-                                    <h4>Nombre: {enumsData.programs.find(p => p._id === programSelected)?.name}</h4>
-                                    <p>Descripción: {enumsData.programs.find(p => p._id === programSelected)?.description || "No disponible"}</p>
-                                    <h4>Dispositivos:</h4>
-                                    {enumsData.programs.find((p) => p._id === programSelected)?.devices?.length > 0 ? (
-                                        enumsData.programs.find((p) => p._id === programSelected)?.devices.map((device) => (
-                                            <div
-                                                key={device._id}
-                                                className={styles.deviceItem}
-                                                onClick={() => selectDevice(device._id)}
-                                            >
-                                                {device.name}
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p>No hay dispositivos asociados a este programa.</p>
-                                    )}
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        // Si no hay nada seleccionado, mostramos la lista de programas
-                        <>
-                            <h3>Lista de Programas</h3>
-                            {enumsData?.programs?.length > 0 ? (
-                                enumsData.programs.map((x) => (
-                                    <div key={x._id} className={styles.programItem} onClick={() => selectProgram(x._id)}>
-                                        {x.name}
-                                    </div>
-                                ))
-                            ) : (
-                                <p>No hay programas disponibles.</p>
-                            )}
-                        </>
-                    )}
-                </div>
-            </div>
+  const closeFormModal = () => {
+    setShowProgramModal(false);
+  };
+
+  return (
+    <div className={styles.contenedor}>
+      <div className={styles.contenido}>
+        <div className={styles.titulo}>
+          <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
+          <FaSquarePlus onClick={openCreateProgram} style={{ cursor: "pointer" }} />
         </div>
-    );
+
+        {/* Modal: Crear/Editar Programa */}
+        {showProgramModal && (
+          <FormProgram
+            program={editingProgram}
+            enumsData={enumsData}
+            modal={modal}
+            charge={charge}
+            closeModal={closeFormModal}
+          />
+        )}
+
+        <div>
+          {selectedDevice ? (
+            // -- VISTA DETALLES DE DISPOSITIVO --
+            <DeviceDetails
+              device={selectedDevice}
+              onClose={() => setSelectedDevice(null)}
+            />
+          ) : selectedProgram ? (
+            // -- VISTA DETALLES DE PROGRAMA --
+            <ProgramDetails
+              program={selectedProgram}
+              onClose={() => setSelectedProgram(null)}
+              onEditProgram={openEditProgram}
+              onSelectDevice={(device) => setSelectedDevice(device)}
+              modal={modal}
+              charge={charge}
+            />
+          ) : (
+            // -- LISTA DE PROGRAMAS --
+            <ProgramList
+              programs={sortedPrograms}
+              onSelectProgram={(program) => setSelectedProgram(program)}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ManagingPrograms;

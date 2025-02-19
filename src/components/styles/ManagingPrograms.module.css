@@ -4,6 +4,7 @@
     flex: 1 100%;
     background-color: var(--color-morado);
     gap: 1rem;
+    padding: 0 4rem 2rem 4rem;
 }
 
 .contenido {
@@ -11,35 +12,117 @@
     flex-direction: column;
     flex: 1;
     background-color: white;
-    padding: 2rem;
     border-radius: 1rem;
     flex-wrap: wrap;
     color: var(--color-morado);
-
+    padding-bottom: 1rem;
 }
 
 
 .titulo {
     display: flex;
-    flex-direction: column;
-    padding-bottom: 2rem;
+    padding: 2rem;
 
 }
 
-.titulo h2 {
+.titulo>h2 {
     padding: 0.5rem 2rem 0 1rem;
     border-left: 10px solid var(--color-morado);
     display: flex;
     flex: 1;
 }
 
-.titulo svg {
+.titulo>svg {
     width: 3rem;
     height: 3rem;
     justify-content: end;
     align-self: flex-end;
 }
 
-.titulo div {
+.titulo>div {
     display: flex;
+}
+
+.programItem{
+    display: flex;
+    flex: 1 100%;
+    padding: 0.3rem 1rem;
+}
+
+.contenedorProgram{
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.areaGroup{
+    display: flex;
+    flex: 1 100%;
+}
+
+.desarrollo_comunitario, 
+.igualdad,.infancia_y_juventud,
+.lgtbiq,
+.mayores,
+.no_identificado,
+.personas_con_discapacidad{
+    display: flex;
+    flex: 100% 1;
+    padding: 1rem 10%;
+
+    >h3{
+      flex: 20rem;  
+      font-weight: 900;
+    };
+    >:nth-child(2){
+        display: flex;
+        flex: 1 100%;
+        flex-direction: column;
+    }
+}
+
+.desarrollo_comunitario{
+    background-color: var(--color-naranja);
+    color: white;
+}
+.igualdad{
+    background-color: var(--color-morado);
+    color: white;
+
+}
+.infancia_y_juventud{
+    background-color: var(--color-malva);
+    color: white;
+}
+.lgtbiq{
+    background-color: var(--color-chicle);
+    color: white;
+}
+.mayores{
+    background-color: var(--color-verde-hoja);
+    color: white;
+}
+.no_identificado{
+
+}
+.personas_con_discapacidad{
+    background-color: var(--color-yema);
+    color: white;
+}
+
+.programInfoContainer{
+    display: flex;
+    flex-direction: column;
+    padding: 0 2rem;
+    gap: 2rem;
+    
+}
+
+.programDetailInfo{
+    display: flex;
+    gap: 0.5rem;
+    flex-direction: column;
+}
+
+.titulines{
+    font-weight: 900;
 }

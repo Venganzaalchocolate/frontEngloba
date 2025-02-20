@@ -20,8 +20,6 @@ const WorkerMenu = ({ modal, charge }) => {
     const { logged } = useLogin()
     const [listResponsability, setlistResponsability] = useState({})
     const [enumsEmployer, setEnumsEmployer] = useState(null);
-
-    console.log(logged.user)
     const chargeResponsability = async () => {
         if (logged.user.role != 'root' && logged.user.role != 'global') {
             const token = getToken();
@@ -68,7 +66,7 @@ const WorkerMenu = ({ modal, charge }) => {
                         <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                         <button onClick={() => changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>
                         <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
-                        <button onClick={() => changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
+                        <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
                         <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
                         <button onClick={() => changeMenuWorker('root')}> PANEL ROOT</button>
                         <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
@@ -80,7 +78,7 @@ const WorkerMenu = ({ modal, charge }) => {
                             <>
                                 <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                                 <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
-                                <button onClick={() => changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
+                                <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
                                 <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
                             </>
                         
@@ -90,7 +88,7 @@ const WorkerMenu = ({ modal, charge }) => {
                                     <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
                                     <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                                     <button onClick={() => changeMenuWorker('offersJobs')}>GESTIONAR OFERTAS</button>
-                                    <button onClick={() => changeMenuWorker('employer')}>GESTIONAR TRABAJADORES</button>
+                                    <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
                                 </>
                                 :
                                 <>

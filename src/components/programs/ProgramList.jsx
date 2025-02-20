@@ -39,7 +39,7 @@ const ProgramList = ({ programs, onSelectProgram }) => {
                   className={styles.programItem}
                   onClick={() => onSelectProgram(program)}
                 >
-                  {program.acronym.toUpperCase()}
+                  {program.acronym.toUpperCase()}: {program.name}
                 </div>
               ))}
             </div>

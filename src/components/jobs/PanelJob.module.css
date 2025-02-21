@@ -1,0 +1,116 @@
+/* Estructura principal */
+.container {
+    display: flex;
+    gap: 2rem;
+    width: 90%;
+    max-width: 1200px;
+    margin: 2rem auto;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden; /* Para que no se desborden hijos con border-radius */
+  }
+  
+  /* Panel izquierdo (listado de ofertas) */
+  .offersPanel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    background-color: #fafafa;
+    border-right: 1px solid #e0e0e0;
+  }
+  
+  /* Botón para volver */
+  .backBtn {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: #333;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin-bottom: 1rem;
+  }
+  
+  .backBtn:hover {
+    transform: scale(1.1);
+  }
+  
+  /* Título de la sección de ofertas */
+  .title {
+    margin: 0;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+    color: #333333;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  /* Cada oferta dentro del panel */
+  .offerItem {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: 1px solid #e8e8e8;
+  }
+  
+  .offerItem:hover {
+    background-color: #f0f8ff;
+  }
+  
+  /* Oferta activa / seleccionada */
+  .activeOffer {
+    background-color: #ffeecf;
+    border: 1px solid #ffd28a;
+  }
+  
+  /* Título dentro de cada tarjeta de oferta */
+  .offerTitle {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333333;
+  }
+  
+  /* Ubicación / lugar de la oferta */
+  .offerLocation {
+    margin: 0;
+    color: #666666;
+    font-size: 0.95rem;
+  }
+  
+  /* Select de ofertas */
+  .selectOffer {
+    margin-top: auto;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    color: #333333;
+    background-color: #ffffff;
+    cursor: pointer;
+    outline: none;
+  }
+  
+  .selectOffer:focus {
+    border-color: #999999;
+  }
+  
+  /* Texto cuando no hay ofertas */
+  .noOffers {
+    margin-top: 2rem;
+    color: #666666;
+    font-style: italic;
+  }
+  
+  /* Panel derecho (detalle de oferta) */
+  .detailsPanel {
+    flex: 2;
+    padding: 2rem;
+    background-color: #fff;
+  }
+  

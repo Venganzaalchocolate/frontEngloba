@@ -54,7 +54,7 @@ const JobsPanel=({ modal, charge })=>{
         selectOffer(auxOffer[0])
     }
 
-
+console.log(offers)
     return  <div className={styles.contenedor}>
                 
                 <div className={styles.contenedorForm}>
@@ -63,8 +63,8 @@ const JobsPanel=({ modal, charge })=>{
                     <h2>OFERTAS DISPONIBLES</h2>
                     { !!offers && offers.length>0 && offers.map((x)=>{
                         return <div className={(offerSelected && offerSelected._id==x._id) ?`${styles.contenedorOferta} crema`:styles.contenedorOferta} onClick={()=>selectOffer(x)}>
-                                    <h2>{x.job_title}</h2>
-                                    <p>{x.location}</p>
+                                    <h2>{x.functions}</h2>
+                                    <p>{x.location.toUpperCase()} - {x.province}</p>
                                 </div>
                         })
                     }

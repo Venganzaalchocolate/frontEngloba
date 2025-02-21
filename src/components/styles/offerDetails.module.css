@@ -2,11 +2,10 @@
     display: flex;
     max-width: 600px;
     padding: 1rem;
-    color: white;
+    color: var(--color-morado);
     flex-wrap: wrap;
-    border: solid 2px var(--color-malva);
     border-radius: 2rem;
-    background-color: var(--color-morado);
+    background-color: white;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 
                         0 6px 6px rgba(0, 0, 0, 0.2);
     height: fit-content;
@@ -14,25 +13,30 @@
 
 .contenedorOferta>h2{
     flex: 1 100%;
-    border-bottom: solid 1px var(--color-crema);
+    border-bottom: solid 1px var(--color-morado);
     padding-bottom: 1rem;
     text-align: center;
 }
 
-.contenedorOferta>.campo{
+.contenedorOferta>.campo, .contenedorOferta>.campoLineas{
     display: flex;
     flex: 1 100%;
     flex-direction: column;
     padding: 0.8rem 0;
 }
 
-.contenedorOferta>.campo>h3{
+.contenedorOferta>.campo>h3, .contenedorOferta>.campoLineas>h3{
     font-size: 12pt;
-    color: var(--color-malva);
+    color: var(--color-morado);
 }
 
-.contenedorOferta>.campo>p{
+.contenedorOferta>.campo>p,  .contenedorOferta>.campoLineas>p, .contenedorOferta>.campo>ul>li{
     font-size: 11pt;
+    color: black;
+}
+
+.campoLineas>p{
+    white-space: pre-line;
 }
 
 .contenedorBotones{

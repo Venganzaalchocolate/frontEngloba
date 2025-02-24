@@ -239,9 +239,11 @@
 
     .tableCell:nth-child(9),
     .tableCell:nth-child(10) {
-        max-width: 4rem;
-        min-width: 4rem;
+        max-width: 5rem;
+        min-width: 5rem;
         display: flex;
+        justify-content:center;
+
         gap: 0.5rem;
     }
 

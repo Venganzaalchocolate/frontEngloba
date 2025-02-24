@@ -4,6 +4,8 @@ export const textErrors = (tipo) => {
         case "firstName":
         case "nombre":
             return "El nombre no es correcto, no debe contener números ni carácteres especiales y debe tener mínimo 3 carácteres";
+        case "lastName":
+            return "El apellido no es correcto, no debe contener números ni carácteres especiales y debe tener mínimo 3 carácteres";
         case "phone":
             return "El teléfono debe contener 9 números y no puede empezar por 0";
         case "from":

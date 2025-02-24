@@ -4,6 +4,7 @@ import React from 'react';
 import { FaCheckCircle, FaTimesCircle, FaRegEyeSlash, FaEye } from 'react-icons/fa';
 import { GoStarFill, GoStar } from 'react-icons/go';
 import { BsExclamationOctagonFill, BsExclamationOctagon } from 'react-icons/bs';
+import { FaWheelchair } from "react-icons/fa6";
 
 // Importa tu componente CvPanel (ajusta la ruta según tu estructura)
 import CvPanel from './CvPanel';
@@ -122,6 +123,12 @@ function DivEmployers({
                   <span className={stylesTooltip.tooltip}>
                     <BsExclamationOctagon />
                     <span className={stylesTooltip.tooltiptext}>No Rechazado</span>
+                  </span>
+                )}
+                {user.disability>0 && (
+                  <span className={stylesTooltip.tooltip}>
+                    <FaWheelchair  />
+                    <span className={stylesTooltip.tooltiptext}>Tiene {user.disability}% de discapacidad</span>
                   </span>
                 )}
               </div>

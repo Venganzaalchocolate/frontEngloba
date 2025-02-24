@@ -40,7 +40,9 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
         studies: '',
         favorite: '',
         reject: '',
+        disability:0,
     });
+    
 
     // Derivar una versión debounced de los filtros
     const debouncedFilters = useDebounce(filters, 300);
@@ -169,6 +171,7 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
             studies: '',
             favorite: '',
             reject: '',
+            disability:0,
         });
     }, []);
 

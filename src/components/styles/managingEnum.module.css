@@ -1,0 +1,92 @@
+.contenedor{
+    display: flex;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem 0.5rem;
+    border-radius: 1rem;
+    
+}
+
+.contenedor>h2{
+    display: flex;
+    flex: 1 100%;
+    border-bottom: 3px solid var(--color-morado);
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    align-items: center;
+}
+
+.contenedor>button{
+    margin-top: 1rem;
+    background-color: var(--color-morado);
+    color: var(--color-malva);
+}
+
+.contenedor>button:hover{
+    color: var(--color-morado);
+}
+
+.contenido{
+    display: flex;
+    flex: 1 100%;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.enumCrud{
+    display: flex;
+    flex-direction: column;
+}
+
+.enumCrud>h2{
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding-bottom: 1rem;
+}
+
+.enumCrud>ul{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.enumCrud>ul>li{
+    display: flex;
+    padding: 1rem;
+    border-radius: 1rem;
+    background-color: white;
+    flex-direction: column;
+
+}
+
+
+
+.enumItem>h3{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    border-bottom:solid 2px var(--color-malva);
+    margin-bottom: 0.5rem;
+}
+
+.subcategories{
+    padding-left: 1rem;
+}
+
+.subcategories li{
+    display: flex;
+    >p{
+        padding-right:1rem ;
+    }
+}
+
+.subcategories li>svg{
+    padding: 0 0.2rem;
+}
+
+.subcategories>button{
+    margin-top: 1rem;
+}

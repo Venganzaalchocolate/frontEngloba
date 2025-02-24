@@ -3,6 +3,7 @@ import { TbEyeDotted, TbEyeClosed, TbEyeFilled } from "react-icons/tb";
 import { BsExclamationOctagonFill, BsExclamationLg, BsExclamationOctagon, BsStarHalf, BsStarFill, BsStar } from "react-icons/bs";
 import styles from '../styles/managingResumenes.module.css';
 import stylesTooltip from '../styles/tooltip.module.css';
+import { FaWheelchair } from "react-icons/fa6";
 
 const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters, listOffers }) => {
 
@@ -121,6 +122,14 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters,
                         {filters.reject === '0' && <BsExclamationOctagon onClick={() => setFilters(prevFilters => ({ ...prevFilters, reject: '1' }))} />}
                         {filters.reject === '1' && <BsExclamationOctagonFill onClick={() => setFilters(prevFilters => ({ ...prevFilters, reject: '' }))} />}
                         <span className={stylesTooltip.tooltiptext}>{(filters.reject === '1') ? 'Rechazados' : (filters.reject === '0') ? 'No Rechazados' : 'Todos'}</span>
+                    </span>
+                </div>
+                <div>
+                
+                    <span className={stylesTooltip.tooltip}>
+                        {filters.disability === 0 && <FaWheelchair   onClick={() => setFilters(prevFilters => ({ ...prevFilters, disability: 1 }))} />}
+                        {filters.disability >0  && <FaWheelchair color='forestgreen' onClick={() => setFilters(prevFilters => ({ ...prevFilters, disability: 0 }))} />}
+                        <span className={stylesTooltip.tooltiptext}>{(filters.disability >0) ? 'Con discapacidad' :  'Sin Discapacidad'}</span>
                     </span>
                 </div>
             </div>

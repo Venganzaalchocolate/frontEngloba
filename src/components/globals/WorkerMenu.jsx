@@ -53,7 +53,7 @@ const WorkerMenu = ({ modal, charge }) => {
         if (MenuWorker == 'programs') return <ManagingPrograms enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         if (MenuWorker == 'employer') return <ManagingEmployer enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         if (MenuWorker == 'myself') return <ManagingMySelf enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-        if (MenuWorker == 'root') return <PanelRoot closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
+        if (MenuWorker == 'root') return <PanelRoot chargeEnums={()=>chargeEnums()} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         if (MenuWorker == 'formCreatePersonal') return <FormCreateEmployer enumsData={enumsEmployer} modal={modal} charge={charge} closeModal={() => changeMenuWorker(null)} chargeUser={() => changeMenuWorker(null)} />
     } else return (
         <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>

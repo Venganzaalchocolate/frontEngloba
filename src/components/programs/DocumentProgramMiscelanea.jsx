@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
-import styles from '../styles/documentProgram.module.css'; // Usa o crea tu propio CSS
+import styles from '../styles/documentProgram.module.css';
 import { AiOutlineCloudDownload, AiOutlineCloudUpload } from "react-icons/ai";
 import { CiFileOn, CiFileOff } from "react-icons/ci";
 import React from 'react';
@@ -8,18 +8,23 @@ import { formatDate } from "../../lib/utils";
 import { getToken } from "../../lib/serviceToken";
 import ModalForm from '../globals/ModalForm';
 
-const DocumentProgramMiscelanea = ({ program, modal, charge, changeProgram }) => {
+const DocumentProgramMiscelanea = ({ program, modal, charge, changeProgram, enumsData }) => {
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formConfig, setFormConfig] = useState(null);
 
-  // Ejemplo de documentos "oficiales" para un programa
-  const fileFields = [
-    { label: 'Proyecto Educativo', name: 'educationalProject', date: false },
-    { label: 'Memoria Anual', name: 'annualReport', date: false },
-    { label: 'Plan de Autoprotección', name: 'selfProtectionPlan', date: true },
-    { label: 'Reglamento Interno', name: 'internalRegulation', date: false },
-  ];
+  // Se obtienen los documentos oficiales cruzando el id con los enums
+  const officialDocs = (program.essentialDocumentationProgram || [])
+    .map(docId => {
+      const enumDoc = enumsData.documentation.find(doc => doc._id === docId);
+      return enumDoc;
+    })
+    .filter(Boolean);
+
+  // Los archivos extra son aquellos que NO pertenecen a los documentos oficiales (según el fileTag)
+  const extraFiles = (program?.files || []).filter(
+    (fileObj) => !officialDocs.some((doc) => doc.name === fileObj.fileTag)
+  );
 
   /**
    * DESCARGA
@@ -32,25 +37,22 @@ const DocumentProgramMiscelanea = ({ program, modal, charge, changeProgram }) =>
     const token = getToken();
 
     try {
-      // Buscar el fileName real dentro de program.files
+      // Buscar el archivo dentro de program.files
       const fileData = program.files?.find(file => file.fileTag === fileTag);
       if (!fileData) {
         modal('Error', 'No se ha encontrado un archivo con ese identificador.');
         charge(false);
         return;
       }
-
-      const fileId = fileData.fileName;  // Nombre/ID real en el backend
+      const fileId = fileData.fileName;
       const programId = program._id;
       // const response = await getFileProgram(programId, fileId, token);
-      const response=''
+      const response = ''; // Simulación de respuesta
       if (!response?.url) {
         modal('Error', 'No se ha podido descargar el archivo. Intente más tarde.');
         charge(false);
         return;
       }
-
-      // Crear link temporal de descarga
       const link = document.createElement('a');
       link.href = response.url;
       link.download = `${program.name}_${fileTag}.pdf`;
@@ -59,7 +61,6 @@ const DocumentProgramMiscelanea = ({ program, modal, charge, changeProgram }) =>
     } catch (err) {
       modal('Error', 'No se ha podido descargar el archivo. Intente más tarde.');
     }
-
     charge(false);
   };
 
@@ -71,19 +72,15 @@ const DocumentProgramMiscelanea = ({ program, modal, charge, changeProgram }) =>
   const uploadFile = async (fileTag, file, date) => {
     charge(true);
     const token = getToken();
-
-    // Estructura de envío que tu backend espera
-    // similar a editUser, pero en este caso editProgram
     const dataAux = { _id: program._id, files: [] };
     if (date) {
       dataAux.files.push({ file, date, nameFile: fileTag });
     } else {
       dataAux.files.push({ file, nameFile: fileTag });
     }
-
     try {
       // const response = await editProgram(dataAux, token);
-      const response=''
+      const response = ''; // Simulación de respuesta
       if (!response.error) {
         changeProgram(response);
         modal('Documento subido', `El documento "${fileTag}" se ha subido con éxito.`);
@@ -99,13 +96,13 @@ const DocumentProgramMiscelanea = ({ program, modal, charge, changeProgram }) =>
   /**
    * ABRE MODAL PARA SUBIR UN ARCHIVO "OFICIAL"
    */
-  const handleFileUpload = (field) => {
+  const handleFileUpload = (doc) => {
     setFormConfig({
-      title: `Subir ${field.label}`,
+      title: `Subir ${doc.label}`,
       message: 'Por favor, seleccione el archivo y la fecha si procede:',
       fields: [
         { label: 'Archivo (PDF)', name: 'file', type: 'file', required: true },
-        field.date && {
+        doc.date && {
           label: 'Fecha de validez (opcional)',
           name: 'date',
           type: 'date',
@@ -118,7 +115,7 @@ const DocumentProgramMiscelanea = ({ program, modal, charge, changeProgram }) =>
           modal('Error', 'Debe seleccionar un archivo para continuar.');
           return;
         }
-        uploadFile(field.name, file, date);
+        uploadFile(doc.name, file, date);
         setIsModalOpen(false);
       },
     });
@@ -165,39 +162,34 @@ const DocumentProgramMiscelanea = ({ program, modal, charge, changeProgram }) =>
     setIsModalOpen(true);
   };
 
-  /**
-   * Archivos extra:
-   * program.files cuyo `fileTag` NO está en la lista fileFields
-   */
-  const extraFiles = (program?.files || []).filter(
-    (fileObj) => !fileFields.some((field) => field.name === fileObj.fileTag)
-  );
-
   return (
     <div className={styles.contenedor}>
       <h2>DOCUMENTOS DEL PROGRAMA</h2>
 
       {/* Documentos oficiales */}
-      {fileFields.map(({ label, name, date }) => {
-        const fileFound = program.files?.find(f => f.fileTag === name);
-        return (
-          <div key={name} className={styles.fileRow}>
-            {fileFound
-              ? <CiFileOn color="green" onClick={() => downloadFile(name)} />
-              : <CiFileOff color="tomato" />
-            }
-            <AiOutlineCloudUpload onClick={() => handleFileUpload({ label, name, date })} />
-            <div className={styles.infoFile}>
-              <label>{label}</label>
-              {fileFound?.date && (
-                <div className={styles.dateFile}>
-                  <p>{`Válido hasta: ${formatDate(fileFound.date)}`}</p>
-                </div>
-              )}
+      {officialDocs.length > 0 ? (
+        officialDocs.map((doc) => {
+          const fileFound = program.files?.find(f => f.fileTag === doc.name);
+          return (
+            <div key={doc._id} className={styles.fileRow}>
+              {fileFound
+                ? <CiFileOn color="green" onClick={() => downloadFile(doc.name)} />
+                : <CiFileOff color="tomato" />}
+              <AiOutlineCloudUpload onClick={() => handleFileUpload(doc)} />
+              <div className={styles.infoFile}>
+                <label>{doc.label}</label>
+                {fileFound?.date && (
+                  <div className={styles.dateFile}>
+                    <p>{`Válido hasta: ${formatDate(fileFound.date)}`}</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })
+      ) : (
+        <p>No existe documentación esencial para el programa</p>
+      )}
 
       {/* Documentos adicionales */}
       <h2>DOCUMENTACIÓN COMPLEMENTARIA</h2>

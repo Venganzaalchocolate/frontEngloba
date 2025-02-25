@@ -21,11 +21,12 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
 
   useEffect(() => {
     if (enumsData?.programs) {
-      const sorted = [...enumsData.programs].sort((a, b) => a.area.localeCompare(b.area));
+      const sorted = [...enumsData.programs].sort((a, b) =>
+        a.area.localeCompare(b.area)
+      );
       setSortedPrograms(sorted);
     }
   }, [enumsData]);
-
 
   // Crear un programa nuevo
   const openCreateProgram = () => {
@@ -47,25 +48,34 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
   };
 
   const handleProgramSaved = (savedProgram) => {
-    // Si el programa ya existe en la lista, lo sobreescribimos
-    // Si no existe, lo agregamos
-
+    // Actualizamos la lista interna de programas
     setSortedPrograms((prev) => {
       const idx = prev.findIndex((p) => p._id === savedProgram._id);
       if (idx >= 0) {
-        // Sobrescribimos
         const newArr = [...prev];
         newArr[idx] = savedProgram;
         return newArr;
       } else {
-        // Añadimos
         return [...prev, savedProgram];
       }
     });
 
-    // Si estábamos viendo un programa que coincide con el que se guardó, lo actualizamos también
+    // Si el programa que se está visualizando es el guardado, se actualiza
     if (selectedProgram && selectedProgram._id === savedProgram._id) {
       setSelectedProgram(savedProgram);
+    }
+
+    // Actualizamos también enumsData.programs a través de chargePrograms
+    if (enumsData?.programs) {
+      const updatedPrograms = enumsData.programs.map((p) =>
+        p._id === savedProgram._id ? savedProgram : p
+      );
+      // Si el programa no existía, lo añadimos
+      if (!updatedPrograms.some((p) => p._id === savedProgram._id)) {
+        updatedPrograms.push(savedProgram);
+      }
+      // Llamamos a chargePrograms para actualizar el enumsData en el componente padre
+      chargePrograms(updatedPrograms);
     }
   };
 
@@ -85,7 +95,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
             modal={modal}
             charge={charge}
             closeModal={closeFormModal}
-            handleProgramSaved={(p)=>handleProgramSaved(p)}
+            handleProgramSaved={(p) => handleProgramSaved(p)}
           />
         )}
 
@@ -95,7 +105,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
             <DeviceDetails
               device={selectedDevice}
               onClose={() => setSelectedDevice(null)}
-              handleProgramSaved={(p)=>handleProgramSaved(p)}
+              handleProgramSaved={(p) => handleProgramSaved(p)}
             />
           ) : selectedProgram ? (
             // -- VISTA DETALLES DE PROGRAMA --
@@ -107,7 +117,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
               modal={modal}
               charge={charge}
               enumsData={enumsData}
-              handleProgramSaved={(p)=>handleProgramSaved(p)}
+              handleProgramSaved={(p) => handleProgramSaved(p)}
             />
           ) : (
             // -- LISTA DE PROGRAMAS --

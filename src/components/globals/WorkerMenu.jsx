@@ -20,6 +20,8 @@ const WorkerMenu = ({ modal, charge }) => {
     const { logged } = useLogin()
     const [listResponsability, setlistResponsability] = useState({})
     const [enumsEmployer, setEnumsEmployer] = useState(null);
+
+
     const chargeResponsability = async () => {
         if (logged.user.role != 'root' && logged.user.role != 'global') {
             const token = getToken();
@@ -44,13 +46,17 @@ const WorkerMenu = ({ modal, charge }) => {
         return enumsData;
     };
 
+    const chargePrograms = (updatedPrograms) => {
+        setEnumsEmployer((prev) => ({ ...prev, programs: updatedPrograms }));
+      };
+      
 
 
     if (MenuWorker != null) {
         if (MenuWorker == 'cv') return <ManagingResumenes chargeEnums={chargeEnums} enumsEmployer={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         if (MenuWorker == 'socialForm') return <ManagingSocial closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} />;
         if (MenuWorker == 'offersJobs') return <OfferJobsPanel enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-        if (MenuWorker == 'programs') return <ManagingPrograms enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
+        if (MenuWorker == 'programs') return <ManagingPrograms chargePrograms={chargePrograms} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         if (MenuWorker == 'employer') return <ManagingEmployer enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         if (MenuWorker == 'myself') return <ManagingMySelf enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         if (MenuWorker == 'root') return <PanelRoot chargeEnums={()=>chargeEnums()} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;

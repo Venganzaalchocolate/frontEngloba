@@ -119,6 +119,14 @@
     display: flex;
     gap: 0.5rem;
     flex-direction: column;
+    >div{
+        display: flex;
+        gap: 0.8rem;
+    }
+    >div span{
+        margin-right: 0.5rem;
+    }
+
 }
 
 .titulines{
@@ -140,4 +148,37 @@
   gap: 1rem;
   padding-bottom: 0.5rem;
     }
+}
+
+.cronologyContenedor{
+    display: flex;
+    flex-direction: column;
+}
+
+.cronologyItem{
+    margin-top: 0.5rem;
+    display: flex;
+    background-color: white;
+    border-radius: 1rem;
+    padding: 0.8rem;
+    >div{
+        display: flex;
+        gap: 0.5rem;
+    }
+    >div:nth-child(2){
+    justify-content: end;
+    flex: 1;
+    }
+}
+@media (min-width: 600px) {
+    .programDetailInfo {
+        flex-direction: row;
+        flex: 1 100%;
+        >div{
+            display: flex;
+            flex: 1 50%;
+            flex-direction: column;
+        }
+    }
+
 }

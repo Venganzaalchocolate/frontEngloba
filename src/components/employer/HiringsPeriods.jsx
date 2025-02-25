@@ -65,6 +65,9 @@ const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) 
             <h2>
                 PERIODOS DE CONTRATACIÓN
                 <FaSquarePlus onClick={() => setButtonCreateHiring(true)} />
+                <button><a href="mailto:web@engloba.org.es?subject=MediaJornada&body=Buenas Gustavo, necesito añadir a media jornada <Nombre>, con DNI <DNI>, al dispositivo <dipositivo>, con fecha de inicio <fecha>, puesto <cargo>, Gracias !!! " class="boton">
+  Añadir media jornada en otro dispositivo
+</a></button>
             </h2>
             
             {/* Si buttonCreateHiring es true, mostramos el nuevo modal */}

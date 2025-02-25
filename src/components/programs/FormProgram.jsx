@@ -67,10 +67,7 @@ const FormProgram = ({
         label: "Financiación",
         type: "selectMultiple",
         required: false,
-        // NOTA: en tu esquema, funding es un único ObjectId
-        // si quieres permitir múltiples, tu backend debe estar listo.
-        // Aquí solo cargamos 1 como ejemplo (array de 1).
-        defaultValue: program?.funding ? [program.funding] : [],
+        defaultValue: program?.finantial || [],
         options: [
           { value: "", label: "Seleccione una financiación" },
           ...finantialOptions,
@@ -114,10 +111,10 @@ const FormProgram = ({
           name: formData.name,
           acronym: formData.acronym,
           area: formData.area,
-          funding:
+          finantial:
             formData.finantial && formData.finantial.length
-              ? formData.finantial[0]
-              : null, // asumiendo 1
+              ? formData.finantial
+              : [], // Ahora es un array
           about: {
             description: formData.description || "",
             objectives: formData.objectives || "",
@@ -129,7 +126,7 @@ const FormProgram = ({
         if (result.error) {
           modal("Error", result.message || "No se pudo crear el programa");
         } else {
-          handleProgramSaved(result)
+          handleProgramSaved(result);
           modal("Programa", "El programa se ha creado con éxito");
           closeModal();
         }
@@ -143,14 +140,12 @@ const FormProgram = ({
         if (formData.acronym !== program.acronym) changes.acronym = formData.acronym;
         if (formData.area !== program.area) changes.area = formData.area;
 
-        // Funding: en tu esquema, es 1 ID
-        const newFunding =
-          formData.finantial && formData.finantial.length
-            ? formData.finantial[0]
-            : null;
-
-        if (newFunding !== program.funding) {
-          changes.funding = newFunding;
+        // Funding: ahora es un array de IDs
+        if (
+          JSON.stringify(formData.finantial) !==
+          JSON.stringify(program.finantial || [])
+        ) {
+          changes.finantial = formData.finantial;
         }
 
         // About: comparamos cada subcampo
@@ -186,10 +181,11 @@ const FormProgram = ({
         };
 
         const result = await updateProgram(payload, token);
+
         if (result.error) {
           modal("Error", result.message || "No se pudo actualizar el programa");
         } else {
-          handleProgramSaved(result)
+          handleProgramSaved(result);
           modal("Programa", "El programa se ha actualizado con éxito");
           closeModal();
         }

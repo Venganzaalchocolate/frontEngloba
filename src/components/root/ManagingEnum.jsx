@@ -5,10 +5,10 @@ import ModalForm from "../globals/ModalForm";
 import { getToken } from "../../lib/serviceToken";
 import { changeData, createData, deleteData, createSubData, deleteSubData } from "../../lib/data";
 import { FaRegEdit, FaTrashAlt, FaPlusSquare } from "react-icons/fa";
-import { FaEye, FaEyeSlash  } from "react-icons/fa6";
+import { FaEye, FaEyeSlash } from "react-icons/fa6";
 
-// Listas de opciones
-const optionsList = ["documentation", "studies", "jobs", "provinces", "work_schedule", "finantial"];
+// Listas de opciones (se añadió "leavetype")
+const optionsList = ["documentation", "studies", "jobs", "provinces", "work_schedule", "finantial", "leavetype"];
 const optionListCastellano = [
   "Documentación",
   "Estudios",
@@ -16,6 +16,7 @@ const optionListCastellano = [
   "Provincias",
   "Horarios",
   "Financiación",
+  "Excedencias"
 ];
 
 // Los enumerados que NO deben permitir subcategorías
@@ -44,7 +45,7 @@ function EnumCRUD({
       </div>
     );
 
-    // Obtener el nombre en castellano
+  // Obtener el nombre en castellano
   const index = optionsList.indexOf(selectedKey);
   const labelCastellano = index !== -1 ? optionListCastellano[index] : selectedKey;
 
@@ -58,14 +59,11 @@ function EnumCRUD({
         {data.map((item) => (
           <li key={item._id} className={styles.enumItem}>
             <h3>
-            {selectedKey === "jobs" && item.public && <FaEye/>}
-            {selectedKey === "jobs" && !item.public && <FaEyeSlash/>}
-            <p>{item.name}</p>
-
+              {selectedKey === "jobs" && item.public && <FaEye />}
+              {selectedKey === "jobs" && !item.public && <FaEyeSlash />}
+              <p>{item.name}</p>
               <FaRegEdit onClick={() => onEditItem(selectedKey, item)} style={{ cursor: "pointer" }} />{" "}
               <FaTrashAlt onClick={() => onDeleteItem(selectedKey, item)} style={{ cursor: "pointer" }} />
-              
-             
             </h3>
             {selectedKey === "documentation" && (
               <span className={styles.dateInfo}>
@@ -80,10 +78,9 @@ function EnumCRUD({
                   <ul>
                     {item.subcategories.map((sub) => (
                       <li key={sub._id}>
-                        {selectedKey === "jobs" && sub.public && <FaEye/>}
-                        {selectedKey === "jobs" && !sub.public && <FaEyeSlash/>}
+                        {selectedKey === "jobs" && sub.public && <FaEye />}
+                        {selectedKey === "jobs" && !sub.public && <FaEyeSlash />}
                         <p>{sub.name}</p>
-                        
                         <FaRegEdit
                           onClick={() => onEditSub(selectedKey, item, sub)}
                           style={{ cursor: "pointer" }}
@@ -113,7 +110,7 @@ function EnumCRUD({
   - Inicializa su estado local a partir de enumsData.
   - Permite editar, borrar y crear elementos y subelementos.
   - Para "documentation" y "jobs" se añade un campo extra en el formulario:
-      * "documentation": campo "date" (si/no).
+      * "documentation": se añaden los campos "label" y "date"
       * "jobs": campo "public" (si/no).
   - En los enumerados que no permiten subcategorías (documentation, leavetype, work_schedule) no se renderizan opciones para subcategorías.
 */
@@ -152,10 +149,18 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
   const selectedEnumData = selectedKey ? crudData[selectedKey] || [] : [];
 
   // Función auxiliar para armar los campos del formulario según el tipo.
-  // Para "documentation" se añade el campo "date" y para "jobs" se añade "public".
+  // Para "documentation" se añaden los campos "label" y "date"; para "jobs" se añade "public".
   const getFields = (enumKey, baseFields, item = null) => {
     const fields = [...baseFields];
     if (enumKey === "documentation") {
+      const defaultLabel = item ? (item.label || "") : "";
+      fields.push({
+        name: "label",
+        label: "Etiqueta",
+        defaultValue: defaultLabel,
+        required: true,
+        type: "text",
+      });
       const defaultDate = item ? (item.date ? "si" : "no") : "no";
       fields.push({
         name: "date",
@@ -198,7 +203,10 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
       fields: getFields(enumKey, baseFields, item),
       onSubmit: async (formData) => {
         const payload = { id: item._id, type: enumKey, name: formData.name };
-        if (enumKey === "documentation") payload.date = formData.date;
+        if (enumKey === "documentation") {
+          payload.date = formData.date;
+          payload.label = formData.label;
+        }
         if (enumKey === "jobs") payload.public = formData.public;
         await changeData(getToken(), payload);
         setCrudData((prev) => ({
@@ -208,7 +216,10 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
               ? {
                   ...it,
                   name: formData.name,
-                  ...(enumKey === "documentation" && { date: formData.date === "si" }),
+                  ...(enumKey === "documentation" && { 
+                    date: formData.date === "si",
+                    label: formData.label 
+                  }),
                   ...(enumKey === "jobs" && { public: formData.public === "si" }),
                 }
               : it
@@ -242,7 +253,9 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
 
   // Crear un nuevo item
   const handleCreateItem = (enumKey) => {
-    const baseFields = [{ name: "name", label: "Nombre", defaultValue: "", required: true }];
+    const baseFields = [
+      { name: "name", label: "Nombre", defaultValue: "", required: true }
+    ];
     setFormModal({
       open: true,
       title: "Crear Nuevo Elemento",
@@ -250,7 +263,10 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
       fields: getFields(enumKey, baseFields),
       onSubmit: async (formData) => {
         const payload = { name: formData.name, type: enumKey };
-        if (enumKey === "documentation") payload.date = formData.date;
+        if (enumKey === "documentation") {
+          payload.date = formData.date;
+          payload.label = formData.label;
+        }
         if (enumKey === "jobs") payload.public = formData.public;
         const newItem = await createData(getToken(), payload);
         setCrudData((prev) => ({
@@ -423,7 +439,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
           onClose={formModal.onClose}
         />
       )}
-      <button onClick={()=>chargeEnums()}>Actualizar enumerados globales</button>
+      <button onClick={() => chargeEnums()}>Actualizar enumerados globales</button>
     </div>
   );
 }

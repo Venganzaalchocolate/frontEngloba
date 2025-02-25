@@ -18,6 +18,7 @@
 
 .contenedor > h2 > button {
     font-size: 10pt;
+    
 }
 
 /* Bloques dentro del contenedor, en columna por defecto */
@@ -38,7 +39,6 @@
 .contenedor button {
     background-color: var(--color-morado);
     color: var(--color-malva);
-    flex: 0;
     width: fit-content;
 }
 

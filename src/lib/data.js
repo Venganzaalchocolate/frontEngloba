@@ -72,6 +72,7 @@ export const getData = () => fetchData('/infodata', 'GET');
 export const getDataEmployer = () => fetchData('/infodataemployer', 'GET');
 
 
+
 export const changeData = (token, datos) => fetchData('/changedata', 'PUT', token, datos);
 
 export const deleteData = (token, datos) => fetchData('/deletedata', 'DELETE', token, datos);

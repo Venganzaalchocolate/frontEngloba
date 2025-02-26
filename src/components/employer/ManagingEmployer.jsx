@@ -4,7 +4,7 @@ import { FaSquarePlus } from "react-icons/fa6";
 import Filters from "./Filters";
 import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
-import { getDataEmployer, getusers } from '../../lib/data';
+import { getusers } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
 import { deepClone } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
@@ -17,37 +17,33 @@ import Payrolls from '../payroll/Payrolls.jsx';
 import VacationDays from './VacationDays.jsx';
 import Hiringperiods from './HiringsPeriods.jsx';
 
-const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
+const ManagingEmployer = ({
+  modal,
+  charge,
+  listResponsability,
+  enumsData,           // <-- YA NO copiamos en un useState
+  chargePrograms,
+  closeAction,
+}) => {
   const { logged } = useLogin();
   const isRootOrGlobal =
     logged?.user?.role === 'root' || logged?.user?.role === 'global';
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  // Aquí guardamos los "enums" (programas, provincias, etc.)
-  const [enumsEmployer, setEnumsEmployer] = useState(enumsData);
-
-  // Función para recargar los "enums" desde servidor
-  const chargeEnums = useCallback(async () => {
-    try {
-      const data = await getDataEmployer();
-      setEnumsEmployer(data);
-      return data;
-    } catch (error) {
-      modal('Error', error.message || 'Ocurrió un error recargando datos.');
-      return null;
-    }
-  }, [modal]);
-
+  // Usuario seleccionado al hacer click en la lista
   const [userSelected, setUserSelected] = useState(null);
+
+  // Paginación
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(1);
+
+  // Lista de usuarios devueltos por la API
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
 
-  // Responsabilidad seleccionada por el usuario (solo si no eres root/global)
+  // Si NO eres root/global, podrás filtrar según una responsabilidad concreta
   const [selectedResponsibility, setSelectedResponsibility] = useState(null);
 
-  // Filtros por default
+  // Filtros de búsqueda
   const [filters, setFilters] = useState({
     firstName: '',
     email: '',
@@ -57,15 +53,17 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
   // Filtros con debounce
   const debouncedFilters = useDebounce(filters, 300);
 
+  // Estado para abrir/cerrar modal de crear empleado
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // ==================================================
-  // =============== LÓGICA DE RESPONSABILIDAD ========
+  // ========== LÓGICA DE RESPONSABILIDADES ============
   // ==================================================
 
-  // Convertimos listResponsability en array de opciones
+  // Generar opciones según listResponsability
   const getResponsibilityOptions = () => {
     const options = [];
     listResponsability.forEach((item) => {
-      // Si es responsable de programa
       if (item.isProgramResponsible) {
         const label = `(Programa) ${item.programName}`;
         const valueObj = {
@@ -75,7 +73,6 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
         const value = JSON.stringify(valueObj);
         options.push({ label, value });
       }
-      // Si es responsable (o coordinador) de un dispositivo
       if (item.isDeviceResponsible || item.isDeviceCoordinator) {
         const label = `(Dispositivo) ${item.dispositiveName} [${item.programName}]`;
         const valueObj = {
@@ -90,14 +87,12 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     return options;
   };
 
-  // Manejo automático de responsabilidad si NO eres root/global
+  // Auto-seleccionar responsabilidad si no eres root/global
   useEffect(() => {
     if (!isRootOrGlobal) {
       if (!listResponsability || listResponsability.length === 0) {
-        // Sin acceso
         setSelectedResponsibility(null);
       } else if (listResponsability.length === 1) {
-        // Autoseleccionar
         const item = listResponsability[0];
         if (item.isProgramResponsible) {
           setSelectedResponsibility(
@@ -125,24 +120,25 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     setUserSelected(null);
   };
 
-  // =====================================================
-  // =============== CARGA DE USUARIOS ===================
-  // =====================================================
+  // ==================================================
+  // =============== CARGA DE USUARIOS =================
+  // ==================================================
   const loadUsers = async (showLoader = false) => {
     if (showLoader) charge(true);
     try {
       const token = getToken();
       let auxFilters = { ...debouncedFilters };
+      // Borramos los campos vacíos
       for (let key in auxFilters) {
         if (auxFilters[key] === "") {
           delete auxFilters[key];
         }
       }
 
-      // Si NO eres root/global, aplicamos restricciones
+      // Si NO eres root/global, filtramos por su responsabilidad
       if (!isRootOrGlobal) {
         if (!selectedResponsibility) {
-          // Si no hay selección de responsabilidad, no cargamos
+          // No se carga nada si no hay responsabilidad seleccionada
           if (showLoader) charge(false);
           return;
         }
@@ -176,10 +172,9 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedFilters, page, limit, selectedResponsibility]);
 
-  // ====================================================
-  // ============= MANEJADORES DE PAGINACIÓN Y FILTROS ==
-  // ====================================================
-
+  // ==================================================
+  // ====== MANEJADORES DE PAGINACIÓN Y FILTROS ========
+  // ==================================================
   const handlePageChange = useCallback((newPage) => {
     setPage(newPage);
   }, []);
@@ -215,10 +210,9 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     });
   }, []);
 
-  // ====================================================
-  // ============= MANEJO DE MODAL Y USERS LOCALES ======
-  // ====================================================
-
+  // ==================================================
+  // =========== MODAL DE CREACIÓN DE EMPLEADO ========
+  // ==================================================
   const closeModal = () => {
     setIsModalOpen(false);
   };
@@ -226,19 +220,23 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
     setIsModalOpen(true);
   };
 
-  // Actualiza un user en la lista (para no recargar todo)
-  const changeUserLocally = (u) => {
+  // ==================================================
+  // ========== ACTUALIZAR USUARIO LOCALMENTE =========
+  // ==================================================
+  const changeUserLocally = (updatedUser) => {
     const aux = deepClone(users);
     aux.forEach((x, i) => {
-      if (x._id === u._id) aux[i] = u;
+      if (x._id === updatedUser._id) {
+        aux[i] = updatedUser;
+      }
     });
-    setUserSelected(u);
+    setUserSelected(updatedUser);
     setUsers(aux);
   };
 
-  // ====================================================
-  // ============= RENDER LÓGICA ========================
-  // ====================================================
+  // ==================================================
+  // ============= RENDER DE LA INTERFAZ ==============
+  // ==================================================
 
   // 1) Si NO eres root/global y no tienes responsabilidades
   if (!isRootOrGlobal) {
@@ -254,29 +252,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
 
     // Si hay varias responsabilidades y no está elegida => select
     if (listResponsability.length > 1 && !selectedResponsibility) {
-      const options = [];
-      listResponsability.forEach((item) => {
-        if (item.isProgramResponsible) {
-          options.push({
-            label: `(Programa) ${item.programName}`,
-            value: JSON.stringify({
-              type: "program",
-              programId: item.idProgram
-            })
-          });
-        }
-        if (item.isDeviceResponsible || item.isDeviceCoordinator) {
-          options.push({
-            label: `(Dispositivo) ${item.dispositiveName} [${item.programName}]`,
-            value: JSON.stringify({
-              type: "device",
-              programId: item.idProgram,
-              deviceId: item.dispositiveId
-            })
-          });
-        }
-      });
-
+      const options = getResponsibilityOptions();
       return (
         <div className={styles.contenedor}>
           <div className={styles.contenido}>
@@ -313,10 +289,13 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
             <div>
               <h2>GESTIÓN DE EMPLEADOS</h2>
               <FaSquarePlus onClick={openModal} />
+              <a className={styles.botonMailto} href="mailto:web@engloba.org.es?subject=MediaJornada&body=Buenas Gustavo, necesito añadir a media jornada <Nombre>, con DNI <DNI>, al dispositivo <dipositivo>, con fecha de inicio <fecha>, puesto <cargo>, Gracias !!! ">
+  Añadir media jornada en otro dispositivo
+</a>
               {isModalOpen && (
                 <FormCreateEmployer
                   selectedResponsibility={selectedResponsibility}
-                  enumsData={enumsEmployer}
+                  enumsData={enumsData}  // en lugar de enumsEmployer
                   modal={modal}
                   charge={charge}
                   closeModal={closeModal}
@@ -325,7 +304,6 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
               )}
             </div>
 
-            {/* Paginación si eres root/global */}
             {isRootOrGlobal ? (
               <div className={styles.paginacion}>
                 <div>
@@ -354,7 +332,6 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
                 </div>
               </div>
             ) : (
-              // Si no eres root/global => mostrar select "Activo"
               <div className={styles.cajaSeleccionActiva}>
                 <h4>Activo</h4>
                 <select
@@ -372,11 +349,10 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
           </div>
 
           <div className={styles.caja}>
-            {/* Solo mostramos Filtros si eres root/global */}
             {isRootOrGlobal && (
               <Filters
                 filters={filters}
-                enums={enumsEmployer} // se pasa enumsEmployer
+                enums={enumsData} // antes se usaba enumsEmployer
                 handleFilterChange={handleFilterChange}
                 resetFilters={resetFilters}
                 setFilters={setFilters}
@@ -385,19 +361,14 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
 
             <div className={styles.containerTableContainer}>
               <div>
-                {/* Cabecera de la tabla */}
-                <div
-                  className={styles.tableContainer}
-                  id={styles.cabeceraTabla}
-                >
+                <div className={styles.tableContainer} id={styles.cabeceraTabla}>
                   <div className={styles.tableCell}>Nombre</div>
                   <div className={styles.tableCell}>Apellidos</div>
                   <div className={styles.tableCellStatus}>Status</div>
                 </div>
 
-                {/* Listado de usuarios */}
                 {users.map((user) => {
-                  // Filtrar usuarios apafa si no tienes permisos
+                  // Filtrar usuario apafa, etc., según permisos
                   if (
                     user.apafa &&
                     !(
@@ -433,24 +404,67 @@ const ManagingEmployer = ({ modal, charge, listResponsability, enumsData }) => {
 
                         {userSelected && userSelected._id === user._id && (
                           <div className={styles.contenedorEmployer}>
-                          <InfoEmployer chargeUser={() => loadUsers(true)} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)} enumsData={enumsData}/>
-                          <Responsability chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)}/>   
-                          <Coordination chargeEnums={chargeEnums} enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)}/> 
-                          <DocumentEmployerMiscelanea user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)}/>
-                          <Payrolls user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)} listResponsability={listResponsability}/>
-                          {(!!user && user.employmentStatus!='en proceso de contratación' && (user.role!='global') || user.role!='root') &&
-                          <>
-                         <VacationDays  user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)}/>
-                          <Hiringperiods enumsData={enumsData} user={user} modal={modal} charge={charge} changeUser={(x)=>changeUserLocally(x)} chargeUser={() => loadUsers(true)}/> 
-                          </>
-                          
-                          }
-                          
-                      </div>
+                            <InfoEmployer
+                              chargeUser={() => loadUsers(true)}
+                              user={user}
+                              modal={modal}
+                              charge={charge}
+                              changeUser={(x) => changeUserLocally(x)}
+                              enumsData={enumsData}
+                            />
+                            <Responsability
+                              chargePrograms={chargePrograms}
+                              enumsData={enumsData} // usamos directamente la prop
+                              user={user}
+                              modal={modal}
+                              charge={charge}
+                              changeUser={(x) => changeUserLocally(x)}
+                            />
+                            <Coordination
+                              chargePrograms={chargePrograms}
+                              enumsData={enumsData}
+                              user={user}
+                              modal={modal}
+                              charge={charge}
+                              changeUser={(x) => changeUserLocally(x)}
+                            />
+                            <DocumentEmployerMiscelanea
+                              user={user}
+                              modal={modal}
+                              charge={charge}
+                              changeUser={(x) => changeUserLocally(x)}
+                            />
+                            <Payrolls
+                              user={user}
+                              modal={modal}
+                              charge={charge}
+                              changeUser={(x) => changeUserLocally(x)}
+                              listResponsability={listResponsability}
+                            />
+                            {/* Si no está en proceso de contratación, etc. */}
+                            {user.employmentStatus !== 'en proceso de contratación' &&
+                              (user.role !== 'global' || user.role !== 'root') && (
+                                <>
+                                  <VacationDays
+                                    user={user}
+                                    modal={modal}
+                                    charge={charge}
+                                    changeUser={(x) => changeUserLocally(x)}
+                                  />
+                                  <Hiringperiods
+                                    enumsData={enumsData}
+                                    user={user}
+                                    modal={modal}
+                                    charge={charge}
+                                    changeUser={(x) => changeUserLocally(x)}
+                                    chargeUser={() => loadUsers(true)}
+                                  />
+                                </>
+                              )}
+                          </div>
                         )}
                       </div>
 
-                      {/* Si eres root y no hay usuario seleccionado => botón de borrar */}
                       {logged?.user?.role === 'root' && !userSelected && (
                         <DeleteEmployer
                           user={user}

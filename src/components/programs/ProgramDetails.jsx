@@ -9,6 +9,7 @@ import { getToken } from "../../lib/serviceToken";
 import { usersName } from "../../lib/data";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import ListDocumentationManager from "./ListDocumentationManager";
+import { useLogin } from '../../hooks/useLogin';
 
 const ProgramDetails = ({
   program,
@@ -22,7 +23,7 @@ const ProgramDetails = ({
 }) => {
   const [showDispositiveModal, setShowDispositiveModal] = useState(false);
   const [responsibles, setResponsibles] = useState([]);
-
+  const { logged } = useLogin()
   if (!program) return null;
 
 
@@ -81,11 +82,11 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Descripción:<br /></span>
               {program.about?.description
                 ? program.about.description.split("\n").map((line, idx) => (
-                    <React.Fragment key={idx}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ))
+                  <React.Fragment key={idx}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))
                 : "No disponible"}
             </p>
             {/* Objetivos */}
@@ -93,11 +94,11 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Objetivos:<br /></span>
               {program.about?.objectives
                 ? program.about.objectives.split("\n").map((line, idx) => (
-                    <React.Fragment key={idx}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ))
+                  <React.Fragment key={idx}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))
                 : "No disponible"}
             </p>
             {/* Perfil */}
@@ -105,15 +106,15 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Perfil:<br /></span>
               {program.about?.profile
                 ? program.about.profile.split("\n").map((line, idx) => (
-                    <React.Fragment key={idx}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ))
+                  <React.Fragment key={idx}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))
                 : "No disponible"}
             </p>
-                        {/* Financiación */}
-                        {!!program.finantial && program.finantial.length > 0 ? (
+            {/* Financiación */}
+            {!!program.finantial && program.finantial.length > 0 ? (
               <div>
                 <span className={styles.titulines}>Financiación:<br /></span>
                 <ul>
@@ -132,9 +133,9 @@ const ProgramDetails = ({
             ) : (
               <p>No tiene financiación</p>
             )}
-            
+
           </div>
-          
+
           <div>
             <div>
               <h3>Responsables del programa</h3>
@@ -152,35 +153,38 @@ const ProgramDetails = ({
             </div>
 
             {/* Componente CronologyManager para añadir, editar y eliminar */}
-            <CronologyManager 
-              program={program} 
-              modal={modal} 
-              charge={charge} 
-              handleProgramSaved={handleProgramSaved} 
+            <CronologyManager
+              program={program}
+              modal={modal}
+              charge={charge}
+              handleProgramSaved={handleProgramSaved}
             />
           </div>
         </div>
       </div>
-      
+
 
       {/* Documentos asociados al programa */}
       <DocumentProgramMiscelanea
         program={program}
         modal={modal}
         charge={charge}
-        changeProgram={() => {}}
+        changeProgram={() => { }}
         handleProgramSaved={(p) => handleProgramSaved(p)}
         enumsData={enumsData}
       />
 
-      {/* Componente ListDocumentationManager para gestionar la documentación esencial */}
-      <ListDocumentationManager
-        program={program}
-        modal={modal}
-        charge={charge}
-        handleProgramSaved={handleProgramSaved}
-        enumsData={enumsData}
-      />
+      {(logged.user.role == 'root' || logged.user.role == 'global') &&
+        //Componente ListDocumentationManager para gestionar la documentación esencial 
+        <ListDocumentationManager
+          program={program}
+          modal={modal}
+          charge={charge}
+          handleProgramSaved={handleProgramSaved}
+          enumsData={enumsData}
+        />
+      }
+
 
       <div>
         <h4>

@@ -1,248 +1,258 @@
-import { useEffect, useState } from 'react';
-import styles from '../styles/responsability.module.css'; // Ajusta el path a tus estilos si quieres
+import { useEffect, useState, useCallback } from 'react';
+import styles from '../styles/responsability.module.css';
 import { FaSquarePlus } from "react-icons/fa6";
 import { FaTrashAlt } from "react-icons/fa";
 import ModalForm from "../globals/ModalForm";
-import ModalConfirmation from '../globals/ModalConfirmation';
-
-// IMPORTANTE: Asegúrate de importar la función que llama a /coordinators
-// en lugar de updateDispositive.
-import { coordinators } from '../../lib/data'; 
+import ModalConfirmation from "../globals/ModalConfirmation";
+import { coordinators } from '../../lib/data';   // Llama a tu endpoint handleCoordinators
 import { getToken } from '../../lib/serviceToken';
+import { useLogin } from '../../hooks/useLogin';
 
-const Coordination = ({ user, modal, charge, enumsData, chargeEnums }) => {
-  // Dispositivos donde el usuario es coordinador
+/**
+ * Componente para gestionar la COORDINACIÓN de dispositivos
+ * (usando tu backend handleCoordinators, que espera 'programId' y 'deviceId').
+ */
+const Coordination = ({ user, modal, charge, enumsData, chargePrograms }) => {
+  const { logged } = useLogin()
+  // Lista de dispositivos donde el usuario es coordinador
   const [listCoordination, setListCoordination] = useState([]);
 
-  // Modal para añadir coordinador
+  // Para abrir/cerrar el Modal de añadir coordinador
   const [openModal, setOpenModal] = useState(false);
 
-  // Modal de confirmación para eliminar coordinador
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  // ID del dispositivo que se va a eliminar la coordinación
+  const [confirmId, setConfirmId] = useState(null);
+
+  // =====================================================
+  // 1) Calcular la lista de dispositivos donde el usuario es coordinador
+  // =====================================================
+  useEffect(() => {
+    if (!enumsData?.programs) {
+      setListCoordination([]);
+      return;
+    }
+
+    const coordinationList = [];
+
+    // Recorremos todos los programas y sus dispositivos
+    enumsData.programs.forEach(program => {
+      if (Array.isArray(program.devices)) {
+        program.devices.forEach(device => {
+          // ¿El usuario aparece en device.coordinators?
+          if (
+            Array.isArray(device.coordinators) &&
+            device.coordinators.includes(user._id)
+          ) {
+            // Lo añadimos a la lista
+            coordinationList.push({
+              // Guardamos info útil para la interfaz y para el backend
+              _id: device._id,        // ID del dispositivo
+              name: device.name,
+              programId: program._id, // para saber a qué programa pertenece
+              programName: program.name,
+            });
+          }
+        });
+      }
+    });
+
+    setListCoordination(coordinationList);
+  }, [enumsData, user._id]);
+
+  // =====================================================
+  // 2) Eliminar coordinación (abrir/cerrar modal confirmación)
+  // =====================================================
+  const handleDelete = useCallback((deviceId) => {
+    setConfirmId(deviceId);
+  }, []);
+
+  const onConfirm = useCallback(() => {
+    if (confirmId) {
+      removeCoordinator(confirmId);
+    }
+    setConfirmId(null);
+  }, [confirmId]);
+
+  const onCancel = useCallback(() => {
+    setConfirmId(null);
+  }, []);
 
   /**
-   * Maneja la apertura del ModalConfirmation para eliminar
-   */
-  const handleDelete = (deviceId) => {
-    // Guardamos el _id del dispositivo en estado,
-    // para luego usarlo en el ModalConfirmation
-    setShowConfirmModal(deviceId);
-  };
-
-  /**
-   * Confirma la eliminación del usuario como coordinador
-   */
-  const onConfirm = () => {
-    removeCoordinator(showConfirmModal);
-    setShowConfirmModal(false);
-  };
-
-  /**
-   * Cancela la acción de eliminación
-   */
-  const onCancel = () => {
-    setShowConfirmModal(false);
-  };
-
-  /**
-   * Quita al usuario como coordinador de un dispositivo
+   * removeCoordinator:
+   *  Quita al usuario (user._id) de coordinators en un dispositivo (deviceId)
    */
   const removeCoordinator = async (deviceId) => {
-    // Obtenemos la info del dispositivo desde la lista local
-    const dataAux = listCoordination.find((item) => item._id === deviceId);
-    if (!dataAux) {
-      modal("Error", "No se encontró el dispositivo a eliminar.");
+    const deviceItem = listCoordination.find((d) => d._id === deviceId);
+    if (!deviceItem) {
+      modal("Error", "No se encontró el dispositivo en la lista de coordinaciones.");
       return;
     }
 
     try {
-      charge(true); // Muestra loader
+      charge(true);
+      const token = getToken();
 
-      // Para saber a qué programa pertenece
-      const programId = dataAux.programId;
-
-      // Construimos el payload para "REMOVE"
-      const removeData = {
+      // Construimos el payload para la API
+      const payload = {
         action: "remove",
-        programId,
-        deviceId,              // <-- El controlador usa "deviceId"
-        coordinatorId: user._id // <-- ID del coordinador a eliminar (usuario actual)
+        programId: deviceItem.programId,
+        deviceId: deviceItem._id,
+        coordinatorId: user._id,
       };
 
-      const token = getToken();
-      const result = await coordinators(removeData, token);
-
+      const result = await coordinators(payload, token);
       if (result.error) {
-        modal("Error", result.message || "No se pudo quitar la coordinación del dispositivo.");
+        modal("Error", result.message || "No se pudo quitar la coordinación.");
       } else {
-        modal("Coordinación Eliminada", "El usuario ya no es coordinador del dispositivo.");
-        chargeEnums(); // Refrescamos datos globales
+        modal("Coordinación Eliminada", "El usuario ya no es coordinador de ese dispositivo.");
+        // Refrescamos datos globales (para que se vea reflejado el cambio)
+        chargePrograms(result);
       }
     } catch (error) {
-      modal("Error", error.message || "Ocurrió un error al quitar la coordinación.");
-    } finally {
-      charge(false); // Oculta loader
-    }
-  };
-
-  /**
-   * Construye los campos para ModalForm (añadir coordinador)
-   */
-  const buildFields = () => {
-    let deviceOptions = [];
-    if (enumsData?.programs) {
-      deviceOptions = enumsData.programs.flatMap(program =>
-        program.devices.map(device => ({
-          // Guardamos en value el programId y el deviceId
-          value: `${program._id}-${device._id}`,
-          label: device.name
-        }))
-      );
-    }
-
-    return [
-      {
-        name: "device",
-        label: "Dispositivo",
-        type: "select",
-        required: true,
-        options: [
-          { value: "", label: "Seleccione una opción" },
-          ...deviceOptions
-        ],
-      }
-    ];
-  };
-
-  /**
-   * Filtra de enumsData.programsIndex todos los dispositivos
-   * donde el usuario figure como coordinador (device.coordinators)
-   */
-  const coordinationFor = () => {
-    const programsIndex = enumsData.programsIndex;
-    
-    const coordinationList = [];
-
-    for (const idDispositive in programsIndex) {
-      const item = programsIndex[idDispositive];
-      // item.coordinators es un array de userIds
-      if (item.coordinators && item.coordinators.includes(user._id)) {
-        // Este item representa un dispositivo donde el usuario es coordinador
-        coordinationList.push(item);
-      }
-    }
-    setListCoordination(coordinationList);
-  };
-
-  useEffect(() => {
-    if (enumsData?.programsIndex) {
-      coordinationFor();
-    }
-    // eslint-disable-next-line
-  }, [enumsData]);
-
-  /**
-   * Renderiza el Modal para añadir coordinador
-   */
-  const addCoordinatorModal = () => {
-    return (
-      <ModalForm
-        title="Añadir Coordinador"
-        message="Seleccione un dispositivo para ser coordinador"
-        fields={buildFields()}
-        onSubmit={handleSubmitAddCoordinator}
-        onClose={closeModal}
-      />
-    );
-  };
-
-  /**
-   * Cierra el modal de añadir
-   */
-  const closeModal = () => {
-    setOpenModal(false);
-  };
-
-  /**
-   * Maneja el submit del ModalForm para añadir al usuario como coordinador
-   */
-  const handleSubmitAddCoordinator = async (formData) => {
-    try {
-      charge(true); // Muestra loader
-
-      // Dividimos la string "programId-deviceId"
-      const [programId, deviceId] = formData.device.split('-');
-
-      // Construimos el body para "ADD"
-      const addData = {
-        action: "add",
-        programId,
-        deviceId,
-        coordinators: user._id, // Añadimos al user como coordinador
-      };
-
-      const token = getToken();
-      const result = await coordinators(addData, token);
-      if (result.error) {
-        modal("Error", result.message || "No se pudo añadir coordinador al dispositivo.");
-      } else {
-        modal("Coordinador Añadido", "El usuario es coordinador de un nuevo dispositivo.");
-        chargeEnums();
-        closeModal();
-      }
-    } catch (error) {
-      modal("Error", error.message || "Ocurrió un error al añadir el coordinador al dispositivo.");
+      modal("Error", error.message || "Ocurrió un error al eliminar la coordinación.");
     } finally {
       charge(false);
     }
   };
 
-  /**
-   * Modal de confirmación para eliminar coordinador
-   */
-  const modalConfirmation = () => {
-    // Obtenemos la data del dispositivo a eliminar
-    const dataAux = listCoordination.find((item) => item._id === showConfirmModal);
-    if (!dataAux) return null;
+  // =====================================================
+  // 3) Añadir coordinación (ModalForm)
+  // =====================================================
+  const openModalAdd = () => {
+    setOpenModal(true);
+  };
 
-    const messageAux = `¿Estás seguro de que deseas que ${user.firstName} ${user.lastName} deje de ser coordinador de ${dataAux.name}?`;
+  const closeModal = () => {
+    setOpenModal(false);
+  };
+
+  /**
+   * buildFields: construye los campos del formulario para elegir
+   * un dispositivo de la lista "programId-deviceId"
+   */
+  const buildFields = useCallback(() => {
+    // Generamos opciones con todos los dispositivos de todos los programas
+    let options = [{ value: "", label: "Seleccione un dispositivo" }];
+
+    if (enumsData?.programs) {
+      enumsData.programs.forEach(program => {
+        if (program.devices) {
+          program.devices.forEach(device => {
+            options.push({
+              value: `${program._id}:${device._id}`, // 'programId:deviceId'
+              label: `(Dispositivo) ${device.name} [${program.name}]`,
+            });
+          });
+        }
+      });
+    }
+
+    return [
+      {
+        name: "selectedDevice",
+        label: "Dispositivo",
+        type: "select",
+        required: true,
+        options,
+      },
+    ];
+  }, [enumsData]);
+
+  /**
+   * handleSubmitAddCoordinator:
+   *  Añade al usuario como coordinador en el dispositivo elegido
+   */
+  const handleSubmitAddCoordinator = async (formData) => {
+    const { selectedDevice } = formData;
+    if (!selectedDevice) {
+      modal("Error", "Debe seleccionar un dispositivo.");
+      return;
+    }
+
+    try {
+      charge(true);
+      const token = getToken();
+
+      // Dividimos "programId:deviceId"
+      const [programId, deviceId] = selectedDevice.split(":");
+
+      // Payload para "add"
+      const payload = {
+        action: "add",
+        programId,
+        deviceId,
+        coordinators: user._id, // puede ser un array, pero el back acepta $addToSet
+      };
+
+      const result = await coordinators(payload, token);
+      if (result.error) {
+        modal("Error", result.message || "No se pudo añadir el coordinador.");
+      } else {
+        modal("Coordinador Añadido", "Se ha asignado correctamente.");
+        chargePrograms(result); // recarga para ver el cambio
+        closeModal();
+      }
+    } catch (error) {
+      modal("Error", error.message || "Error al añadir coordinador.");
+    } finally {
+      charge(false);
+    }
+  };
+
+  // =====================================================
+  // 4) Modal de confirmación para la eliminación
+  // =====================================================
+  const modalConfirmation = () => {
+    const deviceItem = listCoordination.find((d) => d._id === confirmId);
+    if (!deviceItem) return null;
+
+    const mensaje = `¿Estás seguro de que deseas que ${user.firstName} ${user.lastName} deje de ser coordinador de '${deviceItem.name}' (Programa: ${deviceItem.programName})?`;
 
     return (
       <ModalConfirmation
         title="Eliminar coordinación"
-        message={messageAux}
+        message={mensaje}
         onConfirm={onConfirm}
         onCancel={onCancel}
       />
     );
   };
 
-  /**
-   * Render principal
-   */
+  // =====================================================
+  // Render principal
+  // =====================================================
   return (
     <>
       <div className={styles.contenedor}>
         <h2>
           Coordinación 
+          {(logged.user.role=='global' || logged.user.role=='root') &&
           <FaSquarePlus 
-            onClick={() => setOpenModal(true)} 
-            style={{ cursor: "pointer", marginLeft: "10px" }}
-          />
+          onClick={openModalAdd}
+          style={{ cursor: "pointer", marginLeft: 10 }}
+        />
+          }
+          
         </h2>
 
         <div className={styles.contenedorBotones}>
           {listCoordination.length > 0 ? (
             <ul>
-              {listCoordination.map((device) => (
+              {listCoordination.map(device => (
                 <li key={device._id} className={styles.dispositivos}>
-                  <p>{device.name}</p>
+                  <p>
+                    {device.name}{" "}
+                    <small>(Programa: {device.programName})</small>
+                  </p>
+                  {(logged.user.role=='global' || logged.user.role=='root') &&
                   <span>
-                    <FaTrashAlt 
-                      onClick={() => handleDelete(device._id)} 
+                    <FaTrashAlt
+                      onClick={() => handleDelete(device._id)}
                       style={{ cursor: "pointer" }}
                     />
                   </span>
+                  }
+                  
                 </li>
               ))}
             </ul>
@@ -252,8 +262,19 @@ const Coordination = ({ user, modal, charge, enumsData, chargeEnums }) => {
         </div>
       </div>
 
-      {openModal && addCoordinatorModal()}
-      {showConfirmModal && modalConfirmation()}
+      {/* Modal para añadir coordinador */}
+      {openModal && (
+        <ModalForm
+          title="Añadir Coordinador"
+          message="Seleccione un dispositivo"
+          fields={buildFields()}
+          onSubmit={handleSubmitAddCoordinator}
+          onClose={closeModal}
+        />
+      )}
+
+      {/* Modal de confirmación para eliminar coordinador */}
+      {confirmId && modalConfirmation()}
     </>
   );
 };

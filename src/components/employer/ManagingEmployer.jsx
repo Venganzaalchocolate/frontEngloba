@@ -6,7 +6,7 @@ import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
 import { getusers } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
-import { deepClone } from '../../lib/utils.js';
+import { capitalizeWords, deepClone } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
 import DeleteEmployer from './DeleteEmployer.jsx';
 import InfoEmployer from './InfoEmployer.jsx';
@@ -151,7 +151,13 @@ const ManagingEmployer = ({
         }
       }
 
-      const data = await getusers(page, limit, auxFilters, token);
+      let data = await getusers(page, limit, auxFilters, token);
+      data.users=data.users.map(user => ({
+        ...user,
+        firstName: capitalizeWords(user.firstName),
+        lastName: capitalizeWords(user.lastName)
+      }));
+      
       if (data.error) {
         modal("Error", data.message);
       } else {

@@ -74,3 +74,14 @@ export const splitName=(fullName)=>{
     const jobId = found[0];
     return jobId;
   }
+
+  export function capitalizeWords(str) {
+    return str
+      .split(' ')                     // Separa el string en palabras
+      .map(word => 
+        word.length > 0 
+          ? word[0].toUpperCase() + word.slice(1).toLowerCase() 
+          : word
+      )
+      .join(' ');                     // Une las palabras de nuevo en un string
+  }

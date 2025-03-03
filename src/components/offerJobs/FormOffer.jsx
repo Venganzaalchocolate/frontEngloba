@@ -147,6 +147,14 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 required: true,
                 defaultValue: offer?.sepe ? "si" : "no",
                 options: [{ value: "", label: "Seleccione una opción" }, { value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }],
+            },
+            {
+                name: "type",
+                label: "Tipo de oferta",
+                type: "select",
+                required: true,
+                defaultValue: offer?.type || "",
+                options: [{ value: "", label: "Seleccione una opción" }, { value: 'internal', label: 'Oferta Interna' }, { value: 'external', label: 'Oferta Pública' }],
             }
         ];
     };
@@ -173,7 +181,8 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 programId: dispositive.programId,
                 dispositiveId: formData.dispositiveID,
                 studies: formData.studies,
-                sepe: formData.sepe
+                sepe: formData.sepe,
+                type: formData.type
             };
 
             const token = getToken();

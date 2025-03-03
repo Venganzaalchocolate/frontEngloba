@@ -20,7 +20,7 @@ const JobsPanel=({ modal, charge })=>{
             const offersData = await getOfferJobs();
             
             if (!offersData.error) {
-                const offersActive=offersData.filter((x)=>x.active)
+                const offersActive=offersData.filter((x)=>x.active && x.type=='external')
                 if(!!id){
                     const offerParam=offersActive.filter((x)=>x._id==id);
                     if(offerParam.length>0){

@@ -3,13 +3,13 @@ import { FaEdit } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
 import styles from "../styles/ManagingPrograms.module.css";
 import DocumentProgramMiscelanea from "./DocumentProgramMiscelanea";
-import FormDevice from "./FormDevice"; // <--- IMPORTAMOS
-import CronologyManager from "./CronologyManager"; // <--- IMPORTAMOS el componente de cronología
+import FormDevice from "./FormDevice"; 
+import CronologyManager from "./CronologyManager"; 
 import { getToken } from "../../lib/serviceToken";
 import { usersName } from "../../lib/data";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import ListDocumentationManager from "./ListDocumentationManager";
-import { useLogin } from '../../hooks/useLogin';
+import { useLogin } from "../../hooks/useLogin";
 
 const ProgramDetails = ({
   program,
@@ -23,9 +23,9 @@ const ProgramDetails = ({
 }) => {
   const [showDispositiveModal, setShowDispositiveModal] = useState(false);
   const [responsibles, setResponsibles] = useState([]);
-  const { logged } = useLogin()
-  if (!program) return null;
+  const { logged } = useLogin();
 
+  if (!program) return null;
 
   const chargeResponsibles = async (idsUsers) => {
     const token = getToken();
@@ -51,22 +51,35 @@ const ProgramDetails = ({
     setShowDispositiveModal(false);
   };
 
+  // Ejemplo de cambio de status
+  const changeStatus = (current) => {
+    // Aquí podrías hacer una llamada al servidor para activar/desactivar
+    // y luego, por ejemplo, recargar la información en Program.
+    console.log(`Cambia status de ${current} a ${!current}`);
+  };
 
   return (
     <div className={styles.programInfoContainer}>
       <div className={styles.containerInfo}>
         <h2>
-          {program.acronym.toUpperCase()}
+          {program.acronym?.toUpperCase()}
           <FaEdit
             onClick={() => onEditProgram(program._id)}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", marginLeft: "1rem" }}
           />
           {program.active ? (
-            <FaCircleCheck onClick={() => changeStatus(true)} />
+            <FaCircleCheck 
+              onClick={() => changeStatus(true)} 
+              style={{ cursor: "pointer", marginLeft: "1rem" }}
+            />
           ) : (
-            <FaCircleXmark onClick={() => changeStatus(false)} />
+            <FaCircleXmark 
+              onClick={() => changeStatus(false)} 
+              style={{ cursor: "pointer", marginLeft: "1rem" }}
+            />
           )}
         </h2>
+
         <div className={styles.programDetailInfo}>
           <div>
             <p>
@@ -82,11 +95,11 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Descripción:<br /></span>
               {program.about?.description
                 ? program.about.description.split("\n").map((line, idx) => (
-                  <React.Fragment key={idx}>
-                    {line}
-                    <br />
-                  </React.Fragment>
-                ))
+                    <React.Fragment key={idx}>
+                      {line}
+                      <br />
+                    </React.Fragment>
+                  ))
                 : "No disponible"}
             </p>
             {/* Objetivos */}
@@ -94,11 +107,11 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Objetivos:<br /></span>
               {program.about?.objectives
                 ? program.about.objectives.split("\n").map((line, idx) => (
-                  <React.Fragment key={idx}>
-                    {line}
-                    <br />
-                  </React.Fragment>
-                ))
+                    <React.Fragment key={idx}>
+                      {line}
+                      <br />
+                    </React.Fragment>
+                  ))
                 : "No disponible"}
             </p>
             {/* Perfil */}
@@ -106,13 +119,14 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Perfil:<br /></span>
               {program.about?.profile
                 ? program.about.profile.split("\n").map((line, idx) => (
-                  <React.Fragment key={idx}>
-                    {line}
-                    <br />
-                  </React.Fragment>
-                ))
+                    <React.Fragment key={idx}>
+                      {line}
+                      <br />
+                    </React.Fragment>
+                  ))
                 : "No disponible"}
             </p>
+
             {/* Financiación */}
             {!!program.finantial && program.finantial.length > 0 ? (
               <div>
@@ -133,7 +147,6 @@ const ProgramDetails = ({
             ) : (
               <p>No tiene financiación</p>
             )}
-
           </div>
 
           <div>
@@ -152,7 +165,7 @@ const ProgramDetails = ({
               )}
             </div>
 
-            {/* Componente CronologyManager para añadir, editar y eliminar */}
+            {/* Componente CronologyManager para añadir, editar y eliminar cronología */}
             <CronologyManager
               program={program}
               modal={modal}
@@ -163,19 +176,19 @@ const ProgramDetails = ({
         </div>
       </div>
 
-
       {/* Documentos asociados al programa */}
       <DocumentProgramMiscelanea
         program={program}
         modal={modal}
         charge={charge}
-        changeProgram={() => { }}
-        handleProgramSaved={(p) => handleProgramSaved(p)}
         enumsData={enumsData}
+        // Al subir o eliminar un documento, actualizamos el programa en "padre" y en "seleccionado"
+        changeProgram={(updatedProgram) => handleProgramSaved(updatedProgram)}
+        handleProgramSaved={(x)=>handleProgramSaved(x)}
       />
 
-      {(logged.user.role == 'root' || logged.user.role == 'global') &&
-        //Componente ListDocumentationManager para gestionar la documentación esencial 
+      {(logged.user.role === "root" || logged.user.role === "global") && (
+        // Componente ListDocumentationManager para gestionar la documentación esencial
         <ListDocumentationManager
           program={program}
           modal={modal}
@@ -183,15 +196,14 @@ const ProgramDetails = ({
           handleProgramSaved={handleProgramSaved}
           enumsData={enumsData}
         />
-      }
-
+      )}
 
       <div>
         <h4>
           Dispositivos:
           <FaSquarePlus
             onClick={openCreateDispositive}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", marginLeft: "0.5rem" }}
           />
         </h4>
         {program.devices?.length > 0 ? (
@@ -218,7 +230,7 @@ const ProgramDetails = ({
           modal={modal}
           charge={charge}
           closeModal={closeDispositiveModal}
-          handleProgramSaved={(p) => handleProgramSaved(p)}
+          handleProgramSaved={handleProgramSaved}
           enumsData={enumsData}
         />
       )}

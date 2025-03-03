@@ -7,7 +7,7 @@ import DeviceDetails from "./DeviceDetails";
 import styles from "../styles/ManagingPrograms.module.css";
 
 const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} }) => {
-  // Controla la visualización del Modal
+  // Controla la visualización del Modal para crear/editar Programas
   const [showProgramModal, setShowProgramModal] = useState(false);
   // Programa seleccionado (para ver detalles)
   const [selectedProgram, setSelectedProgram] = useState(null);
@@ -47,8 +47,12 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
     setShowProgramModal(false);
   };
 
+  /**
+   * Esta función se llama cuando se ha guardado/actualizado un programa
+   * (por ejemplo, al crear o editar un programa, o al subir/eliminar un archivo).
+   */
   const handleProgramSaved = (savedProgram) => {
-    // Actualizamos la lista interna de programas
+
     setSortedPrograms((prev) => {
       const idx = prev.findIndex((p) => p._id === savedProgram._id);
       if (idx >= 0) {
@@ -60,21 +64,22 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
       }
     });
 
-    // Si el programa que se está visualizando es el guardado, se actualiza
+    // 2) Si el programa que se está visualizando es el guardado, se actualiza
+
     if (selectedProgram && selectedProgram._id === savedProgram._id) {
       setSelectedProgram(savedProgram);
     }
 
-    // Actualizamos también enumsData.programs a través de chargePrograms
+    // 3) Actualizamos también enumsData.programs a través de chargePrograms
     if (enumsData?.programs) {
-      const updatedPrograms = enumsData.programs.map((p) =>
+      // Reemplazar o agregar en la lista global
+      let updatedPrograms = enumsData.programs.map((p) =>
         p._id === savedProgram._id ? savedProgram : p
       );
-      // Si el programa no existía, lo añadimos
       if (!updatedPrograms.some((p) => p._id === savedProgram._id)) {
         updatedPrograms.push(savedProgram);
       }
-      // Llamamos a chargePrograms para actualizar el enumsData en el componente padre
+      // Llamamos a chargePrograms para actualizar en el padre
       chargePrograms(updatedPrograms);
     }
   };
@@ -101,14 +106,14 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
 
         <div>
           {selectedDevice ? (
-            // -- VISTA DETALLES DE DISPOSITIVO --
+            /* --------- VISTA DETALLES DE DISPOSITIVO --------- */
             <DeviceDetails
               device={selectedDevice}
               onClose={() => setSelectedDevice(null)}
               handleProgramSaved={(p) => handleProgramSaved(p)}
             />
           ) : selectedProgram ? (
-            // -- VISTA DETALLES DE PROGRAMA --
+            /* --------- VISTA DETALLES DE PROGRAMA --------- */
             <ProgramDetails
               program={selectedProgram}
               onClose={() => setSelectedProgram(null)}
@@ -117,10 +122,10 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
               modal={modal}
               charge={charge}
               enumsData={enumsData}
-              handleProgramSaved={(p) => handleProgramSaved(p)}
+              handleProgramSaved={handleProgramSaved}
             />
           ) : (
-            // -- LISTA DE PROGRAMAS --
+            /* --------- LISTA DE PROGRAMAS --------- */
             <ProgramList
               programs={sortedPrograms}
               onSelectProgram={(program) => setSelectedProgram(program)}

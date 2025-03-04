@@ -300,6 +300,16 @@ const FormCreateEmployer = ({
         disabled: lockedFields.includes("position"),
         options: [{ value: "", label: "Seleccione una opción" }, ...positionOptions],
       },
+      {
+        name:"reason",
+        label:"Si está sustituyendo a un trabajador introduzca el dni del trabajador que está de baja o excedencia",
+        type: "text",
+        disabled: lockedFields.includes("reason"),
+        isValid: (texto) => {
+          const isOk = validateDNIorNIE(texto);  // true/false
+          return isOk ? "" : textErrors("dni");
+        },
+      }
       
     ];
   };
@@ -358,8 +368,12 @@ const FormCreateEmployer = ({
             category: formData.category || "",
             position: formData.position,
             active: true,
+            reason: {
+              dni:formData.reason,
+            }
           },
         ],
+        
       };
 
       const token = getToken();

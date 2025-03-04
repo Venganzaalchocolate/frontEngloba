@@ -25,9 +25,9 @@ const DocumentProgramMiscelanea = ({
   program,                // Programa actual
   modal,                  // Para lanzar mensajes de éxito/error
   charge,                 // Para activar/desactivar spinner
-  changeProgram,          // Función que actualiza el "program" en el padr
+  changeProgram,          // Función que actualiza el "program" en el padre
   enumsData,              // Datos enumerados (con la info de documentación oficial)
-  handleProgramSaved,     // Si deseas también llamar directamente a la misma del padre
+  handleProgramSaved,     // También se llama para actualizar el program en el padre
 }) => {
   // Lista local de archivos con más detalle que sólo IDs.
   const [documentationFiles, setDocumentationFiles] = useState([]);
@@ -39,28 +39,33 @@ const DocumentProgramMiscelanea = ({
   // Modal de confirmación para borrar
   const [deleteModal, setDeleteModal] = useState({
     open: false,
-    file: null, // Almacenará el archivo a eliminar
+    file: null,
   });
 
-  // Cargar la info de los archivos cuando cambia el programa
+
+
+  // Cada vez que cambie program.files se vuelve a recargar la documentación
   useEffect(() => {
-    if (program?.files?.length > 0) {
-      fetchDocumentationFiles();
+    if (program?.files && program.files.length > 0) {
+      fetchDocumentationFiles(program.files);
     } else {
       setDocumentationFiles([]);
     }
-  }, [program]);
+  }, []);
 
-  
+  const updateDataLocal=(programNew, file)=>{
+    fetchDocumentationFiles(programNew.files);
+  }
 
   /**
-   * Auxiliar: Carga la info detallada de los archivos en `documentationFiles`.
+   * Carga la info detallada de los archivos.
    */
-  const fetchDocumentationFiles = async () => {
+  const fetchDocumentationFiles = async (idFiles) => {
+    //program.files
     try {
       charge(true);
       const token = getToken();
-      const response = await infoDocumentation({ filesId: program.files }, token);
+      const response = await infoDocumentation({ filesId: idFiles }, token);
       if (response?.error) {
         modal("Error", response.message || "Error al cargar documentación");
       } else {
@@ -74,14 +79,11 @@ const DocumentProgramMiscelanea = ({
   };
 
   /**
-   * Auxiliar para actualizar el `program` tanto a nivel local (en ProgramDetails)
-   * como en el "global" (ManagingPrograms), de modo que `program.files` contenga
-   * los nuevos IDs de ficheros.
+   * Actualiza el program en el componente padre.
    */
   const updateLocalAndParentProgram = (updatedProgram) => {
-    // Actualiza en el estado del padre (selectedProgram)
+    // Se notifica al padre y se actualiza el estado global
     handleProgramSaved(updatedProgram);
-    // También notifica al padre para que actualice su lista global
     changeProgram(updatedProgram);
   };
 
@@ -90,12 +92,14 @@ const DocumentProgramMiscelanea = ({
    */
   const officialDocs = (program.essentialDocumentationProgram || [])
     .map((docId) =>
-      enumsData.documentation.find((doc) => doc._id.toString() === docId.toString())
+      enumsData.documentation.find(
+        (doc) => doc._id.toString() === docId.toString()
+      )
     )
     .filter(Boolean);
 
   /**
-   * Retorna el archivo que corresponde a un documento oficial (si existe).
+   * Retorna el archivo correspondiente a un documento oficial (si existe).
    */
   const getOfficialFile = (docOfficial) => {
     return documentationFiles.find(
@@ -106,7 +110,7 @@ const DocumentProgramMiscelanea = ({
   };
 
   /**
-   * Filtra archivos que no pertenecen a documentación oficial ("misceláneos").
+   * Filtra los archivos que no son oficiales.
    */
   const extraFiles = documentationFiles.filter((fileObj) => {
     if (!fileObj.originDocumentation) return true;
@@ -117,7 +121,7 @@ const DocumentProgramMiscelanea = ({
   });
 
   /**
-   * Descargar archivo (PDF) desde Drive.
+   * Descarga un archivo desde Drive.
    */
   const handleDownloadFile = async (fileObj) => {
     try {
@@ -128,7 +132,6 @@ const DocumentProgramMiscelanea = ({
         modal("Error", "No se pudo descargar el archivo (URL no disponible).");
         return;
       }
-      // Descarga
       const link = document.createElement("a");
       link.href = response.url;
       link.download = fileObj.fileName
@@ -144,19 +147,18 @@ const DocumentProgramMiscelanea = ({
   };
 
   /**
-   * Borrar archivo: abre modal de confirmación.
+   * Abre el modal para confirmar borrado.
    */
   const handleDeleteFile = (fileObj) => {
     setDeleteModal({ open: true, file: fileObj });
   };
 
   /**
-   * Confirmar borrado
+   * Confirma el borrado del archivo.
    */
   const confirmDeleteFile = async () => {
     const fileObj = deleteModal.file;
     if (!fileObj) return;
-
     try {
       charge(true);
       const token = getToken();
@@ -165,16 +167,19 @@ const DocumentProgramMiscelanea = ({
         modal("Error", response?.message || "No se pudo eliminar el archivo.");
         return;
       }
-
-      // 1) Eliminamos en la lista local
-      setDocumentationFiles((prev) => prev.filter((doc) => doc._id !== fileObj._id));
-      // 2) Eliminamos el ID del archivo en program.files
-      const updatedFiles = (program.files || []).filter((id) => id !== fileObj._id);
+      // Actualizamos el estado local y program.files
+      setDocumentationFiles((prev) =>
+        prev.filter((doc) => doc._id !== fileObj._id)
+      );
+      const updatedFiles = (program.files || []).filter(
+        (id) => id !== fileObj._id
+      );
       const updatedProgram = { ...program, files: updatedFiles };
-      // 3) Actualizamos local y padre
       updateLocalAndParentProgram(updatedProgram);
-
-      modal("Archivo eliminado", `El archivo "${fileObj.fileName || fileObj.description}" se ha eliminado.`);
+      modal(
+        "Archivo eliminado",
+        `El archivo "${fileObj.fileName || fileObj.description}" se ha eliminado.`
+      );
     } catch (error) {
       modal("Error", "Hubo un problema al eliminar el archivo.");
     } finally {
@@ -183,15 +188,12 @@ const DocumentProgramMiscelanea = ({
     }
   };
 
-  /**
-   * Cancelar modal de confirmación de borrado
-   */
   const cancelDeleteFile = () => {
     setDeleteModal({ open: false, file: null });
   };
 
   /**
-   * Auxiliar para subir un archivo nuevo al backend.
+   * Función auxiliar para subir un archivo nuevo.
    */
   const uploadFileDrive = async (data) => {
     try {
@@ -212,7 +214,7 @@ const DocumentProgramMiscelanea = ({
   };
 
   /**
-   * Auxiliar para actualizar un archivo existente en Drive/BD.
+   * Función auxiliar para actualizar un archivo existente.
    */
   const updateFileInBackend = async (data) => {
     try {
@@ -233,13 +235,10 @@ const DocumentProgramMiscelanea = ({
   };
 
   /**
-   * Subir/actualizar archivo oficial (requerido).
-   * - Si existe, se actualiza.
-   * - Si no existe, se crea nuevo.
+   * Subir o actualizar documento oficial.
    */
   const handleFileUploadOfficial = (doc) => {
     const existingFile = getOfficialFile(doc);
-
     setFormConfig({
       title: `Subir documento oficial: ${doc.label}`,
       message: "Seleccione el archivo y la fecha (obligatoria):",
@@ -253,11 +252,8 @@ const DocumentProgramMiscelanea = ({
           modal("Error", "Archivo y fecha son obligatorios para documentos oficiales.");
           return;
         }
-
         let newOrUpdatedFile = null;
-
         if (existingFile) {
-          // ACTUALIZACIÓN
           const payloadUpdate = {
             fileId: existingFile._id,
             file,
@@ -270,7 +266,6 @@ const DocumentProgramMiscelanea = ({
           };
           newOrUpdatedFile = await updateFileInBackend(payloadUpdate);
         } else {
-          // CREACIÓN
           const payloadCreate = {
             file,
             originModel: "Program",
@@ -282,57 +277,40 @@ const DocumentProgramMiscelanea = ({
           };
           newOrUpdatedFile = await uploadFileDrive(payloadCreate);
         }
-
-        if (!newOrUpdatedFile) return; // Hubo error o se canceló
-
+        if (!newOrUpdatedFile) return;
         // Actualizamos program.files
         let updatedProgramFiles = [];
         if (existingFile) {
-          // Sustituir el _id en program.files
           updatedProgramFiles = program.files.map((fid) =>
-            fid === existingFile._id ? newOrUpdatedFile._id : fid
+            fid === existingFile._id ? newOrUpdatedFile.file._id : fid
           );
         } else {
-          // Agregar nuevo
-          updatedProgramFiles = [...(program.files || []), newOrUpdatedFile._id];
+          updatedProgramFiles = [...(program.files || []), newOrUpdatedFile.file._id];
         }
-
         const updatedProgram = { ...program, files: updatedProgramFiles };
-
         updateLocalAndParentProgram(updatedProgram);
-
-        // Actualizar documentación local
+        // Actualizamos el estado local para reflejar el nuevo/actualizado archivo
         setDocumentationFiles((prev) => {
           if (existingFile) {
             return prev.map((docu) =>
-              docu._id === existingFile._id ? newOrUpdatedFile : docu
+              docu._id === existingFile._id ? newOrUpdatedFile.file : docu
             );
           } else {
-            return [...prev, newOrUpdatedFile];
+            return [...prev, newOrUpdatedFile.file];
           }
         });
-
-        if (existingFile) {
-          modal(
-            "Documento actualizado",
-            `El documento oficial "${doc.label}" se ha actualizado con éxito.`
-          );
-        } else {
-          modal(
-            "Documento subido",
-            `El documento oficial "${doc.label}" se ha subido con éxito.`
-          );
-        }
-
+        modal(
+          existingFile ? "Documento actualizado" : "Documento subido",
+          `El documento oficial "${doc.label}" se ha ${existingFile ? "actualizado" : "subido"} con éxito.`
+        );
         setIsModalOpen(false);
       },
     });
-
     setIsModalOpen(true);
   };
 
   /**
-   * Subir un documento adicional (no oficial).
+   * Subir documento adicional (no oficial).
    */
   const handleFileUploadExtra = () => {
     setFormConfig({
@@ -348,12 +326,7 @@ const DocumentProgramMiscelanea = ({
           required: true,
         },
         { label: "Fecha (opcional)", name: "date", type: "date", required: false },
-        {
-          label: "Descripción (opcional)",
-          name: "description",
-          type: "text",
-          required: false,
-        },
+        { label: "Descripción (opcional)", name: "description", type: "text", required: false },
       ],
       onSubmit: async (formData) => {
         const { file, fileName, date, description } = formData;
@@ -365,7 +338,6 @@ const DocumentProgramMiscelanea = ({
           modal("Error", "Debe indicar un nombre para el documento.");
           return;
         }
-
         const payloadCreate = {
           file,
           originModel: "Program",
@@ -376,30 +348,25 @@ const DocumentProgramMiscelanea = ({
           notes: "",
           description: description || "Documento adicional",
         };
-
-        const newFileDoc = await uploadFileDrive(payloadCreate);
-        if (!newFileDoc) return; // Error o cancelado
-
-        // Actualizar program.files con el nuevo _id
+        const newDataCreate = await uploadFileDrive(payloadCreate);
+        if (newDataCreate?.error) return;
+        // Actualizamos program.files
         const updatedProgram = {
           ...program,
-          files: [...(program.files || []), newFileDoc._id],
+          files: [...(program.files || []), newDataCreate.file._id],
         };
         updateLocalAndParentProgram(updatedProgram);
-
-        // Actualizar lista local
-        setDocumentationFiles((prev) => [...prev, newFileDoc]);
-
+        // Agregamos el nuevo archivo al estado local
+        setDocumentationFiles((prev) => [...prev, newDataCreate.file]);
         modal("Documento subido", `El documento "${fileName}" se ha subido con éxito.`);
         setIsModalOpen(false);
       },
     });
-
     setIsModalOpen(true);
   };
 
   /**
-   * Actualizar un documento complementario existente.
+   * Actualiza un documento complementario existente.
    */
   const handleUpdateFileExtra = (fileObj) => {
     setFormConfig({
@@ -415,16 +382,10 @@ const DocumentProgramMiscelanea = ({
           required: false,
         },
         { label: "Fecha (opcional)", name: "date", type: "date", required: false },
-        {
-          label: "Descripción (opcional)",
-          name: "description",
-          type: "text",
-          required: false,
-        },
+        { label: "Descripción (opcional)", name: "description", type: "text", required: false },
       ],
       onSubmit: async (formData) => {
         const { file, fileName, date, description } = formData;
-
         const payloadUpdate = {
           fileId: fileObj._id,
           originModel: "Program",
@@ -432,33 +393,24 @@ const DocumentProgramMiscelanea = ({
           notes: fileObj.notes || "",
           description: description || fileObj.description || "Documento adicional",
         };
-
-        // Sólo añadimos campo "file" si se subió uno nuevo
         if (file) payloadUpdate.file = file;
-        // Sólo añadimos fileName si se proporcionó
         if (fileName) {
           payloadUpdate.fileName = fileName;
           payloadUpdate.fileLabel = fileName.trim();
         }
-        // Sólo añadimos la fecha si se proporcionó
         if (date) payloadUpdate.date = date;
-
         const updatedDoc = await updateFileInBackend(payloadUpdate);
-        if (!updatedDoc) return; // Error
-
-        // Actualizamos la lista local
+        if (!updatedDoc) return;
+        // Actualizamos el estado local
         setDocumentationFiles((prev) =>
           prev.map((docu) => (docu._id === fileObj._id ? updatedDoc : docu))
         );
-
-        // En el caso de que haya cambiado el _id (suele ser el mismo),
-        // actualizamos la lista program.files
+        // Actualizamos la referencia en program.files
         const updatedProgramFiles = program.files.map((fid) =>
           fid === fileObj._id ? updatedDoc._id : fid
         );
         const updatedProgram = { ...program, files: updatedProgramFiles };
         updateLocalAndParentProgram(updatedProgram);
-
         modal(
           "Documento actualizado",
           `El documento "${fileName || fileObj.fileLabel || fileObj.description}" se ha actualizado con éxito.`
@@ -466,23 +418,18 @@ const DocumentProgramMiscelanea = ({
         setIsModalOpen(false);
       },
     });
-
     setIsModalOpen(true);
   };
 
-
-  if(program){
+  if (program) {
     return (
       <div className={styles.contenedor}>
         <h2>DOCUMENTOS DEL PROGRAMA</h2>
-  
-        {/* Documentos oficiales requeridos */}
         {officialDocs.length > 0 ? (
           officialDocs.map((doc) => {
             const fileFound = getOfficialFile(doc);
             return (
               <div key={doc._id} className={styles.fileRow}>
-                {/* Ícono de archivo existente o faltante */}
                 {fileFound ? (
                   <>
                     <CiFileOn
@@ -498,13 +445,10 @@ const DocumentProgramMiscelanea = ({
                 ) : (
                   <CiFileOff color="tomato" />
                 )}
-  
-                {/* Botón para subir/actualizar el archivo oficial */}
                 <AiOutlineCloudUpload
                   onClick={() => handleFileUploadOfficial(doc)}
                   style={{ cursor: "pointer", marginLeft: "0.5rem" }}
                 />
-  
                 <div className={styles.infoFile}>
                   <label>{doc.label}</label>
                   {fileFound?.date && (
@@ -519,8 +463,6 @@ const DocumentProgramMiscelanea = ({
         ) : (
           <p>No existe documentación esencial configurada en este programa.</p>
         )}
-  
-        {/* Documentación complementaria (miscelánea) */}
         <h2>
           DOCUMENTACIÓN COMPLEMENTARIA
           <AiOutlineCloudUpload
@@ -528,9 +470,7 @@ const DocumentProgramMiscelanea = ({
             style={{ cursor: "pointer", marginLeft: "0.5rem" }}
           />
         </h2>
-  
         {extraFiles.length === 0 && <p>No hay archivos adicionales subidos.</p>}
-  
         {extraFiles.map((fileObj) => (
           <div key={fileObj._id} className={styles.fileRow}>
             <CiFileOn
@@ -556,8 +496,6 @@ const DocumentProgramMiscelanea = ({
             </div>
           </div>
         ))}
-  
-        {/* Modal para subir/actualizar archivo (campos dinámicos según formConfig) */}
         {isModalOpen && formConfig && (
           <ModalForm
             title={formConfig.title}
@@ -567,12 +505,12 @@ const DocumentProgramMiscelanea = ({
             onClose={() => setIsModalOpen(false)}
           />
         )}
-  
-        {/* Modal de confirmación de borrado */}
         {deleteModal.open && (
           <ModalConfirmation
             title="Confirmar eliminación"
-            message={`¿Estás seguro de eliminar "${deleteModal.file?.fileLabel || deleteModal.file?.description}"?`}
+            message={`¿Estás seguro de eliminar "${
+              deleteModal.file?.fileLabel || deleteModal.file?.description
+            }"?`}
             onConfirm={confirmDeleteFile}
             onCancel={cancelDeleteFile}
           />
@@ -580,7 +518,7 @@ const DocumentProgramMiscelanea = ({
       </div>
     );
   }
-  
+  return null;
 };
 
 export default DocumentProgramMiscelanea;

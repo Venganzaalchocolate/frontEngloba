@@ -123,6 +123,10 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
     saveHiring(dataAux, 'put')
   }
 
+  const chargeInfoLeave=(idUser)=>{
+    //
+  }
+
   return (
     <>
       {/* Mapeamos cada hiringPeriod en su propia tabla */}
@@ -130,10 +134,12 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
         if (!hiringPeriod.active) return null; // Si el periodo no está activo, no lo mostramos
 
         return (
-          <div key={hiringPeriod._id} className={styles.tableResponsive}>
+          <div key={hiringPeriod._id} className={(!!hiringPeriod.reason.replacement)?styles.tableResponsiveReason:styles.tableResponsive}>
             {/* Título o identificador si quieres */}
             {/* <h3>Contratación {i+1}</h3> */}
-
+            {!!hiringPeriod.reason.replacement && 
+            <h3>Periodo de sustitución <button onClick={()=>chargeInfoLeave(hiringPeriod.reason.user)}>Información sustitución</button></h3>
+            }
             <table className={styles.myTable}>
               <thead>
                 <tr>

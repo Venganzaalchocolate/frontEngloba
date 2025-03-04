@@ -6,7 +6,7 @@ import ProgramDetails from "./ProgramDetails";
 import DeviceDetails from "./DeviceDetails";
 import styles from "../styles/ManagingPrograms.module.css";
 
-const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} }) => {
+const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
   // Controla la visualización del Modal para crear/editar Programas
   const [showProgramModal, setShowProgramModal] = useState(false);
   // Programa seleccionado (para ver detalles)
@@ -52,7 +52,6 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
    * (por ejemplo, al crear o editar un programa, o al subir/eliminar un archivo).
    */
   const handleProgramSaved = (savedProgram) => {
-
     setSortedPrograms((prev) => {
       const idx = prev.findIndex((p) => p._id === savedProgram._id);
       if (idx >= 0) {
@@ -65,7 +64,6 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms = () => {} 
     });
 
     // 2) Si el programa que se está visualizando es el guardado, se actualiza
-
     if (selectedProgram && selectedProgram._id === savedProgram._id) {
       setSelectedProgram(savedProgram);
     }

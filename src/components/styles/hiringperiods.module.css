@@ -52,6 +52,34 @@
     padding: 0.5rem;
 }
 
+.tableResponsiveReason{
+    border-radius: 1rem;
+    background-color: var(--color-chicle);
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    color: white;
+    >h3{
+        display: flex;
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+    >.myTable tr{
+        background-color: var(--color-chicle);
+    };
+    >.myTable select{
+        background-color: var(--color-chicle);
+    }
+
+    >.myTable tbody>tr:nth-child(1){
+        border-top: 2px solid white;
+        border-bottom: 2px solid white
+    }
+    >.myTable tbody>tr>td>select, .myTable tbody>tr>td>input{
+        color: white;
+    }
+}
+
 /*****************************
  * MOBILE FIRST: "Cards" para la tabla
  *****************************/

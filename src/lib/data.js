@@ -50,18 +50,6 @@ const fetchData = async (endpoint, method, token = null, body = null, isBlob = f
 
 
 
-// export const addEmployerBag = (datos, token) => fetchData('/addemployerbag', 'POST', token, datos);
-
-// export const deleteEmployerBag = (datos, token) => fetchData('/deleteemployerbag', 'POST', token, datos);
-
-// export const createBag = (datos, token) => fetchData('/createbag', 'POST', token, datos);
-
-// export const getBags = (token) => fetchData('/getbags', 'GET', token);
-
-// export const deactivateBagId = (datos, token) => fetchData('/bagdeactivate', 'POST', token, datos)
-
-
-
 export const tokenUser = async (token) => {
     const data = await fetchData('/validtoken', 'POST', token, { token });
     return data || { error: true, message: 'Token no valido' };
@@ -128,7 +116,8 @@ export const sendFormCv = async (dataForm, file, editUser = false) => {
 //Employee
 export const createEmployer = (token, datos) => fetchData('/createemployer', 'POST', token, datos);
 export const deleteEmployer=(token, datos)=>fetchData('/deleteuser', 'POST', token, datos);
-export const getEmployers = (token) => fetchData('/users', 'GET', token)
+export const getEmployers = (token) => fetchData('/users', 'GET', token);
+export const infoUser=(token, data)=> fetchData('/user', 'POST', token, data);
 export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
 export const usersName = (datos, token) => fetchData('/usersname', 'POST', token, datos);
 export const hirings=async(data,token)=>fetchData('/hirings', 'POST', token, data)

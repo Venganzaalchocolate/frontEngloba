@@ -182,8 +182,6 @@ const ProgramDetails = ({
         modal={modal}
         charge={charge}
         enumsData={enumsData}
-        // Al subir o eliminar un documento, actualizamos el programa en "padre" y en "seleccionado"
-        changeProgram={(updatedProgram) => handleProgramSaved(updatedProgram)}
         handleProgramSaved={(x)=>handleProgramSaved(x)}
       />
 

@@ -5,113 +5,68 @@ import { CiFileOn, CiFileOff } from "react-icons/ci";
 
 import styles from "../styles/documentProgram.module.css";
 
+// Utilidades y servicios
 import { formatDate } from "../../lib/utils";
 import { getToken } from "../../lib/serviceToken";
-import ModalForm from "../globals/ModalForm";
-import ModalConfirmation from "../globals/ModalConfirmation";
-
 import {
   createFileDrive,
   getFileDrive,
-  infoDocumentation,
   updateFileDrive,
   deleteFileDrive,
 } from "../../lib/data";
 
+// Componentes de Modal
+import ModalForm from "../globals/ModalForm";
+import ModalConfirmation from "../globals/ModalConfirmation";
+
 /**
- * Componente que maneja la documentación (oficial y complementaria) de un programa.
+ * Componente que maneja la documentación (oficial y complementaria) de un programa
+ * SIN hacer peticiones extra para listar los archivos.
+ *
+ * @param {Object}   program - Objeto del programa con `files` ya populados (array de objetos).
+ * @param {Function} modal - Para mostrar mensajes de éxito/error.
+ * @param {Function} charge - Para activar/desactivar spinner global.
+ * @param {Function} handleProgramSaved - Notifica al padre cuando tenemos el nuevo programa desde el server.
+ * @param {Object}   enumsData - Datos enumerados (si necesitas documentos oficiales).
  */
 const DocumentProgramMiscelanea = ({
-  program,                // Programa actual
-  modal,                  // Para lanzar mensajes de éxito/error
-  charge,                 // Para activar/desactivar spinner
-  changeProgram,          // Función que actualiza el "program" en el padre
-  enumsData,              // Datos enumerados (con la info de documentación oficial)
-  handleProgramSaved,     // También se llama para actualizar el program en el padre
+  program,
+  modal,
+  charge,
+  handleProgramSaved,
+  enumsData,
 }) => {
-  // Lista local de archivos con más detalle que sólo IDs.
-  const [documentationFiles, setDocumentationFiles] = useState([]);
+  // Estado local con la lista de archivos (para render inmediato)
+  const [documentationFiles, setDocumentationFiles] = useState(program.files || []);
 
-  // Modal de Form para subir/editar archivo
+  // Modales para crear/editar/borrar archivos
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formConfig, setFormConfig] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ open: false, file: null });
 
-  // Modal de confirmación para borrar
-  const [deleteModal, setDeleteModal] = useState({
-    open: false,
-    file: null,
-  });
-
-
-
-  // Cada vez que cambie program.files se vuelve a recargar la documentación
+  /**
+   * Cada vez que el padre actualiza `program.files`, sincronizamos la lista local
+   */
   useEffect(() => {
-    if (program?.files && program.files.length > 0) {
-      fetchDocumentationFiles(program.files);
-    } else {
-      setDocumentationFiles([]);
-    }
-  }, []);
+    setDocumentationFiles(program.files || []);
+  }, [program.files]);
 
-  const updateDataLocal=(programNew, file)=>{
-    fetchDocumentationFiles(programNew.files);
-  }
-
-  /**
-   * Carga la info detallada de los archivos.
-   */
-  const fetchDocumentationFiles = async (idFiles) => {
-    //program.files
-    try {
-      charge(true);
-      const token = getToken();
-      const response = await infoDocumentation({ filesId: idFiles }, token);
-      if (response?.error) {
-        modal("Error", response.message || "Error al cargar documentación");
-      } else {
-        setDocumentationFiles(response);
-      }
-    } catch (error) {
-      modal("Error", "Ocurrió un problema al cargar la documentación");
-    } finally {
-      charge(false);
-    }
-  };
-
-  /**
-   * Actualiza el program en el componente padre.
-   */
-  const updateLocalAndParentProgram = (updatedProgram) => {
-    // Se notifica al padre y se actualiza el estado global
-    handleProgramSaved(updatedProgram);
-    changeProgram(updatedProgram);
-  };
-
-  /**
-   * Documentos oficiales que debería tener el programa.
-   */
+  // ========================================
+  //   BLOQUE: DOCUMENTOS OFICIALES (opcional)
+  // ========================================
   const officialDocs = (program.essentialDocumentationProgram || [])
     .map((docId) =>
-      enumsData.documentation.find(
-        (doc) => doc._id.toString() === docId.toString()
-      )
+      enumsData?.documentation?.find((doc) => doc._id.toString() === docId.toString())
     )
     .filter(Boolean);
 
-  /**
-   * Retorna el archivo correspondiente a un documento oficial (si existe).
-   */
   const getOfficialFile = (docOfficial) => {
     return documentationFiles.find(
-      (f) =>
-        f.originDocumentation &&
-        f.originDocumentation.toString() === docOfficial._id.toString()
+      (f) => f.originDocumentation?.toString() === docOfficial._id.toString()
     );
   };
 
-  /**
-   * Filtra los archivos que no son oficiales.
-   */
+  // Archivos adicionales
   const extraFiles = documentationFiles.filter((fileObj) => {
     if (!fileObj.originDocumentation) return true;
     const isOfficial = officialDocs.some(
@@ -120,10 +75,14 @@ const DocumentProgramMiscelanea = ({
     return !isOfficial;
   });
 
-  /**
-   * Descarga un archivo desde Drive.
-   */
+  // ========================================
+  //   DESCARGA
+  // ========================================
   const handleDownloadFile = async (fileObj) => {
+    if (!fileObj.idDrive) {
+      modal("Error", "No se detecta idDrive para este archivo.");
+      return;
+    }
     try {
       charge(true);
       const token = getToken();
@@ -146,36 +105,30 @@ const DocumentProgramMiscelanea = ({
     }
   };
 
-  /**
-   * Abre el modal para confirmar borrado.
-   */
+  // ========================================
+  //   ELIMINACIÓN
+  // ========================================
   const handleDeleteFile = (fileObj) => {
     setDeleteModal({ open: true, file: fileObj });
   };
 
-  /**
-   * Confirma el borrado del archivo.
-   */
   const confirmDeleteFile = async () => {
     const fileObj = deleteModal.file;
     if (!fileObj) return;
     try {
       charge(true);
       const token = getToken();
-      const response = await deleteFileDrive({ fileId: fileObj._id }, token);
-      if (!response || response.error) {
-        modal("Error", response?.message || "No se pudo eliminar el archivo.");
+      // El backend devolverá el "program" ya actualizado
+      const updatedProgram = await deleteFileDrive({ fileId: fileObj._id }, token);
+
+      if (!updatedProgram || updatedProgram.error) {
+        modal("Error", updatedProgram?.message || "No se pudo eliminar el archivo.");
         return;
       }
-      // Actualizamos el estado local y program.files
-      setDocumentationFiles((prev) =>
-        prev.filter((doc) => doc._id !== fileObj._id)
-      );
-      const updatedFiles = (program.files || []).filter(
-        (id) => id !== fileObj._id
-      );
-      const updatedProgram = { ...program, files: updatedFiles };
-      updateLocalAndParentProgram(updatedProgram);
+
+      // Avisamos al padre que tenemos un nuevo programa
+      handleProgramSaved(updatedProgram);
+
       modal(
         "Archivo eliminado",
         `El archivo "${fileObj.fileName || fileObj.description}" se ha eliminado.`
@@ -192,53 +145,13 @@ const DocumentProgramMiscelanea = ({
     setDeleteModal({ open: false, file: null });
   };
 
-  /**
-   * Función auxiliar para subir un archivo nuevo.
-   */
-  const uploadFileDrive = async (data) => {
-    try {
-      charge(true);
-      const token = getToken();
-      const response = await createFileDrive(data, token);
-      if (response?.error) {
-        modal("Error", response?.message || "No se pudo subir el archivo.");
-        return null;
-      }
-      return response;
-    } catch (error) {
-      modal("Error", "Hubo un problema al subir el documento.");
-      return null;
-    } finally {
-      charge(false);
-    }
-  };
-
-  /**
-   * Función auxiliar para actualizar un archivo existente.
-   */
-  const updateFileInBackend = async (data) => {
-    try {
-      charge(true);
-      const token = getToken();
-      const response = await updateFileDrive(data, token);
-      if (response?.error) {
-        modal("Error", response?.message || "No se pudo actualizar el archivo.");
-        return null;
-      }
-      return response;
-    } catch (error) {
-      modal("Error", "Hubo un problema al actualizar el documento.");
-      return null;
-    } finally {
-      charge(false);
-    }
-  };
-
-  /**
-   * Subir o actualizar documento oficial.
-   */
+  // ========================================
+  //   SUBIR / ACTUALIZAR ARCHIVOS
+  // ========================================
+  // 1) Documentos oficiales
   const handleFileUploadOfficial = (doc) => {
     const existingFile = getOfficialFile(doc);
+
     setFormConfig({
       title: `Subir documento oficial: ${doc.label}`,
       message: "Seleccione el archivo y la fecha (obligatoria):",
@@ -246,72 +159,66 @@ const DocumentProgramMiscelanea = ({
         { label: "Archivo (PDF)", name: "file", type: "file", required: true },
         { label: "Fecha", name: "date", type: "date", required: true },
       ],
-      onSubmit: async (formData) => {
-        const { file, date } = formData;
+      onSubmit: async ({ file, date }) => {
         if (!file || !date) {
           modal("Error", "Archivo y fecha son obligatorios para documentos oficiales.");
           return;
         }
-        let newOrUpdatedFile = null;
-        if (existingFile) {
-          const payloadUpdate = {
-            fileId: existingFile._id,
-            file,
-            originModel: "Program",
-            idModel: program._id,
-            originDocumentation: doc._id,
-            date,
-            notes: existingFile.notes || "",
-            description: existingFile.description || `Documento oficial: ${doc.label}`,
-          };
-          newOrUpdatedFile = await updateFileInBackend(payloadUpdate);
-        } else {
-          const payloadCreate = {
-            file,
-            originModel: "Program",
-            idModel: program._id,
-            originDocumentation: doc._id,
-            date,
-            notes: "",
-            description: `Documento oficial: ${doc.label}`,
-          };
-          newOrUpdatedFile = await uploadFileDrive(payloadCreate);
-        }
-        if (!newOrUpdatedFile) return;
-        // Actualizamos program.files
-        let updatedProgramFiles = [];
-        if (existingFile) {
-          updatedProgramFiles = program.files.map((fid) =>
-            fid === existingFile._id ? newOrUpdatedFile.file._id : fid
-          );
-        } else {
-          updatedProgramFiles = [...(program.files || []), newOrUpdatedFile.file._id];
-        }
-        const updatedProgram = { ...program, files: updatedProgramFiles };
-        updateLocalAndParentProgram(updatedProgram);
-        // Actualizamos el estado local para reflejar el nuevo/actualizado archivo
-        setDocumentationFiles((prev) => {
+        try {
+          charge(true);
+          const token = getToken();
+
           if (existingFile) {
-            return prev.map((docu) =>
-              docu._id === existingFile._id ? newOrUpdatedFile.file : docu
-            );
+            // UPDATE
+            const payloadUpdate = {
+              fileId: existingFile._id,
+              file,
+              originModel: "Program",
+              idModel: program._id,
+              originDocumentation: doc._id,
+              date,
+              // Rellenar si quieres
+              notes: existingFile.notes || "",
+              description: existingFile.description || `Documento oficial: ${doc.label}`,
+            };
+            const updatedProgram = await updateFileDrive(payloadUpdate, token);
+            if (!updatedProgram || updatedProgram.error) {
+              modal("Error", updatedProgram?.message || "No se pudo actualizar el archivo.");
+              return;
+            }
+            handleProgramSaved(updatedProgram);
+            modal("Documento actualizado", `Se actualizó "${doc.label}" con éxito.`);
+
           } else {
-            return [...prev, newOrUpdatedFile.file];
+            // CREATE
+            const payloadCreate = {
+              file,
+              originModel: "Program",
+              idModel: program._id,
+              originDocumentation: doc._id,
+              date,
+              notes: "",
+              description: `Documento oficial: ${doc.label}`,
+            };
+            const updatedProgram = await createFileDrive(payloadCreate, token);
+            if (!updatedProgram || updatedProgram.error) {
+              modal("Error", updatedProgram?.message || "No se pudo subir el archivo.");
+              return;
+            }
+            handleProgramSaved(updatedProgram);
+            modal("Documento subido", `Se subió "${doc.label}" con éxito.`);
           }
-        });
-        modal(
-          existingFile ? "Documento actualizado" : "Documento subido",
-          `El documento oficial "${doc.label}" se ha ${existingFile ? "actualizado" : "subido"} con éxito.`
-        );
-        setIsModalOpen(false);
+        } finally {
+          charge(false);
+          setIsModalOpen(false);
+        }
       },
     });
+
     setIsModalOpen(true);
   };
 
-  /**
-   * Subir documento adicional (no oficial).
-   */
+  // 2) Subir documento adicional
   const handleFileUploadExtra = () => {
     setFormConfig({
       title: "Subir documento adicional",
@@ -328,8 +235,7 @@ const DocumentProgramMiscelanea = ({
         { label: "Fecha (opcional)", name: "date", type: "date", required: false },
         { label: "Descripción (opcional)", name: "description", type: "text", required: false },
       ],
-      onSubmit: async (formData) => {
-        const { file, fileName, date, description } = formData;
+      onSubmit: async ({ file, fileName, date, description }) => {
         if (!file) {
           modal("Error", "Debe seleccionar un archivo (PDF).");
           return;
@@ -338,36 +244,37 @@ const DocumentProgramMiscelanea = ({
           modal("Error", "Debe indicar un nombre para el documento.");
           return;
         }
-        const payloadCreate = {
-          file,
-          originModel: "Program",
-          idModel: program._id,
-          fileName,
-          fileLabel: fileName.trim(),
-          date,
-          notes: "",
-          description: description || "Documento adicional",
-        };
-        const newDataCreate = await uploadFileDrive(payloadCreate);
-        if (newDataCreate?.error) return;
-        // Actualizamos program.files
-        const updatedProgram = {
-          ...program,
-          files: [...(program.files || []), newDataCreate.file._id],
-        };
-        updateLocalAndParentProgram(updatedProgram);
-        // Agregamos el nuevo archivo al estado local
-        setDocumentationFiles((prev) => [...prev, newDataCreate.file]);
-        modal("Documento subido", `El documento "${fileName}" se ha subido con éxito.`);
-        setIsModalOpen(false);
+
+        try {
+          charge(true);
+          const token = getToken();
+          const payloadCreate = {
+            file,
+            originModel: "Program",
+            idModel: program._id,
+            fileName,
+            fileLabel: fileName.trim(),
+            date,
+            notes: "",
+            description: description || "Documento adicional",
+          };
+          const updatedProgram = await createFileDrive(payloadCreate, token);
+          if (!updatedProgram || updatedProgram.error) {
+            modal("Error", updatedProgram?.message || "No se pudo subir el archivo.");
+            return;
+          }
+          handleProgramSaved(updatedProgram);
+          modal("Documento subido", `El documento "${fileName}" se subió con éxito.`);
+        } finally {
+          charge(false);
+          setIsModalOpen(false);
+        }
       },
     });
     setIsModalOpen(true);
   };
 
-  /**
-   * Actualiza un documento complementario existente.
-   */
+  // 3) Actualizar un documento complementario
   const handleUpdateFileExtra = (fileObj) => {
     setFormConfig({
       title: `Actualizar documento: ${fileObj.fileLabel || fileObj.description}`,
@@ -378,147 +285,156 @@ const DocumentProgramMiscelanea = ({
           label: "Nombre del documento",
           name: "fileName",
           type: "text",
-          placeholder: "Ej: Informe Financiero, ...",
+          placeholder: "Ej: Informe Financiero...",
           required: false,
         },
         { label: "Fecha (opcional)", name: "date", type: "date", required: false },
         { label: "Descripción (opcional)", name: "description", type: "text", required: false },
       ],
-      onSubmit: async (formData) => {
-        const { file, fileName, date, description } = formData;
-        const payloadUpdate = {
-          fileId: fileObj._id,
-          originModel: "Program",
-          idModel: program._id,
-          notes: fileObj.notes || "",
-          description: description || fileObj.description || "Documento adicional",
-        };
-        if (file) payloadUpdate.file = file;
-        if (fileName) {
-          payloadUpdate.fileName = fileName;
-          payloadUpdate.fileLabel = fileName.trim();
+      onSubmit: async ({ file, fileName, date, description }) => {
+        try {
+          charge(true);
+          const token = getToken();
+          const payloadUpdate = {
+            fileId: fileObj._id,
+            originModel: "Program",
+            idModel: program._id,
+            notes: fileObj.notes || "",
+            description: description || fileObj.description || "Documento adicional",
+          };
+          if (file) payloadUpdate.file = file;
+          if (fileName) {
+            payloadUpdate.fileName = fileName;
+            payloadUpdate.fileLabel = fileName.trim();
+          }
+          if (date) payloadUpdate.date = date;
+
+          const updatedProgram = await updateFileDrive(payloadUpdate, token);
+          if (!updatedProgram || updatedProgram.error) {
+            modal("Error", updatedProgram?.message || "No se pudo actualizar el archivo.");
+            return;
+          }
+          handleProgramSaved(updatedProgram);
+          modal(
+            "Documento actualizado",
+            `El documento "${fileName || fileObj.fileLabel || fileObj.description}" se ha actualizado con éxito.`
+          );
+        } finally {
+          charge(false);
+          setIsModalOpen(false);
         }
-        if (date) payloadUpdate.date = date;
-        const updatedDoc = await updateFileInBackend(payloadUpdate);
-        if (!updatedDoc) return;
-        // Actualizamos el estado local
-        setDocumentationFiles((prev) =>
-          prev.map((docu) => (docu._id === fileObj._id ? updatedDoc : docu))
-        );
-        // Actualizamos la referencia en program.files
-        const updatedProgramFiles = program.files.map((fid) =>
-          fid === fileObj._id ? updatedDoc._id : fid
-        );
-        const updatedProgram = { ...program, files: updatedProgramFiles };
-        updateLocalAndParentProgram(updatedProgram);
-        modal(
-          "Documento actualizado",
-          `El documento "${fileName || fileObj.fileLabel || fileObj.description}" se ha actualizado con éxito.`
-        );
-        setIsModalOpen(false);
       },
     });
     setIsModalOpen(true);
   };
 
-  if (program) {
-    return (
-      <div className={styles.contenedor}>
-        <h2>DOCUMENTOS DEL PROGRAMA</h2>
-        {officialDocs.length > 0 ? (
-          officialDocs.map((doc) => {
-            const fileFound = getOfficialFile(doc);
-            return (
-              <div key={doc._id} className={styles.fileRow}>
-                {fileFound ? (
-                  <>
-                    <CiFileOn
-                      color="green"
-                      onClick={() => handleDownloadFile(fileFound)}
-                      style={{ cursor: "pointer" }}
-                    />
-                    <FaTrash
-                      onClick={() => handleDeleteFile(fileFound)}
-                      style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                    />
-                  </>
-                ) : (
-                  <CiFileOff color="tomato" />
+  // ================================
+  // RENDER
+  // ================================
+  // Si no hay program cargado, no renderizamos nada.
+  if (!program) return null;
+
+  return (
+    <div className={styles.contenedor}>
+      <h2>DOCUMENTOS DEL PROGRAMA</h2>
+      {/* Documentos oficiales */}
+      {officialDocs.length > 0 ? (
+        officialDocs.map((doc) => {
+          const fileFound = getOfficialFile(doc);
+          return (
+            <div key={doc._id} className={styles.fileRow}>
+              {fileFound ? (
+                <>
+                  <CiFileOn
+                    color="green"
+                    onClick={() => handleDownloadFile(fileFound)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  <FaTrash
+                    onClick={() => handleDeleteFile(fileFound)}
+                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+                  />
+                </>
+              ) : (
+                <CiFileOff color="tomato" />
+              )}
+              <AiOutlineCloudUpload
+                onClick={() => handleFileUploadOfficial(doc)}
+                style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+              />
+              <div className={styles.infoFile}>
+                <label>{doc.label}</label>
+                {fileFound?.date && (
+                  <div className={styles.dateFile}>
+                    <p>{`Válido hasta: ${formatDate(fileFound.date)}`}</p>
+                  </div>
                 )}
-                <AiOutlineCloudUpload
-                  onClick={() => handleFileUploadOfficial(doc)}
-                  style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                />
-                <div className={styles.infoFile}>
-                  <label>{doc.label}</label>
-                  {fileFound?.date && (
-                    <div className={styles.dateFile}>
-                      <p>{`Válido hasta: ${formatDate(fileFound.date)}`}</p>
-                    </div>
-                  )}
-                </div>
               </div>
-            );
-          })
-        ) : (
-          <p>No existe documentación esencial configurada en este programa.</p>
-        )}
-        <h2>
-          DOCUMENTACIÓN COMPLEMENTARIA
+            </div>
+          );
+        })
+      ) : (
+        <p>No existe documentación esencial configurada en este programa.</p>
+      )}
+
+      <h2>
+        DOCUMENTACIÓN COMPLEMENTARIA
+        <AiOutlineCloudUpload
+          onClick={handleFileUploadExtra}
+          style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+        />
+      </h2>
+      {extraFiles.length === 0 && <p>No hay archivos adicionales subidos.</p>}
+      {extraFiles.map((fileObj) => (
+        <div key={fileObj._id} className={styles.fileRow}>
+          <CiFileOn
+            color="green"
+            onClick={() => handleDownloadFile(fileObj)}
+            style={{ cursor: "pointer" }}
+          />
           <AiOutlineCloudUpload
-            onClick={handleFileUploadExtra}
+            onClick={() => handleUpdateFileExtra(fileObj)}
             style={{ cursor: "pointer", marginLeft: "0.5rem" }}
           />
-        </h2>
-        {extraFiles.length === 0 && <p>No hay archivos adicionales subidos.</p>}
-        {extraFiles.map((fileObj) => (
-          <div key={fileObj._id} className={styles.fileRow}>
-            <CiFileOn
-              color="green"
-              onClick={() => handleDownloadFile(fileObj)}
-              style={{ cursor: "pointer" }}
-            />
-            <AiOutlineCloudUpload
-              onClick={() => handleUpdateFileExtra(fileObj)}
-              style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-            />
-            <FaTrash
-              onClick={() => handleDeleteFile(fileObj)}
-              style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-            />
-            <div className={styles.infoFile}>
-              <label>{fileObj.fileLabel || fileObj.description}</label>
-              {fileObj.date && (
-                <div className={styles.dateFile}>
-                  <p>{`Válido hasta: ${formatDate(fileObj.date)}`}</p>
-                </div>
-              )}
-            </div>
+          <FaTrash
+            onClick={() => handleDeleteFile(fileObj)}
+            style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+          />
+          <div className={styles.infoFile}>
+            <label>{fileObj.fileLabel || fileObj.description || "Documento"}</label>
+            {fileObj.date && (
+              <div className={styles.dateFile}>
+                <p>{`Válido hasta: ${formatDate(fileObj.date)}`}</p>
+              </div>
+            )}
           </div>
-        ))}
-        {isModalOpen && formConfig && (
-          <ModalForm
-            title={formConfig.title}
-            message={formConfig.message}
-            fields={formConfig.fields}
-            onSubmit={formConfig.onSubmit}
-            onClose={() => setIsModalOpen(false)}
-          />
-        )}
-        {deleteModal.open && (
-          <ModalConfirmation
-            title="Confirmar eliminación"
-            message={`¿Estás seguro de eliminar "${
-              deleteModal.file?.fileLabel || deleteModal.file?.description
-            }"?`}
-            onConfirm={confirmDeleteFile}
-            onCancel={cancelDeleteFile}
-          />
-        )}
-      </div>
-    );
-  }
-  return null;
+        </div>
+      ))}
+
+      {/* Modal genérico para subir/editar archivos */}
+      {isModalOpen && formConfig && (
+        <ModalForm
+          title={formConfig.title}
+          message={formConfig.message}
+          fields={formConfig.fields}
+          onSubmit={formConfig.onSubmit}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+
+      {/* Modal para confirmar borrado */}
+      {deleteModal.open && (
+        <ModalConfirmation
+          title="Confirmar eliminación"
+          message={`¿Estás seguro de eliminar "${
+            deleteModal.file?.fileLabel || deleteModal.file?.description
+          }"?`}
+          onConfirm={confirmDeleteFile}
+          onCancel={cancelDeleteFile}
+        />
+      )}
+    </div>
+  );
 };
 
 export default DocumentProgramMiscelanea;

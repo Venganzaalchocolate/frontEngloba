@@ -98,6 +98,7 @@ const ListDocumentationManager = ({ program, modal, charge, handleProgramSaved, 
 
     // Campos del formulario: se utiliza un select con opciones provenientes de enumsData.documentation.
     // Se añade primero una opción "Selecciona una opción" que no se puede seleccionar.
+
     const fields = [
         {
             name: "documentationId",
@@ -107,9 +108,11 @@ const ListDocumentationManager = ({ program, modal, charge, handleProgramSaved, 
             options: [
                 { value: "", label: "Selecciona una opción", disabled: true },
                 ...(enumsData && enumsData.documentation
-                    ? enumsData.documentation.map(doc => ({ value: doc._id, label: doc.name }))
-                    : [])
-            ]
+                  ? enumsData.documentation
+                      .filter(doc => doc.model === 'Program')
+                      .map(doc => ({ value: doc._id, label: doc.name }))
+                  : [])
+              ]
         }
     ];
 

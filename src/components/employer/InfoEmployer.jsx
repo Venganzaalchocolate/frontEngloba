@@ -21,6 +21,7 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     ...user,
     fostered: user.fostered ? 'si' : 'no',
     apafa: user.apafa ? 'si' : 'no',
+    consetmentDataProtection:user.consetmentDataProtection?'si':'no'
   };
 
   // Guardamos una copia inmutable para saber cómo estaban los datos antes de editar
@@ -133,7 +134,7 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     const fieldsToCompare = [
       'firstName','lastName','dni','email','phone',
       'employmentStatus','socialSecurityNumber','bankAccountNumber',
-      'gender','fostered', 'apafa'
+      'gender','fostered', 'apafa', 'consetmentDataProtection', 'role'
     ];
 
     fieldsToCompare.forEach(field => {
@@ -183,7 +184,6 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     charge(true);
 
     const token = getToken();
-
     const response = await editUser(modifiedData, token);
 
     if (!response.error) {
@@ -224,12 +224,30 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
     ['employmentStatus', 'Estado Laboral'],
     ['socialSecurityNumber', 'Número de Seguridad Social'],
     ['bankAccountNumber', 'Número de Cuenta Bancaria'],
+
   ];
 
   return (
     <div className={styles.contenedor}>
       <h2>DATOS {boton()}</h2>
-      
+      {
+              <div>
+              <label htmlFor="role">Rol</label>
+              <select
+                id="role"
+                name="role"
+                value={datos.role || ''}
+                onChange={handleChange}
+                disabled={!isEditing}
+              >
+                <option value="">Seleccionar</option>
+                <option value="root">Root</option>
+                <option value="global">Global</option>
+                <option value="employee">Empleado</option>
+              </select>
+              {errores.gender && <span className="errorSpan">{errores.gender}</span>}
+            </div>
+      }
       {/* Renderizado de campos simples */}
       {textFields.map(([fieldName, label]) => (
         <div key={fieldName}>
@@ -262,6 +280,7 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
           )}
         </div>
       ))}
+      
 
       {/* Género */}
       <div>
@@ -308,13 +327,28 @@ const InfoEmployer = ({ user, modal, charge, changeUser, listResponsability, enu
           <option value="si">Sí</option>
           <option value="no">No</option>
         </select>
-        {errores.fostered && <span className="errorSpan">{errores.fostered}</span>}
+        {errores.apafa && <span className="errorSpan">{errores.apafa}</span>}
       </div>
 
       {/* Mostrar u ocultar campos de discapacidad:
           - Si estamos editando, siempre.
           - Si no estamos editando, solo si el porcentaje > 0
       */}
+<div>
+        <label htmlFor="consetmentDataProtection">Consentimiento PD</label>
+        <select
+          id="consetmentDataProtection"
+          name="consetmentDataProtection"
+          value={(datos.consetmentDataProtection) || 'si'}
+          onChange={handleChange}
+          disabled={!isEditing}
+        >
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+        </select>
+        {errores.consetmentDataProtection && <span className="errorSpan">{errores.consetmentDataProtection}</span>}
+      </div>
+      
       {(isEditing || (datos?.disability?.percentage || 0) > 0) && (
         <>
           <div>

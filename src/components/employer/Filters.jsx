@@ -108,6 +108,16 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters 
                             </select>
                         </div>
                     </div>
+                    <div>
+                        <label htmlFor='disability'>Discapacidad:</label>
+                        <div>
+                            <select id='disability' name='disability' onChange={handleFilterChange} value={handleFilterChange.disability}>
+                                <option value={''}>Selecciona una opción</option>
+                                <option value='si'>Si</option>
+                                <option value='no'>No</option>
+                            </select>
+                        </div>
+                    </div>
 
 
                 </>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "../styles/managingEnum.module.css";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import ModalForm from "../globals/ModalForm";
@@ -7,7 +7,7 @@ import { changeData, createData, deleteData, createSubData, deleteSubData } from
 import { FaRegEdit, FaTrashAlt, FaPlusSquare } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa6";
 
-// Listas de opciones (se añadió "leavetype")
+// Lista de opciones (se añadió "leavetype")
 const optionsList = ["documentation", "studies", "jobs", "provinces", "work_schedule", "finantial", "leavetype"];
 const optionListCastellano = [
   "Documentación",
@@ -25,7 +25,7 @@ const noSubEnums = ["documentation", "leavetype", "work_schedule"];
 /* 
   Componente EnumCRUD:
   Muestra la lista de elementos y, cuando el enumerado lo permita, sus subcategorías.
-  Para "documentation" muestra si tiene fecha; para "jobs" muestra si es pública.
+  Para "documentation" se muestra si tiene fecha; para "jobs" se muestra si es pública.
 */
 function EnumCRUD({
   selectedKey,
@@ -109,9 +109,8 @@ function EnumCRUD({
   - Recibe por props: enumsData (datos iniciales), charge y modal (componente Modal).
   - Inicializa su estado local a partir de enumsData.
   - Permite editar, borrar y crear elementos y subelementos.
-  - Para "documentation" y "jobs" se añade un campo extra en el formulario:
-      * "documentation": se añaden los campos "label" y "date"
-      * "jobs": campo "public" (si/no).
+  - Para "documentation" se añade en el formulario los campos "label", "date" y el nuevo campo "model".
+  - Para "jobs" se añade el campo "public".
   - En los enumerados que no permiten subcategorías (documentation, leavetype, work_schedule) no se renderizan opciones para subcategorías.
 */
 export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnums }) {
@@ -141,15 +140,8 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
     onClose: null,
   });
 
-  // Manejo del select
-  const handleChange = (e) => {
-    setSelectedKey(e.target.value);
-  };
-
-  const selectedEnumData = selectedKey ? crudData[selectedKey] || [] : [];
-
   // Función auxiliar para armar los campos del formulario según el tipo.
-  // Para "documentation" se añaden los campos "label" y "date"; para "jobs" se añade "public".
+  // Para "documentation" se añaden los campos "label", "date" y "model"; para "jobs" se añade "public".
   const getFields = (enumKey, baseFields, item = null) => {
     const fields = [...baseFields];
     if (enumKey === "documentation") {
@@ -173,6 +165,18 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
           { value: "no", label: "No" },
         ],
       });
+      fields.push({
+        name: "model",
+        label: "Sección",
+        defaultValue: item ? (item.model || "") : "",
+        required: true,
+        type: "select",
+        options: [
+          { value: "", label: "Seleccione una opción" },
+          { value: "Program", label: "Programas y Dispositivos" },
+          { value: "User", label: "Trabajadores" },
+        ],
+      });
     }
     if (enumKey === "jobs") {
       const defaultPublic = item ? (item.public ? "si" : "no") : "no";
@@ -191,6 +195,13 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
     return fields;
   };
 
+  // Manejo del select de categoría
+  const handleChange = (e) => {
+    setSelectedKey(e.target.value);
+  };
+
+  const selectedEnumData = selectedKey ? crudData[selectedKey] || [] : [];
+
   // Editar un item
   const handleEditItem = (enumKey, item) => {
     const baseFields = [
@@ -206,6 +217,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
         if (enumKey === "documentation") {
           payload.date = formData.date;
           payload.label = formData.label;
+          payload.model = formData.model;
         }
         if (enumKey === "jobs") payload.public = formData.public;
         await changeData(getToken(), payload);
@@ -216,9 +228,10 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
               ? {
                   ...it,
                   name: formData.name,
-                  ...(enumKey === "documentation" && { 
+                  ...(enumKey === "documentation" && {
                     date: formData.date === "si",
-                    label: formData.label 
+                    label: formData.label,
+                    model: formData.model,
                   }),
                   ...(enumKey === "jobs" && { public: formData.public === "si" }),
                 }
@@ -266,6 +279,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
         if (enumKey === "documentation") {
           payload.date = formData.date;
           payload.label = formData.label;
+          payload.model = formData.model;
         }
         if (enumKey === "jobs") payload.public = formData.public;
         const newItem = await createData(getToken(), payload);
@@ -398,7 +412,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
         {selectedKey && (
           <EnumCRUD
             selectedKey={selectedKey}
-            data={selectedEnumData}
+            data={crudData[selectedKey] || []}
             onEditItem={handleEditItem}
             onDeleteItem={handleDeleteItem}
             onCreateItem={handleCreateItem}

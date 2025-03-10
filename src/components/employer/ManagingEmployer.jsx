@@ -4,9 +4,9 @@ import { FaSquarePlus } from "react-icons/fa6";
 import Filters from "./Filters";
 import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
-import { getusers } from '../../lib/data';
+import { getusers, getusersnotlimit } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
-import { capitalizeWords, deepClone } from '../../lib/utils.js';
+import { capitalizeWords, deepClone, downloadXlsxFromUsers } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
 import DeleteEmployer from './DeleteEmployer.jsx';
 import InfoEmployer from './InfoEmployer.jsx';
@@ -16,6 +16,7 @@ import DocumentEmployerMiscelanea from './DocumentEmployerMiscelanea.jsx';
 import Payrolls from '../payroll/Payrolls.jsx';
 import VacationDays from './VacationDays.jsx';
 import Hiringperiods from './HiringsPeriods.jsx';
+import { TbFileTypeXml } from "react-icons/tb";
 
 const ManagingEmployer = ({
   modal,
@@ -152,12 +153,12 @@ const ManagingEmployer = ({
       }
 
       let data = await getusers(page, limit, auxFilters, token);
-      data.users=data.users.map(user => ({
+      data.users = data.users.map(user => ({
         ...user,
         firstName: capitalizeWords(user.firstName),
         lastName: capitalizeWords(user.lastName)
       }));
-      
+
       if (data.error) {
         modal("Error", data.message);
       } else {
@@ -286,6 +287,34 @@ const ManagingEmployer = ({
     }
   }
 
+  const getUserNotLimit = async () => {
+    try {
+      charge(true);
+      const token = getToken();
+      let auxFilters = { ...debouncedFilters };
+
+      // Borramos los campos vacíos
+      for (let key in auxFilters) {
+        if (auxFilters[key] === "") {
+          delete auxFilters[key];
+        }
+      }
+
+      // 1) Llamada a tu backend (que devuelve { users: [...] })
+      const data = await getusersnotlimit(auxFilters, token);
+      if (!data || !data.users) {
+        throw new Error("No se recibieron datos de usuarios");
+      }
+
+      // 2) Convertir esa lista de usuarios en un XLSX y descargarlo
+      downloadXlsxFromUsers(data.users);
+
+    } catch (err) {
+      modal("Error", "Error al obtener usuarios o generar Excel");
+    } finally {
+      charge(false)
+    }
+  };
   // 2) Eres root/global O ya tenemos selectedResponsibility => Render normal
   return (
     <div className={styles.contenedor}>
@@ -295,9 +324,13 @@ const ManagingEmployer = ({
             <div>
               <h2>GESTIÓN DE EMPLEADOS</h2>
               <FaSquarePlus onClick={openModal} />
-              <a className={styles.botonMailto} href="mailto:web@engloba.org.es?subject=MediaJornada&body=Buenas Gustavo, necesito añadir a media jornada <Nombre>, con DNI <DNI>, al dispositivo <dipositivo>, con fecha de inicio <fecha>, puesto <cargo>, Gracias !!! ">
-  Añadir media jornada en otro dispositivo
-</a>
+             
+              {isRootOrGlobal &&
+                <TbFileTypeXml onClick={() => getUserNotLimit()}/>
+              }
+ <a className={styles.botonMailto} href="mailto:web@engloba.org.es?subject=MediaJornada&body=Buenas Gustavo, necesito añadir a media jornada <Nombre>, con DNI <DNI>, al dispositivo <dipositivo>, con fecha de inicio <fecha>, puesto <cargo>, Gracias !!! ">
+                Añadir media jornada en otro dispositivo
+              </a>
               {isModalOpen && (
                 <FormCreateEmployer
                   selectedResponsibility={selectedResponsibility}

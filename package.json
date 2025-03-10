@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
     "luxon": "^3.5.0",
     "react": "^18.2.0",
     "react-datepicker": "^7.5.0",

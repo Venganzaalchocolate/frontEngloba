@@ -52,14 +52,17 @@ const DocumentProgramMiscelanea = ({
   }, [program.files]);
 
   // ========================================
-  //   BLOQUE: DOCUMENTOS OFICIALES (opcional)
+  //   BLOQUE: DOCUMENTOS OFICIALES
   // ========================================
+  // Se asume que cada doc en essentialDocumentationProgram
+  // tiene la estructura: { _id, label, date: boolean }
   const officialDocs = (program.essentialDocumentationProgram || [])
     .map((docId) =>
       enumsData?.documentation?.find((doc) => doc._id.toString() === docId.toString())
     )
     .filter(Boolean);
 
+  // Dado un doc oficial, localizar si ya existe un archivo subido que coincida
   const getOfficialFile = (docOfficial) => {
     return documentationFiles.find(
       (f) => f.originDocumentation?.toString() === docOfficial._id.toString()
@@ -68,6 +71,7 @@ const DocumentProgramMiscelanea = ({
 
   // Archivos adicionales
   const extraFiles = documentationFiles.filter((fileObj) => {
+    // Un archivo es "extra" si NO se asocia a un doc oficial
     if (!fileObj.originDocumentation) return true;
     const isOfficial = officialDocs.some(
       (doc) => doc._id.toString() === fileObj.originDocumentation?.toString()
@@ -152,21 +156,50 @@ const DocumentProgramMiscelanea = ({
   const handleFileUploadOfficial = (doc) => {
     const existingFile = getOfficialFile(doc);
 
+    // Ajustar el campo de fecha según doc.date
+    // Si doc.date === true => fecha obligatoria
+    // Si doc.date === false o undefined => fecha opcional
+    const dateField = doc.date
+      ? {
+          label: "Fecha",
+          name: "date",
+          type: "date",
+          required: true,
+        }
+      : {
+          label: "Fecha (opcional)",
+          name: "date",
+          type: "date",
+          required: false,
+        };
+
     setFormConfig({
       title: `Subir documento oficial: ${doc.label}`,
-      message: "Seleccione el archivo y la fecha (obligatoria):",
+      message: doc.date
+        ? "Seleccione el archivo y la fecha (obligatoria)."
+        : "Seleccione el archivo y, opcionalmente, una fecha:",
       fields: [
         { label: "Archivo (PDF)", name: "file", type: "file", required: true },
-        { label: "Fecha", name: "date", type: "date", required: true },
+        dateField,
       ],
       onSubmit: async ({ file, date }) => {
-        if (!file || !date) {
-          modal("Error", "Archivo y fecha son obligatorios para documentos oficiales.");
-          return;
-        }
         try {
           charge(true);
           const token = getToken();
+
+          // Si doc.date === true, validamos que haya fecha
+          if (doc.date === true) {
+            if (!file || !date) {
+              modal("Error", "Archivo y fecha son obligatorios para este documento.");
+              return;
+            }
+          } else {
+            // doc.date === false => solo validamos archivo
+            if (!file) {
+              modal("Error", "Debes seleccionar un archivo (PDF).");
+              return;
+            }
+          }
 
           if (existingFile) {
             // UPDATE
@@ -176,19 +209,21 @@ const DocumentProgramMiscelanea = ({
               originModel: "Program",
               idModel: program._id,
               originDocumentation: doc._id,
-              date,
-              // Rellenar si quieres
+              date, // puede ser undefined si no se llenó
               notes: existingFile.notes || "",
-              description: existingFile.description || `Documento oficial: ${doc.label}`,
+              description:
+                existingFile.description || `Documento oficial: ${doc.label}`,
             };
             const updatedProgram = await updateFileDrive(payloadUpdate, token);
             if (!updatedProgram || updatedProgram.error) {
-              modal("Error", updatedProgram?.message || "No se pudo actualizar el archivo.");
+              modal(
+                "Error",
+                updatedProgram?.message || "No se pudo actualizar el archivo."
+              );
               return;
             }
             handleProgramSaved(updatedProgram);
             modal("Documento actualizado", `Se actualizó "${doc.label}" con éxito.`);
-
           } else {
             // CREATE
             const payloadCreate = {
@@ -202,7 +237,10 @@ const DocumentProgramMiscelanea = ({
             };
             const updatedProgram = await createFileDrive(payloadCreate, token);
             if (!updatedProgram || updatedProgram.error) {
-              modal("Error", updatedProgram?.message || "No se pudo subir el archivo.");
+              modal(
+                "Error",
+                updatedProgram?.message || "No se pudo subir el archivo."
+              );
               return;
             }
             handleProgramSaved(updatedProgram);
@@ -337,6 +375,7 @@ const DocumentProgramMiscelanea = ({
   return (
     <div className={styles.contenedor}>
       <h2>DOCUMENTOS DEL PROGRAMA</h2>
+
       {/* Documentos oficiales */}
       {officialDocs.length > 0 ? (
         officialDocs.map((doc) => {
@@ -350,10 +389,7 @@ const DocumentProgramMiscelanea = ({
                     onClick={() => handleDownloadFile(fileFound)}
                     style={{ cursor: "pointer" }}
                   />
-                  <FaTrash
-                    onClick={() => handleDeleteFile(fileFound)}
-                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                  />
+                  
                 </>
               ) : (
                 <CiFileOff color="tomato" />
@@ -362,6 +398,12 @@ const DocumentProgramMiscelanea = ({
                 onClick={() => handleFileUploadOfficial(doc)}
                 style={{ cursor: "pointer", marginLeft: "0.5rem" }}
               />
+              {
+                fileFound && <FaTrash
+                onClick={() => handleDeleteFile(fileFound)}
+                style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+              />
+              }
               <div className={styles.infoFile}>
                 <label>{doc.label}</label>
                 {fileFound?.date && (

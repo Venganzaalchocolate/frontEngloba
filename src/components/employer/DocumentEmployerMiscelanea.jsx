@@ -20,7 +20,6 @@ const DocumentEmployerMiscelanea = ({ user, modal, charge, changeUser }) => {
         { label: 'Curriculum', name: 'cv', date: false },
         { label: 'Certificado de delitos sexuales', name: 'sexualOffenseCertificate', date: false },
         { label: 'Modelo 145', name: 'model145', date: false },
-        { label: 'Prevención de incendios', name: 'firePrevention', date: true },
         { label: 'Contrato', name: 'contract', date: false },
         { label: 'Vida Laboral', name: 'employmentHistory', date: false },
         { label: 'Protección de datos', name: 'dataProtection', date: false },

@@ -43,7 +43,6 @@ const ListDocumentationManager = ({ program, modal, charge, handleProgramSaved, 
             } else {
                 payload.essentialDocumentationDevice = formData.documentationId;
             }
-            console.log(payload);
             const result = await updateProgram(payload, token);
             if (result.error) {
                 modal("Error", result.message || "No se pudo agregar la documentación esencial");
@@ -110,7 +109,7 @@ const ListDocumentationManager = ({ program, modal, charge, handleProgramSaved, 
                 ...(enumsData && enumsData.documentation
                   ? enumsData.documentation
                       .filter(doc => doc.model === 'Program')
-                      .map(doc => ({ value: doc._id, label: doc.name }))
+                      .map(doc => ({ value: doc._id, label: doc.label }))
                   : [])
               ]
         }
@@ -120,7 +119,7 @@ const ListDocumentationManager = ({ program, modal, charge, handleProgramSaved, 
     const getDocumentationLabel = (docId) => {
         if (enumsData && enumsData.documentation) {
             const doc = enumsData.documentation.find(d => d._id === docId);
-            return doc ? doc.name : docId;
+            return doc ? doc.label : docId;
         }
         return docId;
     };

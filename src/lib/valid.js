@@ -35,7 +35,7 @@ export const validText = (
   // Definir la expresión regular
   // (Si `numerosycaracteresespeciales` está a true, permitimos letras, números, espacios, y (,.:º)
   const regex = numerosycaracteresespeciales
-    ? /^[a-zA-ZÀ-ÿ0-9\s,.º:/()-]+$/
+    ? /^[a-zA-ZÀ-ÿ0-9\s,.'º:/()-]+$/
     : /^[a-zA-ZÀ-ÿ\s]+$/;
 
   return regex.test(texto);

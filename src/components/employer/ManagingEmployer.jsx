@@ -17,6 +17,7 @@ import Payrolls from '../payroll/Payrolls.jsx';
 import VacationDays from './VacationDays.jsx';
 import Hiringperiods from './HiringsPeriods.jsx';
 import { TbFileTypeXml } from "react-icons/tb";
+import DocumentMiscelanea from './DocumentMiscelanea.jsx';
 
 const ManagingEmployer = ({
   modal,
@@ -467,11 +468,12 @@ const ManagingEmployer = ({
                               charge={charge}
                               changeUser={(x) => changeUserLocally(x)}
                             />
-                            <DocumentEmployerMiscelanea
+                            <DocumentMiscelanea
                               user={user}
                               modal={modal}
                               charge={charge}
                               changeUser={(x) => changeUserLocally(x)}
+                              enumsData={enumsData}
                             />
                             <Payrolls
                               user={user}

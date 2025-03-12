@@ -74,6 +74,10 @@ export const textErrors = (tipo) => {
             return "La fecha no debe ser anterior a la fecha actual"
          case "percentage":
             return "Debe ser un número de 0 a 99"
+        case "descriptionFile":
+            return "La descripción debe tener un máximo de 200 caracteres"
+        case "nameFile":
+            return "El nombre del archivo debe contener como máximo 200 caracteres"
         default:
             return null;
     }

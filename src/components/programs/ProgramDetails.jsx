@@ -3,13 +3,14 @@ import { FaEdit } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
 import styles from "../styles/ManagingPrograms.module.css";
 import DocumentProgramMiscelanea from "./DocumentProgramMiscelanea";
-import FormDevice from "./FormDevice"; 
-import CronologyManager from "./CronologyManager"; 
+import FormDevice from "./FormDevice";
+import CronologyManager from "./CronologyManager";
 import { getToken } from "../../lib/serviceToken";
 import { usersName } from "../../lib/data";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import ListDocumentationManager from "./ListDocumentationManager";
 import { useLogin } from "../../hooks/useLogin";
+import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric ";
 
 const ProgramDetails = ({
   program,
@@ -23,6 +24,7 @@ const ProgramDetails = ({
 }) => {
   const [showDispositiveModal, setShowDispositiveModal] = useState(false);
   const [responsibles, setResponsibles] = useState([]);
+  
   const { logged } = useLogin();
 
   if (!program) return null;
@@ -68,13 +70,13 @@ const ProgramDetails = ({
             style={{ cursor: "pointer", marginLeft: "1rem" }}
           />
           {program.active ? (
-            <FaCircleCheck 
-              onClick={() => changeStatus(true)} 
+            <FaCircleCheck
+              onClick={() => changeStatus(true)}
               style={{ cursor: "pointer", marginLeft: "1rem" }}
             />
           ) : (
-            <FaCircleXmark 
-              onClick={() => changeStatus(false)} 
+            <FaCircleXmark
+              onClick={() => changeStatus(false)}
               style={{ cursor: "pointer", marginLeft: "1rem" }}
             />
           )}
@@ -95,11 +97,11 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Descripción:<br /></span>
               {program.about?.description
                 ? program.about.description.split("\n").map((line, idx) => (
-                    <React.Fragment key={idx}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ))
+                  <React.Fragment key={idx}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))
                 : "No disponible"}
             </p>
             {/* Objetivos */}
@@ -107,11 +109,11 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Objetivos:<br /></span>
               {program.about?.objectives
                 ? program.about.objectives.split("\n").map((line, idx) => (
-                    <React.Fragment key={idx}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ))
+                  <React.Fragment key={idx}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))
                 : "No disponible"}
             </p>
             {/* Perfil */}
@@ -119,11 +121,11 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Perfil:<br /></span>
               {program.about?.profile
                 ? program.about.profile.split("\n").map((line, idx) => (
-                    <React.Fragment key={idx}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ))
+                  <React.Fragment key={idx}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))
                 : "No disponible"}
             </p>
 
@@ -176,13 +178,13 @@ const ProgramDetails = ({
         </div>
       </div>
 
-      {/* Documentos asociados al programa */}
-      <DocumentProgramMiscelanea
-        program={program}
+      <DocumentMiscelaneaGeneric
+        data={program}                 // p. ej. user o program
+        modelName='Program'            // p. ej. "User" o "Program"
+        officialDocs={enumsData.documentation.filter((x)=>x._id==program.essentialDocumentationProgram)}         // Documentos oficiales que se deben mostrar
         modal={modal}
         charge={charge}
-        enumsData={enumsData}
-        handleProgramSaved={(x)=>handleProgramSaved(x)}
+        onChange={(x) => handleProgramSaved(x)}
       />
 
       {(logged.user.role === "root" || logged.user.role === "global") && (

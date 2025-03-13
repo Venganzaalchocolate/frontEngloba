@@ -12,12 +12,44 @@ import DeleteEmployer from './DeleteEmployer.jsx';
 import InfoEmployer from './InfoEmployer.jsx';
 import Responsability from './Responsability.jsx';
 import Coordination from './Coordination.jsx';
-import DocumentEmployerMiscelanea from './DocumentEmployerMiscelanea.jsx';
 import Payrolls from '../payroll/Payrolls.jsx';
 import VacationDays from './VacationDays.jsx';
 import Hiringperiods from './HiringsPeriods.jsx';
 import { TbFileTypeXml } from "react-icons/tb";
-import DocumentMiscelanea from './DocumentMiscelanea.jsx';
+import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric .jsx';
+import { FaPersonCircleMinus, FaBusinessTime } from "react-icons/fa6";
+
+
+function getUserStatuses(users) {
+  const now = new Date();
+  return users.reduce((acc, user) => {
+    if (!user.hiringPeriods || !Array.isArray(user.hiringPeriods)) {
+      return acc;
+    }
+    // Filtrar los hiringPeriods activos y "abiertos" (sin endDate o endDate futura)
+    const activePeriods = user.hiringPeriods.filter(period => {
+      return period.active && (!period.endDate || new Date(period.endDate) > now);
+    });
+    if (activePeriods.length === 0) return acc;
+
+    // Verificar si alguno de estos períodos tiene un leavePeriod abierto
+    const isOnLeave = activePeriods.some(period =>
+      (period.leavePeriods || []).some(lp => lp.active && !lp.actualEndLeaveDate)
+    );
+    // Verificar si alguno de estos períodos es por sustitución
+    const isSubstituting = activePeriods.some(period =>
+      period.reason && period.reason.replacement === true
+    );
+
+    if (isOnLeave) {
+      acc.push({ idUsuario: user._id, tipo: "baja" });
+    } else if (isSubstituting) {
+      acc.push({ idUsuario: user._id, tipo: "sustitucion" });
+    }
+    return acc;
+  }, []);
+}
+
 
 const ManagingEmployer = ({
   modal,
@@ -41,6 +73,10 @@ const ManagingEmployer = ({
   // Lista de usuarios devueltos por la API
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
+
+  const [usersWithStatus, setUsersWithStatus] = useState([]);
+
+  console.log(usersWithStatus)
 
   // Si NO eres root/global, podrás filtrar según una responsabilidad concreta
   const [selectedResponsibility, setSelectedResponsibility] = useState(null);
@@ -140,7 +176,6 @@ const ManagingEmployer = ({
       // Si NO eres root/global, filtramos por su responsabilidad
       if (!isRootOrGlobal) {
         if (!selectedResponsibility) {
-          // No se carga nada si no hay responsabilidad seleccionada
           if (showLoader) charge(false);
           return;
         }
@@ -154,6 +189,9 @@ const ManagingEmployer = ({
       }
 
       let data = await getusers(page, limit, auxFilters, token);
+
+      const statuses = getUserStatuses(data.users);
+      setUsersWithStatus(statuses);
       data.users = data.users.map(user => ({
         ...user,
         firstName: capitalizeWords(user.firstName),
@@ -172,6 +210,8 @@ const ManagingEmployer = ({
       if (showLoader) charge(false);
     }
   };
+
+
 
   useEffect(() => {
     if (logged?.isLoggedIn) {
@@ -246,7 +286,7 @@ const ManagingEmployer = ({
   // ============= RENDER DE LA INTERFAZ ==============
   // ==================================================
 
-  // 1) Si NO eres root/global y no tienes responsabilidades
+  // Si no eres root/global y no tienes responsabilidades
   if (!isRootOrGlobal) {
     if (!listResponsability || listResponsability.length === 0) {
       return (
@@ -282,7 +322,6 @@ const ManagingEmployer = ({
       );
     }
 
-    // Si no hay selección => no renderiza la lista
     if (!selectedResponsibility) {
       return null;
     }
@@ -294,29 +333,24 @@ const ManagingEmployer = ({
       const token = getToken();
       let auxFilters = { ...debouncedFilters };
 
-      // Borramos los campos vacíos
       for (let key in auxFilters) {
         if (auxFilters[key] === "") {
           delete auxFilters[key];
         }
       }
 
-      // 1) Llamada a tu backend (que devuelve { users: [...] })
       const data = await getusersnotlimit(auxFilters, token);
       if (!data || !data.users) {
         throw new Error("No se recibieron datos de usuarios");
       }
-
-      // 2) Convertir esa lista de usuarios en un XLSX y descargarlo
       downloadXlsxFromUsers(data.users);
-
     } catch (err) {
       modal("Error", "Error al obtener usuarios o generar Excel");
     } finally {
-      charge(false)
+      charge(false);
     }
   };
-  // 2) Eres root/global O ya tenemos selectedResponsibility => Render normal
+
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
@@ -325,17 +359,17 @@ const ManagingEmployer = ({
             <div>
               <h2>GESTIÓN DE EMPLEADOS</h2>
               <FaSquarePlus onClick={openModal} />
-             
-              {isRootOrGlobal &&
-                <TbFileTypeXml onClick={() => getUserNotLimit()}/>
-              }
- <a className={styles.botonMailto} href="mailto:web@engloba.org.es?subject=MediaJornada&body=Buenas Gustavo, necesito añadir a media jornada <Nombre>, con DNI <DNI>, al dispositivo <dipositivo>, con fecha de inicio <fecha>, puesto <cargo>, Gracias !!! ">
+              {isRootOrGlobal && <TbFileTypeXml onClick={() => getUserNotLimit()} />}
+              <a
+                className={styles.botonMailto}
+                href="mailto:web@engloba.org.es?subject=MediaJornada&body=Buenas Gustavo, necesito añadir a media jornada <Nombre>, con DNI <DNI>, al dispositivo <dipositivo>, con fecha de inicio <fecha>, puesto <cargo>, Gracias !!! "
+              >
                 Añadir media jornada en otro dispositivo
               </a>
               {isModalOpen && (
                 <FormCreateEmployer
                   selectedResponsibility={selectedResponsibility}
-                  enumsData={enumsData}  // en lugar de enumsEmployer
+                  enumsData={enumsData}
                   modal={modal}
                   charge={charge}
                   closeModal={closeModal}
@@ -343,7 +377,6 @@ const ManagingEmployer = ({
                 />
               )}
             </div>
-
             {isRootOrGlobal ? (
               <div className={styles.paginacion}>
                 <div>
@@ -392,7 +425,7 @@ const ManagingEmployer = ({
             {isRootOrGlobal && (
               <Filters
                 filters={filters}
-                enums={enumsData} // antes se usaba enumsEmployer
+                enums={enumsData}
                 handleFilterChange={handleFilterChange}
                 resetFilters={resetFilters}
                 setFilters={setFilters}
@@ -408,7 +441,6 @@ const ManagingEmployer = ({
                 </div>
 
                 {users.map((user) => {
-                  // Filtrar usuario apafa, etc., según permisos
                   if (
                     user.apafa &&
                     !(
@@ -419,6 +451,10 @@ const ManagingEmployer = ({
                   ) {
                     return null;
                   }
+
+                  const userStatus = usersWithStatus.find(
+                    (status) => status.idUsuario === user._id
+                  );
 
                   return (
                     <div className={styles.containerEmployer} key={user._id}>
@@ -437,8 +473,16 @@ const ManagingEmployer = ({
                           <div className={styles.tableCell}>
                             {user.lastName}
                           </div>
+
+
+
                           <div className={styles.tableCellStatus}>
-                            {user.employmentStatus}
+                            {userStatus && <div>
+                              {userStatus.tipo === "baja" ? <FaPersonCircleMinus className={styles.baja} /> : <FaBusinessTime className={styles.sus}/>}
+                            </div>
+                            }
+                            <p>{user.employmentStatus}</p>
+
                           </div>
                         </div>
 
@@ -454,7 +498,7 @@ const ManagingEmployer = ({
                             />
                             <Responsability
                               chargePrograms={chargePrograms}
-                              enumsData={enumsData} // usamos directamente la prop
+                              enumsData={enumsData}
                               user={user}
                               modal={modal}
                               charge={charge}
@@ -468,12 +512,13 @@ const ManagingEmployer = ({
                               charge={charge}
                               changeUser={(x) => changeUserLocally(x)}
                             />
-                            <DocumentMiscelanea
-                              user={user}
+                            <DocumentMiscelaneaGeneric
+                              data={user}
+                              modelName='User'
+                              officialDocs={enumsData.documentation.filter((x) => x.model === 'User')}
                               modal={modal}
                               charge={charge}
-                              changeUser={(x) => changeUserLocally(x)}
-                              enumsData={enumsData}
+                              onChange={(x) => changeUserLocally(x)}
                             />
                             <Payrolls
                               user={user}
@@ -482,7 +527,6 @@ const ManagingEmployer = ({
                               changeUser={(x) => changeUserLocally(x)}
                               listResponsability={listResponsability}
                             />
-                            {/* Si no está en proceso de contratación, etc. */}
                             {user.employmentStatus !== 'en proceso de contratación' &&
                               (user.role !== 'global' || user.role !== 'root') && (
                                 <>

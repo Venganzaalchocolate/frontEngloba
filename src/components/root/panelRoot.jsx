@@ -5,7 +5,6 @@ import ManagingEnum from './ManagingEnum';
 
 const PanelRoot = ({ charge, enumsData, modal, chargeEnums }) => {
 
-    console.log(enumsData)
     return (
         <div className={styles.contenedor}>
             <div className={styles.contenido}>

@@ -85,6 +85,7 @@ const FormCreateEmployer = ({
 
     // Position: options a partir de enums.jobs
     let positionOptions = [];
+    let studiesOptions=[];
     if (enums?.jobs) {
       positionOptions = enums.jobs.flatMap((job) => {
         if (job.subcategories) {
@@ -94,6 +95,19 @@ const FormCreateEmployer = ({
           }));
         } else {
           return [{ value: job._id, label: job.name }];
+        }
+      });
+    }
+
+    if (enums?.studies) {
+      studiesOptions = enums.studies.flatMap((s) => {
+        if (s.subcategories) {
+          return s.subcategories.map((sub) => ({
+            value: sub._id,
+            label: sub.name,
+          }));
+        } else {
+          return [{ value: s._id, label: s.name }];
         }
       });
     }
@@ -124,6 +138,15 @@ const FormCreateEmployer = ({
           const isOk = validText(texto, 2, 100);
           return isOk ? "" : textErrors("name");
         },
+      },
+      {
+        name: "studies",
+        label: "Estudios",
+        type: "selectMultiple",
+        required: true,
+        defaultValue: user?.studies || [],
+        disabled: lockedFields.includes("studies"),
+        options: [{ value: "", label: "Seleccione una o varias opciones" }, ...studiesOptions],
       },
       ...(logged.user.role === "root"
         ? [
@@ -352,6 +375,7 @@ const FormCreateEmployer = ({
         gender: formData.gender,
         fostered: formData.fostered || 'no',
         apafa:formData.apafa || 'no',
+        studies:formData.studies || [],
         disability: {
           percentage: formData.disPercentage || 0,
           notes: formData.disNotes || '',

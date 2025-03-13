@@ -42,7 +42,7 @@
 
 }
 
-.titulo h2 {
+.titulo>div>h2 {
     padding: 0.5rem 2rem 0 1rem;
     border-left: 10px solid var(--color-morado);
     display: flex;
@@ -56,7 +56,7 @@
     align-self: flex-end;
 }
 
-.titulo div {
+.titulo>div {
     display: flex;
 }
 
@@ -234,6 +234,21 @@ a.botonMailto:hover{
     color: var(--color-morado);
 }
 
+.baja, .sus{
+    padding-right: 1rem;
+    width: 2rem;
+    height: 2rem;
+}
+
+.baja{
+    color: var(--color-chicle);
+
+}
+
+.sus{
+    color: lightskyblue;
+}
+
 
 @media (min-width: 1080px) {
 
@@ -259,11 +274,19 @@ a.botonMailto:hover{
     .tableCell {
         display: flex;
         flex: 0 20rem;
+        align-self: center;
     }
 
     .tableCellStatus {
         flex: 1;
-        text-align: right;
+        justify-content: end;
+        display: flex;
+        align-self: center;
+    }
+
+    .tableCellStatus>p{
+        display: flex;
+  align-items: center;
     }
 
     .paginacion {

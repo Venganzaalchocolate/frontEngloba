@@ -8,7 +8,6 @@ const ToHireEmployee = ({ offers, userSelected, enumsEmployer, modal, charge, ch
     const [modalBag, setModalBag] = useState(false)
     const { Offer, changeOffer } = useOffer()
 
-
     const toHire = () => {
         if (!Offer || !(Offer.userCv.some((x)=>x==userSelected._id))) { setModalBag('bag') }
         else {
@@ -41,14 +40,34 @@ const ToHireEmployee = ({ offers, userSelected, enumsEmployer, modal, charge, ch
                 position:idJob,
                 active: true
             }
-        ]
+        ],
+        
     }   
     }
 
     if (userSelected?.offer) {
         userAux["offer"] = userSelected.offer;
     }
-   
+    if (userSelected?.studies) {
+        userAux.studies = userSelected.studies.reduce((acc, selectedStudy) => {
+          enumsEmployer.studies.forEach((studyGroup) => {
+            // Si el estudio seleccionado coincide con el nombre de la categoría principal
+            if (selectedStudy.trim() === studyGroup.name.trim()) {
+              acc.push(studyGroup._id);
+            }
+            // Si existen subcategorías, comprobamos en cada una
+            if (studyGroup.subcategories && Array.isArray(studyGroup.subcategories)) {
+              studyGroup.subcategories.forEach((sub) => {
+                if (selectedStudy.trim() === sub.name.trim()) {
+                  acc.push(sub._id);
+                }
+              });
+            }
+          });
+          return acc;
+        }, []);
+      }
+      
 
     const lockedFields = ['email', 'phone', 'role', 'startDate', 'device']
     

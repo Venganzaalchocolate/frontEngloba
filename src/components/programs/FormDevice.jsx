@@ -1,36 +1,21 @@
 import React from "react";
 import ModalForm from "../globals/ModalForm";
-import { createDispositive } from "../../lib/data"; // <-- Tu endpoint para crear dispositivo
+import { createDispositive, updateDispositive } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import { validEmail, validNumber, validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 
-/**
- * FormDevice
- * ----------
- * Crea un dispositivo dentro de un programa (no edita).
- *
- * Props:
- * - program: El objeto programa donde creamos el dispositivo
- * - device: (Opcional) si existe, estamos en modo edición; si es null, modo creación
- * - modal: función para mostrar mensajes emergentes (alertas)
- * - charge: función para mostrar/cerrar loader
- * - closeModal: cierra este formulario
- * - enumsData: datos enumerados, p.e. provincias
- */
 const FormDevice = ({
   modal,
   charge,
   closeModal,
   program,
-  device = null, // si no hay device, creamos uno nuevo
+  device = null, // Si es null, modo creación; si existe, modo edición
   enumsData,
   handleProgramSaved
 }) => {
-  // Para el futuro, si existe device, isEditing = true → se implementa edición
   const isEditing = !!device;
 
-  // Provincias (opciones del <select>)
   const ProvincesOptions = enumsData?.provinces
     ? enumsData.provinces.map((p) => ({
         value: p._id,
@@ -38,7 +23,6 @@ const FormDevice = ({
       }))
     : [];
 
-  // Campos del formulario
   const buildFields = () => [
     {
       name: "name",
@@ -46,7 +30,8 @@ const FormDevice = ({
       type: "text",
       required: true,
       defaultValue: device?.name || "",
-      isValid: (texto) => (validText(texto, 2, 100) ? "" : textErrors("name")),
+      isValid: (texto) =>
+        validText(texto, 2, 100) ? "" : textErrors("name"),
     },
     {
       name: "address",
@@ -61,7 +46,7 @@ const FormDevice = ({
       type: "text",
       required: false,
       defaultValue: device?.email || "",
-      isValid: (texto) => (validEmail(texto) ? "" : textErrors("email"))
+      isValid: (texto) => (validEmail(texto) ? "" : textErrors("email")),
     },
     {
       name: "phone",
@@ -69,7 +54,8 @@ const FormDevice = ({
       type: "text",
       required: false,
       defaultValue: device?.phone || "",
-      isValid: (texto) => (validNumber(texto) ? "" : textErrors("phone"))
+      isValid: (texto) =>
+        validNumber(texto) ? "" : textErrors("phone"),
     },
     {
       name: "active",
@@ -93,52 +79,62 @@ const FormDevice = ({
         ...ProvincesOptions,
       ],
     },
-    // Si en el futuro agregas 'responsible', 'coordinators', etc.,
-    // aquí puedes añadir más campos (selectMultiple, etc.)
   ];
-
-  // Maneja el envío del formulario
   const handleSubmit = async (formData) => {
     try {
       charge(true);
       const token = getToken();
-
-      // Preparar objeto con datos para crear Dispositivo
-      let newDeviceData = {};
-
+      // Preparamos el objeto con los datos comunes
+      let deviceData = {
+        active: formData.active === "si",
+        name: formData.name,
+        address: formData.address || "",
+        email: formData.email || "",
+        phone: formData.phone || "",
+        province: formData.province || null,
+      };
+      let result;
       if (!isEditing) {
-        // === CREAR ===
-        newDeviceData = {
-          programId: program._id,
-          active: formData.active === "si",
-          name: formData.name,
-          address: formData.address || "",
-          email: formData.email || "",
-          phone: formData.phone || "",
-          province: formData.province || null, // Si no hay valor, enviamos null
-        };
-
-        // Llamamos a tu endpoint createDispositive(...)
-        const result = await createDispositive(newDeviceData, token);
-
-        if (result.error) {
-          modal("Error", result.message || "No se pudo crear el dispositivo");
-        } else {
-          handleProgramSaved(result)
-          modal("Dispositivo", "El dispositivo se ha creado con éxito");
-          closeModal();
-        }
+        // En modo creación, agregamos el ID del programa
+        deviceData.programId = program._id;
+        result = await createDispositive(deviceData, token);
       } else {
-        // === EDITAR ===
-        // (Opcional, si lo implementas en el futuro)
+        // En modo edición, debemos enviar además dispositiveId
+        deviceData.programId = program._id;
+        deviceData.dispositiveId = device._id; // 'device' es el dispositivo en edición
+        result = await updateDispositive(deviceData, token);
+      }
+      if (result.error) {
+        modal(
+          "Error",
+          result.message ||
+            (isEditing
+              ? "No se pudo actualizar el dispositivo"
+              : "No se pudo crear el dispositivo")
+        );
+      } else {
+        handleProgramSaved(result);
+        modal(
+          "Dispositivo",
+          isEditing
+            ? "El dispositivo se ha actualizado con éxito"
+            : "El dispositivo se ha creado con éxito"
+        );
+        closeModal();
       }
     } catch (error) {
-      modal("Error", error.message || "Ocurrió un error al crear el dispositivo");
+      modal(
+        "Error",
+        error.message ||
+          (isEditing
+            ? "Ocurrió un error al actualizar el dispositivo"
+            : "Ocurrió un error al crear el dispositivo")
+      );
     } finally {
       charge(false);
     }
   };
-
+  
   return (
     <ModalForm
       title={isEditing ? "Editar Dispositivo" : "Crear Dispositivo"}

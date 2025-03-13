@@ -4,17 +4,21 @@ import FormProgram from "./FormProgram";
 import ProgramList from "./ProgramList";
 import ProgramDetails from "./ProgramDetails";
 import DeviceDetails from "./DeviceDetails";
+import FormDevice from "./FormDevice";
 import styles from "../styles/ManagingPrograms.module.css";
 
 const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
-  // Controla la visualización del Modal para crear/editar Programas
+  // Modal para crear/editar programas y dispositivos
   const [showProgramModal, setShowProgramModal] = useState(false);
-  // Programa seleccionado (para ver detalles)
+  const [showDeviceModal, setShowDeviceModal] = useState(false);
+  
+  // Programa y dispositivo seleccionados
   const [selectedProgram, setSelectedProgram] = useState(null);
-  // Dispositivo seleccionado
   const [selectedDevice, setSelectedDevice] = useState(null);
-  // Programa en edición (si no es null, se edita)
+  
+  // Programa y dispositivo en edición
   const [editingProgram, setEditingProgram] = useState(null);
+  const [editingDevice, setEditingDevice] = useState(null);
 
   // Lista ordenada de programas
   const [sortedPrograms, setSortedPrograms] = useState([]);
@@ -28,13 +32,13 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
     }
   }, [enumsData]);
 
-  // Crear un programa nuevo
+  // Abrir modal para crear un nuevo programa
   const openCreateProgram = () => {
     setEditingProgram(null);
     setShowProgramModal(true);
   };
 
-  // Editar un programa existente
+  // Abrir modal para editar un programa existente
   const openEditProgram = (programId) => {
     const program = enumsData.programs.find((p) => p._id === programId);
     if (program) {
@@ -43,14 +47,22 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
     }
   };
 
-  const closeFormModal = () => {
+  const closeProgramModal = () => {
     setShowProgramModal(false);
   };
 
-  /**
-   * Esta función se llama cuando se ha guardado/actualizado un programa
-   * (por ejemplo, al crear o editar un programa, o al subir/eliminar un archivo).
-   */
+  // Abrir modal para editar un dispositivo: se recibe el objeto device directamente
+  const openEditDevice = (deviceObj) => {
+    if (deviceObj) {
+      setEditingDevice(deviceObj);
+      setShowDeviceModal(true);
+    }
+  };
+
+  const closeDeviceModal = () => {
+    setShowDeviceModal(false);
+  };
+
   const handleProgramSaved = (savedProgram) => {
     setSortedPrograms((prev) => {
       const idx = prev.findIndex((p) => p._id === savedProgram._id);
@@ -62,32 +74,46 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
         return [...prev, savedProgram];
       }
     });
-
-    // 2) Si el programa que se está visualizando es el guardado, se actualiza
+  
+    // Actualiza el programa seleccionado si coincide
     if (selectedProgram && selectedProgram._id === savedProgram._id) {
       setSelectedProgram(savedProgram);
     }
-
-    // 3) Actualizamos también enumsData.programs a través de chargePrograms
+  
+    // Si se ha actualizado un dispositivo y éste estaba seleccionado,
+    // buscamos dentro de savedProgram.devices el dispositivo actualizado y lo actualizamos.
+    if (selectedDevice && savedProgram.devices) {
+      const updatedDevice = savedProgram.devices.find(
+        (d) => d._id.toString() === selectedDevice._id.toString()
+      );
+      if (updatedDevice) {
+        setSelectedDevice(updatedDevice);
+      }
+    }
+  
+    // Actualizamos la lista global de programas
     if (enumsData?.programs) {
-      // Reemplazar o agregar en la lista global
       let updatedPrograms = enumsData.programs.map((p) =>
         p._id === savedProgram._id ? savedProgram : p
       );
       if (!updatedPrograms.some((p) => p._id === savedProgram._id)) {
         updatedPrograms.push(savedProgram);
       }
-      // Llamamos a chargePrograms para actualizar en el padre
       chargePrograms(updatedPrograms);
     }
   };
+  
 
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
         <div className={styles.titulo}>
-          <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
-          <FaSquarePlus onClick={openCreateProgram} style={{ cursor: "pointer" }} />
+          <h2>{!!selectedDevice?'GESTIÓN DEL DISPOSITIVO':'GESTIÓN DEL PROGRAMA'}</h2>
+          {!selectedDevice && <FaSquarePlus
+            onClick={openCreateProgram}
+            style={{ cursor: "pointer" }}
+          />}
+          
         </div>
 
         {/* Modal: Crear/Editar Programa */}
@@ -97,21 +123,40 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
             enumsData={enumsData}
             modal={modal}
             charge={charge}
-            closeModal={closeFormModal}
-            handleProgramSaved={(p) => handleProgramSaved(p)}
+            closeModal={closeProgramModal}
+            handleProgramSaved={handleProgramSaved}
+          />
+        )}
+
+        {/* Modal: Crear/Editar Dispositivo */}
+        {showDeviceModal && (
+          <FormDevice
+            key={editingDevice ? editingDevice._id : "new-device"}
+            device={editingDevice}
+            program={selectedProgram}
+            enumsData={enumsData}
+            modal={modal}
+            charge={charge}
+            closeModal={closeDeviceModal}
+            handleProgramSaved={handleProgramSaved}
           />
         )}
 
         <div>
           {selectedDevice ? (
-            /* --------- VISTA DETALLES DE DISPOSITIVO --------- */
+            // Vista de detalles de dispositivo
             <DeviceDetails
               device={selectedDevice}
+              program={selectedProgram} // se pasa el programa padre
+              enumsData={enumsData} // datos globales
+              modal={modal}
+              charge={charge}
               onClose={() => setSelectedDevice(null)}
-              handleProgramSaved={(p) => handleProgramSaved(p)}
+              handleProgramSaved={handleProgramSaved}
+              onEditDevice={openEditDevice} // callback para editar device
             />
           ) : selectedProgram ? (
-            /* --------- VISTA DETALLES DE PROGRAMA --------- */
+            // Vista de detalles de programa
             <ProgramDetails
               program={selectedProgram}
               onClose={() => setSelectedProgram(null)}
@@ -123,7 +168,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
               handleProgramSaved={handleProgramSaved}
             />
           ) : (
-            /* --------- LISTA DE PROGRAMAS --------- */
+            // Lista de programas
             <ProgramList
               programs={sortedPrograms}
               onSelectProgram={(program) => setSelectedProgram(program)}

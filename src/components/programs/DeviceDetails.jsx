@@ -5,6 +5,7 @@ import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric ";
 import styles from "../styles/ManagingPrograms.module.css";
 import { getToken } from "../../lib/serviceToken";
 import { usersName } from "../../lib/data";
+import { useLogin } from "../../hooks/useLogin";
 
 const DeviceDetails = ({
   device,
@@ -12,10 +13,10 @@ const DeviceDetails = ({
   enumsData,
   modal,
   charge,
-  onClose,
   handleProgramSaved,
   onEditDevice,      // Callback para editar el dispositivo
   onChangeStatus,    // Opcional para cambiar el estado
+  listResponsability
 }) => {
   if (!device) return null;
 
@@ -23,23 +24,25 @@ const DeviceDetails = ({
   const [coordinators, setCoordinators] = useState([]);
   const [provinceName, setProvinceName] = useState("No disponible");
 
+  const { logged } = useLogin();
+
+
+  const loadResponsibles = async () => {
+    charge(true)
+    if (device.responsible && device.responsible.length > 0) {
+      const token = getToken();
+      const users = await usersName({ ids: device.responsible }, token);
+      if (users && Array.isArray(users)) {
+        setResponsibles(users);
+      }
+      
+    };
+    charge(false)
+  }
+
   useEffect(() => {
     // Cargar responsables (IDs a objetos con nombres)
-    if (device.responsible && device.responsible.length > 0) {
-      const loadResponsibles = async () => {
-        try {
-          const token = getToken();
-          const users = await usersName({ ids: device.responsible }, token);
-          if (users && Array.isArray(users)) {
-            setResponsibles(users);
-          }
-        } catch (error) {
-          console.error("Error cargando responsables:", error);
-        }
-      };
-      loadResponsibles();
-    }
-
+    loadResponsibles();
     // Cargar coordinadores
     if (device.coordinators && device.coordinators.length > 0) {
       const loadCoordinators = async () => {
@@ -148,25 +151,24 @@ const DeviceDetails = ({
         </div>
       </div>
 
-      <DocumentMiscelaneaGeneric
-        data={device}
-        modelName="Device"
-        parentId={program._id}  // <-- Agregar el parentId para dispositivos
-        officialDocs={enumsData.documentation.filter((doc) =>
-          program?.essentialDocumentationDevice?.includes(doc._id)
-        )}
-        modal={modal}
-        charge={charge}
-        onChange={(updatedDevice) => {
-          if (handleProgramSaved) {
-            handleProgramSaved(updatedDevice);
-          }
-        }}
-      />
+      {((logged.user.role === "root" || logged.user.role === "global") || listResponsability.some(ob => ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible))) && (
+        <DocumentMiscelaneaGeneric
+          data={device}
+          modelName="Device"
+          parentId={program._id}  // <-- Agregar el parentId para dispositivos
+          officialDocs={enumsData.documentation.filter((doc) =>
+            program?.essentialDocumentationDevice?.includes(doc._id)
+          )}
+          modal={modal}
+          charge={charge}
+          onChange={(updatedDevice) => {
+            if (handleProgramSaved) {
+              handleProgramSaved(updatedDevice);
+            }
+          }}
+        />
+      )}
 
-      <button onClick={onClose} className={styles.backButton}>
-        Volver
-      </button>
     </div>
   );
 };

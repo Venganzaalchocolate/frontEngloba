@@ -46,6 +46,7 @@ function DocumentMiscelaneaGeneric({
     setNormalizedFiles(transformFiles(data, modelName));
   }, [data, modelName]);
 
+  
   // =============== ESTADOS para modales ===============
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formConfig, setFormConfig] = useState(null);
@@ -341,7 +342,7 @@ function DocumentMiscelaneaGeneric({
 
   return (
     <div className={styles.contenedor}>
-      <h2>DOCUMENTOS {modelName}</h2>
+      <h2>DOCUMENTOS</h2>
 
       {/* Documentación Oficial */}
       <h3 className={styles.titulin}>

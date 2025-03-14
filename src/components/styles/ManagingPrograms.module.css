@@ -18,6 +18,54 @@
     padding-bottom: 1rem;
 }
 
+.cajaDispositivos{
+    display: flex;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem 0.5rem;
+    border-radius: 1rem;
+    >h2{
+        display: flex;
+        flex: 1 100%;
+        border-bottom: 3px solid var(--color-morado);
+        gap: 1rem;
+        padding-bottom: 0.5rem;
+        align-items: center;
+    }
+    >div{
+        flex: 0 0 200px;
+        background-color: white;
+        color: var(--color-morado);
+        padding: 1rem;
+        border-radius: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        border-top: solid 2rem var(--color-morado);
+        
+        >h5{            
+            color: white;
+            text-align: center;
+            text-transform: uppercase;
+            margin-top:-2.5rem;
+            margin-bottom:0.8rem
+        }
+        .deviceItem{
+            background-color: var(--color-malva);
+            padding: 0.5rem;
+            border-radius: 1rem;
+            color: var(--color-morado);
+            text-align: center;
+        }
+        .deviceItem:hover{
+            background-color: var(--color-morado);
+            color: white;
+           
+        }
+    }
+}
+
 
 .titulo {
     display: flex;
@@ -30,6 +78,8 @@
     border-left: 10px solid var(--color-morado);
     display: flex;
     flex: 1;
+    align-items: center;
+    gap: 1rem;
 }
 
 .titulo>svg {
@@ -117,7 +167,7 @@
 
 .programDetailInfo{
     display: flex;
-    gap: 0.5rem;
+    gap: 2rem;
     flex-direction: column;
     >div{
         display: flex;

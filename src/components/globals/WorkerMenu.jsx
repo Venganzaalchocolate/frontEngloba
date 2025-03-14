@@ -76,7 +76,7 @@ const WorkerMenu = ({ modal, charge }) => {
             if (MenuWorker == 'cv') return <ManagingResumenes chargeEnums={chargeEnums} enumsEmployer={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'socialForm') return <ManagingSocial closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} />;
             if (MenuWorker == 'offersJobs') return <OfferJobsPanel enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'programs') return <ManagingPrograms chargePrograms={chargePrograms} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
+            if (MenuWorker == 'programs') return <ManagingPrograms listResponsability={listResponsability} chargePrograms={chargePrograms} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'employer') return <ManagingEmployer chargePrograms={chargePrograms} enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'myself') return <ManagingMySelf enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'root') return <PanelRoot chargeEnums={() => chargeEnums()} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
@@ -106,6 +106,7 @@ const WorkerMenu = ({ modal, charge }) => {
                                 <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
                                 <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
                                 <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
+                                <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
                             </>
 
                             : listResponsability.length > 0
@@ -115,6 +116,7 @@ const WorkerMenu = ({ modal, charge }) => {
                                     <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                                     <button onClick={() => changeMenuWorker('offersJobs')}>GESTIONAR OFERTAS</button>
                                     <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
+                                    <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
                                 </>
                                 :
                                 <>

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
 import styles from "../styles/ManagingPrograms.module.css";
-import DocumentProgramMiscelanea from "./DocumentProgramMiscelanea";
 import FormDevice from "./FormDevice";
 import CronologyManager from "./CronologyManager";
 import { getToken } from "../../lib/serviceToken";
@@ -14,13 +13,13 @@ import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric ";
 
 const ProgramDetails = ({
   program,
-  onClose,
   onEditProgram,
   onSelectDevice,
   modal,
   charge,
   enumsData,
-  handleProgramSaved
+  handleProgramSaved,
+  listResponsability
 }) => {
   const [showDispositiveModal, setShowDispositiveModal] = useState(false);
   const [responsibles, setResponsibles] = useState([]);
@@ -30,17 +29,21 @@ const ProgramDetails = ({
   if (!program) return null;
 
   const chargeResponsibles = async (idsUsers) => {
+    charge(true)
     const token = getToken();
     const users = await usersName({ ids: idsUsers }, token); // Llamada a la API
     if (users && Array.isArray(users)) {
       setResponsibles(users); // Guarda los responsables en el estado
     }
+    charge(false)
   };
 
   useEffect(() => {
+    
     if (program?.responsible?.length > 0) {
       chargeResponsibles(program.responsible);
     }
+    
   }, [program]);
 
   // Abrir modal para crear dispositivo
@@ -60,6 +63,21 @@ const ProgramDetails = ({
     console.log(`Cambia status de ${current} a ${!current}`);
   };
 
+  const groupedDevices = program.devices?.reduce((groups, device) => {
+    const province = device.province;
+    if (!groups[province]) {
+      groups[province] = [];
+    }
+    groups[province].push(device);
+    return groups;
+  }, {});
+
+  // Función auxiliar para obtener el nombre de la provincia a partir de su ID
+const getProvinceName = (provinceId, provincesEnum) => {
+  const province = provincesEnum.find(p => p._id === provinceId);
+  return province ? province.name.trim() : provinceId;
+};
+  
   return (
     <div className={styles.programInfoContainer}>
       <div className={styles.containerInfo}>
@@ -92,6 +110,7 @@ const ProgramDetails = ({
               <span className={styles.titulines}>Área:</span>
               {program.area || "No disponible"}
             </p>
+            
             {/* Descripción */}
             <p>
               <span className={styles.titulines}>Descripción:<br /></span>
@@ -177,15 +196,19 @@ const ProgramDetails = ({
           </div>
         </div>
       </div>
-
-      <DocumentMiscelaneaGeneric
-        data={program}                 // p. ej. user o program
-        modelName='Program'            // p. ej. "User" o "Program"
-        officialDocs={enumsData.documentation.filter((x)=>x._id==program.essentialDocumentationProgram)}         // Documentos oficiales que se deben mostrar
-        modal={modal}
-        charge={charge}
-        onChange={(x) => handleProgramSaved(x)}
-      />
+            
+      {((logged.user.role === "root" || logged.user.role === "global") || listResponsability.some(ob => ob.idProgram === program._id && ob.isProgramResponsible)) && (
+            <DocumentMiscelaneaGeneric
+            data={program}                 // p. ej. user o program
+            modelName='Program'            // p. ej. "User" o "Program"
+            officialDocs={enumsData.documentation.filter((x)=>x._id==program.essentialDocumentationProgram)}         // Documentos oficiales que se deben mostrar
+            modal={modal}
+            charge={charge}
+            onChange={(x) => handleProgramSaved(x)}
+          />
+            )}
+              
+      
 
       {(logged.user.role === "root" || logged.user.role === "global") && (
         // Componente ListDocumentationManager para gestionar la documentación esencial
@@ -198,30 +221,31 @@ const ProgramDetails = ({
         />
       )}
 
-      <div>
-        <h4>
-          Dispositivos:
-          <FaSquarePlus
-            onClick={openCreateDispositive}
-            style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-          />
-        </h4>
-        {program.devices?.length > 0 ? (
-          program.devices.map((device) => (
-            <div
-              key={device._id}
-              className={styles.deviceItem}
-              onClick={() => onSelectDevice(device)}
-            >
-              {device.name}
-            </div>
-          ))
-        ) : (
-          <p>No hay dispositivos asociados a este programa.</p>
-        )}
+<div className={styles.cajaDispositivos}>
+  <h2>DISPOSITIVOS <FaSquarePlus onClick={()=>openCreateDispositive()}/></h2>
+  {groupedDevices && Object.keys(groupedDevices).length > 0 ? (
+    Object.entries(groupedDevices).map(([provinceId, devices]) => (
+      <div key={provinceId}>
+        {/* Aquí usamos la función para obtener el nombre de la provincia */}
+        <h5>{getProvinceName(provinceId, enumsData.provinces)}</h5>
+        {devices.map((device) => (
+          <div
+            key={device._id}
+            className={styles.deviceItem}
+            onClick={() => onSelectDevice(device)}
+          >
+            {device.name}
+          </div>
+        ))}
       </div>
+    ))
+  ) : (
+    <p>No hay dispositivos asociados a este programa.</p>
+  )}
+</div>
 
-      <button onClick={onClose}>Volver a programas</button>
+
+
 
       {/* Modal para crear Dispositivo */}
       {showDispositiveModal && (

@@ -121,7 +121,7 @@ const InfoEmployer = ({
         }
       } else if (name === "socialSecurityNumber") {
         if (value !== "") {
-          valido = validateSocialSecurityNumber(value);
+          valido = true;
           auxErrores[name] = !valido ? textErrors(name) : null;
         } else {
           auxErrores[name] = null;

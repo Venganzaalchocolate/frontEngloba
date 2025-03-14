@@ -28,7 +28,7 @@ const ProgramList = ({ programs, onSelectProgram }) => {
       {groupedByArea.map(([area, programList]) => {
         // Creamos una clase dinámica para cada área, si lo deseas
         const areaClass = area.replace(/\s+/g, "_").toLowerCase();
-
+        
         return (
           <div key={area} className={styles[areaClass]}>
             <h3>{area.toUpperCase()}</h3>

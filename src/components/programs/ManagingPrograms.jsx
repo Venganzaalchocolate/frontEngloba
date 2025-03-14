@@ -7,7 +7,7 @@ import DeviceDetails from "./DeviceDetails";
 import FormDevice from "./FormDevice";
 import styles from "../styles/ManagingPrograms.module.css";
 
-const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
+const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms, listResponsability }) => {
   // Modal para crear/editar programas y dispositivos
   const [showProgramModal, setShowProgramModal] = useState(false);
   const [showDeviceModal, setShowDeviceModal] = useState(false);
@@ -103,17 +103,17 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
     }
   };
   
+  const onClose=()=>{
+    if(selectedDevice) setSelectedDevice(null);
+    else setSelectedProgram(null)
+  }
 
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
         <div className={styles.titulo}>
-          <h2>{!!selectedDevice?'GESTIÓN DEL DISPOSITIVO':'GESTIÓN DEL PROGRAMA'}</h2>
-          {!selectedDevice && <FaSquarePlus
-            onClick={openCreateProgram}
-            style={{ cursor: "pointer" }}
-          />}
-          
+          <h2>{!!selectedDevice?'GESTIÓN DEL DISPOSITIVO':'GESTIÓN DEL PROGRAMA'} {!selectedDevice && <FaSquarePlus onClick={openCreateProgram}/>}</h2>
+          {(selectedDevice || selectedProgram) && <button onClick={() => onClose()}>Atrás</button>}
         </div>
 
         {/* Modal: Crear/Editar Programa */}
@@ -151,21 +151,21 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms }) => {
               enumsData={enumsData} // datos globales
               modal={modal}
               charge={charge}
-              onClose={() => setSelectedDevice(null)}
               handleProgramSaved={handleProgramSaved}
               onEditDevice={openEditDevice} // callback para editar device
+              listResponsability={listResponsability}
             />
           ) : selectedProgram ? (
             // Vista de detalles de programa
             <ProgramDetails
               program={selectedProgram}
-              onClose={() => setSelectedProgram(null)}
               onEditProgram={openEditProgram}
               onSelectDevice={(device) => setSelectedDevice(device)}
               modal={modal}
               charge={charge}
               enumsData={enumsData}
               handleProgramSaved={handleProgramSaved}
+              listResponsability={listResponsability}
             />
           ) : (
             // Lista de programas

@@ -8,7 +8,6 @@ export const formatDatetime=(date)=>{
 }
 
 export const formatDate=(date)=>{
-  console.log(date)
     const dateAux=DateTime.fromISO(date)
     .toFormat('dd-MM-yyyy');
     return dateAux

@@ -140,6 +140,16 @@ const FormCreateEmployer = ({
         },
       },
       {
+        name: "birthday",
+        label: "Fecha de Nacimiento",
+        type: "date",
+        required: true,
+        defaultValue:  user?.birthday
+          ? new Date(user?.birthday).toISOString().split("T")[0]
+          : "",
+        disabled: lockedFields.includes("birthday"),
+      },
+      {
         name: "studies",
         label: "Estudios",
         type: "selectMultiple",
@@ -372,6 +382,7 @@ const FormCreateEmployer = ({
         lastName: formData.lastName || "",
         phone: formData.phone,
         notes: formData.notes || "",
+        birthday: formData.birthday,
         gender: formData.gender,
         fostered: formData.fostered || 'no',
         apafa:formData.apafa || 'no',

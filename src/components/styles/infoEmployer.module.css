@@ -26,11 +26,12 @@
         flex: 1 100%;
     }
 
-.contenedor div input:disabled{
+.contenedor div input:disabled, .contenedor div span{
     background-color: transparent;
     padding: 0;
     font-weight: 600;
     padding-bottom: 0.5rem;
+    font-size: 9pt;
 }
 
 .contenedor div select:disabled{
@@ -52,7 +53,7 @@
     color: var(--color-morado)
 }
 
-.contenedor>div>select.consetmentDataProtection{
+.contenedor>div>select.consetmentDataProtection, .contenedor>div>select{
     all: unset;
     flex:0;
     padding: 0.5rem;
@@ -62,7 +63,7 @@
     font-size: 9pt;
 }
 
-.contenedor>div>select.consetmentDataProtection:disabled{
+.contenedor>div>select.consetmentDataProtection:disabled, .contenedor>div>select:disabled{
     background-color: transparent;
     padding: 0;
     font-weight: 600;
@@ -71,7 +72,6 @@
 
 .contenedor div.studiesContainer{
     display: flex;
-    flex: 30% 0;
     flex-direction: column;
     font-size: 9pt;
     font-weight: 600;
@@ -108,9 +108,9 @@
     .contenedor{
         border-radius: 1rem;
     }
-    .contenedor div{
-        flex: 30%;
-    }
+    .contenedor div {
+        flex: 0 0 30%;
+      }
 
 }
 

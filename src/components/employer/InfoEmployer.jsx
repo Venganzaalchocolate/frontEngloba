@@ -13,7 +13,7 @@ import {
 import { textErrors } from "../../lib/textErrors";
 import { getToken } from "../../lib/serviceToken";
 import { editUser } from "../../lib/data";
-import { deepClone } from "../../lib/utils";
+import { deepClone, formatDate } from "../../lib/utils";
 import { useLogin } from "../../hooks/useLogin";
 
 const InfoEmployer = ({
@@ -71,6 +71,16 @@ const InfoEmployer = ({
     setIsEditing(false);
     setDatos(deepClone(originalData));
   };
+
+  // Convierte una fecha ISO (o string) a 'YYYY-MM-DD'
+function toInputDate(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  // Ajustamos al huso horario (por si no quieres problemas con UTC).
+  // OJO, si tu ISO no es local, tenlo en cuenta. 
+  return d.toISOString().slice(0, 10);
+}
+
 
   // Manejo de cambios en campos generales
   const handleChange = (e) => {
@@ -177,6 +187,7 @@ const InfoEmployer = ({
       "apafa",
       "consetmentDataProtection",
       "role",
+      "birthday"
     ];
 
     fieldsToCompare.forEach((field) => {
@@ -222,8 +233,6 @@ const InfoEmployer = ({
     if (modifiedData.studies) {
       modifiedData.studies = JSON.stringify(modifiedData.studies);
     }
-
-    console.log(modifiedData);
     // Si no hay cambios, salimos del modo edición
     if (Object.keys(modifiedData).length === 0) {
       setIsEditing(false);
@@ -271,6 +280,7 @@ const InfoEmployer = ({
     ["firstName", "Nombre"],
     ["lastName", "Apellidos"],
     ["dni", "DNI"],
+    ["birthday", "Fecha de Nacimiento"],
     ["email", "Email"],
     ["phone", "Teléfono"],
     ["employmentStatus", "Estado Laboral"],
@@ -305,7 +315,10 @@ const InfoEmployer = ({
 
   return (
     <div className={styles.contenedor}>
-      <h2>DATOS {boton()}</h2>
+      <h2>
+        DATOS {boton()}
+      </h2>
+  
       <div className={styles.roleContainer}>
         <label className={styles.roleLabel}>Rol</label>
         <select
@@ -324,41 +337,76 @@ const InfoEmployer = ({
           <span className={styles.errorSpan}>{errores.gender}</span>
         )}
       </div>
-      {/* Renderizado de campos simples */}
-      {textFields.map(([fieldName, label]) => (
-        <div key={fieldName} className={styles[fieldName + "Container"]}>
-          <label className={styles[fieldName + "Label"]}>{label}</label>
-          {fieldName === "employmentStatus" &&
-          (logged.user.role === "global" || logged.user.role === "root") ? (
-            <select
-              className={styles[fieldName]}
-              name={fieldName}
-              value={datos[fieldName] || ""}
-              onChange={handleChange}
-              disabled={!isEditing}
-            >
-              {enumsData.status.map((x) => (
-                <option value={x} key={x}>
-                  {x}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              className={styles[fieldName]}
-              type="text"
-              name={fieldName}
-              value={datos[fieldName] || ""}
-              onChange={handleChange}
-              disabled={fieldName === "employmentStatus" ? true : !isEditing}
-            />
-          )}
-          {errores[fieldName] && (
-            <span className={styles.errorSpan}>{errores[fieldName]}</span>
-          )}
-        </div>
-      ))}
-
+  
+      {/* Renderizado de cada campo en textFields */}
+      {textFields.map(([fieldName, label]) => {
+        if (fieldName === "birthday") {
+          // Si es 'birthday', mostramos la fecha formateada cuando no se edita
+          return (
+            <div key={fieldName} className={styles[fieldName + "Container"]}>
+              <label className={styles[fieldName + "Label"]}>{label}</label>
+  
+              {!isEditing ? (
+                // Modo lectura: usamos 'formatDate'
+                <span className={styles[fieldName]}>
+                  {datos[fieldName] ? formatDate(datos[fieldName]) : ""}
+                </span>
+              ) : (
+                // Modo edición: input de tipo date
+                <input
+                  className={styles[fieldName]}
+                  type="date"
+                  name={fieldName}
+                  value={toInputDate(datos[fieldName])}
+                  onChange={handleChange}
+                />
+              )}
+  
+              {errores[fieldName] && (
+                <span className={styles.errorSpan}>{errores[fieldName]}</span>
+              )}
+            </div>
+          );
+        }
+  
+        // Para otros campos normales:
+        return (
+          <div key={fieldName} className={styles[fieldName + "Container"]}>
+            <label className={styles[fieldName + "Label"]}>{label}</label>
+  
+            {fieldName === "employmentStatus" &&
+            (logged.user.role === "global" || logged.user.role === "root") ? (
+              <select
+                className={styles[fieldName]}
+                name={fieldName}
+                value={datos[fieldName] || ""}
+                onChange={handleChange}
+                disabled={!isEditing}
+              >
+                {enumsData.status.map((x) => (
+                  <option value={x} key={x}>
+                    {x}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className={styles[fieldName]}
+                type="text"
+                name={fieldName}
+                value={datos[fieldName] || ""}
+                onChange={handleChange}
+                disabled={fieldName === "employmentStatus" ? true : !isEditing}
+              />
+            )}
+  
+            {errores[fieldName] && (
+              <span className={styles.errorSpan}>{errores[fieldName]}</span>
+            )}
+          </div>
+        );
+      })}
+  
       {/* Género */}
       <div className={styles.genderContainer}>
         <label className={styles.genderLabel}>Género</label>
@@ -377,7 +425,7 @@ const InfoEmployer = ({
           <span className={styles.errorSpan}>{errores.gender}</span>
         )}
       </div>
-
+  
       {/* Extutelado */}
       <div className={styles.fosteredContainer}>
         <label className={styles.fosteredLabel}>Extutelado</label>
@@ -395,7 +443,7 @@ const InfoEmployer = ({
           <span className={styles.errorSpan}>{errores.fostered}</span>
         )}
       </div>
-
+  
       <div className={styles.apafaContainer}>
         <label className={styles.apafaLabel}>Apafa</label>
         <select
@@ -412,33 +460,31 @@ const InfoEmployer = ({
           <span className={styles.errorSpan}>{errores.apafa}</span>
         )}
       </div>
-
-      
+  
       {/* Consentimiento de protección de datos */}
-      {(isEditing || (!!datos && datos.consetmentDataProtection=='no')) && 
-      <div className={styles.consetmentDataProtectionContainer}>
-        <label className={styles.consetmentDataProtectionLabel}>
-          Consentimiento PD
-        </label>
-        <select
-          className={styles.consetmentDataProtection}
-          name="consetmentDataProtection"
-          value={datos.consetmentDataProtection || "si"}
-          onChange={handleChange}
-          disabled={!isEditing}
-        >
-          <option value="si">Sí</option>
-          <option value="no">No</option>
-        </select>
-        {errores.consetmentDataProtection && (
-          <span className={styles.errorSpan}>
-            {errores.consetmentDataProtection}
-          </span>
-        )}
-      </div>
-      }
-      
-
+      {(isEditing || (!!datos && datos.consetmentDataProtection === "no")) && (
+        <div className={styles.consetmentDataProtectionContainer}>
+          <label className={styles.consetmentDataProtectionLabel}>
+            Consentimiento PD
+          </label>
+          <select
+            className={styles.consetmentDataProtection}
+            name="consetmentDataProtection"
+            value={datos.consetmentDataProtection || "si"}
+            onChange={handleChange}
+            disabled={!isEditing}
+          >
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+          {errores.consetmentDataProtection && (
+            <span className={styles.errorSpan}>
+              {errores.consetmentDataProtection}
+            </span>
+          )}
+        </div>
+      )}
+  
       {/* Campos de discapacidad */}
       {(isEditing || (datos?.disability?.percentage || 0) > 0) && (
         <>
@@ -460,7 +506,7 @@ const InfoEmployer = ({
               </span>
             )}
           </div>
-
+  
           <div className={styles.disabilityNotesContainer}>
             <label className={styles.disabilityNotesLabel}>
               Notas sobre la discapacidad
@@ -481,6 +527,7 @@ const InfoEmployer = ({
           </div>
         </>
       )}
+  
       {/* Estudios */}
       <div className={styles.studiesContainer}>
         <label className={styles.studiesLabel}>Estudios</label>
@@ -492,9 +539,7 @@ const InfoEmployer = ({
               </p>
             ))
           ) : (
-            <p className={styles.noStudies}>
-              No hay información sobre estudios
-            </p>
+            <p className={styles.noStudies}>No hay información sobre estudios</p>
           )
         ) : (
           <>
@@ -510,9 +555,7 @@ const InfoEmployer = ({
                   </div>
                 ))
               ) : (
-                <p className={styles.noStudies}>
-                  No hay estudios seleccionados
-                </p>
+                <p className={styles.noStudies}>No hay estudios seleccionados</p>
               )}
             </div>
             <div className={styles.addStudy}>
@@ -533,9 +576,9 @@ const InfoEmployer = ({
           </>
         )}
       </div>
-
     </div>
   );
+  
 };
 
 export default InfoEmployer;

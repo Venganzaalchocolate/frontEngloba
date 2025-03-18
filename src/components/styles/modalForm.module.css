@@ -254,3 +254,8 @@
 .removeOptionButton:hover {
   color: #ffdede;
 }
+
+.checkboxGroupWrapper{
+  display: flex;
+  flex-direction: column;
+}

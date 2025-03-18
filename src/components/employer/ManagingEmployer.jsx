@@ -6,7 +6,7 @@ import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
 import { getusers, getusersnotlimit } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
-import { capitalizeWords, deepClone, downloadXlsxFromUsers } from '../../lib/utils.js';
+import { capitalizeWords, deepClone } from '../../lib/utils.js';
 import FormCreateEmployer from './FormCreateEmployer';
 import DeleteEmployer from './DeleteEmployer.jsx';
 import InfoEmployer from './InfoEmployer.jsx';
@@ -18,6 +18,8 @@ import Hiringperiods from './HiringsPeriods.jsx';
 import { TbFileTypeXml } from "react-icons/tb";
 import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric .jsx';
 import { FaPersonCircleMinus, FaBusinessTime } from "react-icons/fa6";
+import DocumentXLS from './documentXls.jsx';
+
 
 
 function getUserStatuses(users) {
@@ -76,7 +78,7 @@ const ManagingEmployer = ({
 
   const [usersWithStatus, setUsersWithStatus] = useState([]);
 
-  console.log(usersWithStatus)
+
 
   // Si NO eres root/global, podrás filtrar según una responsabilidad concreta
   const [selectedResponsibility, setSelectedResponsibility] = useState(null);
@@ -359,7 +361,7 @@ const ManagingEmployer = ({
             <div>
               <h2>GESTIÓN DE EMPLEADOS</h2>
               <FaSquarePlus onClick={openModal} />
-              {isRootOrGlobal && <TbFileTypeXml onClick={() => getUserNotLimit()} />}
+              {<DocumentXLS users={users} enumsData={enumsData}/>}
               <a
                 className={styles.botonMailto}
                 href="mailto:web@engloba.org.es?subject=MediaJornada&body=Buenas Gustavo, necesito añadir a media jornada <Nombre>, con DNI <DNI>, al dispositivo <dipositivo>, con fecha de inicio <fecha>, puesto <cargo>, Gracias !!! "

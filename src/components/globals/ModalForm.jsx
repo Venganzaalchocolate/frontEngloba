@@ -236,6 +236,38 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                     )}
                   </>
                 )}
+{/* Campo TIPO CHECKBOX GROUP (varios checkboxes para múltiples opciones)*/}
+                {field.type === "checkboxGroup" && (
+                  <div className={styles.checkboxGroupWrapper}>
+                    {field.options.map((option, optIndex) => {
+                      // Filtramos opciones "public" si es necesario, o simplemente las mostramos
+                      if (option.public === false) return null;
+
+                      const checked = formData[field.name]?.includes(option.value);
+                      return (
+                        <label key={option.value || optIndex} className={styles.checkboxOption}>
+                          <input
+                            type="checkbox"
+                            name={field.name}
+                            value={option.value}
+                            checked={checked}
+                            onChange={() => {
+                              // Reutilizamos la misma lógica para agregar/quitar valores del array
+                              handleChangeMultiple(field.name, option.value);
+                            }}
+                          />
+                          {option.label}
+                        </label>
+                      );
+                    })}
+
+                    {/* Mostramos errores si existen */}
+                    {errors[field.name] && (
+                      <p className={styles.modalError}>{errors[field.name]}</p>
+                    )}
+                  </div>
+                )}
+                
 
                 {/* Campo TIPO SELECT MULTIPLE CON AGRUPACIÓN */}
                 {field.type === "selectMultiple" && (
@@ -245,34 +277,35 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                         className={styles.selectMultipleButton}
                         onClick={() => toggleDropdown(field.name)}
                       >
-                        {formData[field.name]?.length > 0
+                        
+                        {formData[field.name]?.length > 0 
                           ? formData[field.name]
-                              .map((val) => {
-                                // Buscar en opciones (posible estructura agrupada)
-                                let found = null;
-                                field.options.forEach((option) => {
+                            .map((val) => {
+                              // Buscar en opciones (posible estructura agrupada)
+                              let found = null;
+                              field.options.forEach((option) => {
+                                if (
+                                  option.subcategories &&
+                                  option.subcategories.length > 0
+                                ) {
+                                  const match = option.subcategories.find(
+                                    (sub) =>
+                                      sub.value === val &&
+                                      (sub.public === undefined || sub.public === true)
+                                  );
+                                  if (match) found = match.label;
+                                } else {
                                   if (
-                                    option.subcategories &&
-                                    option.subcategories.length > 0
+                                    option.value === val &&
+                                    (option.public === undefined || option.public === true)
                                   ) {
-                                    const match = option.subcategories.find(
-                                      (sub) =>
-                                        sub.value === val &&
-                                        (sub.public === undefined || sub.public === true)
-                                    );
-                                    if (match) found = match.label;
-                                  } else {
-                                    if (
-                                      option.value === val &&
-                                      (option.public === undefined || option.public === true)
-                                    ) {
-                                      found = option.label;
-                                    }
+                                    found = option.label;
                                   }
-                                });
-                                return found || val;
-                              })
-                              .join(", ")
+                                }
+                              });
+                              return found || val;
+                            })
+                            .join(", ")
                           : "Selecciona opciones"}
                         <span className={styles.arrow}>&#9662;</span>
                       </div>
@@ -289,11 +322,10 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                                   {filteredSubs.map((sub, subIdx) => (
                                     <div
                                       key={sub.value || subIdx}
-                                      className={`${styles.selectMultipleOption} ${
-                                        formData[field.name]?.includes(sub.value)
+                                      className={`${styles.selectMultipleOption} ${formData[field.name]?.includes(sub.value)
                                           ? styles.selected
                                           : ""
-                                      } ${sub.value === "" ? styles.disabled : ""}`}
+                                        } ${sub.value === "" ? styles.disabled : ""}`}
                                       onClick={() => {
                                         if (sub.value !== "") {
                                           handleChangeMultiple(field.name, sub.value);
@@ -310,11 +342,10 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                               return (
                                 <div
                                   key={option.value || idx}
-                                  className={`${styles.selectMultipleOption} ${
-                                    formData[field.name]?.includes(option.value)
+                                  className={`${styles.selectMultipleOption} ${formData[field.name]?.includes(option.value)
                                       ? styles.selected
                                       : ""
-                                  } ${option.value === "" ? styles.disabled : ""}`}
+                                    } ${option.value === "" ? styles.disabled : ""}`}
                                   onClick={() => {
                                     if (option.value !== "") {
                                       handleChangeMultiple(field.name, option.value);
@@ -367,23 +398,23 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                 )}
 
                 {/* Otros tipos: text, email, etc. */}
-                {!["file", "select", "date", "textarea", "selectMultiple"].includes(
+                {!["file", "select", "date", "textarea", "selectMultiple", "checkboxGroup"].includes(
                   field.type
                 ) && (
-                  <>
-                    <input
-                      name={field.name}
-                      type={field.type || "text"}
-                      value={formData[field.name] || ""}
-                      placeholder={field.placeholder || ""}
-                      onChange={handleChange}
-                      disabled={field.disabled}
-                    />
-                    {errors[field.name] && (
-                      <p className={styles.modalError}>{errors[field.name]}</p>
-                    )}
-                  </>
-                )}
+                    <>
+                      <input
+                        name={field.name}
+                        type={field.type || "text"}
+                        value={formData[field.name] || ""}
+                        placeholder={field.placeholder || ""}
+                        onChange={handleChange}
+                        disabled={field.disabled}
+                      />
+                      {errors[field.name] && (
+                        <p className={styles.modalError}>{errors[field.name]}</p>
+                      )}
+                    </>
+                  )}
               </div>
             );
           })}

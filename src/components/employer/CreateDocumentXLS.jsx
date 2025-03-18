@@ -36,7 +36,7 @@ function getDeviceAndProgram(enumsData, deviceId) {
   return { deviceName, programName };
 }
 
-function DocumentXLS({ users, enumsData }) {
+function CreateDocumentXLS({ users, enumsData }) {
   const [showModal, setShowModal] = useState(false);
 
   const fieldLabels = {
@@ -280,4 +280,4 @@ function DocumentXLS({ users, enumsData }) {
   );
 }
 
-export default DocumentXLS;
+export default CreateDocumentXLS;

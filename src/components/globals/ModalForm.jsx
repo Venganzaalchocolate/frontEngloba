@@ -256,7 +256,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                               handleChangeMultiple(field.name, option.value);
                             }}
                           />
-                          {option.label}
+                          <span className={styles.textoLabelCheck}>{option.label}</span>
                         </label>
                       );
                     })}

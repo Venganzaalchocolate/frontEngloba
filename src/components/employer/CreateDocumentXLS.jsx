@@ -15,29 +15,32 @@ function getStudyName(enumsData, studyId) {
   return String(studyId);
 }
 
-/** Dado el ID de puesto, retorna su nombre, o el ID si no existe en jobsIndex. */
 function getPositionName(enumsData, positionId) {
-  const found = enumsData.jobsIndex[positionId];
-  return found ? found.name : String(positionId);
-}
+    // positionId debe ser el string que coincide con la clave en enumsData.jobsIndex
+    const found = enumsData.jobsIndex[positionId];
+    return found ? found.name : String(positionId);
+  }
+  
 
-/** Dado el ID de dispositivo, retorna { deviceName, programName }. */
 function getDeviceAndProgram(enumsData, deviceId) {
-  const deviceEntry = enumsData.programsIndex[deviceId];
-  if (!deviceEntry || deviceEntry.type !== "device") {
-    return { deviceName: "(desconocido)", programName: "(desconocido)" };
+    const deviceEntry = enumsData.programsIndex[deviceId];
+    if (!deviceEntry || deviceEntry.type !== "device") {
+      return { deviceName: "(desconocido)", programName: "(desconocido)" };
+    }
+    const deviceName = deviceEntry.name || "(sin nombre)";
+    let programName = "(desconocido)";
+    const pId = deviceEntry.programId;
+    if (pId && enumsData.programsIndex[pId]) {
+      programName = enumsData.programsIndex[pId].name || "(sin nombre)";
+    }
+    return { deviceName, programName };
   }
-  const deviceName = deviceEntry.name || "(sin nombre)";
-  let programName = "(desconocido)";
-  const pId = deviceEntry.programId;
-  if (pId && enumsData.programsIndex[pId]) {
-    programName = enumsData.programsIndex[pId].name || "(sin nombre)";
-  }
-  return { deviceName, programName };
-}
+  
 
-function CreateDocumentXLS({ users, enumsData }) {
+function CreateDocumentXLS({ users, enumsData, closeXls }) {
   const [showModal, setShowModal] = useState(false);
+  
+  
 
   const fieldLabels = {
     firstName: "Nombre",
@@ -96,18 +99,25 @@ function CreateDocumentXLS({ users, enumsData }) {
       );
 
       // Reemplazar periodos
+      // Reemplazar periodos
       const newPeriods = (user.hiringPeriods || []).map((p) => {
-        const { deviceName, programName } = p.device
-          ? getDeviceAndProgram(enumsData, p.device)
-          : { deviceName: "", programName: "" };
+        // Antes apuntabas a p.device?._id, p.position?._id
+        // Ahora, como en tus datos p.device es un string (el ID), lo tomas tal cual:
+        const deviceId = p.device;
+        const positionId = p.position;
+        
+        const { deviceName, programName } = getDeviceAndProgram(enumsData, deviceId);
+        const positionName = getPositionName(enumsData, positionId);
+      
         return {
           ...p,
-          // Reemplazamos p.position
-          position: getPositionName(enumsData, p.position),
+          position: positionName,
           __deviceName: deviceName,
           __programName: programName,
         };
       });
+      
+  
 
       return { ...user, studies: newStudies, hiringPeriods: newPeriods };
     });
@@ -140,7 +150,6 @@ function CreateDocumentXLS({ users, enumsData }) {
           for (let i = 0; i < maxPeriods; i++) {
             const ix = i + 1;
             finalCols.push({ header: `Periodo${ix}_Inicio`, key: `period${ix}_start` });
-            finalCols.push({ header: `Periodo${ix}_Fin`, key: `period${ix}_end` });
             finalCols.push({ header: `Periodo${ix}_Programa`, key: `period${ix}_prog` });
             finalCols.push({ header: `Periodo${ix}_Dispositivo`, key: `period${ix}_dev` });
             finalCols.push({ header: `Periodo${ix}_Puesto`, key: `period${ix}_pos` });
@@ -222,13 +231,11 @@ function CreateDocumentXLS({ users, enumsData }) {
               const ix = i + 1;
               if (p) {
                 row[`period${ix}_start`] = formatDate(p.startDate);
-                row[`period${ix}_end`] = formatDate(p.endDate);
                 row[`period${ix}_prog`] = p.__programName || "";
                 row[`period${ix}_dev`] = p.__deviceName || "";
                 row[`period${ix}_pos`] = p.position || "";
               } else {
                 row[`period${ix}_start`] = "";
-                row[`period${ix}_end`] = "";
                 row[`period${ix}_prog`] = "";
                 row[`period${ix}_dev`] = "";
                 row[`period${ix}_pos`] = "";
@@ -259,24 +266,18 @@ function CreateDocumentXLS({ users, enumsData }) {
   };
 
   const handleSubmit = (formData) => {
-    setShowModal(false);
+    closeXls();
     downloadXlsxFromUsers(users, formData.columnsToInclude);
   };
 
   return (
-    <>
-      <TbFileTypeXml onClick={() => setShowModal(true)} />
-
-      {showModal && (
         <ModalForm
           title="Descargar XLS"
           message="Selecciona las columnas a exportar."
           fields={fields}
           onSubmit={handleSubmit}
-          onClose={() => setShowModal(false)}
+          onClose={() => closeXls(false)}
         />
-      )}
-    </>
   );
 }
 

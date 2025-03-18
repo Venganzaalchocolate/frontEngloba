@@ -1,7 +1,7 @@
 import React from "react";
 import styles from '../styles/ManagingEmployer.module.css';
 
-const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters }) => {
+const Filters = ({ filters, enums, handleFilterChange, resetFilters}) => {
 
     return (
         <div className={styles.contenedorfiltro}>
@@ -81,10 +81,11 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters 
                     <div>
                         <label htmlFor='apafa'>APAFA:</label>
                         <div>
-                            <select id='apafa' name='apafa' onChange={handleFilterChange} value={handleFilterChange.apafa}>
-                                <option value={''}>Selecciona una opción</option>
+                            
+                            <select id='apafa' name='apafa' onChange={handleFilterChange} value={filters.apafa} >
+                                {}<option value='no'>No</option>
                                 <option value='si'>Si</option>
-                                <option value='no'>No</option>
+                                
                             </select>
                         </div>
                     </div>

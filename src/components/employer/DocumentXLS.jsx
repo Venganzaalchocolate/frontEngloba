@@ -44,6 +44,7 @@ function DocumentXLS({ users, enumsData }) {
     lastName: "Apellidos",
     email: "Correo Electrónico",
     dni: "DNI",
+    birthday:"Fecha de Nacimiento",
     phone: "Teléfono",
     disability: "Discapacidad",
     apafa: "APAFA",
@@ -168,6 +169,9 @@ function DocumentXLS({ users, enumsData }) {
           case "socialSecurityNumber":
           case "bankAccountNumber":
             row[col] = u[col] || "";
+            break;
+          case "birthday":
+            row.birthday = formatDate(u.birthday);
             break;
 
           case "gender":

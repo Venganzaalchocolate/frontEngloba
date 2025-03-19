@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
-import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric ";
+import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric.jsx";
 import styles from "../styles/ManagingPrograms.module.css";
 import { getToken } from "../../lib/serviceToken";
 import { usersName } from "../../lib/data";

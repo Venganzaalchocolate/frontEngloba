@@ -1,91 +1,87 @@
-.contenedor{
+.contenedor {
     display: flex;
     flex-direction: row;
-    flex: 1 100% ;
+    flex: 1 1 100%;
     background-color: var(--color-morado);
     gap: 1rem;
 }
 
-.contenedor>div.contenido{
-    flex-direction: column;
+.contenedor > div.contenido {
     display: flex;
+    flex-direction: column;
     flex: 1;
     background-color: white;
     border-radius: 0;
-    
     flex-wrap: wrap;
     color: var(--color-morado);
 }
 
-.contenedor>div.contenido>div.titulo{
+.contenedor > div.contenido > div.titulo {
     display: flex;
     padding-bottom: 2rem;
 }
 
-.contenedor>div.contenido>div.caja{
+.contenedor > div.contenido > div.caja {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     gap: 3%;
 }
 
-.contenedor>div.contenido>div.titulo>h2{
-    padding: 0.5rem 2rem 0 1rem;
+.contenedor > div.contenido > div.titulo > h2 {
     display: flex;
+    padding: 0.5rem 2rem 0 1rem;
     background-color: white;
 }
 
-.contenedor>div.contenido>div.titulo>svg{
+.contenedor > div.contenido > div.titulo > svg {
     width: 3rem;
     height: 3rem;
-    justify-content: end;
-    align-self: self-end;
-};
+    justify-content: flex-end;
+    align-self: flex-end;
+}
 
-
-
-.paginacion{
+.paginacion {
     display: flex;
     flex: 1;
-    justify-content: end;
+    justify-content: flex-end;
     gap: 0.5rem;
     align-items: center;
-    >label{
-        color: var(--color-morado);
-        display: flex;
-        align-self: auto;
-    }
 }
-#cabeceraTabla{
+
+.paginacion > label {
+    color: var(--color-morado);
+    display: flex;
+    align-self: auto;
+}
+
+#cabeceraTabla {
     font-weight: bold;
     background-color: var(--color-morado);
     color: white;
     transition: none;
 }
 
-
-#cabeceraTabla:hover{
-    scale: none;
+#cabeceraTabla:hover {
+    /* Si deseas que no haya transformación, puedes omitir esta regla o utilizar: */
+    transform: scale(1);
 }
 
-.componentes{
+.componentes {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
 @media (min-width: 600px) {
-    .contenedor{
+    .contenedor {
         padding: 0 4rem;
     }    
-    .contenedor>div.contenido{
+    .contenedor > div.contenido {
         padding: 2rem;
         border-radius: 1rem;
-        
     }
-    .contenedor>div.contenido>div.titulo>h2{
+    .contenedor > div.contenido > div.titulo > h2 {
         border-left: 10px solid var(--color-morado);
     }
-    
-    
 }

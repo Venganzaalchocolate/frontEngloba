@@ -9,7 +9,8 @@ import { usersName } from "../../lib/data";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import ListDocumentationManager from "./ListDocumentationManager";
 import { useLogin } from "../../hooks/useLogin";
-import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric ";
+import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric.jsx";
+
 
 const ProgramDetails = ({
   program,

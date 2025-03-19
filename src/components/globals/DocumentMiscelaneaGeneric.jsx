@@ -7,8 +7,8 @@ import {
   deleteFileDrive
 } from "../../lib/data";
 
-import ModalForm from "../globals/ModalForm";
-import ModalConfirmation from "../globals/ModalConfirmation";
+import ModalForm from "./ModalForm";
+import ModalConfirmation from "./ModalConfirmation";
 
 import { validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
@@ -30,7 +30,7 @@ import styles from "../styles/documentMiscelanea.module.css";
  * @param {Function} props.charge - Para mostrar/ocultar loader
  * @param {Function} props.onChange - Callback para actualizar el padre cuando se sube/edita/borra
  */
-function DocumentMiscelaneaGeneric({
+const DocumentMiscelaneaGeneric = ({
   data,
   modelName,
   officialDocs,
@@ -38,15 +38,16 @@ function DocumentMiscelaneaGeneric({
   charge,
   onChange,
   parentId = null
-}) {
+}) => {
   // 1) Extraer/transformar los archivos en un array normalizado
   const [normalizedFiles, setNormalizedFiles] = useState([]);
 
   useEffect(() => {
-    setNormalizedFiles(transformFiles(data, modelName));
+    const tranformData = transformFiles(data, modelName);
+    setNormalizedFiles(tranformData);
   }, [data, modelName]);
 
-  
+
   // =============== ESTADOS para modales ===============
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formConfig, setFormConfig] = useState(null);
@@ -74,7 +75,7 @@ function DocumentMiscelaneaGeneric({
       charge(true);
       const token = getToken();
       const response = await getFileDrive({ idFile: fileObj.idDrive }, token);
-      
+
       if (!response?.url) {
         modal("Error", "No se pudo descargar el archivo (URL no disponible).");
         return;
@@ -341,7 +342,7 @@ function DocumentMiscelaneaGeneric({
   };
 
   return (
-    <div className={styles.contenedor}>
+    <div className={styles.contenedorDocument}>
       <h2>DOCUMENTOS</h2>
 
       {/* Documentación Oficial */}
@@ -447,9 +448,8 @@ function DocumentMiscelaneaGeneric({
       {deleteModal.open && (
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Eliminar "${
-            deleteModal.file?.fileLabel || deleteModal.file?.description
-          }"?`}
+          message={`¿Eliminar "${deleteModal.file?.fileLabel || deleteModal.file?.description
+            }"?`}
           onConfirm={confirmDeleteFile}
           onCancel={cancelDeleteFile}
         />
@@ -457,9 +457,6 @@ function DocumentMiscelaneaGeneric({
     </div>
   );
 }
-
-export default DocumentMiscelaneaGeneric;
-
 /**
  * Función auxiliar para transformar el array de archivos
  * dependiendo del modelo.
@@ -467,6 +464,7 @@ export default DocumentMiscelaneaGeneric;
 function transformFiles(data, modelName) {
   if (!data) return [];
   if (modelName === "User") {
+
     // Para User, se espera data.files como [{ filesId: { ... } }, ...]
     return (data.files || [])
       .map((item) => {
@@ -517,3 +515,5 @@ function transformFiles(data, modelName) {
       .filter(Boolean);
   }
 }
+
+export default DocumentMiscelaneaGeneric;

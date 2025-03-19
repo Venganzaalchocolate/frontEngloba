@@ -4,8 +4,8 @@ import { useLogin } from '../../hooks/useLogin.jsx';
 
 import InfoEmployer from '../employer/InfoEmployer.jsx';
 import Payrolls from '../payroll/Payrolls.jsx';
-import { getDataEmployer } from '../../lib/data.js';
-import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric .jsx';
+import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx';
+
 
 const ManagingMySelf = ({ modal, charge, listResponsability, enumsData }) => {
     const { logged } = useLogin();

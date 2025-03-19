@@ -16,9 +16,9 @@ import Payrolls from '../payroll/Payrolls.jsx';
 import VacationDays from './VacationDays.jsx';
 import Hiringperiods from './HiringsPeriods.jsx';
 import { TbFileTypeXml } from "react-icons/tb";
-import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric .jsx';
 import { FaPersonCircleMinus, FaBusinessTime } from "react-icons/fa6";
 import CreateDocumentXLS from './CreateDocumentXLS.jsx';
+import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx';
 
 
 

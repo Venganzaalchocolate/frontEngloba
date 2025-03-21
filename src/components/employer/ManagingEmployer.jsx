@@ -193,6 +193,8 @@ const ManagingEmployer = ({
         }
       }
 
+      
+
       let data = await getusers(page, limit, auxFilters, token);
 
       const statuses = getUserStatuses(data.users);

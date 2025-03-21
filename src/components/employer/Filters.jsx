@@ -32,12 +32,12 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters}) => {
                                 if (x.subcategories != undefined && x.subcategories.length > 0) {
                                     return <optgroup label={x.name} key={x.name}>
                                         {x.subcategories.map((y) => {
-                                            return <option value={y.name} key={y.name}>{y.name}</option>
+                                            return <option value={y._id} key={y.name}>{y.name}</option>
                                         })}
                                     </optgroup>
                                 }
                                 else {
-                                    return <option value={x.name} key={x.name}>{x.name}</option>
+                                    return <option value={x._id} key={x.name}>{x.name}</option>
                                 }
                             })}
                         </select>

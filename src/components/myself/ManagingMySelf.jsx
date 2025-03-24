@@ -39,6 +39,7 @@ const ManagingMySelf = ({ modal, charge, listResponsability, enumsData }) => {
                         modal={modal}
                         charge={charge}
                         onChange={(x) => changeUser(x)}
+                        authorized={listResponsability>0 || logged.user.role=='global' || logged.user.role=='root'}
                     />
                     <Payrolls user={logged.user} modal={modal} charge={charge} changeUser={(x) => changeUser(x)} listResponsability={listResponsability} />
                 </div>

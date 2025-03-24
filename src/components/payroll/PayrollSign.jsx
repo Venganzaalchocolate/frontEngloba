@@ -7,7 +7,6 @@ import { textErrors } from '../../lib/textErrors';
 import ModalForm from '../globals/ModalForm';
 
 export default function PayrollSign({ user, modal, changeUser, charge, onClose, payroll }) {
-  console.log('PayrollSign')
 
   // Este callback se llamará cuando el usuario dé clic en "Aceptar" en el ModalForm
   const handlePayrollSubmit = async (formData) => {
@@ -30,6 +29,7 @@ export default function PayrollSign({ user, modal, changeUser, charge, onClose, 
       const data = await updatePayroll(payload, token);
       if (!data.error) {
         modal('Subir nómina', 'Nómina añadida con éxito');
+        
         changeUser(data); // Actualiza tu estado global de usuario
       } else {
         modal('Error', 'No se pudo subir la nómina.');

@@ -206,6 +206,7 @@ const getProvinceName = (provinceId, provincesEnum) => {
             modal={modal}
             charge={charge}
             onChange={(x) => handleProgramSaved(x)}
+            authorized={true}
           />
             )}
               

@@ -175,12 +175,18 @@ div.confirmacionBorrar{
     display: flex;
     margin-left: 0.5rem;
     padding: 0 0.4rem;
+    gap: 0.5rem ;
+    color: white;
     border: solid 1px var(--color-chicle);
     border-radius: 1rem;
     background-color: var(--color-chicle);
     >svg.botonNomina{
         color: white;
     }
+}
+
+.dowSig:hover{
+    color: var(--color-chicle);
 }
 
 .botonSubir:hover{

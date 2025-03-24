@@ -37,7 +37,8 @@ const DocumentMiscelaneaGeneric = ({
   modal,
   charge,
   onChange,
-  parentId = null
+  parentId = null,
+  authorized=false
 }) => {
   // 1) Extraer/transformar los archivos en un array normalizado
   const [normalizedFiles, setNormalizedFiles] = useState([]);
@@ -348,10 +349,13 @@ const DocumentMiscelaneaGeneric = ({
       {/* Documentación Oficial */}
       <h3 className={styles.titulin}>
         Documentación Oficial
+        {authorized &&
         <AiOutlineCloudUpload
           className={styles.uploadButton}
           onClick={handleUploadOfficialFromSelect}
         />
+        }
+        
       </h3>
       <div className={styles.contentDocumentOficial}>
         {officialDocumentsToShow.length === 0 && (
@@ -366,18 +370,25 @@ const DocumentMiscelaneaGeneric = ({
                   onClick={() => handleDownloadFile(file)}
                   style={{ cursor: "pointer" }}
                 />
-                <FaTrash
+                {
+                  authorized &&
+                  <FaTrash
                   onClick={() => handleDeleteFile(file)}
                   style={{ cursor: "pointer", marginLeft: "0.5rem" }}
                 />
+                }
+                
               </div>
             ) : (
               <div className={styles.iconos}>
-                <CiFileOff
+                
+                     <CiFileOff
                   color="tomato"
-                  onClick={handleUploadOfficialFromSelect}
+                  onClick={( authorized )?handleUploadOfficialFromSelect:()=>{}}
                   style={{ cursor: "pointer" }}
                 />
+                
+              
               </div>
             )}
 
@@ -396,21 +407,27 @@ const DocumentMiscelaneaGeneric = ({
       {/* Documentos misceláneos */}
       <h3 className={styles.titulin}>
         Documentación Complementaria
+        { authorized &&
         <AiOutlineCloudUpload
           className={styles.uploadButton}
           onClick={handleFileUploadExtra}
         />
+        }
+        
       </h3>
       <div className={styles.contentDocument}>
         {extraFiles.length === 0 && <p>No hay archivos adicionales subidos.</p>}
         {extraFiles.map((fileObj) => (
           <div key={fileObj._id} className={styles.fileRow}>
             <div className={styles.iconos}>
+
               <CiFileOn
                 color="green"
                 onClick={() => handleDownloadFile(fileObj)}
                 style={{ cursor: "pointer" }}
               />
+              { authorized &&
+              <>
               <AiOutlineCloudUpload
                 onClick={() => handleUpdateFileExtra(fileObj)}
                 style={{ cursor: "pointer", marginLeft: "0.5rem" }}
@@ -419,6 +436,10 @@ const DocumentMiscelaneaGeneric = ({
                 onClick={() => handleDeleteFile(fileObj)}
                 style={{ cursor: "pointer", marginLeft: "0.5rem" }}
               />
+              </>
+              
+              }
+              
             </div>
 
             <div className={styles.infoFile}>

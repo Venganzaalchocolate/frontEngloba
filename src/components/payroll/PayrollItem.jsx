@@ -8,7 +8,7 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 import { useLogin } from '../../hooks/useLogin.jsx';
 import { FaLongArrowAltDown } from "react-icons/fa";
 
-const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, listResponsability, signPayroll}) => {
+const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, listResponsability, signPayroll, isPayrollsUserLogged }) => {
     const { logged } = useLogin();
     const [wDelete, setWDelete] = useState(false);
     const name = `${payroll.payrollMonth}_${payroll.payrollYear}`
@@ -22,39 +22,36 @@ const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, lis
                     <FaFileDownload className={styles.botonNomina} />
                 </div>
             </div>
-           
 
-            <div className={styles.firma}>
+
+            
+
+            {isPayrollsUserLogged &&
+                <button className={styles.botonSubir} onClick={() => signPayroll(payroll)}>
+                    Firmar Nómina 
+                    <FaCloudUploadAlt
+                        className={styles.botonNomina}
+                    />
+                </button>
+            }
+
+<div className={styles.firma}>
                 {!!payroll.sign && payroll.sign.length > 0
-                    ? <span className={stylesTooltip.tooltip}><AiFillSignature onClick={() => downloadPayroll(payroll.sign, name)} /><FaLongArrowAltDown/><span className={stylesTooltip.tooltiptext}>Firmada</span></span>
+                    ? <span className={stylesTooltip.tooltip}><AiFillSignature className={styles.dowSig} onClick={() => downloadPayroll(payroll.sign, name)} /><span className={stylesTooltip.tooltiptext}>Firmada</span></span>
                     : <span className={stylesTooltip.tooltip}><AiOutlineSignature /><span className={stylesTooltip.tooltiptext}>No firmada</span></span>
                 }
 
             </div>
 
-            {(!!listResponsability && listResponsability.length > 0) || logged.user.role=='root'
-                ? 
-                <>
-               
-                <div className={styles.botonSubir} onClick={() => signPayroll(payroll)}>
-                    <FaCloudUploadAlt
-                        className={styles.botonNomina}
-                    />
-                </div>
+            {logged.user.role == 'root' &&
                 <div className={styles.botonBorrar} onClick={() => setWDelete(true)}>
                     <FaTrashAlt
                         className={styles.botonNomina}
                     />
-                </div>
-                </>
-                
-                
-                : <div className={styles.botonSubir} onClick={() => signPayroll(payroll)}>
-                    <FaCloudUploadAlt
-                        className={styles.botonNomina}
-                    />
-                </div>
-            }
+            </div>}
+            
+
+
 
 
             {wDelete && (

@@ -532,6 +532,7 @@ const ManagingEmployer = ({
                               modal={modal}
                               charge={charge}
                               onChange={(x) => changeUserLocally(x)}
+                              authorized={true}
                             />
                             <Payrolls
                               user={user}

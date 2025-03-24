@@ -9,11 +9,13 @@ import PayrollModalForm from './PayrollModalForm.jsx'; // <--- nuevo
 import { getToken } from '../../lib/serviceToken.js';
 import { updatePayroll } from '../../lib/data.js';
 import PayrollSign from './PayrollSign.jsx';
+import { useLogin } from '../../hooks/useLogin.jsx';
 
 const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=true }) => {
   // Estado para mostrar u ocultar el modal
   const [showModal, setShowModal] = useState(false);
   const [showModalSign, setShowModalSign] = useState(false);
+  const { logged } = useLogin();
 
   // Función para cerrar el modal
   const closeModal = () => {
@@ -22,6 +24,7 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=t
   }
 
   const deletePayroll = async (id, pdf) => {
+    charge(true);
     let datosAux = {};
     const token = getToken();
     datosAux['userId'] = user._id;
@@ -32,7 +35,10 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=t
     if (!data.error) {
       modal('Borrar Nómina', 'Nómina borrada con éxito');
       changeUser(data)
+    } else {
+      modal('Error al borrar la Nómina', 'No se ha podido borrar la nómina');
     }
+    charge(false);
   };
   const downloadPayroll = async (id, namePdf) => {
     // Activar indicador de carga
@@ -91,6 +97,7 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=t
 
       {/* Lista de nóminas */}
       <PayrollList
+        isPayrollsUserLogged={user._id==logged.user._id}
         payrolls={user.payrolls}
         deletePayroll={deletePayroll}
         downloadPayroll={downloadPayroll}

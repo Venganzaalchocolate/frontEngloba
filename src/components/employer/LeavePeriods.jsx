@@ -1,145 +1,120 @@
-import React from 'react';
-import { FaTrashAlt, FaEdit, FaSave } from 'react-icons/fa';
-import { MdEditOff } from 'react-icons/md';
-// Importa tus estilos y variables
+import React, { useState } from 'react';
+import { FaTrashAlt, FaEdit } from 'react-icons/fa';
 import styles from '../styles/hiringperiods.module.css';
+import LeavePeriodEdit from './LeavePeriodEdit';
 
 const LeavePeriods = ({
-  leavePeriods,
-  handleChange,
-  isEditing,
-  hiringPeriodId,
-  saveAndReset,
-  editCancel,
-  editHiring,
-  positionHiring,
+  leavePeriods = [],
   enums,
-  deleteHirindorLeave
+  positionHiring,
+  hiringPeriodId,      // <-- Se recibe del padre para saber cuál hiringPeriod es
+  deleteHirindorLeave,
+  onUpdateLeavePeriod, // <-- Función del padre => saveHiring(...)
 }) => {
+  const [leavePeriodToEdit, setLeavePeriodToEdit] = useState(null);
+
+  // Al pulsar "Editar" en un periodo
+  const handleEditClick = (period) => {
+    setLeavePeriodToEdit(period);
+  };
+
+  // Cierra el modal
+  const handleCloseModal = () => {
+    setLeavePeriodToEdit(null);
+  };
+
+  // Guardar cambios: se llama al pulsar "Guardar" dentro del modal
+  const handleSave = (updatedLeave) => {
+    // IMPORTANTE: agregamos la info del hiringPeriod actual
+    updatedLeave.hiringPeriodId = hiringPeriodId;
+
+    // Llamamos a onUpdateLeavePeriod con type="updateLeave"
+    onUpdateLeavePeriod(updatedLeave, 'updateLeave');
+    setLeavePeriodToEdit(null);
+  };
+
+  // Función para mostrar fecha en modo lectura
+  const formatDate = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString();
+  };
+
   return (
     <div className={styles.leaveTableWrapper}>
-        <h3>BAJAS O EXCEDENCIAS</h3>
-      {/* Envolver la tabla en un div si quieres controlar overflow o estilos */}
-      <table className={styles.myLeaveTable}>
-        <thead>
-          <tr>
-            <th>Inicio</th>
-            <th>Prevista</th>
-            <th>Fin</th>
-            <th>Descripción</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
+      <h3>BAJAS O EXCEDENCIAS</h3>
+      <div className={styles.myLeaveTable}>
+        <div className={styles.myLeaveTableHeader}>
+          <div className={styles.myLeaveTableCell}>Inicio</div>
+          <div className={styles.myLeaveTableCell}>Prevista</div>
+          <div className={styles.myLeaveTableCell}>Fin</div>
+          <div className={styles.myLeaveTableCell}>Descripción</div>
+          <div className={styles.myLeaveTableCell}></div>
+        </div>
+
+        <div className={styles.myLeaveTableBody}>
           {leavePeriods.map((period, ip) => {
-            if (!period.active) return null; // Sólo renderiza si está activo
+            if (!period.active) return null; // solo mostrar los LeavePeriods activos
+
+            const start = formatDate(period.startLeaveDate);
+            const expEnd = formatDate(period.expectedEndLeaveDate);
+            const actualEnd = formatDate(period.actualEndLeaveDate);
+
+            // Buscamos el nombre del tipo de baja/excedencia
+            let leaveName = 'No especificado';
+            if (enums.leavetype) {
+              const foundType = enums.leavetype.find((lt) => lt._id === period.leaveType);
+              if (foundType) leaveName = foundType.name;
+            }
 
             return (
-              <tr key={period._id}>
-                {/* INICIO */}
-                <td data-label="Inicio">
-                  <input
-                    type="date"
-                    id={`${positionHiring}-${hiringPeriodId}-leavePeriods-${ip}-startLeaveDate`}
-                    name={`${hiringPeriodId}-leavePeriods-${ip}-startLeaveDate`}
-                    value={
-                      period.startLeaveDate
-                        ? new Date(period.startLeaveDate).toISOString().split('T')[0]
-                        : ''
-                    }
-                    onChange={handleChange}
-                    disabled={isEditing !== period._id}
-                  />
-                </td>
-
-                {/* PREVISTA */}
-                <td data-label="Prevista">
-                  <input
-                    type="date"
-                    id={`${positionHiring}-${hiringPeriodId}-leavePeriods-${ip}-expectedEndLeaveDate`}
-                    name={`${hiringPeriodId}-leavePeriods-${ip}-expectedEndLeaveDate`}
-                    value={
-                      period.expectedEndLeaveDate
-                        ? new Date(period.expectedEndLeaveDate).toISOString().split('T')[0]
-                        : ''
-                    }
-                    onChange={handleChange}
-                    disabled={isEditing !== period._id}
-                  />
-                </td>
-
-                {/* FIN */}
-                <td data-label="Fin">
-                  <input
-                    type="date"
-                    id={`${positionHiring}-${hiringPeriodId}-leavePeriods-${ip}-actualEndLeaveDate`}
-                    name={`${hiringPeriodId}-leavePeriods-${ip}-actualEndLeaveDate`}
-                    value={
-                      period.actualEndLeaveDate
-                        ? new Date(period.actualEndLeaveDate).toISOString().split('T')[0]
-                        : ''
-                    }
-                    onChange={handleChange}
-                    disabled={isEditing !== period._id}
-                  />
-                </td>
-
-                {/* DESCRIPCIÓN (tipo de excedencia) */}
-                <td data-label="Descripción">
-                  <select
-                    id={`${positionHiring}-${hiringPeriodId}-leavePeriods-${ip}-leaveType`}
-                    name={`${hiringPeriodId}-leavePeriods-${ip}-leaveType`}
-                    value={period.leaveType}
-                    onChange={handleChange}
-                    disabled={isEditing !== period._id}
-                  >
-                    <option>Selecciona una opción</option>
-                    {!!enums['leavetype'] &&
-                      enums['leavetype'].map((x) => (
-                        <option
-                          key={x._id}
-                          value={x._id}
-                          // `selected` ya no es necesario si usas `value` en React
-                        >
-                          {x.name}
-                        </option>
-                      ))}
-                  </select>
-                </td>
-
-                {/* ACCIONES */}
-                <td data-label="Acciones">
-                  {isEditing === period._id ? (
-                    <>
-                      <MdEditOff
-                        style={{ cursor: 'pointer', marginRight: '0.5rem' }}
-                        onClick={editCancel}
-                      />
-                      <FaSave
-                        style={{ cursor: 'pointer' }}
-                        onClick={saveAndReset}
-                      />
-                    </>
-                  ) : (
+              <div className={styles.myLeaveTableRow} key={period._id}>
+                <div className={styles.myLeaveTableCell} data-label="Inicio">
+                  {start}
+                </div>
+                <div className={styles.myLeaveTableCell} data-label="Prevista">
+                  {expEnd}
+                </div>
+                <div className={styles.myLeaveTableCell} data-label="Fin">
+                  {actualEnd}
+                </div>
+                <div className={styles.myLeaveTableCell} data-label="Descripción">
+                  {leaveName}
+                </div>
+                <div className={styles.myLeaveTableCell} data-label="Acciones">
+                  <div className={styles.cajaAcciones}>
+                    {/* Botón "Editar" */}
                     <FaEdit
                       style={{ cursor: 'pointer', marginRight: '0.5rem' }}
-                      onClick={() => editHiring(period._id)}
+                      title="Editar este periodo"
+                      onClick={() => handleEditClick(period)}
                     />
-                  )}
-                  <FaTrashAlt
-                    style={{ cursor: 'pointer', marginLeft: '0.5rem' }}
-                    onClick={() =>
-                      deleteHirindorLeave(
-                        `${positionHiring}-${hiringPeriodId}-leavePeriods-${ip}-active`
-                      )
-                    }
-                  />
-                </td>
-              </tr>
+                    {/* Botón "Eliminar" */}
+                    <FaTrashAlt
+                      style={{ cursor: 'pointer' }}
+                      title="Eliminar este periodo"
+                      onClick={() =>
+                        deleteHirindorLeave(
+                          `${positionHiring}-${hiringPeriodId}-leavePeriods-${ip}-active`
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
             );
           })}
-        </tbody>
-      </table>
+        </div>
+      </div>
+
+      {/* Modal de edición (sólo se muestra si leavePeriodToEdit tiene datos) */}
+      {leavePeriodToEdit && (
+        <LeavePeriodEdit
+          leavePeriod={leavePeriodToEdit}
+          enums={enums}
+          onClose={handleCloseModal}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 };

@@ -36,7 +36,22 @@ const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) 
                 hirindId: hiringData._id,
                 leaveId: hiringData.leaveId
             };
-        } else {
+        } else if (type === 'updateLeave') {
+            // hiringData DEBE traer ._id (del leavePeriod), .startLeaveDate, etc.
+            // además de .hiringPeriodId (el padre o LeavePeriods se lo pasa)
+            dataSave = {
+              userId: user._id,
+              type: 'updateLeave',
+              hirindId: hiringData.hiringPeriodId,  // OJO: Asegúrate que lo tengas
+              leaveUpdated: {
+                _id: hiringData._id,
+                startLeaveDate: hiringData.startLeaveDate,
+                expectedEndLeaveDate: hiringData.expectedEndLeaveDate,
+                actualEndLeaveDate: hiringData.actualEndLeaveDate,
+                leaveType: hiringData.leaveType
+              }
+            };
+          }  else {
             // Para type === 'create' u otros
             dataSave = {
                 userId: user._id,

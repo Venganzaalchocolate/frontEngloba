@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ModalForm from '../globals/ModalForm';
 import { getDataEmployer } from '../../lib/data'; // o la función que uses para cargar enums
+import { validateDNIorNIE } from '../../lib/valid';
+import { textErrors } from '../../lib/textErrors';
 
 // Ejemplo: Generar fields dinámicamente
 function buildHiringFields(enums) {
@@ -89,6 +91,15 @@ function buildHiringFields(enums) {
         { value: "", label: "Seleccione una opción" },
         ...positionOptions], // a partir de enumsData.jobs
     },
+    {
+      name:"reason",
+      label:"Si está sustituyendo a un trabajador introduzca el dni del trabajador que está de baja o excedencia",
+      type: "text",
+      isValid: (texto) => {
+        const isOk = validateDNIorNIE(texto);  // true/false
+        return isOk ? "" : textErrors("dni");
+      },
+    }
   ];
 };
 //
@@ -145,6 +156,10 @@ export default function HiringPeriodNew({ user, enumsData = null, save = () => {
       category: formData.category || "",
       position: formData.position, // ObjectId (job / subcategory)
       active: true,
+      reason: {
+        dni:formData.reason,
+      }
+
     };
     // 3) Llamar a tu función "save", pasando (hiringNew, 'create')
     save(hiringNew, 'create');

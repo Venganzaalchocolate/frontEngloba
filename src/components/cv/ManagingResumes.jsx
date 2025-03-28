@@ -83,10 +83,7 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
         try {
             let data = null;
             const token = getToken();
-            if (Offer != null ) {
-                const ids = { users: Offer.userCv };
-                data = await getusercvs(page, limit, ids, token);
-            } else {
+            
                 let auxFilters = { ...debouncedFilters };
                 for (let key in auxFilters) {
                     if (auxFilters[key] === "") {
@@ -94,7 +91,7 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
                     }
                 }
                 data = await getusercvs(page, limit, auxFilters, token);
-            }
+            
 
             if (data.error) {
                 charge(false);

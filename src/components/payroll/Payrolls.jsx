@@ -23,14 +23,13 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=t
     setShowModalSign(false);
   }
 
-  const deletePayroll = async (id, pdf) => {
+  const deletePayroll = async (idPayroll) => {
     charge(true);
     let datosAux = {};
     const token = getToken();
     datosAux['userId'] = user._id;
-    datosAux['idPayroll'] = id;
+    datosAux['idPayroll'] = idPayroll;
     datosAux['type'] = 'delete';
-    datosAux['pdf'] = pdf;
     const data = await updatePayroll(datosAux, token);
     if (!data.error) {
       modal('Borrar Nómina', 'Nómina borrada con éxito');
@@ -97,7 +96,7 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=t
 
       {/* Lista de nóminas */}
       <PayrollList
-        isPayrollsUserLogged={user._id==logged.user._id}
+        userId={user._id}
         payrolls={user.payrolls}
         deletePayroll={deletePayroll}
         downloadPayroll={downloadPayroll}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import PayrollItem from './PayrollItem.jsx';
 import styles from '../styles/payrollsEmployer.module.css';
 
-const PayrollList = ({ payrolls, deletePayroll, downloadPayroll, listResponsability, signPayroll, isPayrollsUserLogged}) => {
+const PayrollList = ({ payrolls, deletePayroll, downloadPayroll, listResponsability, signPayroll, userId}) => {
     const [selectedYear, setSelectedYear] = useState(null);
 
     const stringMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -41,7 +41,7 @@ const PayrollList = ({ payrolls, deletePayroll, downloadPayroll, listResponsabil
                             downloadPayroll={downloadPayroll}
                             listResponsability={listResponsability}
                             signPayroll={signPayroll}
-                            isPayrollsUserLogged={isPayrollsUserLogged}
+                            userId={userId}
                         />
                     ))}
                 </ul>

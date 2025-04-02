@@ -346,7 +346,17 @@ const ManagingEmployer = ({
           delete auxFilters[key];
         }
       }
-
+      if(!!selectedResponsibility){
+       const resp = JSON.parse(selectedResponsibility);
+      if (resp.type === "program") {
+        auxFilters.programId = resp.programId;
+      } else if (resp.type === "device") {
+        auxFilters.programId = resp.programId;
+        auxFilters.dispositive = resp.deviceId;
+      } 
+      }
+      
+      
       const data = await getusersnotlimit(auxFilters, token);
       if (!data || !data.users) {
         throw new Error("No se recibieron datos de usuarios");

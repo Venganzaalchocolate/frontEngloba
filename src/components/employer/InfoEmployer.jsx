@@ -318,7 +318,7 @@ function toInputDate(isoString) {
       <h2>
         DATOS {boton()}
       </h2>
-  
+      {logged.user.role === "root" &&
       <div className={styles.roleContainer}>
         <label className={styles.roleLabel}>Rol</label>
         <select
@@ -333,11 +333,8 @@ function toInputDate(isoString) {
           <option value="global">Global</option>
           <option value="employee">Empleado</option>
         </select>
-        {errores.gender && (
-          <span className={styles.errorSpan}>{errores.gender}</span>
-        )}
       </div>
-  
+}
       {/* Renderizado de cada campo en textFields */}
       {textFields.map(([fieldName, label]) => {
         if (fieldName === "birthday") {

@@ -8,7 +8,7 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 import { useLogin } from '../../hooks/useLogin.jsx';
 import { FaLongArrowAltDown } from "react-icons/fa";
 
-const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, listResponsability, signPayroll, isPayrollsUserLogged }) => {
+const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, signPayroll, userId }) => {
     const { logged } = useLogin();
     const [wDelete, setWDelete] = useState(false);
     const name = `${payroll.payrollMonth}_${payroll.payrollYear}`
@@ -26,7 +26,7 @@ const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, lis
 
             
 
-            {isPayrollsUserLogged &&
+            {userId==logged.user._id &&
                 <button className={styles.botonSubir} onClick={() => signPayroll(payroll)}>
                     Firmar Nómina 
                     <FaCloudUploadAlt
@@ -43,20 +43,16 @@ const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, lis
 
             </div>
 
-            {logged.user.role == 'root' &&
+            {(logged.user.role == 'root' || logged.user.role == 'global') &&
                 <div className={styles.botonBorrar} onClick={() => setWDelete(true)}>
                     <FaTrashAlt
                         className={styles.botonNomina}
                     />
             </div>}
             
-
-
-
-
             {wDelete && (
                 <DeleteConfirmation
-                    onConfirm={() => deletePayroll(payroll._id, payroll.pdf)}
+                    onConfirm={() => deletePayroll(payroll._id)}
                     onCancel={() => setWDelete(false)}
                     payroll={payroll}
                     stringMeses={stringMeses}

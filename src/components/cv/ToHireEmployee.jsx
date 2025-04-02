@@ -29,6 +29,7 @@ const ToHireEmployee = ({ offers, userSelected, enumsEmployer, modal, charge, ch
         email: userSelected.email,
         phone: userSelected.phone,
         role: "employee",
+        fostered:userSelected.fostered,
         disability:{
             'percentage':userSelected.disability
         },

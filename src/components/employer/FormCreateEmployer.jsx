@@ -250,8 +250,8 @@ const FormCreateEmployer = ({
         label: "Ex Tutelado",
         type: "select",
         required: true,
-        defaultValue: user?.formerWard === true ? "si" : "no",
-        disabled: lockedFields.includes("formerWard"),
+        defaultValue: user?.fostered === true ? "si" : "no",
+        disabled: lockedFields.includes("fostered"),
         options: [
           { value: "si", label: "Sí" },
           { value: "no", label: "No" },

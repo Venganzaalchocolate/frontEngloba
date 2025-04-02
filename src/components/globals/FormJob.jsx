@@ -25,39 +25,41 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
 
 
     const [datos, setDatos] = useState({
-        firstName: user ? user.firstName : '', 
-        lastName: user ? user.lastName : '', 
-        dni: user ? user.dni : '', 
-        email: user ? user.email : '', 
-        phone: user ? user.phone : '', 
-        jobs: null, 
-        provinces: null, 
-        work_schedule: user ? user.work_schedule[0] : null, 
-        studies: null, 
-        terms: user ? '' : null, 
-        about: user ? user.about : "", 
+        firstName: user ? user.firstName : '',
+        lastName: user ? user.lastName : '',
+        dni: user ? user.dni : '',
+        email: user ? user.email : '',
+        phone: user ? user.phone : '',
+        jobs: null,
+        provinces: null,
+        work_schedule: user ? user.work_schedule[0] : null,
+        studies: null,
+        terms: user ? '' : null,
+        about: user ? user.about : "",
         id: user ? user._id : "",
         // Nuevo campo disability
-        disability: user ? user.disability : 0  
+        disability: user ? user.disability : 0,
+        fostered: user?.fostered ? 'si' : 'no',
     });
 
     const [errores, setError] = useState({
-        firstName:  null, 
-        lastName: null, 
-        dni: null,  
-        email: null, 
-        phone: null, 
-        jobs: null, 
-        provinces: null, 
-        work_schedule: null, 
-        studies: null, 
+        firstName: null,
+        lastName: null,
+        dni: null,
+        email: null,
+        phone: null,
+        jobs: null,
+        provinces: null,
+        work_schedule: null,
+        studies: null,
         terms: null,
         // Agregamos la propiedad disability al estado de errores
         disability: null,
         // Mensaje de error global
         mensajeError: null,
         // Error de archivo
-        file: null
+        file: null,
+        fostered: null,
     });
 
     const navigate = useNavigate();
@@ -73,20 +75,24 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
     };
 
     const handleChange = (e) => {
-        let auxErrores = { ...errores }; 
-        let auxDatos = { ...datos }; 
-        auxErrores['mensajeError'] = null; 
+        let auxErrores = { ...errores };
+        let auxDatos = { ...datos };
+        auxErrores['mensajeError'] = null;
         let valido = false;
 
         const { name, value, type } = e.target;
 
         // Para simplificar, validamos solo ciertos campos por nombre:
-        if (name === 'firstName')  valido = validText(value, 3, 100);
-        if (name === 'lastName')   valido = validText(value, 3, 100);
-        if (name === 'email')      valido = validEmail(value);
-        if (name === 'phone')      valido = validNumber(value);
-        if (name === 'dni')        valido = validateDNIorNIE(value);
-
+        if (name === 'firstName') valido = validText(value, 3, 100);
+        if (name === 'lastName') valido = validText(value, 3, 100);
+        if (name === 'email') valido = validEmail(value);
+        if (name === 'phone') valido = validNumber(value);
+        if (name === 'dni') valido = validateDNIorNIE(value);
+        if (name === 'fostered') {
+            auxDatos.fostered = value; // Guardamos 'si' o 'no'
+            setDatos(auxDatos);
+            return;
+          }
         // Para disability, validamos solo si se ha marcado el checkbox
         if (name === 'disability') {
             // Si no hay valor o no está marcado el checkbox,
@@ -163,7 +169,7 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
 
     const send = async () => {
         let valido = true;
-        const keyAux = ['jobs', 'studies', 'provinces']; 
+        const keyAux = ['jobs', 'studies', 'provinces'];
         let auxErrores = { ...errores };
 
         // Validar si el archivo es requerido y no está presente
@@ -174,16 +180,16 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
 
         for (const key in datos) {
             if (
-              !datos[key] && // en vez de (datos[key] === null)
-              !keyAux.includes(key) &&
-              key !== 'about' &&
-              key !== 'id' &&
-              key !== 'disability'
+                !datos[key] && // en vez de (datos[key] === null)
+                !keyAux.includes(key) &&
+                key !== 'about' &&
+                key !== 'id' &&
+                key !== 'disability'
             ) {
-              auxErrores[key] = textErrors('vacio');
-              valido = false;
+                auxErrores[key] = textErrors('vacio');
+                valido = false;
             }
-          }
+        }
 
         // Verificar si hay errores previos
         for (const key2 in errores) {
@@ -220,12 +226,13 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
             auxDatos.provinces = multipleData.provinces;
             auxDatos.studies = multipleData.studies;
             auxDatos.work_schedule = [auxDatos.work_schedule];
+            auxDatos.fostered = (auxDatos.fostered === 'si') ? 'si' : 'no';
 
             if (!!offer) auxDatos['offer'] = offer._id;
 
             // Enviar el formulario al servidor
-            const sendForm = (user == null 
-                ? await sendFormCv(auxDatos, file) 
+            const sendForm = (user == null
+                ? await sendFormCv(auxDatos, file)
                 : await sendFormCv(auxDatos, file, true)
             );
 
@@ -238,10 +245,10 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                 if (user != null) changeUser(sendForm);
                 charge(false);
                 modal(
-                    'CV enviado', 
+                    'CV enviado',
                     user != null ? "Curriculum modificado con éxito" : "Curriculum enviado con éxito"
                 );
-                if(user == null) window.location.href = 'https://engloba.org.es';
+                if (user == null) window.location.href = 'https://engloba.org.es';
             }
         }
     }
@@ -254,7 +261,7 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                     <img src="/graphic/logotipo_blanco.png" alt="logotipo engloba" />
                 </div>
             )}
-            
+
             {/* Si viene oferta, la mostramos */}
             {offer && (
                 <div className={styles.tituloOferta}>
@@ -319,7 +326,7 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                     <span className="errorSpan">{errores.phone}</span>
                 </div>
 
-               
+
 
                 {/* Resto de campos */}
                 {enums && (
@@ -341,36 +348,63 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                             </select>
                             <span className="errorSpan">{errores.work_schedule}</span>
                         </div>
+                        <div className={styles.fostered}>
+                            <label htmlFor="fostered">¿Eres extutelado en España?</label>
+                            <div>
+                                <div>
+                                    <input
+                                        type="radio"
+                                        id="si"
+                                        name="fostered"
+                                        value="si"
+                                        checked={datos.fostered === 'si'}
+                                        onChange={handleChange}
+                                    />
+                                    <label htmlFor="si">Si</label>
+                                </div>
+                                <div>
+                                    <input
+                                        type="radio"
+                                        id="no"
+                                        name="fostered"
+                                        value="no"
+                                        checked={datos.fostered === 'no'}
+                                        onChange={handleChange}
+                                    />
+                                    <label htmlFor="no">No</label>
+                                </div>
+                            </div>
+                        </div>
 
-                         {/* Checkbox para discapacidad */}
-                <div>
-                    <label htmlFor="hasDisability">
-                        <input
-                            type="checkbox"
-                            id="hasDisability"
-                            name="hasDisability"
-                            checked={hasDisability}
-                            onChange={handleChange}
-                        />
-                        &nbsp;¿Tienes algún grado de discapacidad?
-                    </label>
-                </div>
+                        {/* Checkbox para discapacidad */}
+                        <div>
+                            <label htmlFor="hasDisability">
+                                <input
+                                    type="checkbox"
+                                    id="hasDisability"
+                                    name="hasDisability"
+                                    checked={hasDisability}
+                                    onChange={handleChange}
+                                />
+                                &nbsp;¿Tienes algún grado de discapacidad?
+                            </label>
+                        </div>
 
-                {/* Input para el porcentaje de discapacidad si hasDisability = true */}
-                {hasDisability && (
-                    <div>
-                        <label htmlFor="disability">Porcentaje de discapacidad</label>
-                        <input
-                            type="number"
-                            id="disability"
-                            name="disability"
-                            onChange={handleChange}
-                            value={datos.disability}
-                            placeholder="Ej: 33"
-                        />
-                        <span className="errorSpan">{errores.disability}</span>
-                    </div>
-                )}
+                        {/* Input para el porcentaje de discapacidad si hasDisability = true */}
+                        {hasDisability && (
+                            <div>
+                                <label htmlFor="disability">Porcentaje de discapacidad</label>
+                                <input
+                                    type="number"
+                                    id="disability"
+                                    name="disability"
+                                    onChange={handleChange}
+                                    value={datos.disability}
+                                    placeholder="Ej: 33"
+                                />
+                                <span className="errorSpan">{errores.disability}</span>
+                            </div>
+                        )}
 
                         <div className={styles.contenedorSelectionMultiple}>
                             <SelectionOption
@@ -458,10 +492,10 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                         </label>
                         <span className="errorSpan">{errores.terms}</span>
                         <span className={styles.conditions}>
-                            *Para cumplir con la normativa vigente en protección de datos 
-                            de carácter personal, tal y como se indica en la correspondiente 
-                            cláusula informativa, tu C.V. se mantendrá en nuestra base de datos 
-                            durante un periodo de dos años a contar desde la fecha de entrega, 
+                            *Para cumplir con la normativa vigente en protección de datos
+                            de carácter personal, tal y como se indica en la correspondiente
+                            cláusula informativa, tu C.V. se mantendrá en nuestra base de datos
+                            durante un periodo de dos años a contar desde la fecha de entrega,
                             pasado este tiempo se borrarán tus datos.
                         </span>
                     </div>

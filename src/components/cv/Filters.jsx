@@ -9,7 +9,7 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters,
 
     return (
         <div className={styles.contenedorfiltro}>
-        <h3>FILTROS</h3>
+            <h3>FILTROS</h3>
             <div>
                 <label htmlFor="name">Nombre:</label>
                 <input type="text" id="name" name="name" value={filters.name} onChange={handleFilterChange} />
@@ -96,6 +96,20 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters,
                             })}
                         </select>
                     </div>
+
+                    <div>
+                        <label htmlFor="fostered">¿Extutelado?</label>
+                        <select
+                            id="fostered"
+                            name="fostered"
+                            value={filters.fostered}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="">Selecciona una opción</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
                 </>
             }
 
@@ -125,11 +139,11 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters,
                     </span>
                 </div>
                 <div>
-                
+
                     <span className={stylesTooltip.tooltip}>
-                        {filters.disability === 0 && <FaWheelchair   onClick={() => setFilters(prevFilters => ({ ...prevFilters, disability: 1 }))} />}
-                        {filters.disability >0  && <FaWheelchair color='forestgreen' onClick={() => setFilters(prevFilters => ({ ...prevFilters, disability: 0 }))} />}
-                        <span className={stylesTooltip.tooltiptext}>{(filters.disability >0) ? 'Con discapacidad' :  'Sin Discapacidad'}</span>
+                        {filters.disability === 0 && <FaWheelchair onClick={() => setFilters(prevFilters => ({ ...prevFilters, disability: 1 }))} />}
+                        {filters.disability > 0 && <FaWheelchair color='forestgreen' onClick={() => setFilters(prevFilters => ({ ...prevFilters, disability: 0 }))} />}
+                        <span className={stylesTooltip.tooltiptext}>{(filters.disability > 0) ? 'Con discapacidad' : 'Sin Discapacidad'}</span>
                     </span>
                 </div>
             </div>
@@ -138,7 +152,7 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters, setFilters,
                 <button onClick={resetFilters}>Reset Filtros</button>
             </div>
         </div>
-        
+
     );
 };
 

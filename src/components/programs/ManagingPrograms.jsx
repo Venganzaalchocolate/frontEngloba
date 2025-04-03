@@ -146,6 +146,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms, listRespon
           {selectedDevice ? (
             // Vista de detalles de dispositivo
             <DeviceDetails
+              close={onClose}
               device={selectedDevice}
               program={selectedProgram} // se pasa el programa padre
               enumsData={enumsData} // datos globales
@@ -174,7 +175,9 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms, listRespon
               onSelectProgram={(program) => setSelectedProgram(program)}
             />
           )}
+          
         </div>
+        
       </div>
     </div>
   );

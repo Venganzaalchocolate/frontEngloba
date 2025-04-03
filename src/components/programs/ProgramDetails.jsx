@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
 import styles from "../styles/ManagingPrograms.module.css";
 import FormDevice from "./FormDevice";
@@ -24,7 +24,8 @@ const ProgramDetails = ({
 }) => {
   const [showDispositiveModal, setShowDispositiveModal] = useState(false);
   const [responsibles, setResponsibles] = useState([]);
-  
+  const [showModal, setShowModal] = useState(false)
+
   const { logged } = useLogin();
 
   if (!program) return null;
@@ -40,11 +41,10 @@ const ProgramDetails = ({
   };
 
   useEffect(() => {
-    
     if (program?.responsible?.length > 0) {
       chargeResponsibles(program.responsible);
     }
-    
+
   }, [program]);
 
   // Abrir modal para crear dispositivo
@@ -57,12 +57,6 @@ const ProgramDetails = ({
     setShowDispositiveModal(false);
   };
 
-  // Ejemplo de cambio de status
-  const changeStatus = (current) => {
-    // Aquí podrías hacer una llamada al servidor para activar/desactivar
-    // y luego, por ejemplo, recargar la información en Program.
-    console.log(`Cambia status de ${current} a ${!current}`);
-  };
 
   const groupedDevices = program.devices?.reduce((groups, device) => {
     const province = device.province;
@@ -74,11 +68,11 @@ const ProgramDetails = ({
   }, {});
 
   // Función auxiliar para obtener el nombre de la provincia a partir de su ID
-const getProvinceName = (provinceId, provincesEnum) => {
-  const province = provincesEnum.find(p => p._id === provinceId);
-  return province ? province.name.trim() : provinceId;
-};
-  
+  const getProvinceName = (provinceId, provincesEnum) => {
+    const province = provincesEnum.find(p => p._id === provinceId);
+    return province ? province.name.trim() : provinceId;
+  };
+ 
   return (
     <div className={styles.programInfoContainer}>
       <div className={styles.containerInfo}>
@@ -111,7 +105,7 @@ const getProvinceName = (provinceId, provincesEnum) => {
               <span className={styles.titulines}>Área:</span>
               {program.area || "No disponible"}
             </p>
-            
+
             {/* Descripción */}
             <p>
               <span className={styles.titulines}>Descripción:<br /></span>
@@ -197,20 +191,24 @@ const getProvinceName = (provinceId, provincesEnum) => {
           </div>
         </div>
       </div>
-            
+
       {((logged.user.role === "root" || logged.user.role === "global") || listResponsability.some(ob => ob.idProgram === program._id && ob.isProgramResponsible)) && (
-            <DocumentMiscelaneaGeneric
-            data={program}                 // p. ej. user o program
-            modelName='Program'            // p. ej. "User" o "Program"
-            officialDocs={enumsData.documentation.filter((x)=>x._id==program.essentialDocumentationProgram)}         // Documentos oficiales que se deben mostrar
-            modal={modal}
-            charge={charge}
-            onChange={(x) => handleProgramSaved(x)}
-            authorized={true}
-          />
-            )}
-              
-      
+        <DocumentMiscelaneaGeneric
+          data={program}                 // p. ej. user o program
+          modelName='Program'            // p. ej. "User" o "Program"
+          officialDocs={enumsData.documentation.filter((doc) =>
+            program.essentialDocumentationProgram.some(
+              (essentialDoc) => essentialDoc === doc._id
+            )
+          )}         // Documentos oficiales que se deben mostrar
+          modal={modal}
+          charge={charge}
+          onChange={(x) => handleProgramSaved(x)}
+          authorized={true}
+        />
+      )}
+
+
 
       {(logged.user.role === "root" || logged.user.role === "global") && (
         // Componente ListDocumentationManager para gestionar la documentación esencial
@@ -223,28 +221,31 @@ const getProvinceName = (provinceId, provincesEnum) => {
         />
       )}
 
-<div className={styles.cajaDispositivos}>
-  <h2>DISPOSITIVOS <FaSquarePlus onClick={()=>openCreateDispositive()}/></h2>
-  {groupedDevices && Object.keys(groupedDevices).length > 0 ? (
-    Object.entries(groupedDevices).map(([provinceId, devices]) => (
-      <div key={provinceId}>
-        {/* Aquí usamos la función para obtener el nombre de la provincia */}
-        <h5>{getProvinceName(provinceId, enumsData.provinces)}</h5>
-        {devices.map((device) => (
-          <div
-            key={device._id}
-            className={styles.deviceItem}
-            onClick={() => onSelectDevice(device)}
-          >
-            {device.name}
-          </div>
-        ))}
+
+      <div className={styles.cajaDispositivos}>
+        <h2>DISPOSITIVOS <FaSquarePlus onClick={() => openCreateDispositive()} /></h2>
+        {groupedDevices && Object.keys(groupedDevices).length > 0 ? (
+          Object.entries(groupedDevices).map(([provinceId, devices]) => (
+            <div key={provinceId}>
+              {/* Aquí usamos la función para obtener el nombre de la provincia */}
+              <h5>{getProvinceName(provinceId, enumsData.provinces)}</h5>
+              {devices.map((device) => (
+                <div
+                  key={device._id}
+                  className={styles.deviceItem}
+                  onClick={() => onSelectDevice(device)}
+                >
+                  {device.name}
+                  
+                </div>
+
+              ))}
+            </div>
+          ))
+        ) : (
+          <p>No hay dispositivos asociados a este programa.</p>
+        )}
       </div>
-    ))
-  ) : (
-    <p>No hay dispositivos asociados a este programa.</p>
-  )}
-</div>
 
 
 

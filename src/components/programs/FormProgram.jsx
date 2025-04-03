@@ -29,6 +29,14 @@ const FormProgram = ({
   const buildFields = () => {
     return [
       {
+        name: "active",
+        label: "Estado del programa",
+        type: "select",
+        required: true,
+        defaultValue:program?.active ? "si" : "no",
+        options: [{ value: "", label: "Seleccione una opción" }, { value: 'si', label: 'Activo' }, { value: 'no', label: 'Inactivo' }],
+    },
+      {
         name: "name",
         label: "Nombre del Programa",
         type: "text",
@@ -111,6 +119,7 @@ const FormProgram = ({
           name: formData.name,
           acronym: formData.acronym,
           area: formData.area,
+          active:formData.active,
           finantial:
             formData.finantial && formData.finantial.length
               ? formData.finantial
@@ -139,6 +148,8 @@ const FormProgram = ({
         if (formData.name !== program.name) changes.name = formData.name;
         if (formData.acronym !== program.acronym) changes.acronym = formData.acronym;
         if (formData.area !== program.area) changes.area = formData.area;
+        const activeAux=(formData.active=='si')?true:false;
+        if (activeAux !== program.active) changes.active = formData.active;
 
         // Funding: ahora es un array de IDs
         if (

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric.jsx";
 import styles from "../styles/ManagingPrograms.module.css";
 import { getToken } from "../../lib/serviceToken";
-import { usersName } from "../../lib/data";
+import { deleteDispositive, usersName } from "../../lib/data";
 import { useLogin } from "../../hooks/useLogin";
+import ModalConfirmation from "../globals/ModalConfirmation.jsx";
 
 const DeviceDetails = ({
   device,
@@ -16,14 +17,15 @@ const DeviceDetails = ({
   handleProgramSaved,
   onEditDevice,      // Callback para editar el dispositivo
   onChangeStatus,    // Opcional para cambiar el estado
-  listResponsability
+  listResponsability,
+  close
 }) => {
   if (!device) return null;
 
   const [responsibles, setResponsibles] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
   const [provinceName, setProvinceName] = useState("No disponible");
-
+  const [showModal, setShowModal] = useState(false)
   const { logged } = useLogin();
 
 
@@ -82,6 +84,25 @@ const DeviceDetails = ({
     }
   };
 
+   const handleConfirm = async() => {
+    setShowModal(false)
+    charge(true)
+    const token=getToken();
+    const updateProgram=await deleteDispositive({programId:program._id, dispositiveId:device._id}, token)
+    if(!updateProgram.error){
+      handleProgramSaved(updateProgram);
+      modal('Dispositivo Borrado', `Dispositivo ${device.name} borrado con éxito`)
+      close();
+    } else {
+      modal('Dispositivo No Borrado', `El dispositivo ${device.name} no se ha podido borrar`)
+    }
+    charge(false)
+    }
+  
+    const handleCancel = () => {
+      setShowModal(false)
+    }
+
   return (
     <div className={styles.programInfoContainer}>
       <div className={styles.containerInfo}>
@@ -103,8 +124,21 @@ const DeviceDetails = ({
               style={{ cursor: "pointer", marginLeft: "1rem" }}
             />
           )}
+           <FaTrashAlt onClick={() => setShowModal(true)} />
+                  {showModal && (
+                    <ModalConfirmation
+                      title="Eliminar Dispositivo"
+                      message={(responsibles.length>0)
+                        ?`¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}? Tenga en cuenta que tiene responsables asociados a él`
+                        : (coordinators.length>0)
+                        ? `¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}? Tenga en cuenta que tiene coordinadores asociados a él`
+                        :`¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}?`}
+                      onConfirm={handleConfirm}
+                      onCancel={handleCancel}
+                    />
+                  )}
         </h2>
-
+       
         <div className={styles.programDetailInfo}>
           <div>
             <p>

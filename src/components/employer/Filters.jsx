@@ -2,7 +2,6 @@ import React from "react";
 import styles from '../styles/ManagingEmployer.module.css';
 
 const Filters = ({ filters, enums, handleFilterChange, resetFilters}) => {
-
     return (
         <div className={styles.contenedorfiltro}>
             <div>
@@ -46,7 +45,6 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters}) => {
                     <div>
                         <label htmlFor="status">Status</label>
                         <select id='status' name='status' onChange={handleFilterChange} value={filters.status}>
-                            <option value={''}>Selecciona una opción</option>
                             {enums.status.map((x) => {
                                 return <option value={x} key={x}>{x}</option>
                             })}
@@ -83,7 +81,7 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters}) => {
                         <div>
                             
                             <select id='apafa' name='apafa' onChange={handleFilterChange} value={filters.apafa} >
-                                {}<option value='no'>No</option>
+                                <option value='no'>No</option>
                                 <option value='si'>Si</option>
                                 
                             </select>

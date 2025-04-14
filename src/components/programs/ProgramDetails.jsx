@@ -196,11 +196,11 @@ const ProgramDetails = ({
         <DocumentMiscelaneaGeneric
           data={program}                 // p. ej. user o program
           modelName='Program'            // p. ej. "User" o "Program"
-          officialDocs={enumsData.documentation.filter((doc) =>
+          officialDocs={(!!program.essentialDocumentationProgram && program.essentialDocumentationProgram.length>0) ? enumsData.documentation.filter((doc) =>
             program.essentialDocumentationProgram.some(
               (essentialDoc) => essentialDoc === doc._id
             )
-          )}         // Documentos oficiales que se deben mostrar
+          ):[]}         // Documentos oficiales que se deben mostrar
           modal={modal}
           charge={charge}
           onChange={(x) => handleProgramSaved(x)}

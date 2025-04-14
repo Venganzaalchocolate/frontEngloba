@@ -89,7 +89,8 @@ const ManagingEmployer = ({
     firstName: '',
     email: '',
     phone: '',
-    apafa:'no'
+    apafa:'no',
+    status:'activo',
   });
 
   // Filtros con debounce
@@ -260,9 +261,10 @@ const ManagingEmployer = ({
       phone: '',
       dispositive: '',
       programId: '',
-      status: '',
+      status: 'activo',
       provinces: '',
-      apafa:'no'
+      apafa:'no',
+
     });
   }, []);
 

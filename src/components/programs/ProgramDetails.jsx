@@ -67,11 +67,26 @@ const ProgramDetails = ({
     return groups;
   }, {});
 
-  // Función auxiliar para obtener el nombre de la provincia a partir de su ID
-  const getProvinceName = (provinceId, provincesEnum) => {
-    const province = provincesEnum.find(p => p._id === provinceId);
-    return province ? province.name.trim() : provinceId;
-  };
+// Función para obtener el nombre a partir del ID (puede ser de provincia o subcategoría)
+const getProvinceName = (provinceId, provincesEnum) => {
+  for (const province of provincesEnum) {
+    // Comprobamos si el ID coincide con la provincia
+    if (province._id === provinceId) {
+      return province.name.trim();
+    }
+
+    // Si la provincia tiene subcategorías, las recorremos
+    if (province.subcategories && province.subcategories.length > 0) {
+      const subcategory = province.subcategories.find(sub => sub._id === provinceId);
+      if (subcategory) {
+        return subcategory.name.trim();
+      }
+    }
+  }
+
+  // Si no se encuentra ni en provincias ni en subcategorías, devolvemos el ID original
+  return provinceId;
+};
  
   return (
     <div className={styles.programInfoContainer}>

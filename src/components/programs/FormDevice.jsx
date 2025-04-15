@@ -16,12 +16,16 @@ const FormDevice = ({
 }) => {
   const isEditing = !!device;
 
-  const ProvincesOptions = enumsData?.provinces
-    ? enumsData.provinces.map((p) => ({
-        value: p._id,
-        label: p.name,
-      }))
-    : [];
+
+
+    let provinces = [];
+        if (enumsData?.provinces) {
+          provinces = enumsData.provinces.flatMap((x) =>
+                x.subcategories
+                    ? x.subcategories.map((sub) => ({ value: sub._id, label: sub.name }))
+                    : [{ value: x._id, label: x.name }]
+            );
+        }
 
   const buildFields = () => [
     {
@@ -72,13 +76,10 @@ const FormDevice = ({
       name: "province",
       label: "Provincia",
       type: "select",
-      required: false,
+      required: true,
       defaultValue: device?.province || "",
-      options: [
-        { value: "", label: "Seleccione una provincia" },
-        ...ProvincesOptions,
-      ],
-    },
+      options: [{ value: "", label: "Seleccione una provincia" }, ...provinces]
+  },
   ];
   const handleSubmit = async (formData) => {
     try {

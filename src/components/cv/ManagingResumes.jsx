@@ -14,6 +14,7 @@ import OfferSelect from "./OfferSelect.jsx";
 import { useOffer } from "../../hooks/useOffer.jsx";
 
 
+
 const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
     const { logged, changeLogged, logout } = useLogin();
     const { Offer, changeOffer } = useOffer();
@@ -91,7 +92,7 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
                     }
                 }
                 data = await getusercvs(page, limit, auxFilters, token);
-            
+                
 
             if (data.error) {
                 charge(false);
@@ -113,6 +114,8 @@ const ManagingResumenes = ({ modal, charge, enumsEmployer}) => {
         setUserSelected(null);
         setPage(1);
     }, []);
+
+   
 
     const deleteUser = async () => {
         if (userSelected._id) {

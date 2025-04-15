@@ -54,19 +54,11 @@ const FiltersOffers = ({
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Si quieres "limpiar" el dispositivo cuando cambias de programa,
-  // puedes hacerlo con un useEffect o con un custom handler, ejemplo:
-  //
-  // const handleProgramChange = (e) => {
-  //   setFilters((prev) => ({
-  //     ...prev,
-  //     programId: e.target.value,
-  //     deviceId: "" // opcional: limpiar el dispositivo
-  //   }));
-  // };
+
   const meses=['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
-  return (logged.user.role=='root') && (
+  // return (logged.user.role=='root') && (
+  return (
     <div className={styles.contenedorfiltro}>
       <h3>FILTROS DE OFERTAS</h3>
 
@@ -177,6 +169,19 @@ const FiltersOffers = ({
                 {dev.name}
               </option>
             ))}
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="active">Estado:</label>
+        <select
+          id="active"
+          name="active"
+          value={(filters.active=='si')?'si':'no'}
+          onChange={handleFilterChange}
+        >
+          <option value="si">Activo</option>
+          <option value="no">Inactivo</option>
         </select>
       </div>
 

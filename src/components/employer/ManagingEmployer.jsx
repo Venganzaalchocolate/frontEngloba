@@ -80,7 +80,7 @@ const ManagingEmployer = ({
   const [usersWithStatus, setUsersWithStatus] = useState([]);
 
 
-
+  
   // Si NO eres root/global, podrás filtrar según una responsabilidad concreta
   const [selectedResponsibility, setSelectedResponsibility] = useState(null);
 

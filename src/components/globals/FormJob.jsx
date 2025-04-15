@@ -4,7 +4,7 @@ import { sendFormCv } from '../../lib/data';
 import { validateDNIorNIE, validEmail, validNumber, validText } from '../../lib/valid';
 import { textErrors } from '../../lib/textErrors';
 import styles from '../styles/formJob.module.css';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link} from 'react-router-dom';
 import SelectionOption from './SelectionOption';
 import SelectedJobs from './SelectedJobs';
 
@@ -34,13 +34,15 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         provinces: null,
         work_schedule: user ? user.work_schedule[0] : null,
         studies: null,
-        terms: user ? '' : null,
+        terms: user ? true : null,
         about: user ? user.about : "",
         id: user ? user._id : "",
         // Nuevo campo disability
         disability: user ? user.disability : 0,
         fostered: user?.fostered ? 'si' : 'no',
     });
+
+  
 
     const [errores, setError] = useState({
         firstName: null,
@@ -62,7 +64,6 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         fostered: null,
     });
 
-    const navigate = useNavigate();
     const { enums, offer } = useJobFormData(charge, modal);
 
     const handleChangeFile = (e) => {
@@ -177,7 +178,7 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
             auxErrores['file'] = textErrors('vacio');
             valido = false;
         }
-
+        
         for (const key in datos) {
             if (
                 !datos[key] && // en vez de (datos[key] === null)
@@ -187,10 +188,10 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                 key !== 'disability'
             ) {
                 auxErrores[key] = textErrors('vacio');
+                console.log(key)
                 valido = false;
             }
         }
-
         // Verificar si hay errores previos
         for (const key2 in errores) {
             if (errores[key2] != null) {
@@ -213,6 +214,8 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         }
 
         setError(auxErrores);
+
+        
 
         // Si todo es válido, enviar el formulario
         if (valido) {

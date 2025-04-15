@@ -16,6 +16,7 @@ const JobDetails = ({ offer, onClose, charge, modal, changeOffers, enumsData }) 
                 <div className={styles.modalOverlay}>
                     <div className={styles.modalContent}>
                         <h2 className={styles.modalTitle}>{offer.functions}</h2>
+                        <p className={styles.modalInfo}><strong>Tipo:</strong> {offer.type=='internal' ? "Interna" : "Pública"}</p>
                         <p className={styles.modalInfo}><strong>Ubicación:</strong> {offer.location}, {offer.province}</p>
                         <p className={styles.modalInfo}><strong>Horario:</strong> {offer.work_schedule}</p>
                         <p className={styles.modalInfo}>
@@ -31,6 +32,7 @@ const JobDetails = ({ offer, onClose, charge, modal, changeOffers, enumsData }) 
                         <p className={styles.modalInfo}><strong>Condiciones:</strong> {offer.conditions || "No especificado"}</p>
                         <p className={styles.modalInfo}><strong>Fecha esperada de incorporación:</strong> {offer.expected_incorporation_date}</p>
                         <p className={styles.modalInfo}><strong>SEPE:</strong> {offer.sepe ? "Sí" : "No"}</p>
+                        
 
                         <div className={styles.modalActions}>
                             <button className={styles.editButton} onClick={() => setIsEditing(true)}>Editar</button>

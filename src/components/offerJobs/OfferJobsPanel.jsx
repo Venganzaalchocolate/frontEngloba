@@ -19,7 +19,8 @@ const OfferJobsPanel = ({ modal, charge, enumsData }) => {
     month: "",
     province: "",
     programId: "",
-    deviceId: ""
+    deviceId: "",
+    active:'si'
   });
 
   // Función para resetear filtros
@@ -29,7 +30,8 @@ const OfferJobsPanel = ({ modal, charge, enumsData }) => {
       month: "",
       province: "",
       programId: "",
-      deviceId: ""
+      deviceId: "",
+      active:'si'
     });
   };
 
@@ -38,6 +40,7 @@ const OfferJobsPanel = ({ modal, charge, enumsData }) => {
     charge(true);
     const token = getToken();
     const data = await getOfferJobs(token);
+
     if (!data.error) {
       setOffers(data);
     } else {
@@ -115,10 +118,18 @@ const OfferJobsPanel = ({ modal, charge, enumsData }) => {
         return false;
       }
 
-      return true;
+      if(filters.active=='si' &&  offer.active){
+       return true; 
+      }
+      
+      if(filters.active=='no' &&  !offer.active){
+        return true; 
+       }
+      
     });
   }, [offers, filters]);
 
+  
   return (
     <>
       <div className={styles.contenedor}>

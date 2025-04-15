@@ -186,6 +186,14 @@
     gap: 0.5rem;
 }
 
+.iconworkedInEngloba{
+    padding-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-morado);
+    margin: 0 0 -2px 0;
+}
+
 /* Estilos para pantallas más grandes */
 @media (min-width: 1080px) {
     .contenedor{

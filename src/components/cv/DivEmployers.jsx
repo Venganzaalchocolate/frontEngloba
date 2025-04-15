@@ -12,7 +12,7 @@ import CvPanel from './CvPanel';
 // Importa tus estilos (ajusta las rutas y nombres según tu proyecto)
 import styles from '../styles/managingResumenes.module.css';
 import stylesTooltip from '../styles/tooltip.module.css';
-
+import { FaHouseUser } from "react-icons/fa";
 /**
  * Este componente mostrará la lista de usuarios, con la lógica de mapeo que antes tenías en createDivEmployer.
  * @param {Array} users - Lista de usuarios
@@ -58,7 +58,16 @@ function DivEmployers({
           <div key={user._id + keySuffix}>
             {/* Fila principal con la información del usuario */}
             <div className={checkUser(user)} onClick={() => lookCV(user._id, user)}>
-              <div className={`${styles.tableCell} ${styles.capitalize}`}>{user.name}</div>
+              <div className={`${styles.tableCell} ${styles.capitalize}`}>{
+              (user?.workedInEngloba) && <span className={stylesTooltip.tooltip}>
+                <FaHouseUser className={styles.iconworkedInEngloba}/>
+                <span className={stylesTooltip.tooltiptext}>
+                    Ha trabajado o trabaja en Engloba
+                </span>
+                </span>}
+              
+              
+              {user.name}</div>
               <div className={styles.tableCell}>{user.email}</div>
               <div className={styles.tableCell}>{user.phone}</div>
               <div className={styles.tableCell}>{user.jobs.join(', ')}</div>

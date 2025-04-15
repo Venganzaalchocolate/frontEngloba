@@ -3,6 +3,7 @@ import styles from '../styles/viewOfferJobs.module.css';
 import { getToken } from "../../lib/serviceToken";
 import { updateOffer } from "../../lib/data";
 import { useLogin } from '../../hooks/useLogin';
+import { FaAdjust } from "react-icons/fa";
 
 const ViewJobs = ({ charge, offerSelect, offers, changeOffers, enumsData }) => {
   const { logged } = useLogin(); // por si necesitas el rol
@@ -33,9 +34,20 @@ const ViewJobs = ({ charge, offerSelect, offers, changeOffers, enumsData }) => {
 
             return (
               <div key={offer._id} className={styles.card}>
+                <div className={styles.cardToolBar}>
+                
+                 <p>Tipo: {offer.type=='internal' ? "Interna" : "Pública"}</p>
+                 <FaAdjust color={(offer.active )?'lightgreen':'tomato'}/>  
+                </div>
+                
+
                 <h3 className={styles.cardTitle}>{offer.functions}</h3>
+               
                 <p className={styles.cardInfo}>
-                  <strong>Ubicación:</strong> {offer.location}, {offer.province}
+                  <strong>Localidad:</strong> {offer.location}
+                </p>
+                <p className={styles.cardInfo}>
+                  <strong>Provincia:</strong> {offer.province}
                 </p>
                 <p className={styles.cardInfo}>
                   <strong>Programa:</strong> {programa?.name}
@@ -43,16 +55,16 @@ const ViewJobs = ({ charge, offerSelect, offers, changeOffers, enumsData }) => {
                 <p className={styles.cardInfo}>
                   <strong>Dispositivo:</strong> {dispositivo?.name}
                 </p>
-                <p className={styles.cardStatus}>
-                  <strong>Estado:</strong>{" "}
-                  <span className={offer.active ? styles.active : styles.inactive}>
-                    {offer.active ? "Activo" : "Inactivo"}
-                  </span>
-                </p>
                 <p className={styles.cardInfo}>
                   <strong>Creado:</strong> {formatDate(offer.createdAt)}
                 </p>
                 <div className={styles.cardActions}>
+                <button
+                    className={offer.active ? 'tomato' : ''}
+                    onClick={() => changeStatusOffer(offer.active ? 'no' : 'si', offer._id)}
+                  >
+                    {offer.active ? "Desactivar" : "Activar"}
+                  </button>
                   <button
                     className={styles.viewButton}
                     onClick={() => viewOffer(offer)}
@@ -60,12 +72,7 @@ const ViewJobs = ({ charge, offerSelect, offers, changeOffers, enumsData }) => {
                     Ver Detalles
                   </button>
                   {/* Botón de cambiar estado */}
-                  <button
-                    className={offer.active ? 'tomato' : ''}
-                    onClick={() => changeStatusOffer(offer.active ? 'no' : 'si', offer._id)}
-                  >
-                    {offer.active ? "Desactivar" : "Activar"}
-                  </button>
+                  
                 </div>
               </div>
             );

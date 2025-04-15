@@ -264,6 +264,7 @@ const ManagingEmployer = ({
       status: 'activo',
       provinces: '',
       apafa:'no',
+      position:''
 
     });
   }, []);

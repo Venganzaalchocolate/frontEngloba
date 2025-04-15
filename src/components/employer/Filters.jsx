@@ -23,6 +23,24 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters}) => {
 
             {!!enums &&
                 <>
+                <div>
+                        <label htmlFor="position">Puesto de trabajo</label>
+                        <select id='position' name='position' onChange={handleFilterChange} value={filters.position}>
+                            <option value={''}>Selecciona una opción</option>
+                            {enums.jobs.map((x) => {
+                                if (x.subcategories != undefined && x.subcategories.length > 0) {
+                                    return <optgroup label={x.name} key={x.name}>
+                                        {x.subcategories.map((y) => {
+                                            return <option value={y._id} key={y.name}>{y.name}</option>
+                                        })}
+                                    </optgroup>
+                                }
+                                else {
+                                    return <option value={x._id} key={x.name}>{x.name}</option>
+                                }
+                            })}
+                        </select>
+                    </div>
                     <div>
                         <label htmlFor="provinces">Provincias</label>
                         <select id='provinces' name='provinces' onChange={handleFilterChange} value={filters.provinces}>
@@ -41,6 +59,8 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters}) => {
                             })}
                         </select>
                     </div>
+
+                    
 
                     <div>
                         <label htmlFor="status">Status</label>

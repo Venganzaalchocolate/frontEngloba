@@ -88,78 +88,52 @@ export const splitName=(fullName)=>{
 
 
 export function calcularTiempoRestante(dateString, durationDays) {
-  // Convierte la fecha de expedición a objeto Date
   const fechaExpedicion = new Date(dateString);
-
-  // Suma los días de duración para obtener la fecha de vencimiento
+  console.log(fechaExpedicion)
+  console.log(durationDays)
+  // Sumar duración en días
   const fechaVencimiento = new Date(
     fechaExpedicion.getTime() + durationDays * 24 * 60 * 60 * 1000
   );
 
+  // "Hoy" sin horas
   const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
 
-  // Si la fecha de vencimiento ya pasó o es hoy, retornamos mensaje
+  // Fecha de vencimiento sin horas
+  fechaVencimiento.setHours(0, 0, 0, 0);
+
+  // Si el documento ya venció
   if (fechaVencimiento <= hoy) {
     return "El documento ya venció o vence hoy";
   }
 
-  // Calculamos diferencias iniciales
+  // Diferencias iniciales
   let anios = fechaVencimiento.getFullYear() - hoy.getFullYear();
   let meses = fechaVencimiento.getMonth() - hoy.getMonth();
   let dias = fechaVencimiento.getDate() - hoy.getDate();
 
-  // Ajuste de días/meses si "dias" es negativo
+  // Ajustes
   if (dias < 0) {
     meses -= 1;
-
-    // Obtenemos los días que tuvo el mes anterior (del mes de vencimiento)
     const mesAnterior = new Date(
       fechaVencimiento.getFullYear(),
       fechaVencimiento.getMonth(),
       0
     ).getDate();
-
-    dias = mesAnterior + dias; // ajustamos los días
+    dias = mesAnterior + dias;
   }
 
-  // Ajuste si "meses" es negativo
   if (meses < 0) {
     anios -= 1;
-    meses = 12 + meses;
+    meses += 12;
   }
 
-  // Construye la cadena de resultado
-  let resultado = "";
+  // Construcción del mensaje
+  const partes = [];
+  if (anios > 0) partes.push(`${anios} año${anios > 1 ? "s" : ""}`);
+  if (meses > 0) partes.push(`${meses} mes${meses > 1 ? "es" : ""}`);
+  if (dias > 0) partes.push(`${dias} día${dias > 1 ? "s" : ""}`);
 
-  // Agrega años solo si es mayor a 0
-  if (anios > 0) {
-    resultado += `${anios} año${anios > 1 ? "s" : ""}`;
-  }
-
-  // Agrega espacio si ya tenemos algo y el siguiente valor será mayor de 0
-  if (resultado && meses > 0) {
-    resultado += " ";
-  }
-
-  // Agrega meses solo si es mayor a 0
-  if (meses > 0) {
-    resultado += `${meses} mes${meses > 1 ? "es" : ""}`;
-  }
-
-  // Agrega espacio si ya tenemos algo y el siguiente valor será mayor de 0
-  if (resultado && dias > 0) {
-    resultado += " ";
-  }
-
-  // Agrega días solo si es mayor a 0
-  if (dias > 0) {
-    resultado += `${dias} día${dias > 1 ? "s" : ""}`;
-  }
-
-  // Si por alguna razón no hubiera años, meses o días pendientes:
-  if (!resultado) {
-    resultado = "Menos de un día restante";
-  }
-
-  return resultado;
+  return partes.length ? partes.join(" ") : "Menos de un día restante";
 }

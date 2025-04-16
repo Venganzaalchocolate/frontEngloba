@@ -442,7 +442,7 @@ const DocumentMiscelaneaGeneric = ({
                 <div className={styles.dateFile}>
                   <p>{`Expedido el: ${formatDate(file.date)}`}</p>
                   {!!doc.duration && (
-                    <p>{`Tiempo restante: ${calcularTiempoRestante(doc.date, doc.duration)}`}</p>
+                    <p>{`Tiempo restante: ${calcularTiempoRestante(file.date, doc.duration)}`}</p>
 
                   )}
                 </div>

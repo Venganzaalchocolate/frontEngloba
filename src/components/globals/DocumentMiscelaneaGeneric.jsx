@@ -12,7 +12,7 @@ import ModalConfirmation from "./ModalConfirmation";
 
 import { validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
-import { formatDate } from "../../lib/utils";
+import { calcularTiempoRestante, formatDate } from "../../lib/utils";
 
 import { FaTrash } from "react-icons/fa6";
 import { AiOutlineCloudUpload } from "react-icons/ai";
@@ -29,6 +29,7 @@ import styles from "../styles/documentMiscelanea.module.css";
  * @param {Function} props.modal - Para mostrar mensajes
  * @param {Function} props.charge - Para mostrar/ocultar loader
  * @param {Function} props.onChange - Callback para actualizar el padre cuando se sube/edita/borra
+ * @param {Boolean} [props.authorized] - Controla si se muestra la parte de edición
  */
 const DocumentMiscelaneaGeneric = ({
   data,
@@ -42,7 +43,6 @@ const DocumentMiscelaneaGeneric = ({
 }) => {
   // 1) Extraer/transformar los archivos en un array normalizado
   const [normalizedFiles, setNormalizedFiles] = useState([]);
-
   useEffect(() => {
     const tranformData = transformFiles(data, modelName);
     setNormalizedFiles(tranformData);
@@ -57,8 +57,7 @@ const DocumentMiscelaneaGeneric = ({
   // 2) Separar en oficiales vs misceláneos
   const officialDocumentsToShow = officialDocs.map((doc) => {
     const fileFound = normalizedFiles.find(
-      (f) =>
-        f.originDocumentation?.toString() === doc._id.toString()
+      (f) => f.originDocumentation?.toString() === doc._id.toString()
     );
     return { doc, file: fileFound };
   });
@@ -142,7 +141,8 @@ const DocumentMiscelaneaGeneric = ({
   const handleUploadOfficialFromSelect = () => {
     setFormConfig({
       title: `Subir documentación oficial (${modelName})`,
-      message: "Seleccione el tipo, suba el archivo y, opcionalmente, indique fecha:",
+      message:
+        "Seleccione el tipo, suba el archivo y, si el documento lo requiere, indique fecha:",
       fields: [
         {
           label: "Tipo de documento oficial",
@@ -155,23 +155,65 @@ const DocumentMiscelaneaGeneric = ({
           ],
         },
         { label: "Archivo (PDF)", name: "file", type: "file", required: true },
-        { label: "Fecha (opcional)", name: "date", type: "date" },
+        {
+          // IMPORTANTE: la fecha es obligatoria si doc.date === true
+          label: "Fecha de expedición (obligatoria si el documento la requiere)",
+          name: "date",
+          type: "date",
+          // No marcamos "required" global, pero haremos la validación
+          // en el onSubmit según doc.date === true
+        },
       ],
       onSubmit: async ({ docId, file, date }) => {
         try {
-          // Validación: para Device se requiere parentId
+          // 1) Determinar si el doc requerido tiene date == true
+          const selectedDoc = officialDocs.find(
+            (d) => d._id.toString() === docId.toString()
+          );
+          if (!selectedDoc) {
+            modal("Error", "No se encontró el tipo de documento seleccionado.");
+            return;
+          }
+
+          // 2) Si date == true, forzamos fecha obligatoria y (opcional) validamos >= hoy
+          if (selectedDoc.date === true) {
+            if (!date) {
+              modal(
+                "Error",
+                `El documento "${selectedDoc.label}" requiere fecha obligatoria.`
+              );
+              return;
+            }
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const chosenDate = new Date(date);
+            if (chosenDate > today) {
+              modal(
+                "Error",
+                `La fecha del documento "${selectedDoc.label}" no puede ser posterior a hoy.`
+              );
+              return;
+            }
+          }
+
+          // 3) Validación para Device con parentId
           if (modelName.toLowerCase() === "device" && !parentId) {
             modal("Error", "Falta el idModel (parentId) para el dispositivo.");
             return;
           }
+
+          // 4) Subir o actualizar
           charge(true);
           const token = getToken();
+
+          // Ver si ya existe un doc oficial de este tipo
           const already = officialDocumentsToShow.find(
             ({ doc, file: existingF }) =>
               doc._id.toString() === docId.toString() && existingF
           );
           const isUpdating = !!already?.file;
 
+          // Preparar payload
           const payload = {
             file,
             originModel: modelName,
@@ -179,19 +221,19 @@ const DocumentMiscelaneaGeneric = ({
             ...(modelName.toLowerCase() === "device" ? { deviceId: data._id } : {}),
             originDocumentation: docId,
             date,
-            description:
-              (officialDocs.find(
-                (d) => d._id.toString() === docId.toString()
-              )?.label) || "",
+            description: selectedDoc.label, // Por defecto, la descripción se asocia al label
           };
 
           let updatedData;
           if (isUpdating) {
+            // Actualización
             payload.fileId = already.file._id;
             updatedData = await updateFileDrive(payload, token);
           } else {
+            // Creación
             updatedData = await createFileDrive(payload, token);
           }
+
           if (!updatedData || updatedData.error) {
             modal(
               "Error",
@@ -199,6 +241,7 @@ const DocumentMiscelaneaGeneric = ({
             );
             return;
           }
+
           onChange(updatedData);
           modal(
             "Documento oficial",
@@ -350,12 +393,11 @@ const DocumentMiscelaneaGeneric = ({
       <h3 className={styles.titulin}>
         Documentación Oficial
         {authorized &&
-        <AiOutlineCloudUpload
-          className={styles.uploadButton}
-          onClick={handleUploadOfficialFromSelect}
-        />
+          <AiOutlineCloudUpload
+            className={styles.uploadButton}
+            onClick={handleUploadOfficialFromSelect}
+          />
         }
-        
       </h3>
       <div className={styles.contentDocumentOficial}>
         {officialDocumentsToShow.length === 0 && (
@@ -370,33 +412,39 @@ const DocumentMiscelaneaGeneric = ({
                   onClick={() => handleDownloadFile(file)}
                   style={{ cursor: "pointer" }}
                 />
-                {
-                  authorized &&
+                {authorized && (
                   <FaTrash
-                  onClick={() => handleDeleteFile(file)}
-                  style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                />
-                }
-                
+                    onClick={() => handleDeleteFile(file)}
+                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+                  />
+                )}
               </div>
             ) : (
               <div className={styles.iconos}>
-                
-                     <CiFileOff
+                <CiFileOff
                   color="tomato"
-                  onClick={( authorized )?handleUploadOfficialFromSelect:()=>{}}
-                  style={{ cursor: "pointer" }}
+                  onClick={authorized ? handleUploadOfficialFromSelect : () => {}}
+                  style={{ cursor: authorized ? "pointer" : "not-allowed" }}
                 />
-                
-              
               </div>
             )}
 
             <div className={styles.infoFile}>
               <label>{doc.label}</label>
-              {file?.date && (
+              
+              {/* 
+                Si este documento oficial requiere fecha (doc.date === true) 
+                y existe la file.date, entonces mostramos la vigencia y, 
+                además, la duración si doc.duration está presente.
+              */}
+             
+              {doc.date === true && file?.date && (
                 <div className={styles.dateFile}>
-                  <p>{`Válido hasta: ${formatDate(file.date)}`}</p>
+                  <p>{`Expedido el: ${formatDate(file.date)}`}</p>
+                  {!!doc.duration && (
+                    <p>{`Tiempo restante: ${calcularTiempoRestante(doc.date, doc.duration)}`}</p>
+
+                  )}
                 </div>
               )}
             </div>
@@ -407,39 +455,35 @@ const DocumentMiscelaneaGeneric = ({
       {/* Documentos misceláneos */}
       <h3 className={styles.titulin}>
         Documentación Complementaria
-        { authorized &&
-        <AiOutlineCloudUpload
-          className={styles.uploadButton}
-          onClick={handleFileUploadExtra}
-        />
+        {authorized &&
+          <AiOutlineCloudUpload
+            className={styles.uploadButton}
+            onClick={handleFileUploadExtra}
+          />
         }
-        
       </h3>
       <div className={styles.contentDocument}>
         {extraFiles.length === 0 && <p>No hay archivos adicionales subidos.</p>}
         {extraFiles.map((fileObj) => (
           <div key={fileObj._id} className={styles.fileRow}>
             <div className={styles.iconos}>
-
               <CiFileOn
                 color="green"
                 onClick={() => handleDownloadFile(fileObj)}
                 style={{ cursor: "pointer" }}
               />
-              { authorized &&
-              <>
-              <AiOutlineCloudUpload
-                onClick={() => handleUpdateFileExtra(fileObj)}
-                style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-              />
-              <FaTrash
-                onClick={() => handleDeleteFile(fileObj)}
-                style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-              />
-              </>
-              
-              }
-              
+              {authorized && (
+                <>
+                  <AiOutlineCloudUpload
+                    onClick={() => handleUpdateFileExtra(fileObj)}
+                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+                  />
+                  <FaTrash
+                    onClick={() => handleDeleteFile(fileObj)}
+                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+                  />
+                </>
+              )}
             </div>
 
             <div className={styles.infoFile}>
@@ -469,23 +513,18 @@ const DocumentMiscelaneaGeneric = ({
       {deleteModal.open && (
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Eliminar "${deleteModal.file?.fileLabel || deleteModal.file?.description
-            }"?`}
+          message={`¿Eliminar "${deleteModal.file?.fileLabel || deleteModal.file?.description}"?`}
           onConfirm={confirmDeleteFile}
           onCancel={cancelDeleteFile}
         />
       )}
     </div>
   );
-}
-/**
- * Función auxiliar para transformar el array de archivos
- * dependiendo del modelo.
- */
+};
+
 function transformFiles(data, modelName) {
   if (!data) return [];
   if (modelName === "User") {
-
     // Para User, se espera data.files como [{ filesId: { ... } }, ...]
     return (data.files || [])
       .map((item) => {
@@ -503,7 +542,7 @@ function transformFiles(data, modelName) {
       })
       .filter(Boolean);
   } else if (modelName === "Device") {
-    // Para Device, se espera que data.files sea un array de documentos Filedrive
+    // Para Device, se espera que data.files sea un array de Filedrive
     return (data.files || [])
       .map((f) => {
         if (!f || !f._id) return null;

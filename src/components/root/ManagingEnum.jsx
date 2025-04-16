@@ -65,9 +65,9 @@ function EnumCRUD({
               <FaRegEdit onClick={() => onEditItem(selectedKey, item)} style={{ cursor: "pointer" }} />{" "}
               <FaTrashAlt onClick={() => onDeleteItem(selectedKey, item)} style={{ cursor: "pointer" }} />
             </h3>
-            {selectedKey === "documentation" && (
+            {selectedKey === "documentation" && item.date && (
               <span className={styles.dateInfo}>
-                {item.date ? "Tiene fecha" : "No tiene fecha"}
+                Duración: {item.duration} días
               </span>
             )}
             {/* Sólo se muestran subcategorías si el enum lo permite */}
@@ -177,6 +177,12 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
           { value: "User", label: "Trabajadores" },
         ],
       });
+      fields.push({
+        name: "duration",
+        label: "Duración (Solo si tiene fecha)",
+        defaultValue: item ? (item.duration || 0) : 0,
+        type: "number",
+      });
     }
     if (enumKey === "jobs") {
       const defaultPublic = item ? (item.public ? "si" : "no") : "no";
@@ -218,6 +224,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
           payload.date = formData.date;
           payload.label = formData.label;
           payload.model = formData.model;
+          if((!!item.date || !!formData.date) && !!formData.duration)  payload.duration = formData.duration;
         }
         if (enumKey === "jobs") payload.public = formData.public;
         await changeData(getToken(), payload);
@@ -232,6 +239,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
                     date: formData.date === "si",
                     label: formData.label,
                     model: formData.model,
+                    duration: formData.duration || 0
                   }),
                   ...(enumKey === "jobs" && { public: formData.public === "si" }),
                 }
@@ -280,6 +288,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
           payload.date = formData.date;
           payload.label = formData.label;
           payload.model = formData.model;
+          if(!!payload.date) payload.duration=formData.duration;
         }
         if (enumKey === "jobs") payload.public = formData.public;
         const newItem = await createData(getToken(), payload);

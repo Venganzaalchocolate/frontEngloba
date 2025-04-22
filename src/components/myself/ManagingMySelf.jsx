@@ -8,18 +8,14 @@ import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx'
 
 
 const ManagingMySelf = ({ modal, charge, listResponsability, enumsData }) => {
-    const { logged } = useLogin();
+    const { logged, changeLogged } = useLogin();
     const [isEditing, setIsEditing] = useState(false);  // Estado de edición
     const [currentUser, setCurrentUser] = useState(logged.user);  // Por defecto, mostramos el usuario logueado
     const [enumsEmployer, setEnumsEmployer] = useState(enumsData);
 
-    // Usamos useEffect para actualizar el usuario cuando logged.user cambie
-    useEffect(() => {
-        setCurrentUser(logged.user);  // Actualiza currentUser cuando logged.user cambia
-    }, [logged.user]);
 
     const changeUser = (user) => {
-        setCurrentUser(user)
+        changeLogged(user)
     }
 
    
@@ -33,7 +29,7 @@ const ManagingMySelf = ({ modal, charge, listResponsability, enumsData }) => {
                 <div className={styles.componentes}>
                     <InfoEmployer enumsData={enumsData} listResponsability={listResponsability} user={currentUser} modal={modal} charge={charge} changeUser={(x) => changeUser(x)} />
                     <DocumentMiscelaneaGeneric
-                        data={currentUser}
+                        data={logged.user}
                         modelName='User'
                         officialDocs={enumsData.documentation.filter((x) => x.model === 'User')}
                         modal={modal}

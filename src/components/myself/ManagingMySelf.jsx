@@ -7,11 +7,8 @@ import Payrolls from '../payroll/Payrolls.jsx';
 import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx';
 
 
-const ManagingMySelf = ({ modal, charge, listResponsability, enumsData }) => {
-    const { logged, changeLogged } = useLogin();
-    const [isEditing, setIsEditing] = useState(false);  // Estado de edición
-    const [currentUser, setCurrentUser] = useState(logged.user);  // Por defecto, mostramos el usuario logueado
-    const [enumsEmployer, setEnumsEmployer] = useState(enumsData);
+const ManagingMySelf = ({myself, modal, charge, listResponsability, enumsData }) => {
+    const { changeLogged } = useLogin();
 
 
     const changeUser = (user) => {
@@ -27,17 +24,17 @@ const ManagingMySelf = ({ modal, charge, listResponsability, enumsData }) => {
                     <h2>Mi Perfil</h2>
                 </div>
                 <div className={styles.componentes}>
-                    <InfoEmployer enumsData={enumsData} listResponsability={listResponsability} user={currentUser} modal={modal} charge={charge} changeUser={(x) => changeUser(x)} />
+                    <InfoEmployer enumsData={enumsData} listResponsability={listResponsability} user={myself} modal={modal} charge={charge} changeUser={(x) => changeUser(x)} />
                     <DocumentMiscelaneaGeneric
-                        data={logged.user}
+                        data={myself}
                         modelName='User'
                         officialDocs={enumsData.documentation.filter((x) => x.model === 'User')}
                         modal={modal}
                         charge={charge}
                         onChange={(x) => changeUser(x)}
-                        authorized={listResponsability>0 || logged.user.role=='global' || logged.user.role=='root'}
+                        authorized={listResponsability>0 || myself.role=='global' || myself.role=='root'}
                     />
-                    <Payrolls user={logged.user} modal={modal} charge={charge} changeUser={(x) => changeUser(x)} listResponsability={listResponsability} />
+                    <Payrolls user={myself} modal={modal} charge={charge} changeUser={(x) => changeUser(x)} listResponsability={listResponsability} />
                 </div>
             </div>
         </div>

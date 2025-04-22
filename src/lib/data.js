@@ -282,3 +282,7 @@ export const getFileDrive=async (datos,token)=> {
 
 //documentation
 export const infoDocumentation=(datos,token)=>fetchData('/documentation', 'POST', token, datos);
+
+//signPDF
+export const requestSignature=async (data, token)=> fetchData('/pdf/request-sign','POST',token, data );
+export const  confirmSignature=async (data, token)=>fetchData('/pdf/confirm-sign', 'POST', token, data );

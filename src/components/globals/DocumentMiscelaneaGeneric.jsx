@@ -88,7 +88,6 @@ const DocumentMiscelaneaGeneric = ({
       link.click();
       URL.revokeObjectURL(response.url);
     } catch (err) {
-      console.log(err);
       modal("Error", "No se pudo descargar el archivo.");
     } finally {
       charge(false);

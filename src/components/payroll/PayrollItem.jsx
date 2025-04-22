@@ -26,7 +26,7 @@ const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, sig
 
             
 
-            {userId==logged.user._id &&
+            {userId==logged.user._id && !payroll.sign &&
                 <button className={styles.botonSubir} onClick={() => signPayroll(payroll)}>
                     Firmar Nómina 
                     <FaCloudUploadAlt

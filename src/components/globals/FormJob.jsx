@@ -188,7 +188,6 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
                 key !== 'disability'
             ) {
                 auxErrores[key] = textErrors('vacio');
-                console.log(key)
                 valido = false;
             }
         }

@@ -54,7 +54,6 @@ const JobsPanel=({ modal, charge })=>{
         selectOffer(auxOffer[0])
     }
 
-console.log(offers)
     return  <div className={styles.contenedor}>
                 
                 <div className={styles.contenedorForm}>

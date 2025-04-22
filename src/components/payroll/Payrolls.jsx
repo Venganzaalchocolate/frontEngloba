@@ -1,90 +1,70 @@
-// Payrolls.jsx
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import styles from '../styles/payrollsEmployer.module.css';
-import { FaSquarePlus } from "react-icons/fa6";
-
-import PayrollList from './PayrollList.jsx';
-import PayrollModalForm from './PayrollModalForm.jsx'; // <--- nuevo
-import { getToken } from '../../lib/serviceToken.js';
-import { updatePayroll } from '../../lib/data.js';
-import PayrollSign from './PayrollSign.jsx';
+import { FaSquarePlus } from 'react-icons/fa6';
+import { getToken } from '../../lib/serviceToken';
+import { updatePayroll } from '../../lib/data';
 import { useLogin } from '../../hooks/useLogin.jsx';
+import PayrollList from './PayrollList.jsx';
+import PayrollModalForm from './PayrollModalForm.jsx';
+import PayrollSignDigital from './PayrollSignDigital.jsx';
 
-const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=true }) => {
-  // Estado para mostrar u ocultar el modal
-  const [showModal, setShowModal] = useState(false);
-  const [showModalSign, setShowModalSign] = useState(false);
+const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title = true }) => {
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [signTarget, setSignTarget] = useState(null);
   const { logged } = useLogin();
 
-  // Función para cerrar el modal
   const closeModal = () => {
-    setShowModal(false);
-    setShowModalSign(false);
-  }
+    setShowUploadModal(false);
+    setSignTarget(null);
+  };
 
-  const deletePayroll = async (idPayroll) => {
+  // Borrar nómina existente
+  const deletePayroll = async (payrollId) => {
     charge(true);
-    let datosAux = {};
     const token = getToken();
-    datosAux['userId'] = user._id;
-    datosAux['idPayroll'] = idPayroll;
-    datosAux['type'] = 'delete';
-    const data = await updatePayroll(datosAux, token);
+    const payload = { userId: user._id, idPayroll:payrollId, type: 'delete' };
+    const data = await updatePayroll(payload, token);
     if (!data.error) {
       modal('Borrar Nómina', 'Nómina borrada con éxito');
-      changeUser(data)
+      changeUser(data);
     } else {
-      modal('Error al borrar la Nómina', 'No se ha podido borrar la nómina');
+      modal('Error al borrar nómina', data.message || 'No se pudo borrar');
     }
     charge(false);
   };
-  const downloadPayroll = async (id, namePdf) => {
-    // Activar indicador de carga
+
+  // Descargar PDF de nómina
+  const downloadPayroll = async (fileId, fileName) => {
     charge(true);
-
     const token = getToken();
-    const datosAux = {
-      userId: user._id,
-      pdf: id,
-      type: 'get'
-    };
-
+    const payload = { userId: user._id, pdf: fileId, type: 'get' };
     try {
-      // Obtener el archivo y su nombre desde el servidor
-      const response = await updatePayroll(datosAux, token);
-
+      const resp = await updatePayroll(payload, token);
       const link = document.createElement('a');
-      link.href = response.url;
-      link.download = `Nomina_${user.firstName}_${user.lastName}_${namePdf}.pdf`;
+      link.href = resp.url;
+      link.download = `Nomina_${user.firstName}_${user.lastName}_${fileName}.pdf`;
       link.click();
-      URL.revokeObjectURL(response.url);
-      charge(false); // Oculta el indicador de carga
-    } catch (error) {
-      // Mostrar mensaje de error si no se pudo descargar
-      modal('Error', 'No se ha podido encontrar el archivo, inténtelo más tarde');
+      URL.revokeObjectURL(resp.url);
+    } catch {
+      modal('Error', 'No se pudo descargar la nómina.');
     } finally {
-      // Siempre ocultar el indicador de carga
       charge(false);
     }
   };
 
-  const signPayroll = (payroll) => {
-    setShowModalSign(payroll)
-  }
+  // Abrir modal para firma de nómina
+  const signPayroll = (payroll) => setSignTarget(payroll);
 
   return (
-    <div className={(title)?styles.contenedor:styles.contenedorModuloNominas}>
-      {
-        title && <h2>
-        NÓMINAS
-        <FaSquarePlus onClick={() => setShowModal(true)} />
-      </h2>
-      }
-      
+    <div className={title ? styles.contenedor : styles.contenedorModuloNominas}>
+      {title && (
+        <h2>
+          NÓMINAS <FaSquarePlus onClick={() => setShowUploadModal(true)} />
+        </h2>
+      )}
 
-      {/* Si showModal es true, mostramos el PayrollModalForm */}
-      {showModal && (
+      {/* Modal nuevo CV */}
+      {showUploadModal && (
         <PayrollModalForm
           user={user}
           modal={modal}
@@ -94,7 +74,7 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=t
         />
       )}
 
-      {/* Lista de nóminas */}
+      {/* Lista de nóminas con acciones */}
       <PayrollList
         userId={user._id}
         payrolls={user.payrolls}
@@ -104,14 +84,17 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title=t
         signPayroll={signPayroll}
       />
 
-      {showModalSign && (
-        <PayrollSign
+      {/* Modal firma digital */}
+      {signTarget && (
+        <PayrollSignDigital
           user={user}
-          modal={modal}
+          docType="payroll"
+          docId={signTarget.pdf}
+          meta={{id:signTarget._id, year: signTarget.payrollYear, month: signTarget.payrollMonth }}
           charge={charge}
           changeUser={changeUser}
+          modal={modal}
           onClose={closeModal}
-          payroll={showModalSign}
         />
       )}
     </div>

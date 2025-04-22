@@ -89,9 +89,6 @@ export const splitName=(fullName)=>{
 
 export function calcularTiempoRestante(dateString, durationDays) {
   const fechaExpedicion = new Date(dateString);
-  console.log(fechaExpedicion)
-  console.log(durationDays)
-  // Sumar duración en días
   const fechaVencimiento = new Date(
     fechaExpedicion.getTime() + durationDays * 24 * 60 * 60 * 1000
   );

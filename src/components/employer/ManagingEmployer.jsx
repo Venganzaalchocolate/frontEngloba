@@ -551,7 +551,7 @@ const ManagingEmployer = ({
                               user={user}
                               modal={modal}
                               charge={charge}
-                              changeUser={(x) => changeUserLocally(x)}
+                              changeUser={changeUserLocally}
                               listResponsability={listResponsability}
                             />
                             {user.employmentStatus !== 'en proceso de contratación' &&

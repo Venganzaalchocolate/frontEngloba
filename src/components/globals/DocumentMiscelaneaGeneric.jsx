@@ -16,9 +16,10 @@ import { calcularTiempoRestante, formatDate } from "../../lib/utils";
 
 import { FaTrash } from "react-icons/fa6";
 import { AiOutlineCloudUpload } from "react-icons/ai";
-import { CiFileOn, CiFileOff } from "react-icons/ci";
+import { CiFileOn } from "react-icons/ci";
 
 import styles from "../styles/documentMiscelanea.module.css";
+import { BsPlusSquare } from "react-icons/bs";
 
 /**
  * @param {Object} props
@@ -39,8 +40,7 @@ const DocumentMiscelaneaGeneric = ({
   charge,
   onChange,
   parentId = null,
-  authorized=false,
-  categoryFiles
+  authorized = false,
 }) => {
   // 1) Extraer/transformar los archivos en un array normalizado
   const [normalizedFiles, setNormalizedFiles] = useState([]);
@@ -49,21 +49,31 @@ const DocumentMiscelaneaGeneric = ({
     setNormalizedFiles(tranformData);
   }, [data, modelName]);
 
-  console.log(categoryFiles)
+
 
   // =============== ESTADOS para modales ===============
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formConfig, setFormConfig] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ open: false, file: null });
 
-  // 2) Separar en oficiales vs misceláneos
+  // 2) Agrupar documentos oficiales con sus archivos (antes usábamos .find)
   const officialDocumentsToShow = officialDocs.map((doc) => {
-    const fileFound = normalizedFiles.find(
-      (f) => f.originDocumentation?.toString() === doc._id.toString()
+    const filesForDoc = normalizedFiles.filter(
+      f => f.originDocumentation?.toString() === doc._id.toString()
     );
-    return { doc, file: fileFound };
+    return { doc, files: filesForDoc };
   });
-  const extraFiles = normalizedFiles.filter((f) => !f.originDocumentation);
+
+
+  // 3) Agrupar los tipos de documentos oficiales por categoría
+  const officialByCategory = officialDocumentsToShow.reduce((acc, { doc, files }) => {
+    const cat = doc.categoryFiles || "Sin categoría";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push({ doc, files });
+    return acc;
+  }, {});
+
+  const extraFiles = normalizedFiles.filter(f => !f.originDocumentation);
 
   // ==================================================
   // ============== DESCARGA DE ARCHIVO ===============
@@ -139,7 +149,10 @@ const DocumentMiscelaneaGeneric = ({
   // ==================================================
   // ==== SUBIR/ACTUALIZAR DOCUMENTOS OFICIALES ========
   // ==================================================
-  const handleUploadOfficialFromSelect = () => {
+  const handleUploadOfficialFromSelect = (presetDocId = "") => {
+    // 1) encontrar el doc preseleccionado
+  const selectedDoc = officialDocs.find(d => d._id.toString() === presetDocId.toString());
+  const todayStr = new Date().toISOString().split('T')[0];
     setFormConfig({
       title: `Subir documentación oficial (${modelName})`,
       message:
@@ -150,6 +163,8 @@ const DocumentMiscelaneaGeneric = ({
           name: "docId",
           type: "select",
           required: true,
+          disabled:(presetDocId)?true:false,
+          defaultValue: presetDocId,
           options: [
             { value: "", label: "Seleccione una opción" },
             ...officialDocs.map((d) => ({ value: d._id, label: d.label })),
@@ -158,22 +173,15 @@ const DocumentMiscelaneaGeneric = ({
         { label: "Archivo (PDF)", name: "file", type: "file", required: true },
         {
           // IMPORTANTE: la fecha es obligatoria si doc.date === true
-          label: "Fecha de expedición (obligatoria si el documento la requiere)",
+          label: "Fecha de expedición",
+          required: selectedDoc?.date === true || false,
           name: "date",
           type: "date",
+          defaultValue:todayStr
           // No marcamos "required" global, pero haremos la validación
           // en el onSubmit según doc.date === true
         },
-        {
-          label: "Categoria del documento",
-          name: 'category',
-          type: 'select',
-          required: true,
-          options: [
-            { value: "", label: "Seleccione una opción" },
-            ...categoryFiles.map((d) => ({ value: d, label: d })),
-          ],
-        }
+
       ],
       onSubmit: async ({ docId, file, date }) => {
         try {
@@ -222,7 +230,7 @@ const DocumentMiscelaneaGeneric = ({
             ({ doc, file: existingF }) =>
               doc._id.toString() === docId.toString() && existingF
           );
-          const isUpdating = !!already?.file;
+          const isUpdating = false;
 
           // Preparar payload
           const payload = {
@@ -233,17 +241,14 @@ const DocumentMiscelaneaGeneric = ({
             originDocumentation: docId,
             date,
             description: selectedDoc.label, // Por defecto, la descripción se asocia al label
+            category: selectedDoc.categoryFiles || ''
           };
 
+          
+
           let updatedData;
-          if (isUpdating) {
-            // Actualización
-            payload.fileId = already.file._id;
-            updatedData = await updateFileDrive(payload, token);
-          } else {
-            // Creación
-            updatedData = await createFileDrive(payload, token);
-          }
+           updatedData = await createFileDrive(payload, token);
+
 
           if (!updatedData || updatedData.error) {
             modal(
@@ -275,6 +280,7 @@ const DocumentMiscelaneaGeneric = ({
   // ==== SUBIR DOCUMENTOS MISCELÁNEOS ================
   // ==================================================
   const handleFileUploadExtra = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
     setFormConfig({
       title: `Subir documento adicional (${modelName})`,
       message: "Complete los campos para subir un documento no oficial.",
@@ -291,7 +297,7 @@ const DocumentMiscelaneaGeneric = ({
             return isOk ? "" : textErrors("nameFile");
           },
         },
-        { label: "Fecha (opcional)", name: "date", type: "date" },
+        { label: "Fecha (opcional)", name: "date", type: "date", defaultValue:todayStr },
         {
           label: "Descripción (opcional)",
           name: "description",
@@ -396,6 +402,8 @@ const DocumentMiscelaneaGeneric = ({
     setIsModalOpen(true);
   };
 
+
+
   return (
     <div className={styles.contenedorDocument}>
       <h2>DOCUMENTOS</h2>
@@ -403,62 +411,42 @@ const DocumentMiscelaneaGeneric = ({
       {/* Documentación Oficial */}
       <h3 className={styles.titulin}>
         Documentación Oficial
-        {authorized &&
-          <AiOutlineCloudUpload
-            className={styles.uploadButton}
-            onClick={handleUploadOfficialFromSelect}
-          />
-        }
       </h3>
       <div className={styles.contentDocumentOficial}>
         {officialDocumentsToShow.length === 0 && (
           <p>No hay documentación oficial configurada.</p>
         )}
-        {officialDocumentsToShow.map(({ doc, file }) => (
-          <div key={doc._id} className={styles.fileRow}>
-            {file ? (
-              <div className={styles.iconos}>
-                <CiFileOn
-                  color="green"
-                  onClick={() => handleDownloadFile(file)}
-                  style={{ cursor: "pointer" }}
-                />
-                {authorized && (
-                  <FaTrash
-                    onClick={() => handleDeleteFile(file)}
-                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+
+        {Object.entries(officialByCategory).map(([category, docsArray]) => (
+          <div key={category} className={styles.categoryGroup}>
+            <h4 className={styles.categoryTitle}>{category}</h4>
+            {docsArray.map(({ doc, files }) => (
+              
+              <div key={doc._id} className={(doc.model=='User')?styles.officialDocGroupUser:styles.officialDocGroup}>
+                <label className={styles.docLabel}>{doc.label} {authorized &&
+                  <AiOutlineCloudUpload
+                    className={styles.uploadButton}
+                    onClick={()=>handleUploadOfficialFromSelect(doc._id)}
                   />
+                }</label>
+                {files.length !== 0 && (
+                  files.map(file => (
+                    <div key={file._id} className={styles.fileRow}>
+                      {file.date && ( <div className={styles.infoFile}>
+                          <div className={styles.dateFile}>
+                            <p>{`Fecha: ${formatDate(file.date)}`}</p>
+                          </div>
+                        
+                      </div>
+                      )}
+                      <CiFileOn className={styles.fileOn} onClick={() => handleDownloadFile(file)} />
+                      {authorized && <FaTrash className={styles.trash} onClick={() => handleDeleteFile(file)} />}
+                      {/* resto de info (fecha, tiempo restante) */}
+                    </div>
+                  ))
                 )}
               </div>
-            ) : (
-              <div className={styles.iconos}>
-                <CiFileOff
-                  color="tomato"
-                  onClick={authorized ? handleUploadOfficialFromSelect : () => {}}
-                  style={{ cursor: authorized ? "pointer" : "not-allowed" }}
-                />
-              </div>
-            )}
-
-            <div className={styles.infoFile}>
-              <label>{doc.label}</label>
-              
-              {/* 
-                Si este documento oficial requiere fecha (doc.date === true) 
-                y existe la file.date, entonces mostramos la vigencia y, 
-                además, la duración si doc.duration está presente.
-              */}
-             
-              {doc.date === true && file?.date && (
-                <div className={styles.dateFile}>
-                  <p>{`Expedido el: ${formatDate(file.date)}`}</p>
-                  {!!doc.duration && (
-                    <p>{`Tiempo restante: ${calcularTiempoRestante(file.date, doc.duration)}`}</p>
-
-                  )}
-                </div>
-              )}
-            </div>
+            ))}
           </div>
         ))}
       </div>
@@ -498,12 +486,13 @@ const DocumentMiscelaneaGeneric = ({
             </div>
 
             <div className={styles.infoFile}>
-              <label>{fileObj.fileLabel || "Documento adicional"}</label>
-              {fileObj.date && (
+            {fileObj.date && (
                 <div className={styles.dateFile}>
-                  <p>{`Válido hasta: ${formatDate(fileObj.date)}`}</p>
+                  <p>{`Fecha: ${formatDate(fileObj.date)}`}</p>
                 </div>
               )}
+              <label>{fileObj.fileLabel || "Documento adicional"}</label>
+              
             </div>
           </div>
         ))}

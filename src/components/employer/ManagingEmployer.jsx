@@ -546,6 +546,7 @@ const ManagingEmployer = ({
                               charge={charge}
                               onChange={(x) => changeUserLocally(x)}
                               authorized={true}
+                              categoryFiles={enumsData.categoryFiles}
                             />
                             <Payrolls
                               user={user}

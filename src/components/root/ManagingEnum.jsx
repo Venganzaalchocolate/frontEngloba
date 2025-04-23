@@ -183,6 +183,16 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
         defaultValue: item ? (item.duration || 0) : 0,
         type: "number",
       });
+      fields.push({
+        name: "categoryFiles",
+        label: "Categoría del archivo",
+        type: "select",
+        defaultValue: item ? (item.categoryFiles || '') : '',
+        options:[
+          { value: "", label: "Seleccione una opción" },
+          ...enumsData.categoryFiles.map((d) => ({ value: d, label: d })),
+        ]
+      })
     }
     if (enumKey === "jobs") {
       const defaultPublic = item ? (item.public ? "si" : "no") : "no";
@@ -224,6 +234,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
           payload.date = formData.date;
           payload.label = formData.label;
           payload.model = formData.model;
+          payload.categoryFiles=formData.categoryFiles
           if((!!item.date || !!formData.date) && !!formData.duration)  payload.duration = formData.duration;
         }
         if (enumKey === "jobs") payload.public = formData.public;
@@ -239,7 +250,8 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
                     date: formData.date === "si",
                     label: formData.label,
                     model: formData.model,
-                    duration: formData.duration || 0
+                    duration: formData.duration || 0,
+                    categoryFiles:formData.categoryFiles
                   }),
                   ...(enumKey === "jobs" && { public: formData.public === "si" }),
                 }
@@ -288,6 +300,7 @@ export default function ManagingEnum({ enumsData = {}, charge, modal, chargeEnum
           payload.date = formData.date;
           payload.label = formData.label;
           payload.model = formData.model;
+          payload.categoryFiles=formData.categoryFiles
           if(!!payload.date) payload.duration=formData.duration;
         }
         if (enumKey === "jobs") payload.public = formData.public;

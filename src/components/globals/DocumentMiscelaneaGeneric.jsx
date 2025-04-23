@@ -39,7 +39,8 @@ const DocumentMiscelaneaGeneric = ({
   charge,
   onChange,
   parentId = null,
-  authorized=false
+  authorized=false,
+  categoryFiles
 }) => {
   // 1) Extraer/transformar los archivos en un array normalizado
   const [normalizedFiles, setNormalizedFiles] = useState([]);
@@ -48,6 +49,7 @@ const DocumentMiscelaneaGeneric = ({
     setNormalizedFiles(tranformData);
   }, [data, modelName]);
 
+  console.log(categoryFiles)
 
   // =============== ESTADOS para modales ===============
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -162,6 +164,16 @@ const DocumentMiscelaneaGeneric = ({
           // No marcamos "required" global, pero haremos la validación
           // en el onSubmit según doc.date === true
         },
+        {
+          label: "Categoria del documento",
+          name: 'category',
+          type: 'select',
+          required: true,
+          options: [
+            { value: "", label: "Seleccione una opción" },
+            ...categoryFiles.map((d) => ({ value: d, label: d })),
+          ],
+        }
       ],
       onSubmit: async ({ docId, file, date }) => {
         try {

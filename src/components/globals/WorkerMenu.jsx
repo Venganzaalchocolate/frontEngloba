@@ -69,8 +69,7 @@ const WorkerMenu = ({ modal, charge }) => {
         }));
       };
       
-      
-
+ 
 
         if (MenuWorker != null) {
             if (MenuWorker == 'cv') return <ManagingResumenes chargeEnums={chargeEnums} enumsEmployer={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;

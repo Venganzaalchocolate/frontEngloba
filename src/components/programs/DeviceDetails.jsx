@@ -187,6 +187,7 @@ const DeviceDetails = ({
 
       {((logged.user.role === "root" || logged.user.role === "global") || listResponsability.some(ob => ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible))) && (
         <DocumentMiscelaneaGeneric
+          categoryFiles={enumsData.categoryFiles}
           data={device}
           modelName="Device"
           parentId={program._id}  // <-- Agregar el parentId para dispositivos

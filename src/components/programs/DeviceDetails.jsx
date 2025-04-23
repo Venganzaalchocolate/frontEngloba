@@ -196,6 +196,7 @@ const DeviceDetails = ({
           )}
           modal={modal}
           charge={charge}
+          authorized={true}
           onChange={(updatedDevice) => {
             if (handleProgramSaved) {
               handleProgramSaved(updatedDevice);

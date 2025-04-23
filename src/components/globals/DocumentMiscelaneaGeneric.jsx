@@ -203,16 +203,16 @@ const DocumentMiscelaneaGeneric = ({
               );
               return;
             }
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const chosenDate = new Date(date);
-            if (chosenDate > today) {
-              modal(
-                "Error",
-                `La fecha del documento "${selectedDoc.label}" no puede ser posterior a hoy.`
-              );
-              return;
-            }
+            // const today = new Date();
+            // today.setHours(0, 0, 0, 0);
+            // const chosenDate = new Date(date);
+            // if (chosenDate > today) {
+            //   modal(
+            //     "Error",
+            //     `La fecha del documento "${selectedDoc.label}" no puede ser posterior a hoy.`
+            //   );
+            //   return;
+            // }
           }
 
           // 3) Validación para Device con parentId
@@ -422,7 +422,7 @@ const DocumentMiscelaneaGeneric = ({
             <h4 className={styles.categoryTitle}>{category}</h4>
             {docsArray.map(({ doc, files }) => (
               
-              <div key={doc._id} className={(doc.model=='User')?styles.officialDocGroupUser:styles.officialDocGroup}>
+              <div key={doc._id} className={(doc.model=='antiguomodelo')?styles.officialDocGroupUser:styles.officialDocGroup}>
                 <label className={styles.docLabel}>{doc.label} {authorized &&
                   <AiOutlineCloudUpload
                     className={styles.uploadButton}

@@ -86,6 +86,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms, listRespon
       const updatedDevice = savedProgram.devices.find(
         (d) => d._id.toString() === selectedDevice._id.toString()
       );
+      updatedDevice['idProgramFather']=savedProgram._id
       if (updatedDevice) {
         setSelectedDevice(updatedDevice);
       }
@@ -107,6 +108,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms, listRespon
     if(selectedDevice) setSelectedDevice(null);
     else setSelectedProgram(null)
   }
+
 
   return (
     <div className={styles.contenedor}>

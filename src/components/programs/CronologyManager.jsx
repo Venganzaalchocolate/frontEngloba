@@ -8,7 +8,7 @@ import { FaEdit, FaTrashAlt, FaLockOpen, FaLock } from "react-icons/fa";
 import styles from "../styles/ManagingPrograms.module.css";
 
 
-const CronologyManager = ({ program, modal, charge, handleProgramSaved }) => {
+const CronologyManager = ({ program, modal, charge, handleProgramSaved, authorized }) => {
     const [showModal, setShowModal] = useState(false);
     const [formType, setFormType] = useState("add"); // "add" o "edit"
     const [currentCronology, setCurrentCronology] = useState(null);
@@ -113,7 +113,7 @@ const CronologyManager = ({ program, modal, charge, handleProgramSaved }) => {
 
     return (
         <div className={styles.cronologyContenedor}>
-            <h3>Cronología <FaSquarePlus onClick={openAddCronology} /></h3>
+            <h3>Cronología {authorized && <FaSquarePlus onClick={openAddCronology} />} </h3>
             {program.cronology && program.cronology.length > 0 ? (
                 program.cronology.map((item) => (
                     <div key={item._id} className={styles.cronologyItem}>
@@ -122,10 +122,13 @@ const CronologyManager = ({ program, modal, charge, handleProgramSaved }) => {
                             <p><FaLockOpen /> {new Date(item.open).toLocaleDateString()}</p>
                             <p><FaLock /> {item.closed ? new Date(item.closed).toLocaleDateString() : "N/A"}</p>
                         </div>
+                        {authorized && 
                         <div>
                             <FaEdit onClick={() => openEditCronology(item)} />
                             <FaTrashAlt onClick={() => requestDeleteCronology(item)} />
                         </div>
+                        }
+                        
                     </div>
                 ))
             ) : (

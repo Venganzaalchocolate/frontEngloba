@@ -168,145 +168,148 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
   return (
     <>
       {hiringsEditing.map((hiringPeriod, i) => {
-      if (!hiringPeriod.active) return null; // No mostrar inactivos
-      return (
-        <div
-          key={hiringPeriod._id}
-          className={
-            hiringPeriod.reason?.replacement
-              ? styles.tableResponsiveReason
-              : styles.tableResponsive
-          }
-        >
-          {/* Título para sustitución */}
-          {hiringPeriod.reason?.replacement && (
-            <h3>
-              Periodo de sustitución{" "}
-              <button onClick={() => chargeInfoLeave(hiringPeriod.reason.user)}>
-                Información sustitución
-              </button>
-            </h3>
-          )}
+        if (!hiringPeriod.active) return null; // No mostrar inactivos
+        return (
+          <div
+            key={hiringPeriod._id}
+            className={
+              hiringPeriod.reason?.replacement
+                ? styles.tableResponsiveReason
+                : styles.tableResponsive
+            }
+          >
+            {/* Título para sustitución */}
+            {hiringPeriod.reason?.replacement && (
+              <h3>
+                Periodo de sustitución{" "}
+                <button onClick={() => chargeInfoLeave(hiringPeriod.reason.user)}>
+                  Información sustitución
+                </button>
+              </h3>
+            )}
 
-          <div className={styles.myTable}>
-            {/* Cabecera */}
-            <div className={styles.myTableHeader}>
-              <div className={styles.myTableCell}>Inicio</div>
-              <div className={styles.myTableCell}>Fin</div>
-              <div className={styles.myTableCell}>Dispositivo</div>
-              <div className={styles.myTableCell}>Jornada</div>
-              <div className={styles.myTableCell}>Puesto</div>
-              <div className={styles.myTableCell}></div>
-            </div>
-
-            {/* Cuerpo */}
-            <div className={styles.myTableBody}>
-              <div className={styles.myTableRow}>
-                {/* INICIO */}
-                <div
-                  data-label="Inicio"
-                  className={`${styles.myTableCell} ${styles.fecha}`}
-                >
-                  {hiringPeriod.startDate
-                    ? new Date(hiringPeriod.startDate).toLocaleDateString()
-                    : "-"}
-                </div>
-                {/* FIN */}
-                <div
-                  data-label="Fin"
-                  className={`${styles.myTableCell} ${styles.fecha}`}
-                >
-                  {hiringPeriod.endDate
-                    ? new Date(hiringPeriod.endDate).toLocaleDateString()
-                    : "-"}
-                </div>
-                {/* DISPOSITIVO */}
-                <div data-label="Dispositivo" className={styles.myTableCell}>
-                  <div>
-                    {(() => {
-                      const deviceId = hiringPeriod.device;
-                      let deviceName = "";
-                      enums.programs?.forEach((p) => {
-                        p.devices.forEach((d) => {
-                          if (d._id === deviceId) deviceName = d.name;
-                        });
-                      });
-                      return deviceName || "No asignado";
-                    })()}
-                  </div>
-                </div>
-                {/* JORNADA */}
-                <div data-label="Jornada" className={styles.myTableCell}>
-                  {hiringPeriod.workShift?.type || "-"}
-                </div>
-                {/* PUESTO */}
-                <div data-label="Puesto" className={styles.myTableCell}>
-                  {(() => {
-                    const posId = hiringPeriod.position;
-                    let posName = "";
-                    enums.jobs?.forEach((job) => {
-                      if (job.subcategories) {
-                        job.subcategories.forEach((sub) => {
-                          if (sub._id === posId) posName = sub.name;
-                        });
-                      } else {
-                        if (job._id === posId) posName = job.name;
-                      }
-                    });
-                    return posName || "No asignado";
-                  })()}
-                </div>
-                {/* ACCIONES */}
-                <div data-label="Acciones" className={styles.myTableCell}>
-                  <div className={styles.cajaAcciones}>
-                    <button
-                      className={styles.botonBaja}
-                      style={{ cursor: "pointer", marginRight: "0.5rem" }}
-                      title="Añadir Excedencia/Baja"
-                      onClick={() => setButtonCreateLeave(hiringPeriod._id)}
-                    >
-                      Añadir baja/excedencia
-                    </button>
-
-                    <FaEdit
-                      style={{ cursor: "pointer", marginRight: "0.5rem" }}
-                      title="Editar este periodo"
-                      onClick={() => handleEditClick(hiringPeriod)}
-                    />
-
-                    <FaTrashAlt
-                      style={{ cursor: "pointer" }}
-                      title="Eliminar este periodo"
-                      onClick={() =>
-                        setShowConfirmModal(`${i}-${hiringPeriod._id}-active`)
-                      }
-                    />
-                  </div>
-                </div>
+            <div className={styles.myTable}>
+              {/* Cabecera */}
+              <div className={styles.myTableHeader}>
+                <div className={styles.myTableCell}>Inicio</div>
+                <div className={styles.myTableCell}>Fin</div>
+                <div className={styles.myTableCell}>Dispositivo</div>
+                <div className={styles.myTableCell}>Jornada</div>
+                <div className={styles.myTableCell}>Puesto</div>
+                <div className={styles.myTableCell}></div>
               </div>
 
-              {/* Bloque para LeavePeriods (si existen) */}
-              {hiringPeriod.leavePeriods &&
-                hiringPeriod.leavePeriods.filter((lp) => lp.active).length > 0 && (
-                  <div className={styles.myTableRow}>
-                    <div className={styles.myTableCell} style={{ gridColumn: "1 / -1" }}>
-                    <LeavePeriods
-  leavePeriods={hiringPeriod.leavePeriods}
-  hiringPeriodId={hiringPeriod._id}
-  positionHiring={i}
-  enums={enums}
-  deleteHirindorLeave={(x) => setShowConfirmModal(x)}
-  onUpdateLeavePeriod={(leaveData, actionType) => saveHiring(leaveData, actionType)}
-/>
-
+              {/* Cuerpo */}
+              <div className={styles.myTableBody}>
+                <div className={styles.myTableRow}>
+                  {/* INICIO */}
+                  <div
+                    data-label="Inicio"
+                    className={`${styles.myTableCell} ${styles.fecha}`}
+                  >
+                    {hiringPeriod.startDate
+                      ? new Date(hiringPeriod.startDate).toLocaleDateString()
+                      : "-"}
+                  </div>
+                  {/* FIN */}
+                  <div
+                    data-label="Fin"
+                    className={`${styles.myTableCell} ${styles.fecha}`}
+                  >
+                    {hiringPeriod.endDate
+                      ? new Date(hiringPeriod.endDate).toLocaleDateString()
+                      : "-"}
+                  </div>
+                  {/* DISPOSITIVO */}
+                  <div data-label="Dispositivo" className={styles.myTableCell}>
+                    <div>
+                      {(() => {
+                        const deviceId = hiringPeriod.device;
+                        let deviceName = "";
+                        enums.programs?.forEach((p) => {
+                          p.devices.forEach((d) => {
+                            if (d._id === deviceId) deviceName = d.name;
+                          });
+                        });
+                        return deviceName || "No asignado";
+                      })()}
                     </div>
                   </div>
-                )}
+                  {/* JORNADA */}
+                  <div data-label="Jornada" className={styles.myTableCell}>
+                    {hiringPeriod.workShift?.type || "-"}
+                  </div>
+                  {/* PUESTO */}
+                  <div data-label="Puesto" className={styles.myTableCell}>
+                    {(() => {
+                      const posId = hiringPeriod.position;
+                      let posName = "";
+                      enums.jobs?.forEach((job) => {
+                        if (job.subcategories) {
+                          job.subcategories.forEach((sub) => {
+                            if (sub._id === posId) posName = sub.name;
+                          });
+                        } else {
+                          if (job._id === posId) posName = job.name;
+                        }
+                      });
+                      return posName || "No asignado";
+                    })()}
+                  </div>
+                  {/* ACCIONES */}
+                  <div data-label="Acciones" className={styles.myTableCell}>
+                    <div className={styles.cajaAcciones}>
+                      <button
+                        className={styles.botonBaja}
+                        style={{ cursor: "pointer", marginRight: "0.5rem" }}
+                        title="Añadir Excedencia/Baja"
+                        onClick={() => setButtonCreateLeave(hiringPeriod._id)}
+                      >
+                        Añadir baja/excedencia
+                      </button>
+                      {(logged.user.role == 'global' || logged.user.role == 'root') &&
+                        <FaEdit
+                          style={{ cursor: "pointer", marginRight: "0.5rem" }}
+                          title="Editar este periodo"
+                          onClick={() => handleEditClick(hiringPeriod)}
+                        />
+                      }
+                      {(logged.user.role == 'global' || logged.user.role == 'root') &&
+                        <FaTrashAlt
+                          style={{ cursor: "pointer" }}
+                          title="Eliminar este periodo"
+                          onClick={() =>
+                            setShowConfirmModal(`${i}-${hiringPeriod._id}-active`)
+                          }
+
+                        />
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bloque para LeavePeriods (si existen) */}
+                {hiringPeriod.leavePeriods &&
+                  hiringPeriod.leavePeriods.filter((lp) => lp.active).length > 0 && (
+                    <div className={styles.myTableRow}>
+                      <div className={styles.myTableCell} style={{ gridColumn: "1 / -1" }}>
+                        <LeavePeriods
+                          leavePeriods={hiringPeriod.leavePeriods}
+                          hiringPeriodId={hiringPeriod._id}
+                          positionHiring={i}
+                          enums={enums}
+                          deleteHirindorLeave={(x) => setShowConfirmModal(x)}
+                          onUpdateLeavePeriod={(leaveData, actionType) => saveHiring(leaveData, actionType)}
+                        />
+
+                      </div>
+                    </div>
+                  )}
+              </div>
             </div>
           </div>
-        </div>
-      );
-    })}
+        );
+      })}
 
       {/* Modal para confirmar "borrar" */}
       {showConfirmModal && modalConfirmation()}

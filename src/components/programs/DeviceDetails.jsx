@@ -37,7 +37,7 @@ const DeviceDetails = ({
       if (users && Array.isArray(users)) {
         setResponsibles(users);
       }
-      
+
     };
     charge(false)
   }
@@ -84,12 +84,12 @@ const DeviceDetails = ({
     }
   };
 
-   const handleConfirm = async() => {
+  const handleConfirm = async () => {
     setShowModal(false)
     charge(true)
-    const token=getToken();
-    const updateProgram=await deleteDispositive({programId:program._id, dispositiveId:device._id}, token)
-    if(!updateProgram.error){
+    const token = getToken();
+    const updateProgram = await deleteDispositive({ programId: program._id, dispositiveId: device._id }, token)
+    if (!updateProgram.error) {
       handleProgramSaved(updateProgram);
       modal('Dispositivo Borrado', `Dispositivo ${device.name} borrado con éxito`)
       close();
@@ -97,22 +97,30 @@ const DeviceDetails = ({
       modal('Dispositivo No Borrado', `El dispositivo ${device.name} no se ha podido borrar`)
     }
     charge(false)
-    }
-  
-    const handleCancel = () => {
-      setShowModal(false)
-    }
+  }
+
+  const handleCancel = () => {
+    setShowModal(false)
+  }
 
   return (
     <div className={styles.programInfoContainer}>
       <div className={styles.containerInfo}>
         <h2>
           {device.name || "Nombre del Dispositivo"}
-          {"  "}
-          <FaEdit
-            onClick={handleEdit}
-            style={{ cursor: "pointer", marginLeft: "1rem" }}
-          />
+          {console.log(listResponsability)}
+          {console.log(device)}
+          {(logged.user.role === "root" || logged.user.role === "global") ||
+            listResponsability.some(ob =>
+              (ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible)) ||
+              (String(ob.idProgram) === String(device.idProgramFather))
+            )
+            && (
+              <FaEdit
+                onClick={handleEdit}
+                style={{ cursor: "pointer", marginLeft: "1rem" }}
+              />
+            )}
           {device.active ? (
             <FaCircleCheck
               onClick={() => changeStatus(true)}
@@ -124,21 +132,27 @@ const DeviceDetails = ({
               style={{ cursor: "pointer", marginLeft: "1rem" }}
             />
           )}
-           <FaTrashAlt onClick={() => setShowModal(true)} />
-                  {showModal && (
-                    <ModalConfirmation
-                      title="Eliminar Dispositivo"
-                      message={(responsibles.length>0)
-                        ?`¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}? Tenga en cuenta que tiene responsables asociados a él`
-                        : (coordinators.length>0)
-                        ? `¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}? Tenga en cuenta que tiene coordinadores asociados a él`
-                        :`¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}?`}
-                      onConfirm={handleConfirm}
-                      onCancel={handleCancel}
-                    />
-                  )}
+          {(logged.user.role === "root" || logged.user.role === "global") ||
+            listResponsability.some(ob =>
+              (ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible)) ||
+              (String(ob.idProgram) === String(device.idProgramFather))
+            )
+            &&
+          <FaTrashAlt onClick={() => setShowModal(true)} />}
+          {showModal && (
+            <ModalConfirmation
+              title="Eliminar Dispositivo"
+              message={(responsibles.length > 0)
+                ? `¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}? Tenga en cuenta que tiene responsables asociados a él`
+                : (coordinators.length > 0)
+                  ? `¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}? Tenga en cuenta que tiene coordinadores asociados a él`
+                  : `¿Estás seguro de que quieres eliminar  el dispositivo ${device.name}?`}
+              onConfirm={handleConfirm}
+              onCancel={handleCancel}
+            />
+          )}
         </h2>
-       
+
         <div className={styles.programDetailInfo}>
           <div>
             <p>

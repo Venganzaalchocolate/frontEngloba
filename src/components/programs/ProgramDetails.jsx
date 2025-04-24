@@ -87,16 +87,23 @@ const getProvinceName = (provinceId, provincesEnum) => {
   // Si no se encuentra ni en provincias ni en subcategorías, devolvemos el ID original
   return provinceId;
 };
+
+const changeDeviceAddIDProgram=(d)=>{
+  d['idProgramFather']=program._id
+  onSelectDevice(d)
+}
  
   return (
     <div className={styles.programInfoContainer}>
       <div className={styles.containerInfo}>
         <h2>
           {program.acronym?.toUpperCase()}
+          {((logged.user.role === "root" || logged.user.role === "global") || listResponsability.some(ob => ob.idProgram === program._id && ob.isProgramResponsible)) && (
           <FaEdit
             onClick={() => onEditProgram(program._id)}
             style={{ cursor: "pointer", marginLeft: "1rem" }}
           />
+          )}
           {program.active ? (
             <FaCircleCheck
               onClick={() => changeStatus(true)}
@@ -198,6 +205,7 @@ const getProvinceName = (provinceId, provincesEnum) => {
 
             {/* Componente CronologyManager para añadir, editar y eliminar cronología */}
             <CronologyManager
+              authorized={((logged.user.role === "root" || logged.user.role === "global") || listResponsability.some(ob => ob.idProgram === program._id && ob.isProgramResponsible))}
               program={program}
               modal={modal}
               charge={charge}
@@ -239,7 +247,7 @@ const getProvinceName = (provinceId, provincesEnum) => {
 
 
       <div className={styles.cajaDispositivos}>
-        <h2>DISPOSITIVOS <FaSquarePlus onClick={() => openCreateDispositive()} /></h2>
+        <h2>DISPOSITIVOS {((logged.user.role === "root" || logged.user.role === "global") || listResponsability.some(ob => ob.idProgram === program._id && ob.isProgramResponsible)) && (<FaSquarePlus onClick={() => openCreateDispositive()} />)}</h2>
         {groupedDevices && Object.keys(groupedDevices).length > 0 ? (
           Object.entries(groupedDevices).map(([provinceId, devices]) => (
             <div key={provinceId}>
@@ -249,7 +257,7 @@ const getProvinceName = (provinceId, provincesEnum) => {
                 <div
                   key={device._id}
                   className={styles.deviceItem}
-                  onClick={() => onSelectDevice(device)}
+                  onClick={() =>changeDeviceAddIDProgram(device) }
                 >
                   {device.name}
                   

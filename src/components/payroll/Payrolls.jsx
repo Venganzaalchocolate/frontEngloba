@@ -59,7 +59,7 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title =
     <div className={title ? styles.contenedor : styles.contenedorModuloNominas}>
       {title && (
         <h2>
-          NÓMINAS <FaSquarePlus onClick={() => setShowUploadModal(true)} />
+          NÓMINAS {(logged.user.role=='global' || logged.user.role=='root') && <FaSquarePlus onClick={() => setShowUploadModal(true)}/> } 
         </h2>
       )}
 

@@ -383,7 +383,7 @@ const ManagingEmployer = ({
           <div className={styles.titulo}>
             <div>
               <h2>GESTIÓN DE EMPLEADOS</h2>
-              <FaSquarePlus onClick={openModal} />
+              {isRootOrGlobal && <FaSquarePlus onClick={openModal} />}
               <TbFileTypeXml onClick={() => openXlsForm()} />
               {(userXLS) && <CreateDocumentXLS users={userXLS} enumsData={enumsData} closeXls={()=>setUsersXls(null)}/>}
               <a
@@ -555,25 +555,21 @@ const ManagingEmployer = ({
                               onChange={(x) => changeUserLocally(x)}
                               listResponsability={listResponsability}
                             />
-                            {user.employmentStatus !== 'en proceso de contratación' &&
-                              (user.role !== 'global' || user.role !== 'root') && (
-                                <>
-                                  <VacationDays
-                                    user={user}
-                                    modal={modal}
-                                    charge={charge}
-                                    changeUser={(x) => changeUserLocally(x)}
-                                  />
-                                  <Hiringperiods
-                                    enumsData={enumsData}
-                                    user={user}
-                                    modal={modal}
-                                    charge={charge}
-                                    changeUser={(x) => changeUserLocally(x)}
-                                    chargeUser={() => loadUsers(true)}
-                                  />
-                                </>
-                              )}
+                            <VacationDays
+                              user={user}
+                              modal={modal}
+                              charge={charge}
+                              changeUser={(x) => changeUserLocally(x)}
+                            />
+                            <Hiringperiods
+                              enumsData={enumsData}
+                              user={user}
+                              modal={modal}
+                              charge={charge}
+                              changeUser={(x) => changeUserLocally(x)}
+                              chargeUser={() => loadUsers(true)}
+                            />
+                                
                           </div>
                         )}
                       </div>

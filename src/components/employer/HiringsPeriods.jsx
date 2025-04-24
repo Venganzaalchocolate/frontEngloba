@@ -5,9 +5,11 @@ import { getToken } from '../../lib/serviceToken.js';
 import HiringList from './HiringList.jsx';
 import HiringPeriodNew from './HiringPeriodNew.jsx'; // <-- nuevo
 import { getDataEmployer, getPrograms, hirings } from '../../lib/data.js';
+import { useLogin } from '../../hooks/useLogin.jsx';
 
 const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) => {
     const [buttonCreateHiring, setButtonCreateHiring] = useState(false);
+    const { logged } = useLogin();
     /**
      * Función principal para guardar/actualizar hiring.
      * Se llamará con 'create', 'delete', etc.
@@ -79,7 +81,7 @@ const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) 
          <div className={styles.contenedor}>
             <h2>
                 PERIODOS DE CONTRATACIÓN
-                <FaSquarePlus onClick={() => setButtonCreateHiring(true)} />
+                {(logged.user.role=='global' || logged.user.role=='root') && <FaSquarePlus onClick={() => setButtonCreateHiring(true)} />}
                 
             </h2>
             

@@ -9,6 +9,7 @@ import ModalForm from '../globals/ModalForm';
 import { getToken } from '../../lib/serviceToken';
 import { infoUser } from '../../lib/data';
 import HiringPeriodEdit from './HiringPeriodEdit'; // <--- nuevo componente para edición en Modal
+import { useLogin } from '../../hooks/useLogin.jsx';
 
 const HiringList = ({ hirings, enums, saveHiring }) => {
   // Estado para controlar a cuál hiringPeriod se le abre el modal de edición
@@ -26,6 +27,7 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
   // =========== MODAL de "Información sustitución" ===========
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [infoLeaveData, setInfoLeaveData] = useState(null);
+  const { logged } = useLogin();
 
   useEffect(() => {
     // Ordenamos los hiringPeriods por fecha de inicio descendente

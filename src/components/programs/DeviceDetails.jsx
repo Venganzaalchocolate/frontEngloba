@@ -108,8 +108,6 @@ const DeviceDetails = ({
       <div className={styles.containerInfo}>
         <h2>
           {device.name || "Nombre del Dispositivo"}
-          {console.log(listResponsability)}
-          {console.log(device)}
           {(logged.user.role === "root" || logged.user.role === "global") ||
             listResponsability.some(ob =>
               (ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible)) ||
@@ -132,6 +130,7 @@ const DeviceDetails = ({
               style={{ cursor: "pointer", marginLeft: "1rem" }}
             />
           )}
+          
           {(logged.user.role === "root" || logged.user.role === "global") ||
             listResponsability.some(ob =>
               (ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible)) ||
@@ -199,7 +198,11 @@ const DeviceDetails = ({
         </div>
       </div>
 
-      {((logged.user.role === "root" || logged.user.role === "global") || listResponsability.some(ob => ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible))) && (
+      {(logged.user.role === "root" || logged.user.role === "global") ||
+            listResponsability.some(ob =>
+              (ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible)) ||
+              (String(ob.idProgram) === String(device.idProgramFather))
+            ) && (
         <DocumentMiscelaneaGeneric
           categoryFiles={enumsData.categoryFiles}
           data={device}

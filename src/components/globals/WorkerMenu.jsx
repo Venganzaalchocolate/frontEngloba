@@ -33,8 +33,19 @@ const WorkerMenu = ({ modal, charge }) => {
     }
 
     useEffect(() => {
-        chargeResponsability();
-        chargeEnums();
+        const fetchAll = async () => {
+            try {
+              charge(true); // Mostrar el spinner antes de empezar
+              await chargeResponsability(); // Cargar responsabilidades
+              await chargeEnums();         // Cargar enumeraciones
+            } catch (error) {
+              modal('Error', "Error al cargar los datos");
+            } finally {
+              charge(false); // Ocultar el spinner al final
+            }
+          };
+        
+          fetchAll();
     }, [])
 
     //borrar

@@ -185,6 +185,7 @@ const DocumentMiscelaneaGeneric = ({
       ],
       onSubmit: async ({ docId, file, date }) => {
         try {
+          charge(true);
           // 1) Determinar si el doc requerido tiene date == true
           const selectedDoc = officialDocs.find(
             (d) => d._id.toString() === docId.toString()
@@ -222,7 +223,7 @@ const DocumentMiscelaneaGeneric = ({
           }
 
           // 4) Subir o actualizar
-          charge(true);
+          
           const token = getToken();
 
           // Ver si ya existe un doc oficial de este tipo
@@ -280,6 +281,7 @@ const DocumentMiscelaneaGeneric = ({
   // ==== SUBIR DOCUMENTOS MISCELÁNEOS ================
   // ==================================================
   const handleFileUploadExtra = () => {
+    
     const todayStr = new Date().toISOString().split('T')[0];
     setFormConfig({
       title: `Subir documento adicional (${modelName})`,
@@ -310,6 +312,7 @@ const DocumentMiscelaneaGeneric = ({
       ],
       onSubmit: async ({ file, fileName, date, description }) => {
         try {
+          
           // Validación: para Device se requiere parentId
           if (modelName.toLowerCase() === "device" && !parentId) {
             modal("Error", "Falta el idModel (parentId) para el dispositivo.");

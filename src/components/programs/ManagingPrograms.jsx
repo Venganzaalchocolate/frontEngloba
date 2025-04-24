@@ -6,6 +6,7 @@ import ProgramDetails from "./ProgramDetails";
 import DeviceDetails from "./DeviceDetails";
 import FormDevice from "./FormDevice";
 import styles from "../styles/ManagingPrograms.module.css";
+import { useLogin } from '../../hooks/useLogin.jsx';
 
 const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms, listResponsability }) => {
   // Modal para crear/editar programas y dispositivos
@@ -22,6 +23,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms, listRespon
 
   // Lista ordenada de programas
   const [sortedPrograms, setSortedPrograms] = useState([]);
+  const { logged } = useLogin();
 
   useEffect(() => {
     if (enumsData?.programs) {
@@ -114,7 +116,7 @@ const ManagingPrograms = ({ enumsData, modal, charge, chargePrograms, listRespon
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
         <div className={styles.titulo}>
-          <h2>{!!selectedDevice?'GESTIÓN DEL DISPOSITIVO':'GESTIÓN DEL PROGRAMA'} {!selectedDevice && <FaSquarePlus onClick={openCreateProgram}/>}</h2>
+          <h2>{!!selectedDevice?'GESTIÓN DEL DISPOSITIVO':'GESTIÓN DEL PROGRAMA'} {!selectedDevice &&  (logged.user.role=='global' || logged.user.role=='root') && <FaSquarePlus onClick={openCreateProgram}/>}</h2>
           {(selectedDevice || selectedProgram) && <button onClick={() => onClose()}>Atrás</button>}
         </div>
 

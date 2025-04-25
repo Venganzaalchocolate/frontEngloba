@@ -19,7 +19,7 @@ import { TbFileTypeXml } from "react-icons/tb";
 import { FaPersonCircleMinus, FaBusinessTime } from "react-icons/fa6";
 import CreateDocumentXLS from './CreateDocumentXLS.jsx';
 import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx';
-
+import FilterStatus from './FilterStatus.jsx';
 
 
 
@@ -448,7 +448,7 @@ const ManagingEmployer = ({
           </div>
 
           <div className={styles.caja}>
-            {isRootOrGlobal && (
+            {isRootOrGlobal ? (
               <Filters
                 filters={filters}
                 enums={enumsData}
@@ -456,7 +456,15 @@ const ManagingEmployer = ({
                 resetFilters={resetFilters}
                 setFilters={setFilters}
               />
-            )}
+            ) : 
+            <FilterStatus
+              filters={filters}
+              enums={enumsData}
+              handleFilterChange={handleFilterChange}
+              resetFilters={resetFilters}
+              setFilters={setFilters}
+            />
+          }
 
             <div className={styles.containerTableContainer}>
               <div>

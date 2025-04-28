@@ -560,7 +560,7 @@ const ManagingEmployer = ({
                               user={user}
                               modal={modal}
                               charge={charge}
-                              onChange={(x) => changeUserLocally(x)}
+                              changeUser={(x) => changeUserLocally(x)}
                               listResponsability={listResponsability}
                             />
                             <VacationDays

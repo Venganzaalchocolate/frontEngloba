@@ -93,7 +93,7 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
       return;
     }
   
-    const { notes, nameUser, dni } = hiringPeriod.reason;
+    const { startLeaveDate, nameUser, dniUser, expectedEndLeaveDate, cause } = hiringPeriod.reason?.notes;
   
     // Función auxiliar para formatear la fecha
     const formatDate = (date) => {
@@ -107,12 +107,12 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
   
     const formattedReason = {
       name: nameUser || 'Empleado sustituido',
-      dni: dni || '',
-      startLeaveDate: notes?.startLeaveDate ? formatDate(notes.startLeaveDate) : '',
-      expectedEndLeaveDate: notes?.expectedEndLeaveDate ? formatDate(notes.expectedEndLeaveDate) : '',
+      dni: dniUser || '',
+      startLeaveDate: startLeaveDate ? formatDate(startLeaveDate) : '',
+      expectedEndLeaveDate: expectedEndLeaveDate ? formatDate(expectedEndLeaveDate) : '',
       reason: (() => {
-        if (!notes?.cause) return '';
-        const found = enums.leavetype.find(e => e._id.toString() === notes.cause.toString());
+        if (!cause) return '';
+        const found = enums.leavetype.find(e => e._id.toString() === cause.toString());
         return found ? found.name : '';
       })()
     };
@@ -315,7 +315,7 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
       )}
 
       {/* Modal para mostrar info de la persona a la que se sustituye */}
-{showInfoModal && infoLeaveData && console.log(infoLeaveData) &&(
+{showInfoModal && infoLeaveData  && (
   <ModalForm
     title="Información"
     message="Datos del periodo de baja/excedencia"
@@ -335,19 +335,19 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
       {
         name: "startLeaveDate",
         label: "Inicio",
-        defaultValue: infoLeaveData.startLeaveDate || '',
+        defaultValue: infoLeaveData.startLeaveDate || 'No hay datos disponibles',
         disabled: true
       },
       {
         name: "expectedEndLeaveDate",
         label: "Fin previsto",
-        defaultValue: infoLeaveData.expectedEndLeaveDate || '',
+        defaultValue: infoLeaveData.expectedEndLeaveDate || 'No hay datos disponibles',
         disabled: true
       },
       {
         name: "reason",
         label: "Motivo",
-        defaultValue: infoLeaveData.reason || '',
+        defaultValue: infoLeaveData.reason || 'No hay datos disponibles',
         disabled: true
       }
     ]}

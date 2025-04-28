@@ -1,18 +1,40 @@
 import { useState } from 'react';
 import { FaTrashAlt, FaFileDownload } from "react-icons/fa";
 import styles from '../styles/payrollsEmployer.module.css';
-import DeleteConfirmation from '../employer/DeleteConfirmation.jsx';
 import { AiOutlineSignature, AiFillSignature } from "react-icons/ai";
 import stylesTooltip from '../styles/tooltip.module.css';
 import { FaCloudUploadAlt } from "react-icons/fa";
 import { useLogin } from '../../hooks/useLogin.jsx';
-import { FaLongArrowAltDown } from "react-icons/fa";
+import { obtenerNombreMes } from '../../lib/utils.js';
+import ModalConfirmation from '../globals/ModalConfirmation.jsx';
 
 const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, signPayroll, userId }) => {
     const { logged } = useLogin();
     const [wDelete, setWDelete] = useState(false);
     const name = `${payroll.payrollMonth}_${payroll.payrollYear}`
 
+
+    const onConfirm = () => {
+        deletePayroll(payroll._id)
+        setWDelete(false);
+      };
+    
+      const onCancel = () => {
+        setWDelete(false);
+      };
+
+    const modalConfirmation = () => {
+        const title = `Eliminar nómina`;
+        const messageAux = `¿Estás seguro de que deseas eliminar la nómina del mes ${obtenerNombreMes(payroll.payrollMonth)} y año ${payroll.payrollYear}?`;
+        return (
+          <ModalConfirmation
+            title={title}
+            message={messageAux}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+          />
+        );
+      };
 
     return (
         <li className={styles.payrollItem}>
@@ -51,16 +73,11 @@ const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, sig
             </div>}
             
             {wDelete && (
-                <DeleteConfirmation
-                    onConfirm={() => deletePayroll(payroll._id)}
-                    onCancel={() => setWDelete(false)}
-                    payroll={payroll}
-                    stringMeses={stringMeses}
-                />
+                modalConfirmation()
             )}
 
         </li>
     );
 };
-
+//
 export default PayrollItem;

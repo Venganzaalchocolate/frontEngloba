@@ -38,7 +38,6 @@ export default function PayrollModalForm({ user, modal, changeUser, charge, onCl
       };
 
       const data = await updatePayroll(payload, token);
-
       if (!data.error) {
         modal('Subir nómina', 'Nómina añadida con éxito');
         changeUser(data); // Actualiza tu estado global de usuario
@@ -46,6 +45,7 @@ export default function PayrollModalForm({ user, modal, changeUser, charge, onCl
         modal('Error', 'No se pudo subir la nómina.');
       }
     } catch (error) {
+      console.log(error)
       modal('Error', 'Ocurrió un problema en el servidor.');
     }
 

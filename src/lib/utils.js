@@ -134,3 +134,16 @@ export function calcularTiempoRestante(dateString, durationDays) {
 
   return partes.length ? partes.join(" ") : "Menos de un día restante";
 }
+
+export const obtenerNombreMes=(numeroMes)=>{
+  const meses = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  if (numeroMes >= 1 && numeroMes <= 12) {
+    return meses[numeroMes - 1];
+  } else {
+    return "Número de mes inválido";
+  }
+}

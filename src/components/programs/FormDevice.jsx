@@ -4,6 +4,7 @@ import { createDispositive, updateDispositive } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import { validEmail, validNumber, validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
+import { useLogin } from '../../hooks/useLogin.jsx';
 
 const FormDevice = ({
   modal,
@@ -15,7 +16,7 @@ const FormDevice = ({
   handleProgramSaved
 }) => {
   const isEditing = !!device;
-
+const { logged } = useLogin();
 
 
     let provinces = [];
@@ -93,6 +94,7 @@ const FormDevice = ({
         email: formData.email || "",
         phone: formData.phone || "",
         province: formData.province || null,
+        userCreate: logged.user.firstName+' '+logged.user.lastName,
       };
       let result;
       if (!isEditing) {

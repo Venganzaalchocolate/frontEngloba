@@ -4,6 +4,7 @@ import { createProgram, updateProgram } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import { validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
+import { useLogin } from '../../hooks/useLogin.jsx';
 
 const FormProgram = ({
   modal,
@@ -15,7 +16,7 @@ const FormProgram = ({
 }) => {
   // Detectamos si estamos en modo edición
   const isEditing = !!program;
-
+  const { logged } = useLogin();
   // Generamos las opciones de financiación
   const finantialOptions = enumsData?.finantial
     ? enumsData.finantial.map((f) => ({
@@ -61,6 +62,7 @@ const FormProgram = ({
         required: true,
         defaultValue: program?.area || "",
         options: [
+          { value: "", label: "Seleccione un area" },
           { value: "igualdad", label: "Igualdad" },
           { value: "desarrollo comunitario", label: "Desarrollo Comunitario" },
           { value: "lgtbiq", label: "LGTBIQ+" },
@@ -129,6 +131,8 @@ const FormProgram = ({
             objectives: formData.objectives || "",
             profile: formData.profile || "",
           },
+          userCreate: logged.user.firstName+' '+logged.user.lastName,
+
         };
 
         const result = await createProgram(newProgram, token);

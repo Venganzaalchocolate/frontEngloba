@@ -87,25 +87,14 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
   // ------------------------------------------------------------------------------
   //                          INFO SUSTITUCIÓN (Modal)
   // ------------------------------------------------------------------------------
-  const chargeInfoLeave = async (idUser) => {
-    const token = getToken();
-    const dataUserLeave = await infoUser(token, { id: idUser });
-
-    // Filtrar los hiringPeriods activos y sin endDate
-    const openHiringPeriods = dataUserLeave.hiringPeriods.filter(h => h.active && !h.endDate);
-
-    // Recopilar todos los leavePeriods activos (y abiertos)
-    const allOpenLeavePeriods = openHiringPeriods.reduce((acc, hiring) => {
-      if (Array.isArray(hiring.leavePeriods)) {
-        const openLeaves = hiring.leavePeriods.filter(lp => lp.active && !lp.actualEndLeaveDate);
-        return acc.concat(openLeaves);
-      }
-      return acc;
-    }, []);
-
-    // Ordenamos los leavePeriods abiertos por fecha descendente
-    allOpenLeavePeriods.sort((a, b) => new Date(b.startLeaveDate) - new Date(a.startLeaveDate));
-
+  const chargeInfoLeave = (hiringPeriod) => {
+    if (!hiringPeriod || !hiringPeriod.reason) {
+      console.warn("No hay información de sustitución disponible.");
+      return;
+    }
+  
+    const { notes, nameUser, dni } = hiringPeriod.reason;
+  
     // Función auxiliar para formatear la fecha
     const formatDate = (date) => {
       if (!date) return '';
@@ -115,24 +104,23 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
       const year = d.getFullYear();
       return `${day}/${month}/${year}`;
     };
-
-    // Construimos un objeto con la info a mostrar
-    const infoLeave = {
-      name: dataUserLeave.firstName + ' ' + dataUserLeave.lastName,
-      dni: dataUserLeave.dni,
-      leavePeriods: allOpenLeavePeriods.map(lp => ({
-        startLeaveDate: formatDate(lp.startLeaveDate),
-        expectedEndLeaveDate: formatDate(lp.expectedEndLeaveDate),
-        reason: (() => {
-          const leaveEnum = enums.leavetype.find(e => e._id.toString() === lp.leaveType?.toString());
-          return leaveEnum ? leaveEnum.name : '';
-        })()
-      }))
+  
+    const formattedReason = {
+      name: nameUser || 'Empleado sustituido',
+      dni: dni || '',
+      startLeaveDate: notes?.startLeaveDate ? formatDate(notes.startLeaveDate) : '',
+      expectedEndLeaveDate: notes?.expectedEndLeaveDate ? formatDate(notes.expectedEndLeaveDate) : '',
+      reason: (() => {
+        if (!notes?.cause) return '';
+        const found = enums.leavetype.find(e => e._id.toString() === notes.cause.toString());
+        return found ? found.name : '';
+      })()
     };
-
-    setInfoLeaveData(infoLeave);
+  
+    setInfoLeaveData(formattedReason);
     setShowInfoModal(true);
   };
+  
 
   // ------------------------------------------------------------------------------
   //                            EDICIÓN DE HIRINGPERIOD
@@ -184,7 +172,7 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
             {hiringPeriod.reason?.replacement && (
               <h3>
                 Periodo de sustitución{" "}
-                <button onClick={() => chargeInfoLeave(hiringPeriod.reason.user)}>
+                <button onClick={() => chargeInfoLeave(hiringPeriod)}>
                   Información sustitución
                 </button>
               </h3>
@@ -327,77 +315,47 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
       )}
 
       {/* Modal para mostrar info de la persona a la que se sustituye */}
-      {showInfoModal && infoLeaveData && (
-        <ModalForm
-          title="Información"
-          message="Datos del periodo de baja/excedencia"
-          fields={
-            infoLeaveData.leavePeriods && infoLeaveData.leavePeriods.length > 0
-              ? [
-                {
-                  name: "name",
-                  label: "Nombre",
-                  defaultValue: infoLeaveData.name,
-                  disabled: true
-                },
-                {
-                  name: "dni",
-                  label: "DNI",
-                  defaultValue: infoLeaveData.dni,
-                  disabled: true
-                },
-                // Por cada leavePeriod, se crea una sección y campos individuales
-                ...infoLeaveData.leavePeriods.flatMap((lp, index) => [
-                  {
-                    name: `section-${index}`,
-                    label: `Periodo de baja/excedencia ${index + 1}`,
-                    type: "section"
-                  },
-                  {
-                    name: `startLeaveDate-${index}`,
-                    label: "Inicio",
-                    defaultValue: lp.startLeaveDate,
-                    disabled: true
-                  },
-                  {
-                    name: `expectedEndLeaveDate-${index}`,
-                    label: "Fin Previsto",
-                    defaultValue: lp.expectedEndLeaveDate,
-                    disabled: true
-                  },
-                  {
-                    name: `reason-${index}`,
-                    label: "Motivo",
-                    defaultValue: lp.reason,
-                    disabled: true
-                  }
-                ])
-              ]
-              : [
-                {
-                  name: "name",
-                  label: "Nombre",
-                  defaultValue: infoLeaveData.name,
-                  disabled: true
-                },
-                {
-                  name: "dni",
-                  label: "DNI",
-                  defaultValue: infoLeaveData.dni,
-                  disabled: true
-                },
-                {
-                  name: "mensaje",
-                  label: "Información",
-                  defaultValue: "No hay datos del periodo de baja o excedencia",
-                  disabled: true
-                }
-              ]
-          }
-          onSubmit={() => setShowInfoModal(false)}
-          onClose={() => setShowInfoModal(false)}
-        />
-      )}
+{showInfoModal && infoLeaveData && console.log(infoLeaveData) &&(
+  <ModalForm
+    title="Información"
+    message="Datos del periodo de baja/excedencia"
+    fields={[
+      {
+        name: "name",
+        label: "Nombre",
+        defaultValue: infoLeaveData.name || '',
+        disabled: true
+      },
+      {
+        name: "dni",
+        label: "DNI",
+        defaultValue: infoLeaveData.dni || '',
+        disabled: true
+      },
+      {
+        name: "startLeaveDate",
+        label: "Inicio",
+        defaultValue: infoLeaveData.startLeaveDate || '',
+        disabled: true
+      },
+      {
+        name: "expectedEndLeaveDate",
+        label: "Fin previsto",
+        defaultValue: infoLeaveData.expectedEndLeaveDate || '',
+        disabled: true
+      },
+      {
+        name: "reason",
+        label: "Motivo",
+        defaultValue: infoLeaveData.reason || '',
+        disabled: true
+      }
+    ]}
+    onSubmit={() => setShowInfoModal(false)}
+    onClose={() => setShowInfoModal(false)}
+  />
+)}
+
 
       {/* Modal para editar el HiringPeriod actual */}
       {hiringPeriodToEdit && (

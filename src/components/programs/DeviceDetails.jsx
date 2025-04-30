@@ -103,6 +103,12 @@ const DeviceDetails = ({
     setShowModal(false)
   }
 
+  const autorizadoDocumentacion=(logged.user.role === "root") || (logged.user.role === "global") ||
+  (listResponsability.some(ob =>
+    (ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible)) ||
+    (String(ob.idProgram) === String(device.idProgramFather))
+  ))
+
   return (
     <div className={styles.programInfoContainer}>
       <div className={styles.containerInfo}>
@@ -197,13 +203,8 @@ const DeviceDetails = ({
           </div>
         </div>
       </div>
-
-      {(logged.user.role === "root" || logged.user.role === "global") ||
-            listResponsability.some(ob =>
-              (ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible)) ||
-              (String(ob.idProgram) === String(device.idProgramFather))
-            ) && (
-        <DocumentMiscelaneaGeneric
+      {autorizadoDocumentacion && 
+      <DocumentMiscelaneaGeneric
           categoryFiles={enumsData.categoryFiles}
           data={device}
           modelName="Device"
@@ -219,8 +220,9 @@ const DeviceDetails = ({
               handleProgramSaved(updatedDevice);
             }
           }}
-        />
-      )}
+        />}
+
+
 
     </div>
   );

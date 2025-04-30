@@ -24,6 +24,7 @@ const InfoEmployer = ({
   listResponsability,
   enumsData,
   chargeUser = () => {},
+  soloInfo=false
 }) => {
   // Convertir booleanos a "si"/"no" en el estado inicial
   const initialState = {
@@ -264,6 +265,7 @@ function toInputDate(isoString) {
 
   // Botón de edición/guardado
   const boton = () => {
+    if(!!soloInfo) return ''
     if (!!listResponsability && listResponsability.length < 1) return "";
     return !isEditing ? (
       <FaEdit onClick={handleEdit} />

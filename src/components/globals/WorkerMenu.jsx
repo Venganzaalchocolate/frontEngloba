@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { getDataEmployer, getDispositiveResponsable } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 import FormCreateEmployer from '../employer/FormCreateEmployer';
+import ManagingAuditors from '../auditor/ManagingAuditors';
 
 
 const WorkerMenu = ({ modal, charge }) => {
@@ -91,6 +92,7 @@ const WorkerMenu = ({ modal, charge }) => {
             if (MenuWorker == 'myself') return <ManagingMySelf myself={logged.user} enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'root') return <PanelRoot chargeEnums={() => chargeEnums()} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'formCreatePersonal') return <FormCreateEmployer enumsData={enumsEmployer} modal={modal} charge={charge} closeModal={() => changeMenuWorker(null)} chargeUser={() => changeMenuWorker(null)} />
+            if (MenuWorker == 'auditor') return <ManagingAuditors closeModule={()=>changeMenuWorker(null)} listResponsability={listResponsability} enumsData={enumsEmployer} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         } else return (
             <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
                 <div>
@@ -99,6 +101,7 @@ const WorkerMenu = ({ modal, charge }) => {
                     {logged.user.role == 'root'
                         ?
                         <>
+                            <button onClick={() => changeMenuWorker('auditor')}>AUDITORIA</button>
                             <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                             <button onClick={() => changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>
                             <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>

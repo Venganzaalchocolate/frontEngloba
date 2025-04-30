@@ -286,3 +286,6 @@ export const infoDocumentation=(datos,token)=>fetchData('/documentation', 'POST'
 //signPDF
 export const requestSignature=async (data, token)=> fetchData('/pdf/request-sign','POST',token, data );
 export const  confirmSignature=async (data, token)=>fetchData('/pdf/confirm-sign', 'POST', token, data );
+
+//auditoria
+export const auditInfoUser=(datos,token)=>fetchData('/auditinfouser', 'POST', token, datos);

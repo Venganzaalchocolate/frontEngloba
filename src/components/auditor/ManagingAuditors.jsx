@@ -1,7 +1,7 @@
 // components/ManagingAuditors.jsx
 import { useEffect, useState } from 'react';
 import styles from '../styles/ManagingAuditors.module.css';
-import { auditInfoUser } from '../../lib/data';
+import { auditInfoProgram, auditInfoUser } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 
 import OptionSelector from './OptionSelector';
@@ -22,7 +22,6 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
   const [type, setType] = useState('employer');
   const [subOption, setSubOption] = useState('info');
 
-  const [selectedFields, setSelectedFields] = useState([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -58,12 +57,29 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
 
 
   const runAudit = async () => {
-    if (!selectedFields.length) return;
+    let apiFn, payload;
+  
+    if (type === 'employer') {
+      apiFn   = auditInfoUser;
+      payload = { fields: selectedEmployeeFields };
+      if (payload.fields.length === 0) return;     // nada que auditar
+    } else {
+      apiFn   = auditInfoProgram;
+      payload = {
+        programFields: selectedProgramFields,
+        deviceFields:  selectedDeviceFields,
+      };
+      if (
+        payload.programFields.length === 0 &&
+        payload.deviceFields.length   === 0
+      ) return;
+    }
+  
     setLoading(true);
     charge(true);
     try {
       const token = getToken();
-      const data = await auditInfoUser({ fields: selectedFields }, token);
+      const data  = await apiFn(payload, token);
       setResult(data);
     } catch (err) {
       setResult({ error: err.message || 'Error' });
@@ -80,8 +96,8 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
     if (subOption === 'info') {
       return type === 'employer' ? (
         <InfoAuditPanelEmployee
-          selectedFields={selectedFields}
-          setSelectedFields={setSelectedFields}
+        selectedFields={selectedEmployeeFields}
+        setSelectedFields={setSelectedEmployeeFields}
           result={result}
           getValue={getValue}
           runAudit={runAudit}
@@ -89,12 +105,14 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
         />
       ) : (
         <InfoAuditPanelProgramDevice
-          selectedFields={selectedFields}
-          setSelectedFields={setSelectedFields}
-          loading={loading}
-          result={result}
-          getValue={getValue}
-          runAudit={runAudit}
+        selectedProgramFields={selectedProgramFields}
+        setSelectedProgramFields={setSelectedProgramFields}
+        selectedDeviceFields={selectedDeviceFields}
+        setSelectedDeviceFields={setSelectedDeviceFields}
+        result={result}
+        getValue={getValue}
+        runAudit={runAudit}
+        enumsData={enumsData}
         />
       );
     }

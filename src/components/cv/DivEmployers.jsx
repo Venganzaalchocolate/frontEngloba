@@ -58,16 +58,16 @@ function DivEmployers({
           <div key={user._id + keySuffix}>
             {/* Fila principal con la información del usuario */}
             <div className={checkUser(user)} onClick={() => lookCV(user._id, user)}>
-              <div className={`${styles.tableCell} ${styles.capitalize}`}>{
+              <div className={`${styles.tableCell}`}>{
               (user?.workedInEngloba) && <span className={stylesTooltip.tooltip}>
                 <FaHouseUser className={styles.iconworkedInEngloba}/>
-                <span className={stylesTooltip.tooltiptext}>
+                <span className={`${stylesTooltip.tooltiptext}`}>
                     Ha trabajado o trabaja en Engloba
                 </span>
                 </span>}
               
               
-              {user.name}</div>
+              <p className={styles.capitalize}>{user.name}</p></div>
               <div className={styles.tableCell}>{user.email}</div>
               <div className={styles.tableCell}>{user.phone}</div>
               <div className={styles.tableCell}>{user.jobs.join(', ')}</div>

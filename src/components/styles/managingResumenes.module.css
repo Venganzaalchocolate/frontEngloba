@@ -101,6 +101,7 @@
 }
 
 .tableCell {
+    display: flex;
     flex: 1 1 100%;
     min-width: 5rem;
     padding: 0.5rem;
@@ -116,6 +117,11 @@
 
 .capitalize{
     text-transform: capitalize;
+}
+
+.tableCell>.capitalize{
+    text-transform: capitalize;
+    display: inline;
 }
 
 .contenedorfiltro{

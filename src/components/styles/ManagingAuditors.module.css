@@ -263,6 +263,8 @@
     gap: 1rem;
     padding: 1rem;
   }
+
+  
   
   @media (min-width: 640px) {                         /* ~ ≥640 px */
     .checkboxGroupDual {
@@ -310,6 +312,11 @@
   .scrollableFieldset::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, .2);
     border-radius: 3px;
+  }
+
+  .sectionButtonExport{
+    display: flex;
+    gap: 1rem;
   }
 /* Responsive - tablet & desktop */
 @media (min-width: 600px) {

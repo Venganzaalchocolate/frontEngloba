@@ -109,16 +109,14 @@ const DeviceDetails = ({
     (String(ob.idProgram) === String(device.idProgramFather))
   ))
 
+
+
   return (
     <div className={styles.programInfoContainer}>
       <div className={styles.containerInfo}>
         <h2>
           {device.name || "Nombre del Dispositivo"}
-          {(logged.user.role === "root" || logged.user.role === "global") ||
-            listResponsability.some(ob =>
-              (ob.dispositiveId === device._id && (ob.isDeviceCoordinator || ob.isDeviceResponsible)) ||
-              (String(ob.idProgram) === String(device.idProgramFather))
-            )
+          {autorizadoDocumentacion
             && (
               <FaEdit
                 onClick={handleEdit}

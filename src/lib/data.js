@@ -290,3 +290,5 @@ export const  confirmSignature=async (data, token)=>fetchData('/pdf/confirm-sign
 //auditoria
 export const auditInfoUser=(datos,token)=>fetchData('/auditinfouser', 'POST', token, datos);
 export const auditInfoProgram=(datos,token)=>fetchData('/auditinfoprogram', 'POST', token, datos);
+export const auditInfoDevice=(datos,token)=>fetchData('/auditinfodevice', 'POST', token, datos);
+export const auditDocumentUser=(datos,token)=>fetchData('/auditdocumentuser', 'POST', token, datos);

@@ -1,13 +1,15 @@
 // components/ManagingAuditors.jsx
 import { useEffect, useState } from 'react';
 import styles from '../styles/ManagingAuditors.module.css';
-import { auditInfoProgram, auditInfoUser } from '../../lib/data';
+import { auditInfoDevice, auditInfoProgram, auditInfoUser, auditDocumentUser } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 
 import OptionSelector from './OptionSelector';
 import InfoAuditPanelEmployee from './InfoAuditPanelEmployee';
 import PlaceholderPanel from './PlaceholderPanel';
-import InfoAuditPanelProgramDevice from './InfoAuditPanelProgramDevice';
+import InfoAuditPanelProgram from './InfoAuditPanelProgram';
+import InfoAuditPanelDevice from './InfoAuditPanelDevice';
+import InfoAuditPanelEmployeeDocs from './InfoAuditPanelEmployeeDocs';
 
 export const OPTIONAL_FIELDS_INFO_EMPLOYEE = [
   { value: 'birthday', label: 'Fecha de nacimiento' },
@@ -25,12 +27,14 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-    // Trabajadores
+  // Trabajadores
   const [selectedEmployeeFields, setSelectedEmployeeFields] = useState([]);
   // Programas
   const [selectedProgramFields, setSelectedProgramFields] = useState([]);
   // Dispositivos
-  const [selectedDeviceFields,  setSelectedDeviceFields]  = useState([]);
+  const [selectedDeviceFields, setSelectedDeviceFields] = useState([]);
+  // Documentación
+  const [selectedDocumentationFields, setSelectedDocumentationFields]= useState([]);
 
   useEffect(() => {
     setSelectedEmployeeFields([]);
@@ -41,7 +45,8 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
 
   const optionsType = [
     ['employer', 'Trabajadores'],
-    ['program', 'Programas y dispositivos']
+    ['program', 'Programas'],
+    ['device', 'Dispositivos']
   ];
   const optionsTypeEmployer = [
     ['info', 'Información Básica'],
@@ -53,26 +58,35 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
     ['doc', 'Documentación']
   ];
   const allSubOptions = type === 'employer' ? optionsTypeEmployer : optionsTypeProgram;
-
-
-
   const runAudit = async () => {
     let apiFn, payload;
   
     if (type === 'employer') {
-      apiFn   = auditInfoUser;
-      payload = { fields: selectedEmployeeFields };
-      if (payload.fields.length === 0) return;     // nada que auditar
+      if (subOption === 'info') {
+        apiFn   = auditInfoUser;
+        payload = { fields: selectedEmployeeFields };
+        if (payload.fields.length === 0) return;
+      } else if (subOption === 'doc') {
+        apiFn   = auditDocumentUser;
+        payload = { docIds: selectedDocumentationFields };
+        if (payload.docIds.length === 0) return;
+      } else {
+        return;
+      }
     } else {
-      apiFn   = auditInfoProgram;
-      payload = {
-        programFields: selectedProgramFields,
-        deviceFields:  selectedDeviceFields,
-      };
+      if (selectedProgramFields.length > 0) {
+        apiFn   = auditInfoProgram;
+        payload = { programFields: selectedProgramFields };
+      } else if (selectedDeviceFields.length > 0) {
+        apiFn   = auditInfoDevice;
+        payload = { deviceFields: selectedDeviceFields };
+      }
       if (
-        payload.programFields.length === 0 &&
-        payload.deviceFields.length   === 0
-      ) return;
+        !apiFn ||
+        (payload.programFields?.length === 0 && payload.deviceFields?.length === 0)
+      ) {
+        return;
+      }
     }
   
     setLoading(true);
@@ -88,35 +102,61 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
       charge(false);
     }
   };
-
+  
   const getValue = (obj, path) =>
     path.split('.').reduce((o, key) => (o ? o[key] : undefined), obj);
 
-  const renderContent = () => {
-    if (subOption === 'info') {
-      return type === 'employer' ? (
+const renderContent = () => {
+  if (subOption === 'info') {
+    if (type === 'employer') {
+      return (
         <InfoAuditPanelEmployee
-        selectedFields={selectedEmployeeFields}
-        setSelectedFields={setSelectedEmployeeFields}
+          selectedFields={selectedEmployeeFields}
+          setSelectedFields={setSelectedEmployeeFields}
           result={result}
           getValue={getValue}
           runAudit={runAudit}
           enumsData={enumsData}
         />
-      ) : (
-        <InfoAuditPanelProgramDevice
-        selectedProgramFields={selectedProgramFields}
-        setSelectedProgramFields={setSelectedProgramFields}
-        selectedDeviceFields={selectedDeviceFields}
-        setSelectedDeviceFields={setSelectedDeviceFields}
-        result={result}
-        getValue={getValue}
-        runAudit={runAudit}
-        enumsData={enumsData}
+      );
+    } else if (type === 'program') {
+      return (
+        <InfoAuditPanelProgram
+          selectedProgramFields={selectedProgramFields}
+          setSelectedProgramFields={setSelectedProgramFields}
+          result={result}
+          runAudit={runAudit}
+          charge={charge}
+        />
+      );
+    } else if (type === 'device') {
+      return (
+        <InfoAuditPanelDevice
+          selectedDeviceFields={selectedDeviceFields}
+          setSelectedDeviceFields={setSelectedDeviceFields}
+          result={result}
+          runAudit={runAudit}
+          charge={charge}
+          enumsData={enumsData}
         />
       );
     }
+  }
+
     if (subOption === 'doc') {
+      if (type === 'employer') {
+        return (
+          <InfoAuditPanelEmployeeDocs
+            enumsData={enumsData}
+            selectedDocumentationFields={selectedDocumentationFields}
+            setSelectedDocumentationFields={setSelectedDocumentationFields}
+            result={result}
+            runAudit={runAudit}
+            charge={charge}
+          />
+        );
+      }
+      
       return <PlaceholderPanel title="Documentación">Lógica de Documentación…</PlaceholderPanel>;
     }
     if (subOption === 'period') {
@@ -138,7 +178,6 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
             onTypeClick={v => {
               if (v === type) return;
               setType(v);
-              // por defecto al cambiar de tipo, volvemos a 'info'
               setSubOption('info');
             }}
             onSubClick={v => setSubOption(v)}

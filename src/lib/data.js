@@ -292,3 +292,5 @@ export const auditInfoUser=(datos,token)=>fetchData('/auditinfouser', 'POST', to
 export const auditInfoProgram=(datos,token)=>fetchData('/auditinfoprogram', 'POST', token, datos);
 export const auditInfoDevice=(datos,token)=>fetchData('/auditinfodevice', 'POST', token, datos);
 export const auditDocumentUser=(datos,token)=>fetchData('/auditdocumentuser', 'POST', token, datos);
+export const auditDocumentProgram=(datos,token)=>fetchData('/auditdocumentprogram', 'POST', token, datos);
+export const auditDocumentDevice=(datos,token)=>fetchData('/auditdocumentdevice', 'POST', token, datos);

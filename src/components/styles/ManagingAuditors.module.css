@@ -171,16 +171,20 @@
     
   }
 
-  .infoRowMissing{
+  .infoRowMissing, .infoRowMissingTime{
     display: flex;
     align-items: center;
     background-color: aliceblue;
     padding: 0.3rem;
   }
 
-  .infoRowMissing>:nth-child(1) {
+  .infoRowMissing>:nth-child(1), .infoRowMissingTime>:nth-child(1) {
     margin-right: 1rem;
     
+  }
+
+  .infoRowMissingTime{
+    background-color: rgb(240, 255, 240);
   }
   
   .infoLabel {

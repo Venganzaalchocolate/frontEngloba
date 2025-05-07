@@ -1,7 +1,6 @@
-// components/ManagingAuditors.jsx
 import { useEffect, useState } from 'react';
 import styles from '../styles/ManagingAuditors.module.css';
-import { auditInfoDevice, auditInfoProgram, auditInfoUser, auditDocumentUser } from '../../lib/data';
+import { auditInfoDevice, auditInfoProgram, auditInfoUser, auditDocumentUser, auditDocumentProgram, auditDocumentDevice } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 
 import OptionSelector from './OptionSelector';
@@ -10,6 +9,8 @@ import PlaceholderPanel from './PlaceholderPanel';
 import InfoAuditPanelProgram from './InfoAuditPanelProgram';
 import InfoAuditPanelDevice from './InfoAuditPanelDevice';
 import InfoAuditPanelEmployeeDocs from './InfoAuditPanelEmployeeDocs';
+import InfoAuditPanelProgramDocs from './InfoAuditPanelProgramDocs';
+import InfoAuditPanelDeviceDocs from './InfoAuditPanelDeviceDocs';
 
 export const OPTIONAL_FIELDS_INFO_EMPLOYEE = [
   { value: 'birthday', label: 'Fecha de nacimiento' },
@@ -43,6 +44,7 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
     setResult(null);
   }, [type, subOption]);
 
+
   const optionsType = [
     ['employer', 'Trabajadores'],
     ['program', 'Programas'],
@@ -60,7 +62,6 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
   const allSubOptions = type === 'employer' ? optionsTypeEmployer : optionsTypeProgram;
   const runAudit = async () => {
     let apiFn, payload;
-  
     if (type === 'employer') {
       if (subOption === 'info') {
         apiFn   = auditInfoUser;
@@ -73,27 +74,44 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
       } else {
         return;
       }
-    } else {
-      if (selectedProgramFields.length > 0) {
+    } else if (type === 'program') {
+      if (subOption === 'info') {
         apiFn   = auditInfoProgram;
         payload = { programFields: selectedProgramFields };
-      } else if (selectedDeviceFields.length > 0) {
-        apiFn   = auditInfoDevice;
-        payload = { deviceFields: selectedDeviceFields };
-      }
-      if (
-        !apiFn ||
-        (payload.programFields?.length === 0 && payload.deviceFields?.length === 0)
-      ) {
+        if (payload.programFields.length === 0) return;
+      } else if (subOption === 'doc') {
+        
+        apiFn   = auditDocumentProgram;
+        payload = { docIds: selectedDocumentationFields };
+        if (payload.docIds.length === 0) return;
+      } else {
         return;
       }
-    }
-  
+    }  else if (type === 'device') {
+      if (subOption === 'info') {
+        if (selectedDeviceFields.length > 0) {
+          apiFn = auditInfoDevice;
+          payload = { deviceFields: selectedDeviceFields };
+        } else {
+          return;
+        }
+      } else if (subOption === 'doc') {
+        if (selectedDocumentationFields.length > 0) {
+          apiFn = auditDocumentDevice;
+          payload = { docIds: selectedDocumentationFields };
+        } else {
+          return;
+        }
+      }
+    } 
+
     setLoading(true);
     charge(true);
     try {
       const token = getToken();
+
       const data  = await apiFn(payload, token);
+
       setResult(data);
     } catch (err) {
       setResult({ error: err.message || 'Error' });
@@ -102,46 +120,46 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
       charge(false);
     }
   };
-  
+
   const getValue = (obj, path) =>
     path.split('.').reduce((o, key) => (o ? o[key] : undefined), obj);
 
-const renderContent = () => {
-  if (subOption === 'info') {
-    if (type === 'employer') {
-      return (
-        <InfoAuditPanelEmployee
-          selectedFields={selectedEmployeeFields}
-          setSelectedFields={setSelectedEmployeeFields}
-          result={result}
-          getValue={getValue}
-          runAudit={runAudit}
-          enumsData={enumsData}
-        />
-      );
-    } else if (type === 'program') {
-      return (
-        <InfoAuditPanelProgram
-          selectedProgramFields={selectedProgramFields}
-          setSelectedProgramFields={setSelectedProgramFields}
-          result={result}
-          runAudit={runAudit}
-          charge={charge}
-        />
-      );
-    } else if (type === 'device') {
-      return (
-        <InfoAuditPanelDevice
-          selectedDeviceFields={selectedDeviceFields}
-          setSelectedDeviceFields={setSelectedDeviceFields}
-          result={result}
-          runAudit={runAudit}
-          charge={charge}
-          enumsData={enumsData}
-        />
-      );
+  const renderContent = () => {
+    if (subOption === 'info') {
+      if (type === 'employer') {
+        return (
+          <InfoAuditPanelEmployee
+            selectedFields={selectedEmployeeFields}
+            setSelectedFields={setSelectedEmployeeFields}
+            result={result}
+            getValue={getValue}
+            runAudit={runAudit}
+            enumsData={enumsData}
+          />
+        );
+      } else if (type === 'program') {
+        return (
+          <InfoAuditPanelProgram
+            selectedProgramFields={selectedProgramFields}
+            setSelectedProgramFields={setSelectedProgramFields}
+            result={result}
+            runAudit={runAudit}
+            charge={charge}
+          />
+        );
+      } else if (type === 'device') {
+        return (
+          <InfoAuditPanelDevice
+            selectedDeviceFields={selectedDeviceFields}
+            setSelectedDeviceFields={setSelectedDeviceFields}
+            result={result}
+            runAudit={runAudit}
+            charge={charge}
+            enumsData={enumsData}
+          />
+        );
+      }
     }
-  }
 
     if (subOption === 'doc') {
       if (type === 'employer') {
@@ -155,8 +173,29 @@ const renderContent = () => {
             charge={charge}
           />
         );
+      } else if (type === 'program') {
+        return (
+          <InfoAuditPanelProgramDocs
+            enumsData={enumsData}
+            selectedDocumentationFields={selectedDocumentationFields}
+            setSelectedDocumentationFields={setSelectedDocumentationFields}
+            result={result}
+            runAudit={runAudit}
+            charge={charge}
+          />
+        );
+      } else if (type === 'device') {
+        return (
+          <InfoAuditPanelDeviceDocs
+            enumsData={enumsData}
+            selectedDocumentationFields={selectedDocumentationFields}
+            setSelectedDocumentationFields={setSelectedDocumentationFields}
+            result={result}
+            runAudit={runAudit}
+            charge={charge}
+          />
+        );
       }
-      
       return <PlaceholderPanel title="Documentación">Lógica de Documentación…</PlaceholderPanel>;
     }
     if (subOption === 'period') {

@@ -94,7 +94,6 @@ const InfoAuditPanelEmployee = ({
         socialSecurityNumber: u.socialSecurityNumber,
         bankAccountNumber: u.bankAccountNumber,
         studies: (u.studies || []).map(id => studiesMap[id] || 'Desconocido'),
-        apafa: u.apafa ? 'Sí' : 'No',
         fostered: u.fostered ? 'Sí' : 'No',
         disabilityPct: u.disability?.percentage ?? 0,
         disabilityNotes: u.disability?.notes ?? '',
@@ -123,7 +122,6 @@ const InfoAuditPanelEmployee = ({
       { key: 'socialSecurityNumber', label: 'NSS', type: 'text' },
       { key: 'bankAccountNumber', label: 'Cuenta Bancaria', type: 'text' },
       { key: 'studies', label: 'Estudios', type: 'array' },
-      { key: 'apafa', label: 'APAFA', type: 'text' },
       { key: 'fostered', label: 'Extutelado', type: 'text' },
       { key: 'disabilityPct', label: 'Discapacidad (%)', type: 'text' },
       { key: 'disabilityNotes', label: 'Notas Discapacidad', type: 'text' },
@@ -270,9 +268,7 @@ const InfoAuditPanelEmployee = ({
                             ? u.studies.join(', ')
                             : 'No existe información'}
                         </p>
-                        <p>
-                          <strong>APAFA:</strong> {u.apafa}
-                        </p>
+                        
                         <p>
                           <strong>Extutelado:</strong> {u.fostered}
                         </p>

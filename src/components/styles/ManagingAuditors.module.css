@@ -24,7 +24,7 @@
     margin-bottom: 1rem;
 }
 
-.titulo>div>h2 {
+.titulo h2 {
     padding: 0.5rem 1rem;
     border-left: 10px solid var(--color-morado);
     font-size: 1.25rem;
@@ -171,20 +171,29 @@
     
   }
 
-  .infoRowMissing, .infoRowMissingTime{
+  .infoRowMissing, .infoRowMissingTime, .infoRowPeriod, .infoRowLeave{
     display: flex;
     align-items: center;
     background-color: aliceblue;
     padding: 0.3rem;
   }
 
-  .infoRowMissing>:nth-child(1), .infoRowMissingTime>:nth-child(1) {
+  .infoRowMissing>:nth-child(1), .infoRowMissingTime>:nth-child(1), .infoRowPeriod>:nth-child(1), .infoRowLeave>:nth-child(1) {
     margin-right: 1rem;
     
   }
 
   .infoRowMissingTime{
     background-color: rgb(240, 255, 240);
+  }
+
+  .infoRowPeriod{
+    background-color: transparent;
+    padding:  0.3rem 0.3rem 0 0.3rem;
+  }
+  .infoRowLeave{
+    background-color: transparent;
+    padding:  0 0.3rem;
   }
   
   .infoLabel {
@@ -196,7 +205,8 @@
   .infoText {
     flex: 1;
     font-size: 10pt;
-    
+    align-content: center;
+  display: flex;
   }
 
   .ulBlock{
@@ -220,6 +230,7 @@
     margin-top: 12px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 10pt;
   }
   
   .infoAditional h4 {
@@ -268,7 +279,36 @@
     padding: 1rem;
   }
 
+  .content>h3{
+    margin-bottom: 1rem;
+  }
   
+  .displayToggle{
+    display: flex;
+    justify-content: space-between;
+    gap: "10px";
+    >label{
+      color: var(--color-morado)
+    }
+  }
+
+  .capsulaTime{
+    /* border: solid 1px var(--color-morado); */
+    background-color: lightblue;
+    /* color: white; */
+    border-radius: 0.5rem;
+    font-size: 8pt;
+    padding: 0.2rem 0.4rem;
+    margin: 0 0.4rem;
+  }
+
+  .infoRowLeave .capsulaTime{
+    background-color: var(--color-yema);
+  }
+
+  .infoTextDeviceName{
+    margin-left: 0.3rem;
+  }
   
   @media (min-width: 640px) {                         /* ~ ≥640 px */
     .checkboxGroupDual {
@@ -284,9 +324,10 @@
     line-height: 1.3;
     cursor: pointer;                                  /* hace toda la línea clicable */
     user-select: none;
-    padding: 0.25rem 0.1rem;
+    padding: 0.1rem 0.1rem;
     border-radius: 0.375rem;                          /* 6 px */
     transition: background-color .15s;
+    color: var(--color-morado);
   }
   
   /* Hover/focus */
@@ -299,7 +340,7 @@
   .checkboxOption input[type='checkbox'] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: var(--accent, #2563eb);             /* azul Tailwind 600 */
+    accent-color: var(--accent, var(--color-morado));             /* azul Tailwind 600 */
   }
   
   /* ---------- MANEJO DE OVERFLOW (opcional) ---------- */
@@ -321,6 +362,22 @@
   .sectionButtonExport{
     display: flex;
     gap: 1rem;
+  }
+
+  .periodoBaja{
+    display: flex;
+    background-color: var(--color-chicle);
+    flex-direction: column;
+    padding: 0.5rem;
+    color: white;
+    border-radius: 0.5rem;
+    >p{
+      color: white;
+      font-size: 10pt;
+      >strong{
+        color: white;
+      }
+    }
   }
 /* Responsive - tablet & desktop */
 @media (min-width: 600px) {

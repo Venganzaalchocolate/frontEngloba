@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import styles from '../styles/ManagingAuditors.module.css';
-import { auditInfoDevice, auditInfoProgram, auditInfoUser, auditDocumentUser, auditDocumentProgram, auditDocumentDevice } from '../../lib/data';
+import { auditInfoDevice, auditInfoProgram, auditInfoUser, auditDocumentUser, auditDocumentProgram, auditDocumentDevice,auditUserPeriod } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 
 import OptionSelector from './OptionSelector';
 import InfoAuditPanelEmployee from './InfoAuditPanelEmployee';
-import PlaceholderPanel from './PlaceholderPanel';
 import InfoAuditPanelProgram from './InfoAuditPanelProgram';
 import InfoAuditPanelDevice from './InfoAuditPanelDevice';
 import InfoAuditPanelEmployeeDocs from './InfoAuditPanelEmployeeDocs';
 import InfoAuditPanelProgramDocs from './InfoAuditPanelProgramDocs';
 import InfoAuditPanelDeviceDocs from './InfoAuditPanelDeviceDocs';
+import InfoAuditPanelContractLeaveEmployee from './InfoAuditPanelContractLeaveEmployee';
 
 export const OPTIONAL_FIELDS_INFO_EMPLOYEE = [
   { value: 'birthday', label: 'Fecha de nacimiento' },
@@ -24,9 +24,8 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
   // preseleccionamos Trabajadores → Info
   const [type, setType] = useState('employer');
   const [subOption, setSubOption] = useState('info');
-
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [apafa, setApafa]=useState(false)
 
   // Trabajadores
   const [selectedEmployeeFields, setSelectedEmployeeFields] = useState([]);
@@ -37,12 +36,16 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
   // Documentación
   const [selectedDocumentationFields, setSelectedDocumentationFields]= useState([]);
 
+  const [selectedLeaveFields, setSelectedLeaveFields] = useState([])
+
   useEffect(() => {
     setSelectedEmployeeFields([]);
     setSelectedProgramFields([]);
     setSelectedDeviceFields([]);
     setResult(null);
-  }, [type, subOption]);
+    setSelectedDocumentationFields([]);
+    setSelectedLeaveFields([]);
+  }, [type, subOption, apafa]);
 
 
   const optionsType = [
@@ -59,6 +62,8 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
     ['info', 'Información Básica'],
     ['doc', 'Documentación']
   ];
+
+
   const allSubOptions = type === 'employer' ? optionsTypeEmployer : optionsTypeProgram;
   const runAudit = async () => {
     let apiFn, payload;
@@ -71,6 +76,12 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
         apiFn   = auditDocumentUser;
         payload = { docIds: selectedDocumentationFields };
         if (payload.docIds.length === 0) return;
+       } else if (subOption === 'period') {
+        apiFn   = auditUserPeriod;
+          payload = {
+          leaveFields : selectedLeaveFields
+        };
+        if (payload.leaveFields.length === 0) return;
       } else {
         return;
       }
@@ -105,18 +116,18 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
       }
     } 
 
-    setLoading(true);
+
     charge(true);
     try {
       const token = getToken();
-
+      payload['apafa']=apafa
       const data  = await apiFn(payload, token);
 
       setResult(data);
     } catch (err) {
       setResult({ error: err.message || 'Error' });
     } finally {
-      setLoading(false);
+
       charge(false);
     }
   };
@@ -145,6 +156,7 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
             result={result}
             runAudit={runAudit}
             charge={charge}
+            enumsData={enumsData}
           />
         );
       } else if (type === 'device') {
@@ -196,10 +208,19 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
           />
         );
       }
-      return <PlaceholderPanel title="Documentación">Lógica de Documentación…</PlaceholderPanel>;
     }
     if (subOption === 'period') {
-      return <PlaceholderPanel title="Periodos de contratación">Lógica de Periodos…</PlaceholderPanel>;
+      return (
+        <InfoAuditPanelContractLeaveEmployee
+            enumsData={enumsData}
+            selectedLeaveFields={selectedLeaveFields}
+            setSelectedLeaveFields={setSelectedLeaveFields}
+            result={result}
+            runAudit={runAudit}
+            charge={charge}
+            
+          />
+      )
     }
     return <p>Selecciona una opción para ver el contenido.</p>;
   };
@@ -219,7 +240,9 @@ const ManagingAuditors = ({ modal, charge, listResponsability, enumsData }) => {
               setType(v);
               setSubOption('info');
             }}
+            apafa={apafa}
             onSubClick={v => setSubOption(v)}
+            onApafa={a=>setApafa(a)}
           />
           <main className={styles.content}>
             {renderContent()}

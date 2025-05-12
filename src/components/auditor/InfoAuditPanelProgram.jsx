@@ -26,14 +26,14 @@ const InfoAuditPanelProgram = ({
   setSelectedProgramFields,
   result,
   runAudit,
-  charge
+  charge,
+  enumsData
 }) => {
   const [showExport, setShowExport] = useState(false);
   const [showExportPerProg, setShowExportPerProg] = useState(false);
   const [programSelected, setProgramSelected] = useState(null);
   const [responsiblesProgram, setResponsiblesProgram] = useState(null);
   const [userMap, setUserMap] = useState({});   
-
 
   // 1) Agrupar TODOS los IDs y hacer UNA sola llamada
   useEffect(() => {
@@ -75,20 +75,32 @@ const InfoAuditPanelProgram = ({
     setProgramSelected(null);
   }, [selectedProgramFields]);
 
+  const finantialMap = useMemo(() => {
+        if (!enumsData?.finantial) return {};
+        return enumsData.finantial.reduce((acc, f) => {
+          acc[f._id] = f.name;
+          return acc;
+        }, {});
+      }, [enumsData]);
+
   const enrichedPrograms = useMemo(() => {
     if (!Array.isArray(result)) return [];
     return result.map(p => {
+      const finantialNames = (p.finantial || []).map(id => finantialMap[id] || id);
       const programMissing = selectedProgramFields.filter(k => {
         const v = getValue(p, k);
         return Array.isArray(v) ? v.length === 0 : v == null || v === '';
       });
       return {
+        
         ...p,
+        finantial: finantialNames,
         programMissing: programMissing.map(
           k => OPTIONAL_FIELDS_INFO_PROGRAM.find(o => o.value === k)?.label || k
         ),
         devicesWithMissing: (p.devices || []).map(d => ({
           ...d,
+          finantial: (d.finantial || []).map(id => finantialMap[id] || id),
           missingDevice: selectedProgramFields.filter(k => {
             const v = getValue(d, k);
             return Array.isArray(v) ? v.length === 0 : v == null || v === '';
@@ -125,6 +137,7 @@ const InfoAuditPanelProgram = ({
         .map(def => ({ header: def.label, key: def.key, width: 25 }));
       ws.addRow({
         ...prog,
+        finantial: prog.finantial,
         responsible: (prog.responsible || []).map(id => userMap[id] || ''),
         deviceCount: prog.devicesWithMissing.length,
         programMissing: prog.programMissing
@@ -138,6 +151,7 @@ const InfoAuditPanelProgram = ({
       prog.devicesWithMissing.forEach(d => {
         wsDev.addRow({
           ...d,
+          finantial: d.finantial,
           responsible: (d.responsible || []).map(id => userMap[id] || ''),
           coordinators: (d.coordinators || []).map(id => userMap[id] || ''),
           missingDevice: d.missingDevice

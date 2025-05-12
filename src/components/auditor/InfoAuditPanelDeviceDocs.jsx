@@ -137,8 +137,34 @@ const InfoAuditPanelDeviceDocs = ({
     }
   };
 
+  const selectBox = (idProgram) => {
+    if (idProgram) {
+      const selectedProgram = enumsData.programs.find((x) => x._id === idProgram);
+      const idDocuments = selectedProgram?.essentialDocumentationDevice || [];
+      setSelectedDocumentationFields(idDocuments);
+    } else {
+      setSelectedDocumentationFields([]);
+    }
+  };
+
   return (
     <>
+      <div>
+        <h3>Seleccionar paquete de documentos</h3>
+        <select
+          name="documentProgram"
+          id="documentProgram"
+          onChange={(e) => selectBox(e.target.value || null)}
+        >
+          <option value="">Selecciona una opción</option>
+          {!!enumsData &&
+            enumsData.programs.map((program) => (
+              <option key={program._id} value={program._id}>
+                {program.name}
+              </option>
+            ))}
+        </select>
+      </div>
       <h3>Elige documentos esenciales de Dispositivo a auditar</h3>
       <fieldset className={styles.fieldsetCheckbox}>
         {officialDocs.map(({ value, label }) => (

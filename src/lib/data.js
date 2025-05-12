@@ -294,3 +294,4 @@ export const auditInfoDevice=(datos,token)=>fetchData('/auditinfodevice', 'POST'
 export const auditDocumentUser=(datos,token)=>fetchData('/auditdocumentuser', 'POST', token, datos);
 export const auditDocumentProgram=(datos,token)=>fetchData('/auditdocumentprogram', 'POST', token, datos);
 export const auditDocumentDevice=(datos,token)=>fetchData('/auditdocumentdevice', 'POST', token, datos);
+export const auditUserPeriod=(datos,token)=>fetchData('/audituserperiod', 'POST', token, datos);

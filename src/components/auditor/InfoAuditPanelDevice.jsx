@@ -208,7 +208,7 @@ const InfoAuditPanelDevice = ({
       {result && selectedDeviceFields.length > 0 && (
         <div className={styles.auditResult}>
           <h4 className={styles.sectionTitle}>
-          <p>{enrichedDevices.length}</p> DISPOSITIVOS{' '}
+          <p>{(!!enrichedDevices && enrichedDevices.length>0) ?enrichedDevices.length :''}</p> DISPOSITIVOS{' '}
             <button onClick={() => setShowExportDevice(true)}>xml</button>{' '}
             <button onClick={() => setShowExportByDevice(true)}>xml por dispositivo</button>
           </h4>

@@ -188,7 +188,7 @@ const InfoAuditPanelDeviceDocs = ({
       {result && selectedDocumentationFields.length > 0 && (
         <div className={styles.auditResult}>
           <h4 className={styles.sectionTitle}>
-          <p>{enrichedDevices.length}</p> DISPOSITIVOS{' '}
+          DISPOSITIVOS{' '}
             <button onClick={() => setShowExport(true)}>Exportar XLS</button>{' '}
             <button onClick={() => setShowExportByDevice(true)}>Exportar ZIP por Dispositivo</button>
           </h4>

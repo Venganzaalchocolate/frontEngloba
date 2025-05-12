@@ -211,7 +211,7 @@ const InfoAuditPanelProgram = ({
       {result && selectedProgramFields.length > 0 && (
         <div className={styles.auditResult}>
           <h4 className={styles.sectionTitle}>
-          <p>{result.length}</p> PROGRAMAS{' '}
+          <p>{(!!result && result.length>0) ?result.length :''}</p> PROGRAMAS{' '}
             <button onClick={() => setShowExport(true)}>xml</button>{' '}
             <button onClick={() => setShowExportPerProg(true)}>xml por programa</button>
           </h4>

@@ -260,7 +260,7 @@ const InfoAuditPanelContractLeaveEmployee = ({
       {selectedLeaveFields.length && enriched.length ? (
         <div className={styles.auditResult}>
           <h4 className={styles.sectionTitle}>
-             <p>{enriched.length}</p> BAJAS / EXCEDENCIAS
+             <p>{(!!enriched && enriched.length>0) ?enriched.length :''}</p> BAJAS / EXCEDENCIAS
             <button onClick={() => setShowExport(true)}>xls</button>
             <button onClick={() => setShowExportByUser(true)}>
               xls por dispositivo

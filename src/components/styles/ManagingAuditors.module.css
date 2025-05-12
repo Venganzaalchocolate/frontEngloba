@@ -309,6 +309,12 @@
   .infoTextDeviceName{
     margin-left: 0.3rem;
   }
+
+  .content select{
+    border: solid 1px var(--color-morado);
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  }
   
   @media (min-width: 640px) {                         /* ~ ≥640 px */
     .checkboxGroupDual {

@@ -190,7 +190,7 @@ const InfoAuditPanelEmployee = ({
           {Array.isArray(enrichedUsers) && enrichedUsers.length > 0 ? (
             <>
               <h4 className={styles.sectionTitle}>
-                EMPLEADOS{' '}
+              <p>{enrichedUsers.length}</p> EMPLEADOS{' '}
                 <button onClick={() => setShowExport(true)}>xml</button>{' '}
                 <button onClick={() => setShowExportByDevice(true)}>
                   xml por dispositivo

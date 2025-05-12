@@ -235,6 +235,7 @@ export const deleteProgram = (datos, token) => fetchData('/deleteprogram', 'DELE
 export const updateProgram = (datos, token) => fetchData('/updateprogram', 'PUT', token, datos);
 export const coordinators = (datos, token) => fetchData('/coordinators', 'POST', token, datos);
 export const responsibles = (datos, token) => fetchData('/responsibles', 'POST', token, datos);
+export const listsResponsiblesAndCoordinators=(datos,token)=> fetchData('/listsresponsiblesprogram', 'POST', datos, token)
 
 // filesDrive
 export const createFileDrive = async (data, token) => {

@@ -141,7 +141,7 @@ const InfoAuditPanelEmployeeDocs = ({
       {result && selectedDocumentationFields.length > 0 && (
         <div className={styles.auditResult}>
           <h4 className={styles.sectionTitle}>
-            EMPLEADOS{' '}
+          <p>{enrichedUsers.length}</p> EMPLEADOS{' '}
             <button onClick={() => setShowExport(true)}>xml</button>{' '}
             <button onClick={() => setShowExportByDevice(true)}>
               xml por dispositivo

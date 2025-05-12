@@ -207,7 +207,7 @@ const InfoAuditPanelProgramDocs = ({
             {result && selectedDocumentationFields.length > 0 && (
                 <div className={styles.auditResult}>
                     <h4 className={styles.sectionTitle}>
-                        PROGRAMAS{' '}
+                    <p>{result.length}</p> PROGRAMAS{' '}
                         <button onClick={() => setShowExport(true)}>Exportar XLS</button>{' '}
                         <button onClick={() => setShowExportByProgram(true)}>Exportar ZIP por Programa</button>
                     </h4>

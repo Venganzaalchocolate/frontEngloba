@@ -10,10 +10,9 @@ import { FaCalendarTimes } from "react-icons/fa";
 
 /* Campos de baja / excedencia (leavePeriods) que puede auditar el back */
 export const LEAVE_FIELDS = [
-  { value: 'leaveType', label: 'Tipo de baja' },
-  { value: 'startLeaveDate', label: 'Inicio baja' },
   { value: 'expectedEndLeaveDate', label: 'Fecha de Fin prevista' },
-  { value: 'actualEndLeaveDate', label: 'Fecha de Fin real' }
+  { value: 'actualEndLeaveDate', label: 'Fecha de Fin real' },
+  { value: 'actualEndLeaveDateSin', label: 'Fecha de Fin real (Sin Excedencia Voluntaria)' }
 ]
 
 const formatDate = iso => {
@@ -237,7 +236,7 @@ const InfoAuditPanelContractLeaveEmployee = ({
   return (
     <>
       {/* Checkboxes de campos de baja */}
-      <h3>Campos de baja / excedencia</h3>
+      <h3> Campos de baja / excedencia</h3>
       <fieldset className={styles.fieldsetCheckbox}>
         {LEAVE_FIELDS.map(({ value, label }) => (
           <label key={value} className={styles.checkboxOption}>
@@ -261,7 +260,7 @@ const InfoAuditPanelContractLeaveEmployee = ({
       {selectedLeaveFields.length && enriched.length ? (
         <div className={styles.auditResult}>
           <h4 className={styles.sectionTitle}>
-            BAJAS / EXCEDENCIAS
+             <p>{enriched.length}</p> BAJAS / EXCEDENCIAS
             <button onClick={() => setShowExport(true)}>xls</button>
             <button onClick={() => setShowExportByUser(true)}>
               xls por dispositivo

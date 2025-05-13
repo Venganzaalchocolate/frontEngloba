@@ -64,8 +64,8 @@ const ManagingEmployer = ({
 }) => {
   const { logged } = useLogin();
   const isRootOrGlobal =
-    logged?.user?.role === 'root' || logged?.user?.role === 'global';
-
+    logged?.user?.role === 'root' || (logged?.user?.role === 'global');
+  const apafaUser=(logged.user.apafa==false || logged.user._id=='67d80ef5f093b4a61894b881' || logged?.user?.role === 'root')?'no':'si'
   // Usuario seleccionado al hacer click en la lista
   const [userSelected, setUserSelected] = useState(null);
 
@@ -89,7 +89,7 @@ const ManagingEmployer = ({
     firstName: '',
     email: '',
     phone: '',
-    apafa:'no',
+    apafa: apafaUser,
     status:'activo',
   });
 
@@ -245,10 +245,18 @@ const ManagingEmployer = ({
     setPage(1);
     setUserSelected(null);
     const { name, value } = event.target;
+    if(apafaUser=='no'){
     setFilters((prevFilters) => ({
       ...prevFilters,
       [name]: value || ''
-    }));
+    }));  
+    } else if(apafaUser=='si' && name!='apafa'){
+ setFilters((prevFilters) => ({
+      ...prevFilters,
+      [name]: value || ''
+    }));  
+    }
+    
   }, []);
 
   const resetFilters = useCallback(() => {
@@ -263,7 +271,7 @@ const ManagingEmployer = ({
       programId: '',
       status: 'activo',
       provinces: '',
-      apafa:'no',
+      apafa:apafaUser,
       position:''
 
     });

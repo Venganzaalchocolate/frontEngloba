@@ -45,6 +45,7 @@ function EnumCRUD({
       </div>
     );
 
+    console.log(data)
   // Obtener el nombre en castellano
   const index = optionsList.indexOf(selectedKey);
   const labelCastellano = index !== -1 ? optionListCastellano[index] : selectedKey;

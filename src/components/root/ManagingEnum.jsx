@@ -25,8 +25,10 @@ export default function ManagingEnum({
 
  const runWithSpinner = useCallback(async (fn) => {
     try {
-      charge(true);
-      return await fn();
+      charge(true);                 // mismo spinner
+      const result = await fn();    // operación de escritura
+      await chargeEnums();          // 🔄 vuelve a consultar todas las enums
+      return result;                // devuelve lo que devuelva la API
     } finally {
       charge(false);
     }

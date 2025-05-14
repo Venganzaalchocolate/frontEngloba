@@ -19,7 +19,7 @@ import { AiOutlineCloudUpload } from "react-icons/ai";
 import { CiFileOn } from "react-icons/ci";
 
 import styles from "../styles/documentMiscelanea.module.css";
-import { BsPlusSquare } from "react-icons/bs";
+
 
 /**
  * @param {Object} props
@@ -426,7 +426,7 @@ const DocumentMiscelaneaGeneric = ({
             {docsArray.map(({ doc, files }) => (
               
               <div key={doc._id} className={(doc.model=='antiguomodelo')?styles.officialDocGroupUser:styles.officialDocGroup}>
-                <label className={styles.docLabel}>{doc.label} {authorized &&
+                <label className={styles.docLabel}>{doc.name} {authorized &&
                   <AiOutlineCloudUpload
                     className={styles.uploadButton}
                     onClick={()=>handleUploadOfficialFromSelect(doc._id)}

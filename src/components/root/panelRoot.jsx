@@ -17,4 +17,4 @@ const PanelRoot = ({ charge, enumsData, modal, chargeEnums }) => {
                     );
 };
 
-                    export default PanelRoot;
+export default PanelRoot;

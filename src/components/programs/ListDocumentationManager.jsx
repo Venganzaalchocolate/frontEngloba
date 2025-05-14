@@ -109,7 +109,7 @@ const ListDocumentationManager = ({ program, modal, charge, handleProgramSaved, 
                 ...(enumsData && enumsData.documentation
                   ? enumsData.documentation
                       .filter(doc => doc.model === 'Program')
-                      .map(doc => ({ value: doc._id, label: doc.label }))
+                      .map(doc => ({ value: doc._id, label: doc.name }))
                   : [])
               ]
         }
@@ -119,7 +119,7 @@ const ListDocumentationManager = ({ program, modal, charge, handleProgramSaved, 
     const getDocumentationLabel = (docId) => {
         if (enumsData && enumsData.documentation) {
             const doc = enumsData.documentation.find(d => d._id === docId);
-            return doc ? doc.label : docId;
+            return doc ? doc.name : docId;
         }
         return docId;
     };

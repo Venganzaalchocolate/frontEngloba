@@ -90,3 +90,6 @@
 .subcategories>button{
     margin-top: 1rem;
 }
+
+.modelFilters { margin-bottom: 1rem; gap: .5rem; display: flex; flex-wrap: wrap; }
+.modelFilters button.active { font-weight: 700; }

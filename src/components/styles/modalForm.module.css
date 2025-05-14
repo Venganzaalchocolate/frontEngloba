@@ -263,3 +263,13 @@
 .textoLabelCheck{
   margin-left: 0.5rem;
 }
+
+.modalVentana .modalContenedor .searchInput {
+  display: flex;
+  flex: 1;
+  padding: 6px 8px;
+  margin: 4px 0 8px;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-malva);
+  appearance: none
+}

@@ -50,7 +50,6 @@ const DocumentMiscelaneaGeneric = ({
   }, [data, modelName]);
 
 
-
   // =============== ESTADOS para modales ===============
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formConfig, setFormConfig] = useState(null);
@@ -167,7 +166,7 @@ const DocumentMiscelaneaGeneric = ({
           defaultValue: presetDocId,
           options: [
             { value: "", label: "Seleccione una opción" },
-            ...officialDocs.map((d) => ({ value: d._id, label: d.label })),
+            ...officialDocs.map((d) => ({ value: d._id, label: d.name })),
           ],
         },
         { label: "Archivo (PDF)", name: "file", type: "file", required: true },

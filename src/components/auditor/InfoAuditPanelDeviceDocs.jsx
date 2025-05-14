@@ -61,7 +61,7 @@ const InfoAuditPanelDeviceDocs = ({
     if (!enumsData?.documentation) return [];
     return enumsData.documentation
       .filter(d => d.model === 'Program')
-      .map(d => ({ value: d._id.toString(), label: d.label }));
+      .map(d => ({ value: d._id.toString(), label: d.name }));
   }, [enumsData]);
 
   // Disparar auditoría al seleccionar documentos

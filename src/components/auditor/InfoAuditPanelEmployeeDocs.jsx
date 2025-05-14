@@ -27,7 +27,7 @@ const InfoAuditPanelEmployeeDocs = ({
     if (!enumsData?.documentation) return [];
     return enumsData.documentation
       .filter(d => d.model === 'User')
-      .map(d => ({ value: d._id.toString(), label: d.label }));
+      .map(d => ({ value: d._id.toString(), label: d.name }));
   }, [enumsData]);
 
   // 2) Índice de programas/dispositivos para lookup

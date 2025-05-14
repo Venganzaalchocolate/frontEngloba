@@ -6,6 +6,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const ALLOWED_FILE_TYPES = ["application/pdf"];
   const [showDropdown, setShowDropdown] = useState({}); // Para múltiples desplegables
+  const [searchTerm, setSearchTerm] = useState({});
 
   // =========== ESTADOS ===============
   const [formData, setFormData] = useState(() =>
@@ -139,6 +140,26 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
   const filterOptions = (options) =>
     options.filter((option) => option.public === undefined || option.public === true);
 
+  const applySearchFilter = (options, term = "") => {
+    if (!term) return options;                      // sin texto → sin filtrar
+    const lc = term.toLowerCase();
+
+    return options.flatMap((opt) => {
+      // 2.1 optgroup
+      if (opt.subcategories && opt.subcategories.length) {
+        const subs = opt.subcategories.filter(
+          (sub) =>
+            (sub.public ?? true) &&
+            sub.label.toLowerCase().includes(lc)
+        );
+        return subs.length ? [{ ...opt, subcategories: subs }] : [];
+      }
+      // 2.2 opción normal
+      const isVisible =
+        (opt.public ?? true) && opt.label.toLowerCase().includes(lc);
+      return isVisible ? [opt] : [];
+    });
+  };
   // =========== RENDER ===============
   return (
     <div className={styles.modalVentana}>
@@ -193,50 +214,63 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                 {/* Campo TIPO SELECT CON POSIBLE OPTGROUP */}
                 {field.type === "select" && (
                   <>
+                    {/* ——— 3.1 Input de búsqueda (se muestra si hay muchas opciones o campo.searchable ——— */}
+                    {(field.searchable ||
+                      filterOptions(field.options).length > 15) && (
+                        <input
+                          type="text"
+                          className={styles.searchInput}
+                          placeholder="Buscar…"
+                          value={searchTerm[field.name] || ""}
+                          onChange={(e) =>
+                            setSearchTerm((prev) => ({
+                              ...prev,
+                              [field.name]: e.target.value,
+                            }))
+                          }
+                        />
+                      )}
+
+                    {/* ——— 3.2 Select con las opciones filtradas ——— */}
                     <select
                       name={field.name}
                       value={formData[field.name] || ""}
                       onChange={handleChange}
                       disabled={field.disabled}
                     >
-                      {field.options.map((option, optIndex) => {
-                        if (option.subcategories && option.subcategories.length > 0) {
-                          const filteredSubs = filterOptions(option.subcategories);
-                          if (filteredSubs.length === 0) return null;
+                      {applySearchFilter(
+                        filterOptions(field.options),
+                        searchTerm[field.name] || ""
+                      ).map((option, optIndex) => {
+                        // Mantiene tu soporte de optgroup
+                        if (option.subcategories && option.subcategories.length) {
                           return (
                             <optgroup
                               key={option.value || optIndex}
                               label={option.label || option.name}
                             >
-                              {filteredSubs.map((sub, subIndex) => (
-                                <option
-                                  key={sub.value || subIndex}
-                                  value={sub.value}
-                                >
+                              {option.subcategories.map((sub, subIdx) => (
+                                <option key={sub.value || subIdx} value={sub.value}>
                                   {sub.label}
                                 </option>
                               ))}
                             </optgroup>
                           );
-                        } else {
-                          if (option.public === false) return null;
-                          return (
-                            <option
-                              key={option.value || optIndex}
-                              value={option.value}
-                            >
-                              {option.label}
-                            </option>
-                          );
                         }
+                        return (
+                          <option key={option.value || optIndex} value={option.value}>
+                            {option.label}
+                          </option>
+                        );
                       })}
                     </select>
+
                     {errors[field.name] && (
                       <p className={styles.modalError}>{errors[field.name]}</p>
                     )}
                   </>
                 )}
-{/* Campo TIPO CHECKBOX GROUP (varios checkboxes para múltiples opciones)*/}
+                {/* Campo TIPO CHECKBOX GROUP (varios checkboxes para múltiples opciones)*/}
                 {field.type === "checkboxGroup" && (
                   <div className={styles.checkboxGroupWrapper}>
                     {field.options.map((option, optIndex) => {
@@ -267,7 +301,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                     )}
                   </div>
                 )}
-                
+
 
                 {/* Campo TIPO SELECT MULTIPLE CON AGRUPACIÓN */}
                 {field.type === "selectMultiple" && (
@@ -277,8 +311,8 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                         className={styles.selectMultipleButton}
                         onClick={() => toggleDropdown(field.name)}
                       >
-                        
-                        {formData[field.name]?.length > 0 
+
+                        {formData[field.name]?.length > 0
                           ? formData[field.name]
                             .map((val) => {
                               // Buscar en opciones (posible estructura agrupada)
@@ -323,8 +357,8 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                                     <div
                                       key={sub.value || subIdx}
                                       className={`${styles.selectMultipleOption} ${formData[field.name]?.includes(sub.value)
-                                          ? styles.selected
-                                          : ""
+                                        ? styles.selected
+                                        : ""
                                         } ${sub.value === "" ? styles.disabled : ""}`}
                                       onClick={() => {
                                         if (sub.value !== "") {
@@ -343,8 +377,8 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                                 <div
                                   key={option.value || idx}
                                   className={`${styles.selectMultipleOption} ${formData[field.name]?.includes(option.value)
-                                      ? styles.selected
-                                      : ""
+                                    ? styles.selected
+                                    : ""
                                     } ${option.value === "" ? styles.disabled : ""}`}
                                   onClick={() => {
                                     if (option.value !== "") {

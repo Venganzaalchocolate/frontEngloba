@@ -160,6 +160,23 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
       return isVisible ? [opt] : [];
     });
   };
+
+  const commitFirstMatch = (field) => {
+    const visibles = applySearchFilter(
+      filterOptions(field.options),
+      searchTerm[field.name] || ""
+    );
+
+    if (!visibles.length) return;                 // nada que seleccionar
+
+    // Si hay optgroups, toma la primera sub-opción
+    const first = visibles[0].subcategories?.length
+      ? visibles[0].subcategories[0]
+      : visibles[0];
+
+    setFormData((prev) => ({ ...prev, [field.name]: first.value }));
+    setErrors((prev) => ({ ...prev, [field.name]: "" }));
+  };
   // =========== RENDER ===============
   return (
     <div className={styles.modalVentana}>
@@ -217,17 +234,38 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                     {/* ——— 3.1 Input de búsqueda (se muestra si hay muchas opciones o campo.searchable ——— */}
                     {(field.searchable ||
                       filterOptions(field.options).length > 15) && (
+
                         <input
                           type="text"
                           className={styles.searchInput}
                           placeholder="Buscar…"
                           value={searchTerm[field.name] || ""}
-                          onChange={(e) =>
-                            setSearchTerm((prev) => ({
-                              ...prev,
-                              [field.name]: e.target.value,
-                            }))
-                          }
+                          onChange={(e) => {
+                            const term = e.target.value;
+
+                            // 1· actualizamos el texto que muestra el buscador
+                            setSearchTerm((prev) => ({ ...prev, [field.name]: term }));
+
+                            // 2· calculamos las opciones visibles con tu misma lógica
+                            const visibles = applySearchFilter(
+                              filterOptions(field.options),
+                              term
+                            );
+
+                            // 3· si hay al menos una coincidencia -> elegimos la primera
+                            if (visibles.length) {
+                              const first =
+                                visibles[0].subcategories?.length
+                                  ? visibles[0].subcategories[0]
+                                  : visibles[0];
+
+                              setFormData((prev) => ({ ...prev, [field.name]: first.value }));
+                              setErrors((prev) => ({ ...prev, [field.name]: "" }));
+                            } else {
+                              // 4· sin coincidencias -> limpiamos selección (lo deja como no válido)
+                              setFormData((prev) => ({ ...prev, [field.name]: "" }));
+                            }
+                          }}
                         />
                       )}
 

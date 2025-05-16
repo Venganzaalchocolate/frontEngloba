@@ -56,7 +56,7 @@ const ViewJobs = ({ charge, offerSelect, offers, changeOffers, enumsData }) => {
                   <strong>Dispositivo:</strong> {dispositivo?.name}
                 </p>
                 <p className={styles.cardInfo}>
-                  <strong>Creado:</strong> {formatDate(offer.createdAt)}
+                  <strong>Creado:</strong> {formatDate(offer.datecreate)}
                 </p>
                 <div className={styles.cardActions}>
                 <button

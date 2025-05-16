@@ -121,6 +121,8 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 type: "textarea",
                 required: false,
                 defaultValue: offer?.essentials_requirements || "",
+                isValid: (value) =>
+                    validText(value, 2, 500, true) ? "" : textErrors("essentials_requirements"),
             },
             {
                 name: "optionals_requirements",
@@ -129,7 +131,7 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 required: false,
                 defaultValue: offer?.optionals_requirements || "",
                 isValid: (value) =>
-                    validText(value, 2, 500) ? "" : textErrors("essentials_requirements"),
+                    validText(value, 2, 500, true) ? "" : textErrors("essentials_requirements"),
             },
             {
                 name: "conditions",
@@ -138,7 +140,7 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 required: false,
                 defaultValue: offer?.conditions || "",
                 isValid: (value) =>
-                    validText(value, 2, 500) ? "" : textErrors("essentials_requirements"),
+                    validText(value, 2, 500, true) ? "" : textErrors("essentials_requirements"),
             },
             {
                 name: "sepe",
@@ -155,9 +157,18 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 required: true,
                 defaultValue: offer?.type || "",
                 options: [{ value: "", label: "Seleccione una opción" }, { value: 'internal', label: 'Oferta Interna' }, { value: 'external', label: 'Oferta Pública' }],
+            },
+            {
+                name:'datecreate',
+                label: "Fecha de creación",
+                type: "date",
+                required:true,
+                disabled:logged.user.role!='root',
+                defaultValue: (offer?.datecreate) ?new Date(offer?.datecreate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
             }
         ];
     };
+
 
     const handleSubmit = async (formData) => {
         try {
@@ -182,7 +193,8 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 dispositiveId: formData.dispositiveID,
                 studies: formData.studies,
                 sepe: formData.sepe,
-                type: formData.type
+                type: formData.type,
+                datecreate:formData.datecreate
             };
 
             const token = getToken();

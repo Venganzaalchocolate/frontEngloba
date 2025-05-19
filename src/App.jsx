@@ -42,23 +42,21 @@ function App() {
   useEffect(() => {
     const isLogged = async () => {
       const token = getToken();
-      if (token != null) {
-        const user = await tokenUser(token)
-        if (user == null || user.error) {
-          logout()
-          setCharge(false)
+      if (token) {
+        const user = await tokenUser(token);
+        if (!user || user.error) {
+          logout();
         } else {
-          changeLogged(user)
-          setCharge(false)
+          changeLogged(user);
         }
       } else {
-        logout()
-        setCharge(false)
+        logout();
       }
-    }
-    isLogged();
+      setCharge(false);
+    };
 
-  }, [])
+    isLogged();
+  }, []);
 
 
   if (logged.isLoggedIn) {
@@ -89,10 +87,11 @@ function App() {
         <Routes>
           <Route path="/" element={<MenuStart charge={(x) => setCharge(x)} />}></Route>
           <Route path="/login" element={<Login charge={(x) => setCharge(x)} />}></Route>
+           <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
+          <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
           <Route path="/trabajaconnosotros" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
           <Route path="/trabajaconnosotros/:id" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-          <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-          <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
+          <Route path="/*" element={<NotFound />} />
           <Route path="/*" element={<NotFound />}></Route>
         </Routes>
         {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}

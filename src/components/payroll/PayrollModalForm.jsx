@@ -49,8 +49,9 @@ export default function PayrollModalForm({ user, modal, changeUser, charge, onCl
       modal('Error', 'Ocurrió un problema en el servidor.');
     }
 
-    charge(false);
+    
     onClose(); // Cierra el modal
+    charge(false);
   };
 
   return (

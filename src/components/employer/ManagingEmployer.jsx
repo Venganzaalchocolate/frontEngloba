@@ -20,6 +20,7 @@ import { FaPersonCircleMinus, FaBusinessTime } from "react-icons/fa6";
 import CreateDocumentXLS from './CreateDocumentXLS.jsx';
 import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx';
 import FilterStatus from './FilterStatus.jsx';
+import RecibiSignDigital from '../globals/RecibiSignDigital.jsx';
 
 
 
@@ -384,6 +385,8 @@ const ManagingEmployer = ({
     setUsersXls(userAll)
   }
 
+
+
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
@@ -564,6 +567,14 @@ const ManagingEmployer = ({
                               authorized={true}
                               categoryFiles={enumsData.categoryFiles}
                             />
+                            {logged.user.role=='root' &&
+                            <RecibiSignDigital
+                            user={user}
+                            modal={modal}
+                            charge={charge}
+                            changeUser={(x) => changeUserLocally(x)}
+                            />
+                            }
                             <Payrolls
                               user={user}
                               modal={modal}

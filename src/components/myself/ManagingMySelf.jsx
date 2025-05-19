@@ -16,19 +16,6 @@ const ManagingMySelf = ({
 }) => {
     const { changeLogged } = useLogin();
 
-    /* 1. ¿Tenemos ya todos los datos? */
-    const ready = useMemo(
-        () => Boolean(myself && enumsData),
-        [myself, enumsData]
-    );
-
-    /* 2. Mostrar / ocultar spinner cada vez que cambie "ready" */
-    useEffect(() => {
-        if (typeof charge === 'function') charge(!ready); // true = ON, false = OFF
-    }, [ready, charge]);
-
-    /* 3. Mientras falta algo NO renderizamos nada (el spinner ya se ve fuera) */
-    if (!ready) return null;
 
     /* 4. Helpers */
     const changeUser = user => changeLogged(user);

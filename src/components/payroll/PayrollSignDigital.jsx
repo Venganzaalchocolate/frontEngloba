@@ -10,7 +10,7 @@ export default function PayrollSignDigital({
   const [step, setStep]   = useState('request'); // 'request' o 'verify'
   const [fileId, setFileId] = useState(null);
   const [error, setError]   = useState(null);
-
+const inFlight = React.useRef(false);  // 🔹 no provoca re-render
   // Paso 1: solicitar el código exactamente cuando abrimos el modal
   const handleRequest = async () => {
     charge(true);
@@ -23,37 +23,40 @@ export default function PayrollSignDigital({
         setFileId(resp.fileId);
         setStep('verify');
         modal('Código enviado', 'Revisa tu correo y escribe el código.');
+        charge(false);
       } else {
         setError('No recibimos ningún identificador.');
       }
     } catch (e) {
       setError(e.message || 'Error al solicitar el código');
-    } finally {
-      charge(false);
     }
   };
 
   // Paso 2: verificar el código
-  const handleVerify = async ({ code }) => {
-    charge(true);
-    setError(null);
-    try {
-      const token = getToken();
-      const payload = { userId: user._id, fileId, code };
-      const resp = await confirmSignature(payload, token);
-      if (resp.data) {
-        modal('Éxito', 'Documento firmado correctamente');
-        changeUser(resp.data.user || resp.data);
-        onClose();
-      } else {
-        setError('No pudimos completar la firma.');
-      }
-    } catch (e) {
-      setError(e.message || 'Error al verificar el código');
-    } finally {
-      charge(false);
+const handleVerify = async ({ code }) => {
+  if (inFlight.current) return;           // bloquea doble clic
+  inFlight.current = true;
+  charge(true);
+  setError(null);
+
+  try {
+    const token   = getToken();
+    const payload = { userId: user._id, fileId, code };
+    const resp    = await confirmSignature(payload, token);
+
+    if (!resp.data) {
+      throw new Error('No pudimos completar la firma.');
     }
-  };
+    modal('Éxito', 'Documento firmado correctamente');
+    changeUser(resp.data.user || resp.data);
+    onClose();
+  } catch (e) {
+    setError(e.message || 'Error al verificar el código');
+  } finally {
+    inFlight.current = false;             // libera bloqueo
+    charge(false);                        // apaga spinner global
+  }
+};
 
   // Cuando el modal se renderiza por primera vez, disparamos la petición
   // (es un clic en el padre el que abre este componente)

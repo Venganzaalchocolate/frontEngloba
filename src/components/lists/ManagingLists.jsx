@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import ExcelJS from 'exceljs';
+import React, { useState, useEffect, useMemo, useCallback, startTransition } from 'react';
+import ExcelJS from 'exceljs/dist/exceljs.min.js';
 import { saveAs } from 'file-saver';
 import styles from '../styles/ManagingLists.module.css';
 import { listsResponsiblesAndCoordinators } from '../../lib/data';
@@ -132,48 +132,51 @@ export default function ManagingLists({ enumsData, modal, charge }) {
   /**
    * Exporta todas las filas en un único XLS.
    */
-  const exportFlatXLS = () => {
-    if (!rows.length) {
-      modal('Aviso', 'No hay datos para exportar.');
-      return;
+const exportFlatXLS = () => {
+  if (!rows.length) {
+    modal('Aviso', 'No hay datos para exportar.');
+    return;
+  }
+  startTransition(async () => {
+    charge(true);
+    try {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Listado');
+      ws.columns = [
+        { header: 'Programa', key: 'program', width: 30 },
+        { header: 'Dispositivo', key: 'device', width: 30 },
+        { header: 'Provincia', key: 'province', width: 25 },
+        { header: 'Rol', key: 'role', width: 22 },
+        { header: 'Nombre', key: 'fullName', width: 30 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'Teléfono', key: 'phone', width: 22 }
+      ];
+      rows.forEach(r =>
+        ws.addRow({
+          program: r.program,
+          device: r.device || '',
+          province: provinceName(r.province),
+          role: r.role,
+          fullName: fullName(r),
+          email: r.email,
+          phone: r.phone
+        })
+      );
+      const buffer = await wb.xlsx.writeBuffer();
+      saveAs(
+        new Blob([buffer], {
+          type:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }),
+        'listado_responsables_coordinadores.xlsx'
+      );
+    } catch (err) {
+      modal('Error', err.message || 'No se pudo generar el XLS.');
+    } finally {
+      charge(false);
     }
-    startTransition(async () => {
-      charge(true);
-      try {
-        const wb = new ExcelJS.Workbook();
-        const ws = wb.addWorksheet('Listado');
-        ws.columns = [
-          { header: 'Programa', key: 'program', width: 30 },
-          { header: 'Dispositivo', key: 'device', width: 30 },
-          { header: 'Provincia', key: 'province', width: 25 },
-          { header: 'Rol', key: 'role', width: 20 },
-          { header: 'Nombre', key: 'fullName', width: 30 },
-          { header: 'Email', key: 'email', width: 30 },
-          { header: 'Teléfono', key: 'phone', width: 22 }
-        ];
-        rows.forEach(r =>
-          ws.addRow({
-            program: r.program,
-            device: r.device || '',
-            province: provinceName(r.province),
-            role: r.role,
-            fullName: fullName(r),
-            email: r.email,
-            phone: r.phone
-          })
-        );
-        const buf = await wb.xlsx.writeBuffer();
-        saveAs(
-          new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-          'listado_responsables_coordinadores.xlsx'
-        );
-      } catch (err) {
-        modal('Error', err.message || 'No se pudo generar el XLS.');
-      } finally {
-        charge(false);
-      }
-    });
-  };
+  });
+};
 
 
   return (

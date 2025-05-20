@@ -125,6 +125,7 @@ const WorkerMenu = ({ modal, charge }) => {
                                 <button onClick={() => changeMenuWorker('auditor')}>AUDITORIA</button>
                                 <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
                                 <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
+                                <button onClick={() => changeMenuWorker('lists')}>LISTIN DE CONTACTO</button>
                             </>
 
                             : listResponsability.length > 0
@@ -135,6 +136,7 @@ const WorkerMenu = ({ modal, charge }) => {
                                     <button onClick={() => changeMenuWorker('offersJobs')}>GESTIONAR OFERTAS</button>
                                     <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
                                     <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
+                                    <button onClick={() => changeMenuWorker('lists')}>LISTIN DE CONTACTO</button>
                                 </>
                                 :
                                 <>

@@ -30,22 +30,26 @@ export default function ManagingLists({ enumsData, modal, charge }) {
   const [badPD, setBadPD] = useState(false);   // flag de regex mal
   const [badNom, setBadNom] = useState(false);
   // Convierte wildcard sencillo a RegExp:  * → .*,  ? → .
-  const wildcardToRegex = str =>
-    str.trim()
-      .replace(/[.+^${}()|[\]\\]/g, '\\$&')  // escapa metacaracteres JS
-      .replace(/\*/g, '.*')
-      .replace(/\?/g, '.');
+  // ——— util para hacer la búsqueda “sin tildes” ———
+const stripAccents = s =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');   // quita diacríticos
 
-  const buildRegex = (pattern, setBadFlag) => {
-    if (!pattern) { setBadFlag(false); return null; }
-    try {
-      return new RegExp(wildcardToRegex(pattern), 'i'); // insensitive
-    } catch {
-      setBadFlag(true);
-      return null;
-    }
-  };
+// ——— comodines  →  texto-patrón de RegExp ———
+const wildcardToRegex = str =>
+  stripAccents(str.trim())               // ① borra acentos (y espacios extremos)
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&') // ② escapa metacaracteres
+    .replace(/\*/g, '.*')                // ③ *  →  .*
+    .replace(/\?/g, '.');                // ④ ?  →  .
 
+const buildRegex = (pattern, setBadFlag) => {
+  if (!pattern) { setBadFlag(false); return null; }
+  try {
+    return new RegExp(wildcardToRegex(pattern), 'i');   // flag i = mayúsc./minúsc.
+  } catch {
+    setBadFlag(true);
+    return null;
+  }
+};
   /**
    * Nombre completo de una persona.
    */
@@ -113,8 +117,12 @@ export default function ManagingLists({ enumsData, modal, charge }) {
     const reNom = buildRegex(searchNom, setBadNom);
 
     const filtered = rows.filter(r => {
-      const okPD = !rePD || rePD.test(`${r.program} ${r.device ?? ''}`);
-      const okNom = !reNom || reNom.test(fullName(r));
+    // ───── normaliza ambos “haystack” ─────
+    const hayPD  = stripAccents(`${r.program} ${r.device ?? ''}`);
+    const hayNom = stripAccents(fullName(r));
+
+    const okPD  = !rePD  || rePD.test(hayPD);
+    const okNom = !reNom || reNom.test(hayNom);
       return okPD && okNom;
     });
     return filtered.reduce((acc, r) => {

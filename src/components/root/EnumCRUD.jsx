@@ -94,6 +94,12 @@ function EnumCRUD({ selectedKey, data, actions }) {
                 </span>
               )}
 
+              {!!item.requiresSignature && (
+                <span className={styles.docDuration}>
+                  Requiere Firma: {(item.requiresSignature)?'Si':'No'}
+                </span>
+              )}
+
               {allowSub && item.subcategories?.length > 0 && (
                 <div className={styles.docSubcategories}>
                   <ul>

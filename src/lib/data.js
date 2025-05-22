@@ -296,3 +296,9 @@ export const auditDocumentUser=(datos,token)=>fetchData('/auditdocumentuser', 'P
 export const auditDocumentProgram=(datos,token)=>fetchData('/auditdocumentprogram', 'POST', token, datos);
 export const auditDocumentDevice=(datos,token)=>fetchData('/auditdocumentdevice', 'POST', token, datos);
 export const auditUserPeriod=(datos,token)=>fetchData('/audituserperiod', 'POST', token, datos);
+
+//estadisticas
+export const stOverview=(token)=>fetchData('/overview', 'POST', token);
+export const stCvMonthly=(datos, token)=>fetchData('/cvmonthly', 'POST', token, datos);
+export const stCvDistribution=(datos, token)=>fetchData('/cvdistribution', 'POST', token, datos);
+export const stCvConversion=(datos, token)=>fetchData('/cvconversion', 'POST', token, datos);

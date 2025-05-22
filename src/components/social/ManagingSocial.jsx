@@ -1,6 +1,25 @@
-const ManagingSocial=()=>{
+import CvStatsDashboard from "./statistics/CvStatsDashboard"
+import styles from '../styles/ManagingSocial.module.css';
+
+const ManagingSocial = ({ enumsData, modal, charge }) => {
     return (
-        <p>Impacto Social</p>
+        <div className={styles.contenedor}>
+            <div className={styles.contenido}>
+                <>
+                    <div className={styles.titulo}>
+                        <div>
+                            <h2>ESTADISTICAS</h2>
+                        </div>
+                    </div>
+
+                    <CvStatsDashboard
+                        enumsData={enumsData}
+                        modal={modal}
+                        charge={charge}
+                    />
+                </>
+            </div>
+        </div>
     )
 }
 

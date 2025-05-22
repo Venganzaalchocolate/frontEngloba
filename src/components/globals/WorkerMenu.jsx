@@ -86,7 +86,7 @@ const WorkerMenu = ({ modal, charge }) => {
 
         if (MenuWorker != null) {
             if (MenuWorker == 'cv') return <ManagingResumenes chargeEnums={chargeEnums} enumsEmployer={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'socialForm') return <ManagingSocial closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} />;
+            if (MenuWorker == 'socialForm') return <ManagingSocial  enumsData={enumsEmployer} modal={modal} charge={charge} />;
             if (MenuWorker == 'offersJobs') return <OfferJobsPanel enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'programs') return <ManagingPrograms listResponsability={listResponsability} chargePrograms={chargePrograms} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'employer') return <ManagingEmployer chargePrograms={chargePrograms} enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
@@ -121,6 +121,7 @@ const WorkerMenu = ({ modal, charge }) => {
                                 
                                 <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
                                 <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
+                                <button onClick={() => changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>
                                 <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
                                 <button onClick={() => changeMenuWorker('auditor')}>AUDITORIA</button>
                                 <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
@@ -133,6 +134,7 @@ const WorkerMenu = ({ modal, charge }) => {
                                 <>
                                     <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
                                     <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
+                                    <button onClick={() => changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>
                                     <button onClick={() => changeMenuWorker('offersJobs')}>GESTIONAR OFERTAS</button>
                                     <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
                                     <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>

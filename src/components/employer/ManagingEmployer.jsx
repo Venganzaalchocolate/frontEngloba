@@ -567,14 +567,7 @@ const ManagingEmployer = ({
                               authorized={true}
                               categoryFiles={enumsData.categoryFiles}
                             />
-                            {logged.user.role=='root' &&
-                            <RecibiSignDigital
-                            user={user}
-                            modal={modal}
-                            charge={charge}
-                            changeUser={(x) => changeUserLocally(x)}
-                            />
-                            }
+                           
                             <Payrolls
                               user={user}
                               modal={modal}

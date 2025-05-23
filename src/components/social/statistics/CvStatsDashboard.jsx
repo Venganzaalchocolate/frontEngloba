@@ -1,4 +1,4 @@
-import styles from '../styles/CvStatsDashboard.module.css';
+import styles from '../../styles/CvStatsDashboard.module.css';
 import OverviewCards        from './OverviewCards.jsx';
 import MonthlyCVChart       from './MonthlyCVChart.jsx';
 import DistributionCVChart  from './DistributionCVChart.jsx';

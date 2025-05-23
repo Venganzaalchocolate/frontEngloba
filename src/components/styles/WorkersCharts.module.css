@@ -1,0 +1,14 @@
+.grid {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex: 1 40%;
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 8px #0001;
+  padding: 1rem 1.25rem;
+}
+.card h3 { margin: 0 0 0.5rem; font-size: 1.1rem; }

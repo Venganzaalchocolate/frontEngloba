@@ -8,12 +8,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import ExcelJS from 'exceljs/dist/exceljs.min.js';
-import { saveAs } from 'file-saver';
 
 import { stCvMonthly } from '../../../lib/data';
 import { getToken } from '../../../lib/serviceToken';
-import styles from '../styles/CvStatsDashboard.module.css';
+import styles from '../../styles/CvStatsDashboard.module.css';
 
 /* ──────────────────────────────────────────────────────────────────
  *  Constantes auxiliares

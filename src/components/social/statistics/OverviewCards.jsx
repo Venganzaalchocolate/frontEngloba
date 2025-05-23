@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { stOverview } from '../../../lib/data';
 import { getToken }   from '../../../lib/serviceToken';
-import styles from '../styles/CvStatsDashboard.module.css';
+import styles from '../../styles/CvStatsDashboard.module.css';
 
 export default function OverviewCards({ modal, charge }) {
   const [data, setData] = useState(null);

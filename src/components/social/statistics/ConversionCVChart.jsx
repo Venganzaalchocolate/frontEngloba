@@ -13,7 +13,7 @@ import {
 
 import { stCvConversion } from '../../../lib/data';
 import { getToken } from '../../../lib/serviceToken';
-import styles from '../styles/CvStatsDashboard.module.css';
+import styles from '../../styles/CvStatsDashboard.module.css';
 
 const MONTHS_ES = [
   'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',

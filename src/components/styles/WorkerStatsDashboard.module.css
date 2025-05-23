@@ -1,0 +1,42 @@
+/* styles/WorkerStatsDashboard.module.css */
+.container {
+    padding: 1rem;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: 1rem;
+}
+
+.select {
+    padding: .4rem .6rem;
+    border-radius: 6px;
+}
+
+.cardsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .1);
+    text-align: center;
+}
+
+.cardTitle {
+    font-size: .85rem;
+    margin: 0 0 .25rem;
+    color: #555;
+}
+
+.cardValue {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin: 0;
+}

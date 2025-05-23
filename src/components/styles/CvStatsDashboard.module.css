@@ -134,3 +134,22 @@
   color: #667085;
   margin-left: 0.4rem;
 }
+
+.controls{
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 1rem;
+  background-color: var(--color-morado);
+  padding: 1rem;
+  border-radius: 1rem;
+  >h3{
+    flex: 1 100%;
+    color: white;
+    text-align: center;
+  }
+  >button{
+    background-color: var(--color-malva);
+    color: var(--color-morado);
+  }
+}

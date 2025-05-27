@@ -222,7 +222,7 @@ const FormCreateEmployer = ({
       },
       {
         name: "phone",
-        label: "Teléfono",
+        label: "Teléfono Personal",
         type: "text",
         required: true,
         defaultValue: user?.phone || "",
@@ -231,6 +231,25 @@ const FormCreateEmployer = ({
           const isOk = validNumber(texto);
           return isOk ? "" : textErrors("phone");
         },
+      },
+      //phoneJobNumber || req.body.phoneJobExtension
+      {
+         name: "phoneJobNumber",
+        label: "Teléfono Laboral",
+        type: "text",
+        defaultValue: user?.phoneJob?.number || "",
+        disabled: false,
+        isValid: (texto) => {
+          const isOk = validNumber(texto);
+          return isOk ? "" : textErrors("phone");
+        }
+      },
+      {
+        name: "phoneJobExtension",
+        label: "Teléfono Extensión",
+        type: "text",
+        defaultValue: user?.phoneJob?.extension || "",
+        disabled:false,
       },
       {
         name: "gender",
@@ -391,6 +410,8 @@ const FormCreateEmployer = ({
           percentage: formData.disPercentage || 0,
           notes: formData.disNotes || '',
         },
+        phoneJobNumber:formData.phoneJobNumber,
+        phoneJobExtension:formData.phoneJobExtension,
         hiringPeriods: [
           {
             startDate: formData.startDate,

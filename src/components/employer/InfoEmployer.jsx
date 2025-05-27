@@ -23,8 +23,8 @@ const InfoEmployer = ({
   changeUser,
   listResponsability,
   enumsData,
-  chargeUser = () => {},
-  soloInfo=false
+  chargeUser = () => { },
+  soloInfo = false
 }) => {
   // Convertir booleanos a "si"/"no" en el estado inicial
   const initialState = {
@@ -74,13 +74,13 @@ const InfoEmployer = ({
   };
 
   // Convierte una fecha ISO (o string) a 'YYYY-MM-DD'
-function toInputDate(isoString) {
-  if (!isoString) return "";
-  const d = new Date(isoString);
-  // Ajustamos al huso horario (por si no quieres problemas con UTC).
-  // OJO, si tu ISO no es local, tenlo en cuenta. 
-  return d.toISOString().slice(0, 10);
-}
+  function toInputDate(isoString) {
+    if (!isoString) return "";
+    const d = new Date(isoString);
+    // Ajustamos al huso horario (por si no quieres problemas con UTC).
+    // OJO, si tu ISO no es local, tenlo en cuenta. 
+    return d.toISOString().slice(0, 10);
+  }
 
 
   // Manejo de cambios en campos generales
@@ -88,6 +88,7 @@ function toInputDate(isoString) {
     const { name, value } = e.target;
     const auxErrores = { ...errores };
     const auxDatos = { ...datos };
+
 
     auxErrores["mensajeError"] = null;
     let valido = true;
@@ -130,6 +131,9 @@ function toInputDate(isoString) {
         } else {
           auxErrores[name] = null;
         }
+      } else if (name === "phoneJobNumber" ) {
+        valido = validNumber(value);
+        auxErrores[name] = valido ? null : textErrors("phone");
       } else if (name === "socialSecurityNumber") {
         if (value !== "") {
           valido = true;
@@ -179,7 +183,6 @@ function toInputDate(isoString) {
       "lastName",
       "dni",
       "email",
-      "phone",
       "employmentStatus",
       "socialSecurityNumber",
       "bankAccountNumber",
@@ -188,7 +191,8 @@ function toInputDate(isoString) {
       "apafa",
       "consetmentDataProtection",
       "role",
-      "birthday"
+      "birthday",
+      "phone",
     ];
 
     fieldsToCompare.forEach((field) => {
@@ -215,6 +219,18 @@ function toInputDate(isoString) {
       changed.studies = datos.studies;
     }
 
+    const oldJobPhone = originalData.phoneJob?.number || "";
+    const newJobPhone = datos.phoneJobNumber || "";
+    if (oldJobPhone !== newJobPhone) {
+      changed.phoneJobNumber = newJobPhone;
+    }
+
+    const oldJobExt = originalData.phoneJob?.extension || "";
+    const newJobExt = datos.phoneJobExtension || "";
+    if (oldJobExt !== newJobExt) {
+      changed.phoneJobExtension = newJobExt;
+    }
+
     return changed;
   };
 
@@ -225,6 +241,7 @@ function toInputDate(isoString) {
 
   // Guardar cambios
   const handleSave = async () => {
+    console.log(validateFields())
     if (!validateFields()) return;
 
     // Obtenemos sólo los campos modificados
@@ -247,6 +264,7 @@ function toInputDate(isoString) {
     charge(true);
 
     const token = getToken();
+    console.log(modifiedData)
     const response = await editUser(modifiedData, token);
 
     if (!response.error) {
@@ -265,7 +283,7 @@ function toInputDate(isoString) {
 
   // Botón de edición/guardado
   const boton = () => {
-    if(!!soloInfo) return ''
+    if (!!soloInfo) return ''
     if (!!listResponsability && listResponsability.length < 1) return "";
     return !isEditing ? (
       <FaEdit onClick={handleEdit} />
@@ -284,10 +302,10 @@ function toInputDate(isoString) {
     ["dni", "DNI"],
     ["birthday", "Fecha de Nacimiento"],
     ["email", "Email"],
-    ["phone", "Teléfono"],
     ["employmentStatus", "Estado Laboral"],
     ["socialSecurityNumber", "Número de Seguridad Social"],
     ["bankAccountNumber", "Número de Cuenta Bancaria"],
+    ["phone", "Teléfono Personal"],
   ];
 
   // Función para agregar un estudio seleccionado
@@ -321,22 +339,22 @@ function toInputDate(isoString) {
         DATOS {boton()}
       </h2>
       {logged.user.role === "root" &&
-      <div className={styles.roleContainer}>
-        <label className={styles.roleLabel}>Rol</label>
-        <select
-          className={styles.role}
-          name="role"
-          value={datos.role || ""}
-          onChange={handleChange}
-          disabled={!isEditing}
-        >
-          <option value="">Seleccionar</option>
-          <option value="root">Root</option>
-          <option value="global">Global</option>
-          <option value="employee">Empleado</option>
-        </select>
-      </div>
-}
+        <div className={styles.roleContainer}>
+          <label className={styles.roleLabel}>Rol</label>
+          <select
+            className={styles.role}
+            name="role"
+            value={datos.role || ""}
+            onChange={handleChange}
+            disabled={!isEditing}
+          >
+            <option value="">Seleccionar</option>
+            <option value="root">Root</option>
+            <option value="global">Global</option>
+            <option value="employee">Empleado</option>
+          </select>
+        </div>
+      }
       {/* Renderizado de cada campo en textFields */}
       {textFields.map(([fieldName, label]) => {
         if (fieldName === "birthday") {
@@ -344,7 +362,7 @@ function toInputDate(isoString) {
           return (
             <div key={fieldName} className={styles[fieldName + "Container"]}>
               <label className={styles[fieldName + "Label"]}>{label}</label>
-  
+
               {!isEditing ? (
                 // Modo lectura: usamos 'formatDate'
                 <span className={styles[fieldName]}>
@@ -360,21 +378,21 @@ function toInputDate(isoString) {
                   onChange={handleChange}
                 />
               )}
-  
+
               {errores[fieldName] && (
                 <span className={styles.errorSpan}>{errores[fieldName]}</span>
               )}
             </div>
           );
         }
-  
+
         // Para otros campos normales:
         return (
           <div key={fieldName} className={styles[fieldName + "Container"]}>
             <label className={styles[fieldName + "Label"]}>{label}</label>
-  
+
             {fieldName === "employmentStatus" &&
-            (logged.user.role === "global" || logged.user.role === "root") ? (
+              (logged.user.role === "global" || logged.user.role === "root") ? (
               <select
                 className={styles[fieldName]}
                 name={fieldName}
@@ -398,14 +416,42 @@ function toInputDate(isoString) {
                 disabled={fieldName === "employmentStatus" ? true : !isEditing}
               />
             )}
-  
+
             {errores[fieldName] && (
               <span className={styles.errorSpan}>{errores[fieldName]}</span>
             )}
           </div>
         );
       })}
-  
+
+      {/* Campos nuevos: Teléfono laboral y extensión */}
+      <div className={styles.phoneJobContainer}>
+        <label className={styles.phoneJobLabel}>Teléfono Laboral</label>
+        <input
+          className={styles.phoneJob}
+          type="text"
+          name="phoneJobNumber"
+          value={datos.phoneJob?.number || datos.phoneJobNumber || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+        {errores["phoneJobNumber"] && (
+          <span className={styles.errorSpan}>{errores["phoneJobNumber"]}</span>
+        )}
+      </div>
+
+      <div className={styles.phoneJobExtensionContainer}>
+        <label className={styles.phoneJobExtensionLabel}>Extensión</label>
+        <input
+          className={styles.phoneJobExtension}
+          type="text"
+          name="phoneJobExtension"
+          value={datos.phoneJob?.extension || datos.phoneJobExtension || ""}
+          onChange={handleChange}
+          disabled={!isEditing}
+        />
+      </div>
+
       {/* Género */}
       <div className={styles.genderContainer}>
         <label className={styles.genderLabel}>Género</label>
@@ -424,7 +470,7 @@ function toInputDate(isoString) {
           <span className={styles.errorSpan}>{errores.gender}</span>
         )}
       </div>
-  
+
       {/* Extutelado */}
       <div className={styles.fosteredContainer}>
         <label className={styles.fosteredLabel}>Extutelado</label>
@@ -442,7 +488,7 @@ function toInputDate(isoString) {
           <span className={styles.errorSpan}>{errores.fostered}</span>
         )}
       </div>
-  
+
       <div className={styles.apafaContainer}>
         <label className={styles.apafaLabel}>Apafa</label>
         <select
@@ -459,7 +505,7 @@ function toInputDate(isoString) {
           <span className={styles.errorSpan}>{errores.apafa}</span>
         )}
       </div>
-  
+
       {/* Consentimiento de protección de datos */}
       {(isEditing || (!!datos && datos.consetmentDataProtection === "no")) && (
         <div className={styles.consetmentDataProtectionContainer}>
@@ -483,7 +529,7 @@ function toInputDate(isoString) {
           )}
         </div>
       )}
-  
+
       {/* Campos de discapacidad */}
       {(isEditing || (datos?.disability?.percentage || 0) > 0) && (
         <>
@@ -505,7 +551,7 @@ function toInputDate(isoString) {
               </span>
             )}
           </div>
-  
+
           <div className={styles.disabilityNotesContainer}>
             <label className={styles.disabilityNotesLabel}>
               Notas sobre la discapacidad
@@ -526,7 +572,7 @@ function toInputDate(isoString) {
           </div>
         </>
       )}
-  
+
       {/* Estudios */}
       <div className={styles.studiesContainer}>
         <label className={styles.studiesLabel}>Estudios</label>
@@ -577,7 +623,7 @@ function toInputDate(isoString) {
       </div>
     </div>
   );
-  
+
 };
 
 export default InfoEmployer;

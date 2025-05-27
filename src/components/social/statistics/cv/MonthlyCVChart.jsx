@@ -9,9 +9,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-import { stCvMonthly } from '../../../lib/data';
-import { getToken } from '../../../lib/serviceToken';
-import styles from '../../styles/CvStatsDashboard.module.css';
+import { stCvMonthly } from '../../../../lib/data';
+import { getToken } from '../../../../lib/serviceToken';
+import styles from '../../../styles/CvStatsDashboard.module.css';
 
 /* ──────────────────────────────────────────────────────────────────
  *  Constantes auxiliares

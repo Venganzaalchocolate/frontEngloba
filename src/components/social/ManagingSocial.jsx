@@ -1,6 +1,6 @@
-import CvStatsDashboard from "./statistics/CvStatsDashboard"
+import CvStatsDashboard from "./statistics/cv/CvStatsDashboard"
 import styles from '../styles/ManagingSocial.module.css';
-import WorkersStatsDashboard from "./statistics/WorkersStatsDashboard";
+import WorkersStatsDashboard from "./statistics/employee/WorkersStatsDashboard";
 
 const ManagingSocial = ({ enumsData, modal, charge }) => {
 

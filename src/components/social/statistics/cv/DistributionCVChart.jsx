@@ -3,9 +3,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { stCvDistribution } from '../../../lib/data';
-import { getToken }         from '../../../lib/serviceToken';
-import styles from '../../styles/CvStatsDashboard.module.css';
+import { stCvDistribution } from '../../../../lib/data';
+import { getToken }         from '../../../../lib/serviceToken';
+import styles from '../../../styles/CvStatsDashboard.module.css';
 
 /* ─── constantes UI ─── */
 const FIELD_OPTS = [

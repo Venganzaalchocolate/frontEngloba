@@ -31,25 +31,25 @@ export default function ManagingLists({ enumsData, modal, charge }) {
   const [badNom, setBadNom] = useState(false);
   // Convierte wildcard sencillo a RegExp:  * → .*,  ? → .
   // ——— util para hacer la búsqueda “sin tildes” ———
-const stripAccents = s =>
-  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');   // quita diacríticos
+  const stripAccents = s =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');   // quita diacríticos
 
-// ——— comodines  →  texto-patrón de RegExp ———
-const wildcardToRegex = str =>
-  stripAccents(str.trim())               // ① borra acentos (y espacios extremos)
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&') // ② escapa metacaracteres
-    .replace(/\*/g, '.*')                // ③ *  →  .*
-    .replace(/\?/g, '.');                // ④ ?  →  .
+  // ——— comodines  →  texto-patrón de RegExp ———
+  const wildcardToRegex = str =>
+    stripAccents(str.trim())               // ① borra acentos (y espacios extremos)
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&') // ② escapa metacaracteres
+      .replace(/\*/g, '.*')                // ③ *  →  .*
+      .replace(/\?/g, '.');                // ④ ?  →  .
 
-const buildRegex = (pattern, setBadFlag) => {
-  if (!pattern) { setBadFlag(false); return null; }
-  try {
-    return new RegExp(wildcardToRegex(pattern), 'i');   // flag i = mayúsc./minúsc.
-  } catch {
-    setBadFlag(true);
-    return null;
-  }
-};
+  const buildRegex = (pattern, setBadFlag) => {
+    if (!pattern) { setBadFlag(false); return null; }
+    try {
+      return new RegExp(wildcardToRegex(pattern), 'i');   // flag i = mayúsc./minúsc.
+    } catch {
+      setBadFlag(true);
+      return null;
+    }
+  };
   /**
    * Nombre completo de una persona.
    */
@@ -117,12 +117,12 @@ const buildRegex = (pattern, setBadFlag) => {
     const reNom = buildRegex(searchNom, setBadNom);
 
     const filtered = rows.filter(r => {
-    // ───── normaliza ambos “haystack” ─────
-    const hayPD  = stripAccents(`${r.program} ${r.device ?? ''}`);
-    const hayNom = stripAccents(fullName(r));
+      // ───── normaliza ambos “haystack” ─────
+      const hayPD = stripAccents(`${r.program} ${r.device ?? ''}`);
+      const hayNom = stripAccents(fullName(r));
 
-    const okPD  = !rePD  || rePD.test(hayPD);
-    const okNom = !reNom || reNom.test(hayNom);
+      const okPD = !rePD || rePD.test(hayPD);
+      const okNom = !reNom || reNom.test(hayNom);
       return okPD && okNom;
     });
     return filtered.reduce((acc, r) => {
@@ -140,53 +140,59 @@ const buildRegex = (pattern, setBadFlag) => {
   /**
    * Exporta todas las filas en un único XLS.
    */
-const exportFlatXLS = () => {
-  if (!rows.length) {
-    modal('Aviso', 'No hay datos para exportar.');
-    return;
-  }
-  startTransition(async () => {
-    charge(true);
-    try {
-      const wb = new ExcelJS.Workbook();
-      const ws = wb.addWorksheet('Listado');
-      ws.columns = [
-        { header: 'Programa', key: 'program', width: 30 },
-        { header: 'Dispositivo', key: 'device', width: 30 },
-        { header: 'Provincia', key: 'province', width: 25 },
-        { header: 'Rol', key: 'role', width: 22 },
-        { header: 'Nombre', key: 'fullName', width: 30 },
-        { header: 'Email', key: 'email', width: 30 },
-        { header: 'Teléfono', key: 'phone', width: 22 }
-      ];
-      rows.forEach(r =>
-        ws.addRow({
-          program: r.program,
-          device: r.device || '',
-          province: provinceName(r.province),
-          role: r.role,
-          fullName: fullName(r),
-          email: r.email,
-          phone: r.phone
-        })
-      );
-      const buffer = await wb.xlsx.writeBuffer();
-      saveAs(
-        new Blob([buffer], {
-          type:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        }),
-        'listado_responsables_coordinadores.xlsx'
-      );
-    } catch (err) {
-      modal('Error', err.message || 'No se pudo generar el XLS.');
-    } finally {
-      charge(false);
+  const exportFlatXLS = () => {
+    if (!rows.length) {
+      modal('Aviso', 'No hay datos para exportar.');
+      return;
     }
-  });
-};
+    startTransition(async () => {
+      charge(true);
+      try {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet('Listado');
+        ws.columns = [
+          { header: 'Programa', key: 'program', width: 30 },
+          { header: 'Dispositivo', key: 'device', width: 30 },
+          { header: 'Provincia', key: 'province', width: 25 },
+          { header: 'Rol', key: 'role', width: 22 },
+          { header: 'Nombre', key: 'fullName', width: 30 },
+          { header: 'Email', key: 'email', width: 30 },
 
+          { header: 'Teléfono Laboral', key: 'phoneJobNumber', width: 22 },
+          { header: 'Teléfono Extensión', key: 'phoneJobExtension', width: 22 },
+          { header: 'Teléfono Personal', key: 'phone', width: 22 },
+        ];
+        rows.forEach(r =>
+          ws.addRow({
+            program: r.program,
+            device: r.device || '',
+            province: provinceName(r.province),
+            role: r.role,
+            fullName: fullName(r),
+            email: r.email,
+            phone: r.phone,
+            phoneJobNumber: r.phoneJob?.number || '',
+            phoneJobExtension: r.phoneJob?.extension || '',
+          })
+        );
+        const buffer = await wb.xlsx.writeBuffer();
+        saveAs(
+          new Blob([buffer], {
+            type:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          }),
+          'listado_responsables_coordinadores.xlsx'
+        );
+      } catch (err) {
+        modal('Error', err.message || 'No se pudo generar el XLS.');
+      } finally {
+        charge(false);
+      }
+    });
+  };
 
+  const noDisponible = 'No Disponible';
+  const reAnywhere = /@engloba\.org\.es/i;
   return (
     <div className={styles.listContainer}>
       <div className={styles.content}>
@@ -235,69 +241,85 @@ const exportFlatXLS = () => {
 
         {
           grouped.length ?
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Programa / Dispositivo</th>
-                  <th>Provincia</th>
-                  <th>Rol</th>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Teléfono</th>
-                </tr>
-              </thead>
-              <tbody>
-                {grouped.length ? (
-                  grouped.map(g => (
-                    <React.Fragment key={g.program}>
-                      {/* Responsables de programa */}
-                      {g.programResponsibles.length ? (
-                        g.programResponsibles.map((pr, i) => (
-                          <tr key={`pr-${i}`} className={styles.rowProgram}>
-                            <td data-label="Program/Dispositivo" >{g.program}</td>
-                            <td></td>
-                            <td className={styles.roleProgram}>Responsable programa</td>
-                            <td>{fullName(pr)}</td>
-                            <td>{pr.email}</td>
-                            <td>{pr.phone}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr className={styles.rowProgramSolo}>
-                          <td colSpan={6}>{g.program}</td>
-                        </tr>
-                      )}
-
-                      {/* Dispositivos y coordinadores */}
-                      {g.deviceRows.map((d, j) => (
-                        <tr key={`d-${j}`} className={styles.rowDevice}>
-                          <td className={styles.deviceCell}>{d.device}</td>
-                          <td>{provinceName(d.province)}</td>
-                          <td className={(d.role === 'responsible') ? styles.roleR : styles.roleC}>
-                            {d.role === 'responsible'
-                              ? 'Responsable dispositivo'
-                              : 'Coordinador'}
-                          </td>
-                          <td>{fullName(d)}</td>
-                          <td>{d.email}</td>
-                          <td>{d.phone}</td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  ))
-                ) : (
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '1rem' }}>
-                      Sin datos
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    <th>Programa / Dispositivo</th>
+                    <th>Provincia</th>
+                    <th>Rol</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
 
-          </div>
-          : <p>No hay resultados</p>
+                    <th>Teléfono Laboral</th>
+                    <th>Teléfono Extensión</th>
+                    <th>Teléfono Personal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grouped.length ? (
+                    grouped.map((g, i) => (
+                      <React.Fragment key={`${i}-${g.program}`}>
+                        {/* Responsables de programa */}
+                        {g.programResponsibles.length ? (
+                          g.programResponsibles.map((pr, i) => (
+                            <tr key={`pr-${i}-${g.program}`} className={styles.rowProgram}>
+                              <td data-label="Program/Dispositivo" >{g.program}</td>
+                              <td></td>
+                              <td className={styles.roleProgram}>Responsable programa</td>
+                              <td>{fullName(pr)}</td>
+                              <td>{reAnywhere.test(pr.email) ? pr.email : 'Sin email coorporativo' }</td>
+
+                              <td>{pr.phoneJob?.number || noDisponible}</td>
+                              <td>{pr.phoneJob?.extension || noDisponible}</td>
+                              <td>{pr.phone}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr className={styles.rowProgramSolo}>
+                            <td>{g.program}</td>
+                            <td></td>
+                            <td className={styles.roleProgram}></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                          </tr>
+                        )}
+
+                        {/* Dispositivos y coordinadores */}
+                        {g.deviceRows.map((d, j) => (
+                          <tr key={`d-${j}`} className={styles.rowDevice}>
+                            <td className={styles.deviceCell}>{d.device}</td>
+                            <td>{provinceName(d.province)}</td>
+                            <td className={(d.role === 'responsible') ? styles.roleR : styles.roleC}>
+                              {d.role === 'responsible'
+                                ? 'Responsable dispositivo'
+                                : 'Coordinador'}
+                            </td>
+                            <td>{fullName(d)}</td>
+                            <td>{reAnywhere.test(d.email) ? d.email : 'Sin email coorporativo' }</td>
+
+                            <td>{d.phoneJob?.number || noDisponible}</td>
+                            <td>{d.phoneJob?.extension || noDisponible}</td>
+                            <td>{d.phone}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '1rem' }}>
+                        Sin datos
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+            </div>
+            : <p>No hay resultados</p>
         }
 
 

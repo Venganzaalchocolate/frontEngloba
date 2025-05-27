@@ -304,8 +304,4 @@ export const stCvDistribution=(datos, token)=>fetchData('/cvdistribution', 'POST
 export const stCvConversion=(datos, token)=>fetchData('/cvconversion', 'POST', token, datos);
 export const stAuditWorkersStats=(datos, token)=>fetchData('/auditworkersstats', 'POST', token, datos);
 
-export const stgetworkerspyramid=(datos, token)=>fetchData('/getworkerspyramid', 'POST', token, datos);
-export const stgetworkerspie=(datos, token)=>fetchData('/getworkerspie', 'POST', token, datos);
-export const stgetworkershiredended=(datos, token)=>fetchData('/getworkershiredended', 'POST', token, datos);
-export const stgetworkersworkshift=(datos, token)=>fetchData('/getworkersworkshift', 'POST', token, datos);
-export const stgetworkerstenure=(datos, token)=>fetchData('/getworkerstenure', 'POST', token, datos);
+export const stgetWorkersStats=(datos, token)=>fetchData('/workersstats', 'POST', token, datos);

@@ -1,0 +1,38 @@
+.panel {
+  border: 1px solid #dcdfe4;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin: 6px 0;
+  background: #fafbff;
+}
+
+.panel summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 500;
+  position: relative;
+  padding-right: 18px;
+}
+
+.panel summary::after {
+  content: "▸";
+  position: absolute;
+  right: 0;
+  transition: transform .2s ease;
+}
+
+.panel[open] summary::after {
+  transform: rotate(90deg);
+}
+
+.ul {
+  margin: 6px 0 0 0;
+  padding-left: 16px;
+  font-size: 0.85rem;
+}
+
+.noMembers {
+  margin: 6px 0 0 4px;
+  font-size: 0.85rem;
+  color: #777;
+}

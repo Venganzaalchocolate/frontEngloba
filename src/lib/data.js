@@ -305,3 +305,10 @@ export const stCvConversion=(datos, token)=>fetchData('/cvconversion', 'POST', t
 export const stAuditWorkersStats=(datos, token)=>fetchData('/auditworkersstats', 'POST', token, datos);
 
 export const stgetWorkersStats=(datos, token)=>fetchData('/workersstats', 'POST', token, datos);
+
+//workspace
+export const wsInfoGroup  = (datos, token)   => fetchData('/infogroupws', 'POST', token, datos);
+export const wsCreateGroup = (datos, token)   => fetchData('/creategroupws', 'POST', token, datos);
+export const wsAddMember = (datos, token)   => fetchData('/addgroupws', 'POST', token, datos);
+export const wsRemoveMember = (datos, token) =>  fetchData('/deletememberws', 'POST', token, datos);
+export const wsDeleteGroup = (datos, token) =>  fetchData('/deletegroupws', 'POST', token, datos);

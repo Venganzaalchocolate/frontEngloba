@@ -124,6 +124,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
             newErrors[field.name] = "Este campo es obligatorio.";
           }
         }
+       
       }
     });
 
@@ -177,6 +178,43 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
     setFormData((prev) => ({ ...prev, [field.name]: first.value }));
     setErrors((prev) => ({ ...prev, [field.name]: "" }));
   };
+
+useEffect(() => {
+    setFormData((prev) => {
+      let changed = false;
+      const next = { ...prev };
+
+      fields.forEach((field) => {
+        if (field.type !== "select" || !field.firstSelect) return; // ← Clave
+
+        const curVal = next[field.name];
+        const isEmpty = curVal === "" || curVal === null || curVal === undefined;
+
+        if (isEmpty && Array.isArray(field.options) && field.options.length) {
+          // Primera opción con value distinto de "" (optgroups incluidos)
+          const firstRealOption = (() => {
+            for (const opt of field.options) {
+              if (opt.subcategories?.length) {
+                const sub = opt.subcategories.find((s) => s.value !== "");
+                if (sub) return sub;
+              } else if (opt.value !== "") {
+                return opt;
+              }
+            }
+            return null;
+          })();
+
+          if (firstRealOption) {
+            next[field.name] = firstRealOption.value;
+            changed = true;
+            setErrors((e) => ({ ...e, [field.name]: "" }));
+          }
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [fields]);
   // =========== RENDER ===============
   return (
     <div className={styles.modalVentana}>

@@ -15,6 +15,7 @@ import { getToken } from '../../lib/serviceToken';
 import FormCreateEmployer from '../employer/FormCreateEmployer';
 import ManagingAuditors from '../auditor/ManagingAuditors';
 import ManagingLists from '../lists/ManagingLists';
+import ManagingWorkspace from '../woprkspace/Managingworkspace';
 
 
 const WorkerMenu = ({ modal, charge }) => {
@@ -95,6 +96,7 @@ const WorkerMenu = ({ modal, charge }) => {
             if (MenuWorker == 'formCreatePersonal') return <FormCreateEmployer enumsData={enumsEmployer} modal={modal} charge={charge} closeModal={() => changeMenuWorker(null)} chargeUser={() => changeMenuWorker(null)} />
             if (MenuWorker == 'auditor') return <ManagingAuditors closeModule={()=>changeMenuWorker(null)} listResponsability={listResponsability} enumsData={enumsEmployer} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'lists') return <ManagingLists listResponsability={listResponsability} enumsData={enumsEmployer} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
+            if (MenuWorker == 'workspace') return <ManagingWorkspace listResponsability={listResponsability} enumsData={enumsEmployer} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
         } else return (
             <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
                 <div>
@@ -112,6 +114,7 @@ const WorkerMenu = ({ modal, charge }) => {
                             <button onClick={() => changeMenuWorker('root')}> PANEL ROOT</button>
                             <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
                             <button onClick={() => changeMenuWorker('lists')}>LISTIN DE CONTACTO</button>
+                            <button onClick={() => changeMenuWorker('workspace')}>GESTIÓN DE WORKSPACE</button>
                         </>
 
 

@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { useState, useEffect } from 'react';
 
 
 export const formatDatetime=(date)=>{
@@ -146,4 +147,34 @@ export const obtenerNombreMes=(numeroMes)=>{
   } else {
     return "Número de mes inválido";
   }
+}
+
+export default function useDebounce(value, delay = 400) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+
+  return debounced;
+}
+
+
+
+// ————————————————————————————————————————————————————————————————————————
+// UTIL: Construir email de Workspace para un usuario
+//    basándose en firstName.lastName@DOMAIN
+// ————————————————————————————————————————————————————————————————————————
+
+export const DOMAIN = 'engloba.org.es';
+
+export function buildUserEmail(user) {
+  const first = (user.firstName || '').trim().toLowerCase();
+  const last = (user.lastName || '').trim().toLowerCase();
+  const normalizedFirst = first
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+  const normalizedLast = last
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+  return `${normalizedFirst}.${normalizedLast}@${DOMAIN}`;
 }

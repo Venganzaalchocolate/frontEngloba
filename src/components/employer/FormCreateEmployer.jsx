@@ -380,13 +380,13 @@ const FormCreateEmployer = ({
 
 
   // ========== SUBMIT =============
-  const handleConfirmOfferChange = async (formData) => {
+  const handleConfirmOfferChange = async (formData, active) => {
     try {
       charge(true);
-
+      const activeOption=(active)?'si':'no'
       if (user?.offer) {
         const token = getToken();
-        const updatedOffer = { id: user.offer, active: 'no' };
+        const updatedOffer = { id: user.offer, active: activeOption};
         const res = await updateOffer(updatedOffer, token);
         chargeOffers();
         changeOffer(null);
@@ -458,11 +458,6 @@ const FormCreateEmployer = ({
     }
   };
 
-  const handleCancelOfferChange = () => {
-    setShowConfirmation(false);
-    setPendingFormData(null);
-  };
-
 
   // Build fields
   const fields = buildFields();
@@ -474,8 +469,8 @@ const FormCreateEmployer = ({
         <ModalConfirmation
           title="Cambio de Oferta"
           message="Este usuario ya tiene una oferta asociada. ¿Desea desactivarla y continuar?"
-          onConfirm={() => handleConfirmOfferChange(pendingFormData)}
-          onCancel={handleCancelOfferChange}
+          onConfirm={() => handleConfirmOfferChange(pendingFormData, true)}
+          onCancel={() => handleConfirmOfferChange(pendingFormData, false)}
         />
       )}
 

@@ -114,7 +114,7 @@
 .lgtbiq,
 .mayores,
 .no_identificado,
-.personas_con_discapacidad{
+.personas_con_discapacidad, .general{
     display: flex;
     flex: 100% 1;
     padding: 1rem 10%;
@@ -155,6 +155,11 @@
 .personas_con_discapacidad{
     background-color: var(--color-yema);
     color: white;
+}
+
+.general{
+    background-color: white;
+    color: var(--color-morado);
 }
 
 .programInfoContainer{

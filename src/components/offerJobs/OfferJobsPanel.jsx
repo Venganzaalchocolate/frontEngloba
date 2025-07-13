@@ -7,11 +7,14 @@ import { FaSquarePlus } from "react-icons/fa6";
 import { getToken } from '../../lib/serviceToken';
 import FormOffer from './FormOffer.jsx';
 import JobDetails from './JobDetails.jsx';
+import { useOffer } from "../../hooks/useOffer";
 
-const OfferJobsPanel = ({ modal, charge, enumsData }) => {
+const OfferJobsPanel = ({ modal, charge, enumsData, chargeOffers = () => {} }) => {
+
   const [action, setAction] = useState(null);
   const [offerSelected, setOfferSelected] = useState(null);
   const [offers, setOffers] = useState([]);
+
   
   // Estado de filtros: año, mes, provincia, programId, deviceId, etc.
   const [filters, setFilters] = useState({
@@ -66,19 +69,16 @@ const OfferJobsPanel = ({ modal, charge, enumsData }) => {
     setAction('create');
   };
 
-  // Actualizar lista de ofertas tras edición o creación
-  const changeOffers = (offer) => {
-    let exists = false;
-    const offersAux = [...offers];
-    offersAux.forEach((x, i, a) => {
-      if (x._id === offer._id) {
-        a[i] = offer;
-        exists = true;
-      }
+    /* ---------- Añadir / actualizar una oferta ---------- */
+  const upsertOffer = (offer) => {
+    setOffers((prev) => {
+      const exists = prev.some((o) => o._id === offer._id);
+      return exists
+        ? prev.map((o) => (o._id === offer._id ? offer : o))
+        : [...prev, offer];
     });
-    if (!exists) offersAux.push(offer);
+    chargeOffers(offer);     // 🔗 mantenemos enumsEmployer sincronizado
     setOfferSelected(null);
-    setOffers(offersAux);
   };
 
   // Volver al panel principal
@@ -156,7 +156,7 @@ const OfferJobsPanel = ({ modal, charge, enumsData }) => {
               charge={charge}
               offerSelect={offerSelect}
               offers={filteredOffers}  
-              changeOffers={changeOffers}
+              changeOffers={chargeOffers}
             />
           </div>
         </div>
@@ -170,19 +170,19 @@ const OfferJobsPanel = ({ modal, charge, enumsData }) => {
           enumsData={enumsData}
           modal={modal}
           charge={charge}
-          changeOffers={changeOffers}
+          changeOffers={chargeOffers}
         />
       )}
 
       {/* Mostrar formulario de creación */}
-      {action === 'create' && (
+       {action === 'create' && (
         <FormOffer
-          offer={null}  // En modo creación no hay oferta previa
+          offer={null}
           closeModal={back}
           enumsData={enumsData}
           modal={modal}
           charge={charge}
-          changeOffers={changeOffers}
+          changeOffers={upsertOffer}
         />
       )}
     </>

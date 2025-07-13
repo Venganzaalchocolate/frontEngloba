@@ -1,91 +1,133 @@
-import { useState } from "react";
-import { useOffer } from "../../hooks/useOffer.jsx";
+import { useState, useMemo } from "react";
+import { deepClone } from "../../lib/utils";
+import { updateOffer } from "../../lib/data";
+import { getToken } from "../../lib/serviceToken";
+import { useOffer } from "../../hooks/useOffer";
 import FormCreateEmployer from "../employer/FormCreateEmployer";
-import { getJobIdFromNameOffer, splitName } from "../../lib/utils.js";
-import OfferSelect from "./OfferSelect.jsx";
+import OfferSelect from "./OfferSelect";
+import { getJobIdFromNameOffer, splitName } from "../../lib/utils";
 
-const ToHireEmployee = ({ offers, userSelected, enumsEmployer, modal, charge, chargeOffers }) => {
-    const [modalBag, setModalBag] = useState(false)
-    const { Offer, changeOffer } = useOffer()
+const ToHireEmployee = ({
+  offers,
+  userSelected,
+  enumsEmployer,
+  modal,
+  charge,
+  chargeOffers,        // ← seguimos recibiendo el callback global
+  changeUser
+}) => {
+  const { Offer, changeOffer } = useOffer();
+  const [step, setStep] = useState(null); // null │ "select" │ "hire"
 
-    const toHire = () => {
-        if (!Offer || !(Offer.userCv.some((x)=>x==userSelected._id))) { setModalBag('bag') }
-        else {
-            setModalBag('create')
-        }
+  /* ---------- click “Contratar” ---------- */
+  const handleClick = async () => {
+    if(userSelected?.workedInEngloba) return modal('No es posible la contratación', 'El usuario está o ha estado trabajando en Engloba. Contacta con Administración o con Elisabet.')
+    if (!Offer) {
+      // Sin oferta → elegir una
+      setStep("select");
+      return;
     }
+
+    const alreadyInOffer = Offer.userCv?.includes(userSelected._id);
+
+    if (!alreadyInOffer) {
+      /* 1· Añadir el usuario a la oferta seleccionada */
+      const token = getToken();
+      const upd = {
+        ...deepClone(Offer),
+        id: Offer._id,
+        userCv: [...Offer.userCv, userSelected._id],
+      };
+      const updatedOffer = await updateOffer(upd, token);
+
+      /* 2· Propagar cambios */
+      changeOffer(updatedOffer);   // contexto
+      chargeOffers(updatedOffer);  // enumsEmployer.offers
+    }
+
+    /* 3· Pasamos al formulario de contratación */
+    setStep("hire");
+  };
+
+  /* ---------- callback del selector ---------- */
+  const handleOfferChosen = (chosen) => {
+    changeOffer(chosen);
+    setStep("hire");
+  };
+
+  /* ---------- datos para FormCreateEmployer ---------- */
+  const userAux = useMemo(() => {
+    if (!Offer) return null;
 
     const { firstName, lastName } = splitName(userSelected.name);
+    const idJob = getJobIdFromNameOffer(
+      Offer.nameOffer,
+      enumsEmployer.jobsIndex
+    );
 
-    let userAux={}
-    if(Offer!=null){
-        const idJob=getJobIdFromNameOffer(Offer.nameOffer, enumsEmployer.jobsIndex);
-
-    userAux =
-    {
-        firstName: userSelected.firstName || firstName,
-        lastName: userSelected.lastName || lastName,
-        dni: userSelected.dni || '',
-        email: userSelected.email,
-        phone: userSelected.phone,
-        role: "employee",
-        fostered:userSelected.fostered,
-        disability:{
-            'percentage':userSelected.disability
+    return {
+      firstName: userSelected.firstName || firstName,
+      lastName: userSelected.lastName || lastName,
+      dni: userSelected.dni || "",
+      email: userSelected.email,
+      phone: userSelected.phone,
+      role: "employee",
+      fostered: userSelected.fostered,
+      disability: { percentage: userSelected.disability },
+      hiringPeriods: [
+        {
+          startDate: new Date(),
+          device: Offer.dispositive.dispositiveId,
+          position: idJob,
+          active: true,
         },
-        hiringPeriods: [
-            {
-                
-                startDate: new Date(),
-                dispositive: Offer.dispositive.dispositiveId,
-                position:idJob,
-                active: true
-            }
-        ],
-        
-    }   
-    }
-
-    if (userSelected?.offer) {
-        userAux["offer"] = userSelected.offer;
-    }
-    if (userSelected?.studies) {
-        userAux.studies = userSelected.studies.reduce((acc, selectedStudy) => {
-          enumsEmployer.studies.forEach((studyGroup) => {
-            // Si el estudio seleccionado coincide con el nombre de la categoría principal
-            if (selectedStudy.trim() === studyGroup.name.trim()) {
-              acc.push(studyGroup._id);
-            }
-            // Si existen subcategorías, comprobamos en cada una
-            if (studyGroup.subcategories && Array.isArray(studyGroup.subcategories)) {
-              studyGroup.subcategories.forEach((sub) => {
-                if (selectedStudy.trim() === sub.name.trim()) {
-                  acc.push(sub._id);
-                }
-              });
-            }
+      ],
+      ...(userSelected.offer && { offer: userSelected.offer }),
+      ...(userSelected.studies && {
+        studies: userSelected.studies.reduce((acc, s) => {
+          enumsEmployer.studies.forEach((g) => {
+            if (s.trim() === g.name.trim()) acc.push(g._id);
+            g.subcategories?.forEach((sub) => {
+              if (s.trim() === sub.name.trim()) acc.push(sub._id);
+            });
           });
           return acc;
-        }, []);
-      }
-      
+        }, []),
+      }),
+    };
+  }, [Offer, userSelected, enumsEmployer]);
 
-    const lockedFields = ['email', 'phone', 'role', 'startDate', 'device']
-    
+  /* ---------- render ---------- */
+  return (
+    <>
+      <button className="tomato" onClick={handleClick}>
+        Contratar
+      </button>
 
-    return (
-        <div>
-            <button onClick={() => toHire()}>Contratar</button>
-            {modalBag &&
-                (modalBag == 'bag')
-                ? <OfferSelect offers={offers} closeModal={() => setModalBag(false)} userSelected={userSelected} />
-                : (modalBag == 'create')
-                    ? <FormCreateEmployer chargeOffers={chargeOffers} enumsData={enumsEmployer} modal={modal} charge={charge} user={userAux} closeModal={() => setModalBag(false)} chargeUser={() => { }} lockedFields={lockedFields} />
-                    : null
-            }
-        </div>
+      {step === "select" && (
+        <OfferSelect
+          offers={offers}
+          userSelected={userSelected}
+          onChosen={handleOfferChosen}
+          closeModal={() => setStep(null)}
+        />
+      )}
 
-    )
-}
+      {step === "hire" && userAux && (
+        <FormCreateEmployer
+          enumsData={enumsEmployer}
+          modal={modal}
+          charge={charge}
+          chargeOffers={chargeOffers}
+          user={userAux}
+          lockedFields={["email", "phone", "role", "device"]}
+          closeModal={() => setStep(null)}
+          changeUser={(x) => changeUser(x)}
+          offerId={(Offer.userCv?.includes(userSelected._id))?Offer._id:null}
+        />
+      )}
+    </>
+  );
+};
 
 export default ToHireEmployee;

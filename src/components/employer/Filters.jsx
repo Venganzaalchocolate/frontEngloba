@@ -64,6 +64,7 @@ const Filters = ({ filters, enums, handleFilterChange, resetFilters}) => {
                     <div>
                         <label htmlFor="status">Status</label>
                         <select id='status' name='status' onChange={handleFilterChange} value={filters.status}>
+                            <option value={'total'} key={'total'}>Activos y En periodo de contratación</option>
                             {enums.status.map((x) => {
                                 return <option value={x} key={x}>{x}</option>
                             })}

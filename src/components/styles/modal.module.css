@@ -14,7 +14,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--color-crema);
+  background-color: white;
   flex:0;
   max-width: 20rem;
   flex-direction: column;

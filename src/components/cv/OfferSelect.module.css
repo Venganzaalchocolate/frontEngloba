@@ -1,0 +1,48 @@
+.listWrapper {
+  max-width: 22rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--color-morado);
+}
+
+/* ‼️ chips en varias filas */
+.list {
+  display: flex;
+  flex-wrap: wrap;        /* permite “romper” de línea */
+  gap: 0.35rem;
+  justify-content: flex-start;
+}
+
+/* Estilo pill-shape, igual que .chip en InfoUser pero clicable */
+.chip {
+  background: var(--color-malva-oscuro);
+  color: #fff;
+  padding: 0.25rem 0.8rem;
+  border-radius: 0.3rem;
+  font-size: 8pt;
+  font-weight: normal;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.chip:hover {
+  background: var(--color-crema);
+  color: var(--color-morado);
+}
+
+p.function{
+  font-size: 10pt;
+  font-weight: bold;
+  color: white;
+}
+
+.chip>p.location{
+    font-size: 7pt;
+  color: var(--color-morado);
+  font-weight: bold;
+}

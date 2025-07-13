@@ -1,0 +1,14 @@
+.paginacion {
+    display: flex;
+    min-width: fit-content;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    >label{
+        display: none;
+    }
+    >button{
+        display: flex;
+        flex: 0;
+    }
+}

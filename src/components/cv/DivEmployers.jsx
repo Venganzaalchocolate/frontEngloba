@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 // Importar iconos de react-icons (ajusta según tu caso)
-import { FaCheckCircle, FaTimesCircle, FaRegEyeSlash, FaEye } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaRegEyeSlash, FaEye, FaMailBulk } from 'react-icons/fa';
 import { GoStarFill, GoStar } from 'react-icons/go';
 import { BsExclamationOctagonFill, BsExclamationOctagon } from 'react-icons/bs';
-import { FaWheelchair } from "react-icons/fa6";
+import { MdEmail } from "react-icons/md";
 
 // Importa tu componente CvPanel (ajusta la ruta según tu estructura)
 import CvPanel from './CvPanel';
@@ -13,6 +13,7 @@ import CvPanel from './CvPanel';
 import styles from '../styles/managingResumenes.module.css';
 import stylesTooltip from '../styles/tooltip.module.css';
 import { FaHouseUser } from "react-icons/fa";
+import OfferSelect from './OfferSelect';
 /**
  * Este componente mostrará la lista de usuarios, con la lógica de mapeo que antes tenías en createDivEmployer.
  * @param {Array} users - Lista de usuarios
@@ -41,16 +42,14 @@ function DivEmployers({
   modal,
   deleteUser,
   enumsEmployer,
-  offerSelected, 
+  offerSelected,
   changeOffer,
-  modalBagView, 
   listOffers,
   chargeOffers
-}) 
+}) {
+  const [selectedOfferAndAddUser, setSelectedOfferAndAddUser] = useState(null);
 
 
-{
-  
   return (
     <>
       {users.length > 0 &&
@@ -59,16 +58,16 @@ function DivEmployers({
             {/* Fila principal con la información del usuario */}
             <div className={checkUser(user)} onClick={() => lookCV(user._id, user)}>
               <div className={`${styles.tableCell}`}>{
-              (user?.workedInEngloba) && <span className={stylesTooltip.tooltip}>
-                <FaHouseUser className={styles.iconworkedInEngloba}/>
-                <span className={`${stylesTooltip.tooltiptext}`}>
+                (user?.workedInEngloba) && <span className={stylesTooltip.tooltip}>
+                  <FaHouseUser className={styles.iconworkedInEngloba} />
+                  <span className={`${stylesTooltip.tooltiptext}`}>
                     Ha trabajado o trabaja en Engloba
-                </span>
+                  </span>
                 </span>}
-              
-              
-              <p className={styles.capitalize}>{user.name}</p></div>
-              <div className={styles.tableCell}>{user.email}</div>
+
+
+                <p className={styles.capitalize}>{user.name}</p></div>
+              <div className={styles.tableCell}><MdEmail size="1.5rem" onClick={() => modal(`${user.name}`, `${user.email}`)} /></div>
               <div className={styles.tableCell}>{user.phone}</div>
               <div className={styles.tableCell}>{user.jobs.join(', ')}</div>
               <div className={styles.tableCell}>{user.studies.join(', ')}</div>
@@ -76,12 +75,12 @@ function DivEmployers({
                 {user.provinces.length !== 11 ? user.provinces.join(', ') : 'Todas'}
               </div>
               <div className={styles.tableCell}>
-           
+
                 {user.offer != null ? (
                   <span className={stylesTooltip.tooltip}>
                     <FaCheckCircle />
                     <span className={stylesTooltip.tooltiptext}>
-                    {listOffers.find((x) => x._id === user.offer)?.job_title || 'Oferta desconocida'}
+                      {listOffers.find((x) => x._id === user.offer)?.job_title || 'Oferta desconocida'}
 
                     </span>
                   </span>
@@ -134,21 +133,21 @@ function DivEmployers({
                     <span className={stylesTooltip.tooltiptext}>No Rechazado</span>
                   </span>
                 )}
-                {user.disability>0 && (
+                {user.disability > 0 && (
                   <span className={stylesTooltip.tooltip}>
-                    <FaWheelchair  />
+                    <FaWheelchair />
                     <span className={stylesTooltip.tooltiptext}>Tiene {user.disability}% de discapacidad</span>
                   </span>
                 )}
               </div>
               <div className={styles.tableCell}>{formatDatetime(user.date)}</div>
             </div>
-       
+
             {/* Renderiza el panel si el usuario está seleccionado */}
             {userSelected && userSelected._id === user._id && (
               <CvPanel
-              chargeOffers={chargeOffers}
-                modalBagView={modalBagView}
+                chargeOffers={chargeOffers}
+                setSelectedOfferAndAddUser={(user) => setSelectedOfferAndAddUser(user)}
                 charge={charge}
                 urlpdf={urlCv}
                 user={userSelected}
@@ -157,10 +156,19 @@ function DivEmployers({
                 deleteUser={deleteUser}
                 offers={listOffers}
                 enumsEmployer={enumsEmployer}
-                offerSelected={offerSelected} 
-                changeOffer={(x)=>changeOffer(x)}
+                offerSelected={offerSelected}
+                changeOffer={(x) => changeOffer(x)}
               />
             )}
+            {selectedOfferAndAddUser && (
+              <OfferSelect
+                offers={listOffers}
+                closeModal={() => setSelectedOfferAndAddUser(null)}
+                type="add"
+                userSelected={selectedOfferAndAddUser}
+              />
+            )}
+
           </div>
         ))}
     </>

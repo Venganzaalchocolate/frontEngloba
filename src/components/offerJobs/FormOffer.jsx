@@ -194,7 +194,8 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 studies: formData.studies,
                 sepe: formData.sepe,
                 type: formData.type,
-                datecreate:formData.datecreate
+                datecreate:formData.datecreate,
+                active: true
             };
 
             const token = getToken();

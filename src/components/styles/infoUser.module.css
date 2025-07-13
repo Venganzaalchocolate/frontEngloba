@@ -1,0 +1,80 @@
+/* InfoUser.module.css */
+
+/* Tarjeta contenedora */
+.card {
+  background: #fff;                          /* seguimos con fondo blanco  */      /* tu malva corporativo       */
+  border-radius: 0.75rem;
+  padding: 1rem;
+  max-width: 20rem;                          /* “tarjeta pequeña”           */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06); /* sombra suave               */
+  font-size: 0.9rem;
+  line-height: 1.35;
+  margin: 1rem 0;
+}
+
+/* Nombre completo */
+.card>.header {
+  font-size: 10pt;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  color: var(--color-morado);                  /* dorado corporativo          */
+}
+
+/* Fila etiqueta–valor */
+.row {
+  display: grid;
+  grid-template-columns: 7rem 1fr;           /* etiqueta fija + valor flex  */
+  gap: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+
+/* Fila para chips (arrays) */
+.valueFlex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* Fila especial “Sobre mí” */
+.rowColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.4rem;
+}
+
+/* Etiquetas */
+.label {
+  font-weight: 700;
+  font-size: 9pt;
+  color: var(--color-morado);
+}
+
+/* Valores simples */
+.value {
+  color: var(--color-morado);
+  word-break: break-word;                    /* sin cortes con “…”          */
+  font-size: 9pt;
+}
+
+/* Chips para arrays */
+.chip {
+  background: var(--color-malva-oscuro);
+  color: #fff;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Texto “Sobre mí” */
+.about {
+  margin: 0;
+  color: var(--color-morado);
+  text-align: justify;
+  font-size: 0.8rem;
+}

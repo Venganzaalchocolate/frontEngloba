@@ -23,10 +23,11 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import ToHireEmployee from './ToHireEmployee.jsx';
 import { getToken } from "../../lib/serviceToken";
 import { useOffer } from '../../hooks/useOffer.jsx';
+import InfoUser from './infoUser.jsx';
 
 
 
-const CvPanel = ({modalBagView, urlpdf, user, changeUser, modal, charge, deleteUser, offers, enumsEmployer, chargeOffers}) => {
+const CvPanel = ({modalBagView, urlpdf, user, changeUser, modal, charge, deleteUser, offers, enumsEmployer, chargeOffers, setSelectedOfferAndAddUser}) => {
     const { logged } = useLogin()
     const [typeComment, setTypeComment] = useState(null)
     const [textComment, setTextComment] = useState('')
@@ -34,6 +35,7 @@ const CvPanel = ({modalBagView, urlpdf, user, changeUser, modal, charge, deleteU
     const [deletePanel, setDeletePanel] = useState(false)
     const [inOffer,setInOffer]=useState(false)
     const {Offer, changeOffer}=useOffer()
+    
 
     const isInOffer=()=>{
         if(!!Offer){
@@ -47,7 +49,7 @@ const CvPanel = ({modalBagView, urlpdf, user, changeUser, modal, charge, deleteU
  
 useEffect(()=>{
     isInOffer();
-},[Offer])
+},[[Offer, user._id]])
 
     const saveComment = async () => {
         if (textComment != '' && typeComment != null) {
@@ -123,6 +125,7 @@ useEffect(()=>{
         const upOffer = await updateOffer(offerAux, token);
         if(!upOffer.error){
             changeOffer(upOffer); // Actualiza la oferta en el estado principal
+            chargeOffers(upOffer);
             setInOffer(true); // Fuerza la actualización del estado   
         }
         
@@ -137,8 +140,10 @@ useEffect(()=>{
         const upOffer = await updateOffer(offerAux, token);
         
         changeOffer(upOffer); // Actualiza la oferta en el estado principal
+        chargeOffers(upOffer);
         setInOffer(false); // Fuerza la actualización del estado
     };
+
 
     
 
@@ -152,9 +157,9 @@ useEffect(()=>{
                         {(user.favorite != null) ? <GoStarFill color='yellow' onClick={() => changeStatus('favorite')}></GoStarFill> : <GoStar onClick={() => changeStatus('favorite')}></GoStar>}
                         {(user.reject != null) ? <BsExclamationOctagonFill color="tomato" onClick={() => changeStatus('reject')} /> : <BsExclamationOctagon onClick={() => changeStatus('reject')} />}
                         {logged.user.role == 'root' && <RiDeleteBin6Line  onClick={() => deleteCvPanel(true)}>Eliminar CV</RiDeleteBin6Line>}
-                        <FaRegEdit onClick={() => viewPanelEditUser()} />
+                        {logged.user.role == 'root' && <FaRegEdit onClick={() => viewPanelEditUser()} />}
                         {(!Offer)
-                            ?<IoBagAdd onClick={() => modalBagView()}></IoBagAdd>
+                            ?<IoBagAdd onClick={() => setSelectedOfferAndAddUser(user)}></IoBagAdd>
                             :(inOffer)
                                 ?<IoBagCheck onClick={() => deleteUserInOffer()} color='lightgreen'></IoBagCheck>
                                 :<IoBagAdd onClick={() => addUserInOffer()}></IoBagAdd>
@@ -177,7 +182,8 @@ useEffect(()=>{
                         />
 
                     </div>}
-                    <ToHireEmployee chargeOffers={chargeOffers} enumsEmployer={enumsEmployer} offers={offers} userSelected={user}  modal={(title, message) => modal(title, message)} charge={() => charge()} />
+                    <ToHireEmployee changeUser={(x) => changeUser(x)}  chargeOffers={chargeOffers} enumsEmployer={enumsEmployer} offers={offers} userSelected={user}  modal={(title, message) => modal(title, message)} charge={() => charge()} />
+                    <InfoUser user={user}/>
                     <div className={styles.boxComments}>
                         <h2>Notas <BsBookmarkPlusFill onClick={() => handleChangeType('notes')}></BsBookmarkPlusFill></h2>
                         <div>
@@ -260,6 +266,7 @@ useEffect(()=>{
 
                 </div>
                 {(urlpdf != null) ? <VisualizadorPDF url={urlpdf.url}></VisualizadorPDF> : <div>No se ha podido cargar el PDF</div>}
+                               
             </div>
         )
     }

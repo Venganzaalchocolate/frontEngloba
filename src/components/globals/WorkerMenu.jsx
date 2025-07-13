@@ -83,12 +83,38 @@ const WorkerMenu = ({ modal, charge }) => {
         }));
       };
       
- 
+  // Actualiza lista e índice de OFERTAS
+const chargeOffers = (updatedOffers) => {
+  console.log(updatedOffers)
+  setEnumsEmployer((prev) => {
+    let list;
+
+    // 1) Si llega un ARRAY, sustituimos todo
+    if (Array.isArray(updatedOffers)) {
+      list = updatedOffers;
+    } else {
+      // 2) Si llega UNA sola oferta…
+      const exists = prev.offers.some((o) => o._id === updatedOffers._id);
+
+      list = exists
+        ? prev.offers.map((o) =>
+            o._id === updatedOffers._id ? updatedOffers : o
+          )
+        : [...prev.offers, updatedOffers];    // ← ¡la añadimos!
+    }
+    list = list.filter((o) => o.active === true || o.active === 'si');
+    return {
+      ...prev,
+      offers: list,
+    };
+  });
+};
+
 
         if (MenuWorker != null) {
-            if (MenuWorker == 'cv') return <ManagingResumenes chargeEnums={chargeEnums} enumsEmployer={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
+            if (MenuWorker == 'cv') return <ManagingResumenes chargeOffers={chargeOffers} chargeEnums={chargeEnums} enumsEmployer={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'socialForm') return <ManagingSocial  enumsData={enumsEmployer} modal={modal} charge={charge} />;
-            if (MenuWorker == 'offersJobs') return <OfferJobsPanel enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
+            if (MenuWorker == 'offersJobs') return <OfferJobsPanel chargeOffers={chargeOffers} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'programs') return <ManagingPrograms listResponsability={listResponsability} chargePrograms={chargePrograms} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'employer') return <ManagingEmployer chargePrograms={chargePrograms} enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
             if (MenuWorker == 'myself') return <ManagingMySelf myself={logged.user} enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;

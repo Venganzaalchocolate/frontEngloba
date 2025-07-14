@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 // Importar iconos de react-icons (ajusta según tu caso)
-import { FaCheckCircle, FaTimesCircle, FaRegEyeSlash, FaEye, FaMailBulk } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaRegEyeSlash, FaEye, FaMailBulk, FaWheelchair } from 'react-icons/fa';
 import { GoStarFill, GoStar } from 'react-icons/go';
 import { BsExclamationOctagonFill, BsExclamationOctagon } from 'react-icons/bs';
 import { MdEmail } from "react-icons/md";

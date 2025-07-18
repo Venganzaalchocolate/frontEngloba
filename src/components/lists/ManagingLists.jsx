@@ -157,10 +157,8 @@ export default function ManagingLists({ enumsData, modal, charge }) {
           { header: 'Rol', key: 'role', width: 22 },
           { header: 'Nombre', key: 'fullName', width: 30 },
           { header: 'Email', key: 'email', width: 30 },
-
           { header: 'Teléfono Laboral', key: 'phoneJobNumber', width: 22 },
           { header: 'Teléfono Extensión', key: 'phoneJobExtension', width: 22 },
-          { header: 'Teléfono Personal', key: 'phone', width: 22 },
         ];
         rows.forEach(r =>
           ws.addRow({
@@ -170,7 +168,6 @@ export default function ManagingLists({ enumsData, modal, charge }) {
             role: r.role,
             fullName: fullName(r),
             email: r.email,
-            phone: r.phone,
             phoneJobNumber: r.phoneJob?.number || '',
             phoneJobExtension: r.phoneJob?.extension || '',
           })
@@ -253,7 +250,6 @@ export default function ManagingLists({ enumsData, modal, charge }) {
 
                     <th>Teléfono Laboral</th>
                     <th>Teléfono Extensión</th>
-                    <th>Teléfono Personal</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -272,7 +268,6 @@ export default function ManagingLists({ enumsData, modal, charge }) {
 
                               <td>{pr.phoneJob?.number || noDisponible}</td>
                               <td>{pr.phoneJob?.extension || noDisponible}</td>
-                              <td>{pr.phone}</td>
                             </tr>
                           ))
                         ) : (
@@ -303,7 +298,6 @@ export default function ManagingLists({ enumsData, modal, charge }) {
 
                             <td>{d.phoneJob?.number || noDisponible}</td>
                             <td>{d.phoneJob?.extension || noDisponible}</td>
-                            <td>{d.phone}</td>
                           </tr>
                         ))}
                       </React.Fragment>

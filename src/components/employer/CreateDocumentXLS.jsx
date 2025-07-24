@@ -45,7 +45,7 @@ function CreateDocumentXLS({ users, enumsData, closeXls }) {
   const fieldLabels = {
     firstName: "Nombre",
     lastName: "Apellidos",
-    email: "Correo Electrónico",
+    email: "Correo Electrónico Corporativo",
     dni: "DNI",
     birthday:"Fecha de Nacimiento",
     phone: "Teléfono",
@@ -98,7 +98,6 @@ function CreateDocumentXLS({ users, enumsData, closeXls }) {
         getStudyName(enumsData, id)
       );
 
-      // Reemplazar periodos
       // Reemplazar periodos
       const newPeriods = (user.hiringPeriods || []).map((p) => {
         // Antes apuntabas a p.device?._id, p.position?._id

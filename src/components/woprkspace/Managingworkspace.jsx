@@ -349,7 +349,7 @@ return (
                             onAddMember={g => handleAddMemberGroup(g, 'Sub')}
                             onRemoveUser={handleDeleteSubMember}
                             onRemoveGroup={g =>
-                              handleDeleteGroup(g, gProg.id, p._id, 'Program')}
+                            handleDeleteGroup(g, gProg.id, p._id, 'Program')}
                             onCreateSub={handleCreateSubGroup}
                           />
                         </section>

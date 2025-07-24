@@ -111,7 +111,7 @@ const InfoEmployer = ({
       if (name === "firstName") {
         valido = validText(value, 3, 100);
         auxErrores[name] = !valido ? textErrors(name) : null;
-      } else if (name === "email") {
+      } else if (name === "email_personal") {
         valido = validEmail(value);
         auxErrores[name] = !valido ? textErrors(name) : null;
       } else if (name === "phone") {
@@ -165,7 +165,7 @@ const InfoEmployer = ({
 
     // Campos requeridos básicos
     if (!datos.firstName) newErrors.firstName = "El nombre es requerido.";
-    if (!datos.email) newErrors.email = "El email es requerido.";
+    // if (!datos.email) newErrors.email = "El email es requerido.";
     if (!datos.phone) newErrors.phone = "El teléfono es requerido.";
 
     setErrores(newErrors);
@@ -182,7 +182,7 @@ const InfoEmployer = ({
       "firstName",
       "lastName",
       "dni",
-      "email",
+      "email_personal",
       "employmentStatus",
       "socialSecurityNumber",
       "bankAccountNumber",
@@ -301,8 +301,9 @@ const InfoEmployer = ({
     ["lastName", "Apellidos"],
     ["dni", "DNI"],
     ["birthday", "Fecha de Nacimiento"],
-    ["email", "Email"],
     ["employmentStatus", "Estado Laboral"],
+    ["email", "Email Corporativo"],
+    ["email_personal", "Email Personal"], // editable
     ["socialSecurityNumber", "Número de Seguridad Social"],
     ["bankAccountNumber", "Número de Cuenta Bancaria"],
     ["phone", "Teléfono Personal"],
@@ -413,7 +414,11 @@ const InfoEmployer = ({
                 name={fieldName}
                 value={datos[fieldName] || ""}
                 onChange={handleChange}
-                disabled={fieldName === "employmentStatus" ? true : !isEditing}
+                disabled={
+                  fieldName === "employmentStatus" || fieldName === "email"
+                    ? true
+                    : !isEditing
+                }
               />
             )}
 

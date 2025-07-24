@@ -62,7 +62,7 @@ export default function FormWorkspaceGroup({
         { value: 'direction', label: 'Dirección' },
         { value: 'social', label: 'Trabajadores Sociales' },
         { value: 'psychology', label: 'Psicólogos' },
-        { value: 'blank', label: 'Sin categoria' },
+        { value: 'tecnicos', label: 'Equipo Técnico' },
         { value:'education', label: 'Equipo Educativo'}
     ];
 

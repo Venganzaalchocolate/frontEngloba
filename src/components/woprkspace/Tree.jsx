@@ -28,25 +28,27 @@ export default function Tree({
         {node.email}
       </span>
 
-      {/* + y papelera */}
-      {/* ➕  miembros */}
-      <FaUserPlus className={`${styles.iconBtn} ${styles.iconPlus}`}
-        onClick={() => onAddMember(node)} />
 
-      {allowCreate && (
-        <FaFolderPlus
-          className={`${styles.iconBtn} ${styles.iconPlus}`}
-          onClick={() => onCreateSub(node)}
-        />
-      )}
-
-      {/* 🗑  borrar */}
-      <FaTrashAlt className={styles.iconBtn}
-        onClick={() => onRemoveGroup(node)} />
 
       {/* usuarios y sub-grupos */}
       {open && (
+
         <>
+          {/* + y papelera */}
+          {/* ➕  miembros */}
+          <FaUserPlus className={`${styles.iconBtn} ${styles.iconPlus}`}
+            onClick={() => onAddMember(node)} />
+
+          {allowCreate && (
+            <FaFolderPlus
+              className={`${styles.iconBtn} ${styles.iconPlus}`}
+              onClick={() => onCreateSub(node)}
+            />
+          )}
+
+          {/* 🗑  borrar */}
+          <FaTrashAlt className={styles.iconBtn}
+            onClick={() => onRemoveGroup(node)} />
           {/* usuarios */}
           {info.miembros
             .filter(m => m.type === 'USER')

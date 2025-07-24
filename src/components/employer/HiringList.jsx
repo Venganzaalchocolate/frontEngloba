@@ -11,7 +11,7 @@ import { infoUser } from '../../lib/data';
 import HiringPeriodEdit from './HiringPeriodEdit'; // <--- nuevo componente para edición en Modal
 import { useLogin } from '../../hooks/useLogin.jsx';
 
-const HiringList = ({ hirings, enums, saveHiring }) => {
+const HiringList = ({ hirings, enums, saveHiring, modal=()=>{}, userStatusActive=true }) => {
   // Estado para controlar a cuál hiringPeriod se le abre el modal de edición
   const [hiringPeriodToEdit, setHiringPeriodToEdit] = useState(null);
 
@@ -261,7 +261,7 @@ const HiringList = ({ hirings, enums, saveHiring }) => {
                         <FaEdit
                           style={{ cursor: "pointer", marginRight: "0.5rem" }}
                           title="Editar este periodo"
-                          onClick={() => handleEditClick(hiringPeriod)}
+                          onClick={() =>(userStatusActive)? handleEditClick(hiringPeriod):modal('Error al Editar', 'No se puede editar un periodo de contratación si el estado laboral es "Ya no trabaja con nosotros"')}
                         />
                       }
                       {(logged.user.role == 'global' || logged.user.role == 'root') &&

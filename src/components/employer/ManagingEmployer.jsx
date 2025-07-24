@@ -100,7 +100,7 @@ const ManagingEmployer = ({
   // Estado para abrir/cerrar modal de crear empleado
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [userXLS, setUsersXls]=useState(null)
+  const [userXLS, setUsersXls]=useState(false)
   // ==================================================
   // ========== LÓGICA DE RESPONSABILIDADES ============
   // ==================================================
@@ -348,6 +348,7 @@ const ManagingEmployer = ({
   }
 
   const getUserNotLimit = async () => {
+    
     try {
       charge(true);
       const token = getToken();
@@ -368,9 +369,10 @@ const ManagingEmployer = ({
       } 
       }
       
-      
+
       const data = await getusersnotlimit(auxFilters, token);
-      if (!data || !data.users) {
+   
+      if (!data || !data.users || data.users.length==0) {
         throw new Error("No se recibieron datos de usuarios");
       }
       return data.users
@@ -381,6 +383,7 @@ const ManagingEmployer = ({
     }
   };
   const openXlsForm=async ()=>{
+
     const userAll=await getUserNotLimit();
     setUsersXls(userAll)
   }
@@ -396,7 +399,7 @@ const ManagingEmployer = ({
               <h2>GESTIÓN DE EMPLEADOS</h2>
               {isRootOrGlobal && <FaSquarePlus onClick={openModal} />}
               <TbFileTypeXml onClick={() => openXlsForm()} />
-              {(userXLS) && <CreateDocumentXLS users={userXLS} enumsData={enumsData} closeXls={()=>setUsersXls(null)}/>}
+              {!!userXLS && <CreateDocumentXLS users={userXLS} enumsData={enumsData} closeXls={()=>setUsersXls(null)}/>}
               <a
                 className={styles.botonMailto}
                 href="mailto:web@engloba.org.es?subject=MediaJornada&body=Buenas Gustavo, necesito añadir a media jornada <Nombre>, con DNI <DNI>, al dispositivo <dipositivo>, con fecha de inicio <fecha>, puesto <cargo>, Gracias !!! "

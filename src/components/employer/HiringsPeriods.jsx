@@ -81,7 +81,7 @@ const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) 
          <div className={styles.contenedor}>
             <h2>
                 PERIODOS DE CONTRATACIÓN
-                {(logged.user.role=='global' || logged.user.role=='root') && <FaSquarePlus onClick={() => setButtonCreateHiring(true)} />}
+                {(logged.user.role=='global' || logged.user.role=='root') && <FaSquarePlus onClick={() => (user.employmentStatus=='ya no trabaja con nosotros')?modal('Error al Crear', 'No se puede crear un periodo de contratación si el estado laboral es "Ya no trabaja con nosotros"'):setButtonCreateHiring(true)} />}
                 
             </h2>
             
@@ -93,7 +93,8 @@ const Hiringperiods = ({ user, modal, charge, changeUser,enumsData,chargeUser}) 
               hirings={user.hiringPeriods}
               enums={enumsData}
               saveHiring={(x, y) => saveHiring(x, y)}
-              
+              modal={modal}
+              userStatusActive={user.employmentStatus!='ya no trabaja con nosotros'}
             />
         </div>
          {buttonCreateHiring && (

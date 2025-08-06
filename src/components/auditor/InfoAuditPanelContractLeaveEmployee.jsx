@@ -9,7 +9,7 @@ import { getDispositiveInfo } from './auditUtils'
 import { FaCalendarTimes } from "react-icons/fa";
 
 /* Campos de baja / excedencia (leavePeriods) que puede auditar el back */
-export const LEAVE_FIELDS = [
+const LEAVE_FIELDS = [
   { value: 'expectedEndLeaveDate', label: 'Fecha de Fin prevista' },
   { value: 'actualEndLeaveDate', label: 'Fecha de Fin real' },
   { value: 'actualEndLeaveDateSin', label: 'Fecha de Fin real (Sin Excedencia Voluntaria)' }

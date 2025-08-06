@@ -9,7 +9,7 @@ import ExcelJS from 'exceljs';
 import { getToken } from '../../lib/serviceToken';
 import { usersName } from '../../lib/data';
 
-export const OPTIONAL_FIELDS_INFO_PROGRAM = [
+const OPTIONAL_FIELDS_INFO_PROGRAM = [
   { value: 'area', label: 'Área' },
   { value: 'responsible', label: 'Responsable(s)' },
   { value: 'finantial', label: 'Financiación' },

@@ -15,6 +15,7 @@ import NotFound from './components/globals/NotFound.jsx';
 import Spinnning from './components/globals/Spinning.jsx';
 import { MenuWorkerProvider } from './context/MenuWorkerProvider.jsx'
 import { OfferProvider } from './context/OfferProvider.jsx';
+import FormJobUp from './components/globals/FormJobUp.jsx';
 
 
 
@@ -70,9 +71,8 @@ function App() {
               <Route path="/*" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
               <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
               <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-
-              <Route path="/trabajaconnosotros" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-              <Route path="/trabajaconnosotros/:id" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
+              <Route path="/trabajaconnosotros" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
+              <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
             </Routes>
             {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })}></Modal>}
             {charge && <Spinnning status={charge}></Spinnning>}
@@ -89,8 +89,8 @@ function App() {
           <Route path="/login" element={<Login charge={(x) => setCharge(x)} />}></Route>
            <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
           <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-          <Route path="/trabajaconnosotros" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-          <Route path="/trabajaconnosotros/:id" element={<FormJob modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
+          <Route path="/trabajaconnosotros" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
+          <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
           <Route path="/*" element={<NotFound />} />
           <Route path="/*" element={<NotFound />}></Route>
         </Routes>

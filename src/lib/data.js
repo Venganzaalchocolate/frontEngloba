@@ -85,6 +85,7 @@ export const modifyUser = (dataUser) => fetchData('/modifyusercv', 'PUT', null, 
 export const getusercvs = (page, limit, filters, token) => fetchData('/usercvs', 'POST', token, { page, limit, ...filters });
 export const getuserscvs=(datos,token)=> fetchData('/userscv', 'POST', token, datos)
 export const sendFormCv = async (dataForm, file, editUser = false) => {
+  
     let userExist = await fetchData('/filterusercv', 'POST', null, (editUser ? { id: dataForm.id } : dataForm));
 
     if (!userExist || userExist.length === 0) {
@@ -121,7 +122,9 @@ export const infoUser=(token, data)=> fetchData('/user', 'POST', token, data);
 export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
 export const getusersnotlimit = (filters, token) => fetchData('/usersfilternotlimit', 'POST', token, { ...filters });
 export const usersName = (datos, token) => fetchData('/usersname', 'POST', token, datos);
-export const hirings=async(data,token)=>fetchData('/hirings', 'POST', token, data)
+export const hirings= (data,token)=>fetchData('/hirings', 'POST', token, data);
+export const rehireEmployee= (data,token)=>fetchData('/rehireemployee', 'POST', token, data);
+
 export const editUser = async (data, token) => {
     const formData = new FormData();
     // Añadir los campos al FormData

@@ -11,6 +11,7 @@ export const useJobFormData = (charge, modal) => {
     useEffect(() => {
         charge(true);
         const cargarDatos = async () => {
+            
             const enumsData = await getData();
             if (!enumsData.error) {
                 setEnums({
@@ -19,6 +20,7 @@ export const useJobFormData = (charge, modal) => {
                     work_schedule: enumsData.work_schedule,
                     studies: enumsData.studies,
                 });
+                
                 charge(false);
                 if (id) {
                     const offerJob = await getOfferJobId({ id });

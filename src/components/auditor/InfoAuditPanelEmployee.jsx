@@ -1,7 +1,7 @@
 // components/InfoAuditPanelEmployee.jsx
 import React, { useEffect, useState, useMemo } from 'react';
 import styles from '../styles/ManagingAuditors.module.css';
-import { OPTIONAL_FIELDS_INFO_EMPLOYEE } from './ManagingAuditors';
+
 import { getDispositiveInfo, getValue } from './auditUtils';
 import {
   FaHouse,
@@ -13,6 +13,15 @@ import GenericXLSExport from '../globals/GenericXLSExport';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
+
+
+const OPTIONAL_FIELDS_INFO_EMPLOYEE = [
+  { value: 'birthday', label: 'Fecha de nacimiento' },
+  { value: 'socialSecurityNumber', label: 'Número de Seguridad Social' },
+  { value: 'bankAccountNumber', label: 'Número de cuenta bancaria' },
+  { value: 'consetmentDataProtection', label: 'Consentimiento de Protección de Datos' },
+  { value: 'studies', label: 'Estudios' }
+];
 
 const formatDate = isoString => {
   const d = new Date(isoString);

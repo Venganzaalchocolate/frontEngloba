@@ -37,7 +37,6 @@ const FormJob = ({ modal, charge, user = null, changeUser = null }) => {
         terms: user ? true : null,
         about: user ? user.about : "",
         id: user ? user._id : "",
-        // Nuevo campo disability
         disability: user ? user.disability : 0,
         fostered: user?.fostered ? 'si' : 'no',
     });

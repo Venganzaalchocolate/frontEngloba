@@ -9,7 +9,7 @@ import ExcelJS from 'exceljs';
 import { getToken } from '../../lib/serviceToken';
 import { usersName } from '../../lib/data';
 
-export const OPTIONAL_FIELDS_INFO_DEVICE = [
+const OPTIONAL_FIELDS_INFO_DEVICE = [
   { value: 'name',         label: 'Nombre dispositivo' },
   { value: 'address',      label: 'Dirección' },
   { value: 'email',        label: 'Email' },

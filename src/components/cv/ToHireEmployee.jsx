@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { deepClone } from "../../lib/utils";
-import { updateOffer } from "../../lib/data";
+import { rehireEmployee, updateOffer } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import { useOffer } from "../../hooks/useOffer";
 import FormCreateEmployer from "../employer/FormCreateEmployer";
 import OfferSelect from "./OfferSelect";
 import { getJobIdFromNameOffer, splitName } from "../../lib/utils";
+import RehireEmployee from "./RehireEmployee";
 
 const ToHireEmployee = ({
   offers,
@@ -21,7 +22,7 @@ const ToHireEmployee = ({
 
   /* ---------- click “Contratar” ---------- */
   const handleClick = async () => {
-    if(userSelected?.workedInEngloba) return modal('No es posible la contratación', 'El usuario está o ha estado trabajando en Engloba. Contacta con Administración o con Elisabet.')
+
     if (!Offer) {
       // Sin oferta → elegir una
       setStep("select");
@@ -46,14 +47,59 @@ const ToHireEmployee = ({
     }
 
     /* 3· Pasamos al formulario de contratación */
-    setStep("hire");
+    (userSelected?.workedInEngloba)?setStep("rehire"):setStep("hire");
   };
 
   /* ---------- callback del selector ---------- */
   const handleOfferChosen = (chosen) => {
     changeOffer(chosen);
-    setStep("hire");
+    // Si es recontratación, ve directo a rehire; si no, a hire
+    if (userSelected?.workedInEngloba) setStep("rehire");
+    else setStep("hire");
   };
+
+  const normalizeDni = (s) => String(s || "").replace(/\s+/g, "").toUpperCase();
+  /* ---------- Guardado de REHIRE ---------- */
+  const handleRehireSave = async (hiringNew) => {
+  const token = getToken();
+
+  // Validación básica en cliente (evita viajes innecesarios)
+  if (!hiringNew?.device || !hiringNew?.position) {
+    modal?.("Datos incompletos", "Faltan el dispositivo o el puesto.");
+    return;
+  }
+  if (!hiringNew?.workShift?.type) {
+    modal?.("Datos incompletos", "Selecciona el tipo de jornada.");
+    return;
+  }
+
+  // Limpia reason si viene vacío
+  const hiringClean = {
+    ...hiringNew,
+    ...(hiringNew.reason?.dni ? {} : { reason: undefined }),
+  };
+
+  const payload = {
+    dni: normalizeDni(userSelected?.dni),
+    hiring: hiringClean, // { startDate, device, workShift:{type,nota}, category, position, active, reason? }
+  };
+
+  const result = await rehireEmployee(payload, token);
+
+  if (result?.error) {
+    modal?.("Error recontratando", result.message || "No se pudo completar la recontratación.");
+    return;
+  }
+
+  // El endpoint devuelve el usuario actualizado
+  changeUser(result);
+  charge?.(result);
+  modal?.(
+    "Recontratación creada",
+    "Se ha abierto un nuevo periodo de contratación y el estado se ha puesto en 'en proceso de contratación'."
+  );
+  setStep?.(null);
+};
 
   /* ---------- datos para FormCreateEmployer ---------- */
   const userAux = useMemo(() => {
@@ -124,6 +170,16 @@ const ToHireEmployee = ({
           closeModal={() => setStep(null)}
           changeUser={(x) => changeUser(x)}
           offerId={(Offer.userCv?.includes(userSelected._id))?Offer._id:null}
+        />
+      )}
+
+      {step === "rehire" && Offer && (
+        <RehireEmployee
+          enumsEmployer={enumsEmployer}
+          offer={Offer}
+          lockedFields={["device", "position"]}
+          save={handleRehireSave}
+          onClose={() => setStep(null)}
         />
       )}
     </>

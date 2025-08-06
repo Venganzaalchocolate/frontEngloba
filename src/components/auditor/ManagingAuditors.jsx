@@ -12,7 +12,7 @@ import InfoAuditPanelProgramDocs from './InfoAuditPanelProgramDocs';
 import InfoAuditPanelDeviceDocs from './InfoAuditPanelDeviceDocs';
 import InfoAuditPanelContractLeaveEmployee from './InfoAuditPanelContractLeaveEmployee';
 
-export const OPTIONAL_FIELDS_INFO_EMPLOYEE = [
+const OPTIONAL_FIELDS_INFO_EMPLOYEE = [
   { value: 'birthday', label: 'Fecha de nacimiento' },
   { value: 'socialSecurityNumber', label: 'Número de Seguridad Social' },
   { value: 'bankAccountNumber', label: 'Número de cuenta bancaria' },

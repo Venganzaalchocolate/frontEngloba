@@ -85,7 +85,7 @@ const WorkerMenu = ({ modal, charge }) => {
       
   // Actualiza lista e índice de OFERTAS
 const chargeOffers = (updatedOffers) => {
-  console.log(updatedOffers)
+  
   setEnumsEmployer((prev) => {
     let list;
 

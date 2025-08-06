@@ -1,0 +1,324 @@
+/* =========================================
+   FormJob – Compact & Elegant (CSS Module)
+   Usa tus variables globales:
+   --color-morado, --color-malva, --color-malva-oscuro,
+   --color-rosa-palo, --color-crema, --color-verde-hoja,
+   --color-yema, --color-naranja
+========================================= */
+.contenedor {
+  display: flex;
+  flex: 1 100%;
+  background-image: url('../../../public/img/fondo_menuStart.jpg');
+  flex-direction: column;
+  background-repeat: no-repeat;
+  background-size: cover;
+  justify-content: center;
+  align-items: center;
+  /* padding: 2rem; */
+  flex-wrap: wrap;
+  gap: 2rem;
+  
+  /* From https://css.glass */
+}
+
+.formJob {
+  --morado: var(--color-morado);
+  --malva: var(--color-malva);
+  --malvaOsc: var(--color-malva-oscuro);
+  --rosa: var(--color-rosa-palo);
+  --crema: var(--color-crema);
+  --verde: var(--color-verde-hoja);
+  --yema: var(--color-yema);
+  --naranja: var(--color-naranja);
+
+  --radius: 14px;
+  --gap: .9rem;
+
+  margin: 0 auto;
+  max-width: 760px;
+  padding: 1rem 1.1rem;
+
+  /* card elegante, menos “plastificado” */
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--malva) 30%, #fff 70%), #fff) padding-box,
+    linear-gradient(180deg, color-mix(in srgb, var(--morado) 25%, transparent), transparent) border-box;
+  border: 1px solid color-mix(in srgb, var(--malvaOsc) 35%, transparent);
+  
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .06);
+  color: var(--color-morado);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+  border-radius: 0;
+  label {
+    color: var(--color-morado);
+  }
+}
+
+.actionsCancel{
+  display: flex;
+  gap: 1rem;
+}
+
+.tituloOferta{
+  font-size: 14pt;
+  
+}
+.bold{
+  margin-top: -1rem;
+  font-weight: bold;
+}
+@media (min-width: 720px) {
+  
+  .formJob {
+    border-radius: var(--radius);
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 1.2rem 1.4rem;
+    gap: 1rem;
+    margin: 2rem;
+    
+  }
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.tituloOferta, .bold{
+  grid-column: 1 / -1;
+}
+/* ===== Campos ===== */
+.field {
+  display: grid;
+  gap: .35rem;
+  align-content: baseline;
+}
+
+.label {
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--morado) 75%, #000 25%);
+}
+
+.control,
+.formJob select,
+.formJob textarea,
+.formJob input:not([type="radio"]):not([type="checkbox"]) {
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--malvaOsc) 35%, #000 0%);
+  background: #fff;
+  color: #1f2233;
+  padding: .55rem .7rem;
+  outline: none;
+  height: fit-content;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.control::placeholder {
+  color: #9aa1b2;
+}
+
+.control:focus-visible {
+  border-color: var(--morado);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--morado) 22%, transparent);
+}
+
+.control[aria-invalid="true"] {
+  border-color: #c9372c;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #c9372c 25%, transparent);
+}
+
+.errorMsg {
+  margin-top: .15rem;
+  color: #7d1414;
+  background: #ffe3e5;
+  border: 1px solid #f4b9c0;
+  border-radius: 8px;
+  font-size: .78rem;
+  padding: .28rem .45rem;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* archivo */
+.file {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--malva) 18%, #fff 82%);
+}
+
+/* radios/checkbox */
+.fieldset {
+  border: 1px solid color-mix(in srgb, var(--malvaOsc) 30%, transparent);
+  border-radius: 12px;
+  padding: .75rem .8rem;
+  display: grid;
+  gap: .4rem;
+  background: color-mix(in srgb, var(--rosa) 12%, #fff 88%);
+}
+
+.legend {
+  font-size: .8rem;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--morado) 80%, #000 20%);
+}
+
+/* ===== Acciones ===== */
+.actions {
+  display: flex;
+  gap: .6rem;
+  justify-content: space-between;
+  grid-column: 1 / -1;
+
+}
+
+.btn {
+  border: 0;
+  border-radius: 10px;
+  padding: .55rem .9rem;
+  font-weight: 800;
+  cursor: pointer;
+  color: #fff;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--morado) 92%, #000 8%), var(--morado));
+  box-shadow: 0 1px 0 color-mix(in srgb, #000 18%, transparent);
+  transition: transform .08s ease, filter .12s ease, box-shadow .12s ease;
+}
+
+.btn:hover {
+  filter: brightness(1.06);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn[disabled] {
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  color: var(--morado);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--malvaOsc) 35%, transparent);
+}
+
+/* ===== Multivalor agrupado por subcategoría ===== */
+.multi {
+  grid-column: 1 / -1;
+  border: 1px solid color-mix(in srgb, var(--malvaOsc) 30%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--malva) 22%, #fff 78%);
+  padding: .85rem;
+  display: grid;
+  gap: .7rem;
+}
+
+.multiHeader {
+  display: grid;
+  gap: .3rem;
+}
+
+.multiSelect {
+  width: 100%;
+}
+
+.inlineChoices {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+}
+
+.choice {
+  display: inline-flex;
+  gap: .4rem;
+  align-items: center;
+  font-weight: 600;
+}
+
+
+.groups {
+  display: grid;
+  gap: .7rem;
+}
+
+@media (min-width: 720px) {
+  .groups {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.groupS {
+  grid-template-columns: 1fr;
+}
+
+.group {
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--malvaOsc) 28%, transparent);
+  border-radius: 10px;
+  padding: .6rem .65rem;
+  display: grid;
+  gap: .45rem;
+  align-items: baseline;
+}
+
+
+.groupTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-weight: 800;
+  font-size: .86rem;
+  color: color-mix(in srgb, var(--morado) 85%, #000 15%);
+}
+
+.groupTitle::before {
+  content: "";
+  width: .45rem;
+  height: .45rem;
+  border-radius: 999px;
+  background: var(--yema);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--yema) 30%, transparent);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem .45rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .3rem .55rem;
+  border-radius: 999px;
+  font-size: .85rem;
+  background: color-mix(in srgb, var(--crema) 70%, #fff 30%);
+  color: color-mix(in srgb, var(--morado) 90%, #000 10%);
+  border: 1px solid color-mix(in srgb, var(--malvaOsc) 30%, transparent);
+  height: fit-content;
+}
+
+.chipBtn {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0 .05rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .formJob *,
+  .btn {
+    transition: none !important;
+  }
+}

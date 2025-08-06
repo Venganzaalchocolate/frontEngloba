@@ -245,3 +245,47 @@ export const isNotFutureDateStringMsg = (dateString) => {
 
   return true;
 };
+
+export function validateField(value, rules = {}) {
+  // 1) normaliza si hace falta
+  const normalized = typeof rules.normalize === 'function' ? rules.normalize(value) : value;
+  const v = (normalized ?? '').toString().trim();
+
+  // 2) reglas genéricas
+  if (rules.required && v.length === 0) return rules.messages?.required ?? 'Campo obligatorio';
+  if (rules.minLength && v.length < rules.minLength)
+    return rules.messages?.minLength ?? `Mínimo ${rules.minLength} caracteres`;
+  if (rules.maxLength && v.length > rules.maxLength)
+    return rules.messages?.maxLength ?? `Máximo ${rules.maxLength} caracteres`;
+  if (rules.pattern && !rules.pattern.test(v))
+    return rules.messages?.pattern ?? 'Formato inválido';
+
+  // 3) validadores encadenados (usa tus funciones)
+  if (Array.isArray(rules.validators)) {
+    for (const { test, message } of rules.validators) {
+      try {
+        const ok = test(v);
+        if (!ok) return message || 'Valor inválido';
+      } catch {
+        return message || 'Valor inválido';
+      }
+    }
+  }
+
+  // 4) custom único que devuelva string (error) o null (ok)
+  if (typeof rules.custom === 'function') {
+    const msg = rules.custom(v);
+    if (msg) return msg;
+  }
+  return null;
+}
+
+export function validateForm(values, schema, only = null) {
+  const errors = {};
+  const keys = Array.isArray(only) ? only : Object.keys(schema);
+  for (const key of keys) {
+    const msg = validateField(values[key], schema[key]);
+    if (msg) errors[key] = msg;
+  }
+  return { errors, valid: Object.keys(errors).length === 0 };
+}

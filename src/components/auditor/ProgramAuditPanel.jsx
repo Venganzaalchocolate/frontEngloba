@@ -1,7 +1,7 @@
 // components/ProgramAuditPanel.jsx
 import React, { useEffect } from 'react';
 import styles from '../styles/ManagingAuditors.module.css';
-export const OPTIONAL_PROGRAM_FIELDS = [
+const OPTIONAL_PROGRAM_FIELDS = [
   { value: 'name', label: 'Nombre del programa' },
   { value: 'description', label: 'Descripción' },
   { value: 'devices', label: 'Dispositivos asociados' },

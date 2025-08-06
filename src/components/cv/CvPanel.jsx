@@ -15,7 +15,7 @@ import { deepClone, formatDatetime } from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
 import VisualizadorPDF from "./GoogleView.jsx";
 import { FaRegEdit, FaCalendarAlt } from "react-icons/fa";
-import FormJob from "../globals/FormJob.jsx";
+import FormJob from "../globals/FormJobUp.jsx";
 import { BsBookmarkPlusFill } from "react-icons/bs";
 import { PiPersonFill } from "react-icons/pi";
 import { IoBagAdd } from "react-icons/io5";

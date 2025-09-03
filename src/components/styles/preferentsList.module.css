@@ -1,0 +1,180 @@
+.wrapper {
+  width: 100%;
+}
+
+/* Card activo */
+.card {
+  background: #fff;
+  width: fit-content;
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-malva, #d1d5fa) 65%, #fff 35%);
+}
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-morado, #6158c7);
+  color: #fff;
+  padding: .6rem .8rem;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+.cardTitle {
+  font-weight: 700;
+}
+
+.actions{
+  display: flex;
+  gap: 0.5rem;
+}
+.actions button {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  padding: .15rem .25rem;
+  font-size: 1rem;
+}
+.cardBody {
+  padding: .8rem .9rem;
+  color: var(--color-morado, #6158c7);
+}
+
+.activeGrid {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr);
+}
+
+/* Botón histórico */
+.historyBar {
+  margin-top: .5rem;
+}
+.historyBtn {
+  border: 1px solid var(--color-morado, #6158c7);
+  background: color-mix(in srgb, var(--color-crema, #f5f5ff) 75%, #fff 25%);
+  color: var(--color-morado, #6158c7);
+  padding: .35rem .6rem;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.historyBtn:hover {
+  background: color-mix(in srgb, var(--color-malva, #d1d5fa) 25%, #fff 75%);
+}
+
+/* Tabla histórico */
+.historyTableWrapper {
+  margin-top: .8rem;
+  overflow-x: auto;
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .95rem;
+}
+
+.historyTable th {
+  background: var(--color-morado, #6158c7);
+  color: #fff;
+  text-align: left;
+  padding: .5rem;
+}
+
+.historyTable td {
+  border-bottom: 1px solid #ddd;
+  padding: .45rem .5rem;
+  color: var(--color-morado, #6158c7);
+}
+
+.historyTable tr:nth-child(even) td {
+  background-color: #f8f8ff;
+}
+
+.historyTable tr:hover td {
+  background-color: #f1f1fc;
+}
+
+.emptyHistory {
+  margin-top: .5rem;
+  color: var(--color-morado, #6158c7);
+  opacity: .8;
+}
+
+.historyTableWrapper {
+  margin-top: .8rem;
+  overflow-x: auto; /* fallback por si acaso */
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .95rem;
+}
+
+.historyTable th,
+.historyTable td {
+  padding: .55rem .6rem;
+  text-align: left;
+}
+
+.historyTable th {
+  background: var(--color-morado, #6158c7);
+  color: #fff;
+}
+
+.historyTable td {
+  border-bottom: 1px solid #e8e9ff;
+  color: var(--color-morado, #6158c7);
+}
+
+.historyTable tr:nth-child(even) td {
+  background-color: #f8f8ff;
+}
+
+.historyTable tr:hover td {
+  background-color: #f1f1fc;
+}
+
+/* —— Responsive: en móviles la tabla se “apila” — */
+@media (max-width: 640px) {
+  .historyTable thead {
+    display: none;
+  }
+  .historyTable,
+  .historyTable tbody,
+  .historyTable tr,
+  .historyTable td {
+    display: block;
+    width: 100%;
+  }
+  .historyTable tr {
+    background: #fff;
+    border: 1px solid color-mix(in srgb, var(--color-malva, #d1d5fa) 65%, #fff 35%);
+    border-radius: 10px;
+    margin-bottom: .65rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,.04);
+  }
+  .historyTable td {
+    border: 0;
+    border-bottom: 1px dashed #e8e9ff;
+    position: relative;
+    padding-left: 7.5rem; /* espacio para la etiqueta */
+    min-height: 40px;
+  }
+  .historyTable td:last-child {
+    border-bottom: 0;
+  }
+  .historyTable td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: .6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+    color: var(--color-morado, #6158c7);
+    opacity: .85;
+  }
+}

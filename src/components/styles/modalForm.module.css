@@ -273,3 +273,14 @@
   border: 1px solid var(--color-malva);
   appearance: none
 }
+
+.modalInfoText {
+  color: var(--color-morado, #6c63ff);
+  font-size: .98em;
+  background: color-mix(in srgb, var(--color-crema, #f8f8f8) 65%, #fff 35%);
+  border-left: 4px solid var(--color-malva, #d1d5fa);
+  padding: .35em 1em;
+  border-radius: 7px;
+  margin-bottom: 8px;
+  margin-top: 3px;
+}

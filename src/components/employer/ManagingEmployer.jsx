@@ -21,6 +21,7 @@ import CreateDocumentXLS from './CreateDocumentXLS.jsx';
 import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx';
 import FilterStatus from './FilterStatus.jsx';
 import RecibiSignDigital from '../globals/RecibiSignDigital.jsx';
+import PreferentsEmployee from './PreferentsEmployee.jsx';
 
 
 
@@ -584,6 +585,15 @@ const ManagingEmployer = ({
                               charge={charge}
                               changeUser={(x) => changeUserLocally(x)}
                             />
+                            {logged?.user?.role === 'root' &&
+                             <PreferentsEmployee
+                              user={user}
+                              modal={modal}
+                              charge={charge}
+                              enumsData={enumsData}
+                              authorized={logged.user._id}
+                            /> 
+                            }
                             <Hiringperiods
                               enumsData={enumsData}
                               user={user}

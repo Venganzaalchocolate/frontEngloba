@@ -5,7 +5,6 @@ import { FaSquarePlus } from "react-icons/fa6";
 import {
   validateBankAccount,
   validateDNIorNIE,
-  validateSocialSecurityNumber,
   validEmail,
   validNumber,
   validText,
@@ -241,7 +240,7 @@ const InfoEmployer = ({
 
   // Guardar cambios
   const handleSave = async () => {
-    console.log(validateFields())
+   
     if (!validateFields()) return;
 
     // Obtenemos sólo los campos modificados
@@ -264,7 +263,7 @@ const InfoEmployer = ({
     charge(true);
 
     const token = getToken();
-    console.log(modifiedData)
+   
     const response = await editUser(modifiedData, token);
 
     if (!response.error) {

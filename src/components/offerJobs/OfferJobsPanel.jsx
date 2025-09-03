@@ -15,7 +15,6 @@ const OfferJobsPanel = ({ modal, charge, enumsData, chargeOffers = () => {} }) =
   const [offerSelected, setOfferSelected] = useState(null);
   const [offers, setOffers] = useState([]);
 
-  
   // Estado de filtros: año, mes, provincia, programId, deviceId, etc.
   const [filters, setFilters] = useState({
     year: "",
@@ -70,16 +69,18 @@ const OfferJobsPanel = ({ modal, charge, enumsData, chargeOffers = () => {} }) =
   };
 
     /* ---------- Añadir / actualizar una oferta ---------- */
-  const upsertOffer = (offer) => {
-    setOffers((prev) => {
-      const exists = prev.some((o) => o._id === offer._id);
-      return exists
-        ? prev.map((o) => (o._id === offer._id ? offer : o))
-        : [...prev, offer];
-    });
-    chargeOffers(offer);     // 🔗 mantenemos enumsEmployer sincronizado
-    setOfferSelected(null);
-  };
+const upsertOffer = (offer) => {
+  setOffers(prev => {
+    const exists = prev.some(o => o._id === offer._id);
+    return exists
+      ? prev.map(o => (o._id === offer._id ? offer : o))
+      : [...prev, offer];
+  });
+
+  chargeOffers(offer);   // solo sincroniza enumsEmployer
+  setOfferSelected(null);
+};
+
 
   // Volver al panel principal
   const back = () => {
@@ -90,44 +91,25 @@ const OfferJobsPanel = ({ modal, charge, enumsData, chargeOffers = () => {} }) =
   // --------------------------------------------------
   //  Filtrado de ofertas en base a "filters"
   // --------------------------------------------------
-  const filteredOffers = useMemo(() => {
-    if (!offers || offers.length === 0) return [];
+const filteredOffers = useMemo(() => {
+  if (!offers || offers.length === 0) return [];
 
-    return offers.filter((offer) => {
-      const offerYear = new Date(offer.createdAt).getFullYear();
-      const offerMonth = new Date(offer.createdAt).getMonth() + 1;
-      
-      // Filtro por año (si hay uno seleccionado)
-      if (filters.year && parseInt(filters.year) !== offerYear) {
-        return false;
-      }
-      // Filtro por mes (si hay uno seleccionado)
-      if (filters.month && parseInt(filters.month) !== offerMonth) {
-        return false;
-      }
-      // Filtro por provincia
-      if (filters.province && filters.province !== offer.province) {
-        return false;
-      }
-      // Filtro por programa
-      if (filters.programId && filters.programId !== offer.dispositive.programId) {
-        return false;
-      }
-      // Filtro por dispositivo
-      if (filters.deviceId && filters.deviceId !== offer.dispositive.dispositiveId) {
-        return false;
-      }
+  return offers.filter((offer) => {
+    const offerYear = new Date(offer.createdAt).getFullYear();
+    const offerMonth = new Date(offer.createdAt).getMonth() + 1;
 
-      if(filters.active=='si' &&  offer.active){
-       return true; 
-      }
-      
-      if(filters.active=='no' &&  !offer.active){
-        return true; 
-       }
-      
-    });
-  }, [offers, filters]);
+    if (filters.year && +filters.year !== offerYear) return false;
+    if (filters.month && +filters.month !== offerMonth) return false;
+    if (filters.province && filters.province !== offer.province) return false;
+    if (filters.programId && filters.programId !== offer.dispositive.programId) return false;
+    if (filters.deviceId && filters.deviceId !== offer.dispositive.dispositiveId) return false;
+
+    if (filters.active === 'si')  return !!offer.active;
+    if (filters.active === 'no')  return !offer.active;
+    return true; // <- imprescindible cuando está vacío u otro valor
+  });
+}, [offers, filters]);
+
 
   
   return (
@@ -170,7 +152,7 @@ const OfferJobsPanel = ({ modal, charge, enumsData, chargeOffers = () => {} }) =
           enumsData={enumsData}
           modal={modal}
           charge={charge}
-          changeOffers={chargeOffers}
+          changeOffers={upsertOffer}
         />
       )}
 

@@ -65,6 +65,7 @@ export const createSubData = (token, datos) => fetchData('/createsubcategory', '
 export const deleteSubData = (token, datos) => fetchData('/deletesubdata', 'DELETE', token, datos);
 
 //userCv
+export const getusercvdniorphone=(datos)=>fetchData('/filterusercv', 'POST',null,datos)
 export const getCVs = async (id, token) => {
     const pdfBlob = await fetchData('/getFile', 'POST', token, { id }, true);
     const pdfUrl = URL.createObjectURL(pdfBlob);
@@ -315,3 +316,11 @@ export const wsCreateGroup = (datos, token)   => fetchData('/creategroupws', 'PO
 export const wsAddMember = (datos, token)   => fetchData('/addgroupws', 'POST', token, datos);
 export const wsRemoveMember = (datos, token) =>  fetchData('/deletememberws', 'POST', token, datos);
 export const wsDeleteGroup = (datos, token) =>  fetchData('/deletegroupws', 'POST', token, datos);
+
+//preferents
+export const preferentGet=(datos, token)   => fetchData('/preferents', 'POST', token, datos);
+export const preferentCreate=(datos, token)   => fetchData('/preferentscreate', 'POST', token, datos);
+export const preferentFilter=(datos, token)   => fetchData('/preferentsfilter', 'POST', token, datos);
+export const preferentDelete=(datos, token)   => fetchData('/preferentdelete', 'POST', token, datos);
+export const preferentUpdate=(datos, token)   => fetchData('/preferentsupdate', 'POST', token, datos);
+export const preferentId=(datos, token)   => fetchData('/preferentsid', 'POST', token, datos);

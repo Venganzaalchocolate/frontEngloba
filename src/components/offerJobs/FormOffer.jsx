@@ -9,13 +9,35 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
     const { logged } = useLogin();
     const isEditing = !!offer; // Si hay oferta, estamos editando
 
+    // Helpers de normalización
+const normalizeSelectDefault = (value, options) => {
+  if (!value) return "";
+  // Si ya es un id presente en options.value, úsalo
+  if (options.some(o => o.value === value)) return value;
+  // Si vino etiqueta, busca su id
+  const found = options.find(o => o.label === value);
+  return found ? found.value : "";
+};
+
+const normalizeMultiDefaults = (values, options) => {
+  if (!Array.isArray(values)) return [];
+  return values
+    .map(v => {
+      if (options.some(o => o.value === v)) return v;            // ya id
+      const byLabel = options.find(o => o.label === v);          // venía etiqueta
+      return byLabel ? byLabel.value : null;
+    })
+    .filter(Boolean);
+};
+
     const buildFields = () => {
+        
         let studiesOptions = [];
         if (enumsData?.studies) {
             studiesOptions = enumsData.studies.flatMap((x) =>
                 x.subcategories
-                    ? x.subcategories.map((sub) => ({ value: sub.name, label: sub.name }))
-                    : [{ value: x.name, label: x.name }]
+                    ? x.subcategories.map((sub) => ({ value: sub._id, label: sub.name }))
+                    : [{ value: x._id, label: x.name }]
             );
         }
 
@@ -35,8 +57,8 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 job.subcategories
                     ? job.subcategories
                           .filter((sub) => sub.name !== "Director/a")
-                          .map((sub) => ({ value: sub.name, label: sub.name }))
-                    : [{ value: job.name, label: job.name }]
+                          .map((sub) => ({ value: sub._id, label: sub.name }))
+                    : [{ value: job._id, label: job.name }]
             );
         };
 
@@ -44,8 +66,8 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
         if (enumsData?.provinces) {
             provinces = enumsData.provinces.flatMap((x) =>
                 x.subcategories
-                    ? x.subcategories.map((sub) => ({ value: sub.name, label: sub.name }))
-                    : [{ value: x.name, label: x.name }]
+                    ? x.subcategories.map((sub) => ({ value: sub._id, label: sub.name }))
+                    : [{ value: x._id, label: x.name }]
             );
         }
 
@@ -58,13 +80,21 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
             );
         }
 
+        const functionsDefault = normalizeSelectDefault(
+        offer?.jobId ?? offer?.functions,       // prioriza jobId si existe
+        positionOptions
+        );
+        const provinceDefault = normalizeSelectDefault(
+  offer?.provinceId ?? offer?.province,   // prioriza id si existe
+  provinces
+);
         return [
             {
                 name: "functions",
                 label: "Funciones",
                 type: "select",
                 required: true,
-                defaultValue: offer?.functions || "",
+                defaultValue: functionsDefault,
                 options: [{ value: "", label: "Seleccione una función" }, ...positionOptions]
             },
             {
@@ -80,7 +110,7 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 label: "Provincia",
                 type: "select",
                 required: true,
-                defaultValue: offer?.province || "",
+                defaultValue: provinceDefault,
                 options: [{ value: "", label: "Seleccione una provincia" }, ...provinces]
             },
             {
@@ -176,15 +206,24 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
             const dispositive = enumsData.programsIndex[formData.dispositiveID];
             const dataNow = new Date();
 
+            const fields = buildFields();
+            // obtener label de functions
+            const functionField = fields.find(f => f.name === "functions");
+            const startsWithNumber = (str) => /^[0-9]/.test(str);
+            const functionLabel =(startsWithNumber(formData.functions))? functionField?.options.find(o => o.value === formData.functions)?.label || "":formData.functions;
+            // obtener label de province
+            const provinceField = fields.find(f => f.name === "province");
+            const provinceLabel = provinceField?.options.find(o => o.value === formData.province)?.label || "";
+
             const updatedOffer = {
                 entity: 'ASOCIACIÓN ENGLOBA',
-                job_title: formData.functions + '-' + formData.location + '(' + formData.province + ')',
-                functions: formData.functions,
+                job_title: functionLabel + '-' + formData.location + '(' + provinceLabel + ')',
+                functions: functionLabel,
                 work_schedule: formData.work_schedule,
                 essentials_requirements: formData.essentials_requirements,
                 optionals_requirements: formData.optionals_requirements,
                 conditions: formData.conditions,
-                province: formData.province,
+                province: provinceLabel,
                 location: formData.location,
                 date: dataNow,
                 create: logged.user._id,
@@ -195,7 +234,9 @@ const FormOffer = ({ enumsData, closeModal, charge, modal, offer = null, changeO
                 sepe: formData.sepe,
                 type: formData.type,
                 datecreate:formData.datecreate,
-                active: true
+                active: true,
+                jobId:formData.functions,
+                provinceId:formData.province,
             };
 
             const token = getToken();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "../styles/modalForm.module.css";
+import MultiSelectChips from "./MultiSelectChips";
 
 const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
   // =========== CONSTANTES ===============
@@ -12,10 +13,16 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
   const [formData, setFormData] = useState(() =>
     fields.reduce((acc, field) => {
       if (field.type === "section") return acc;
-      acc[field.name] = field.type === "file" ? null : field.defaultValue || "";
+      if (field.type === "file") { acc[field.name] = null; return acc; }
+      if (field.type === "selectMultiple" || field.type === "checkboxGroup" || field.type === "multiChips") {
+        acc[field.name] = Array.isArray(field.defaultValue) ? field.defaultValue : [];
+        return acc;
+      }
+      acc[field.name] = field.defaultValue ?? "";
       return acc;
     }, {})
   );
+
   const [errors, setErrors] = useState({});
   const [isValidForm, setIsValidForm] = useState(false);
 
@@ -25,12 +32,13 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
       (err) => err !== null && err !== ""
     );
     const allRequiredFilled = fields.every((field) => {
-      if (field.type === "section") return true;
-      if (!field.required) return true;
-      if (field.type === "file") {
-        return formData[field.name] !== null;
+      if (field.type === "section" || !field.required) return true;
+      const v = formData[field.name];
+      if (field.type === "file") return v !== null;
+      if (field.type === "selectMultiple" || field.type === "checkboxGroup" || field.type === "multiChips") {
+        return Array.isArray(v) && v.length > 0;
       }
-      return formData[field.name] !== "";
+      return v !== "" && v !== undefined && v !== null;
     });
 
     setIsValidForm(!hasErrors && allRequiredFilled);
@@ -109,22 +117,21 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
     let newErrors = { ...errors };
 
     fields.forEach((field) => {
-      if (field.type === "section") return;
-      if (field.required) {
-        if (field.type === "file" && !formData[field.name]) {
+      if (field.type === "section" || !field.required) return;
+
+      if (field.type === "file" && !formData[field.name]) {
+        newErrors[field.name] = "Este campo es obligatorio.";
+      }
+
+      if (["text", "select", "date"].includes(field.type) || !field.type) {
+        if (!formData[field.name]) newErrors[field.name] = "Este campo es obligatorio.";
+      }
+
+      if (field.type === "selectMultiple" || field.type === "checkboxGroup" || field.type === "multiChips") {
+        const v = formData[field.name];
+        if (!Array.isArray(v) || v.length === 0) {
           newErrors[field.name] = "Este campo es obligatorio.";
         }
-        if (["text", "select", "date"].includes(field.type) || !field.type) {
-          if (!formData[field.name]) {
-            newErrors[field.name] = "Este campo es obligatorio.";
-          }
-        }
-        if (field.type === "selectMultiple") {
-          if (!formData[field.name] || formData[field.name].length === 0) {
-            newErrors[field.name] = "Este campo es obligatorio.";
-          }
-        }
-       
       }
     });
 
@@ -179,7 +186,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
     setErrors((prev) => ({ ...prev, [field.name]: "" }));
   };
 
-useEffect(() => {
+  useEffect(() => {
     setFormData((prev) => {
       let changed = false;
       const next = { ...prev };
@@ -378,6 +385,11 @@ useEffect(() => {
                   </div>
                 )}
 
+                {/* NUEVO: Campo multiSelectGrouped (chips agrupados estilo ofertas) */}
+
+
+
+
 
                 {/* Campo TIPO SELECT MULTIPLE CON AGRUPACIÓN */}
                 {field.type === "selectMultiple" && (
@@ -506,9 +518,40 @@ useEffect(() => {
                     )}
                   </>
                 )}
+                {field.type === "info" && (
+                  <div key={index} className={styles.modalInfoText}>
+                    {field.content}
+                  </div>
+                )}
+                {field.type === "multiChips" && (
+                  <>
+                    <MultiSelectChips
+                      options={(field.options || []).flatMap(opt =>
+                        Array.isArray(opt.subcategories)
+                          ? opt.subcategories.map(s => ({ value: s.value, label: s.label }))
+                          : (opt.value !== "" ? [{ value: opt.value, label: opt.label }] : [])
+                      )}
+                      value={Array.isArray(formData[field.name]) ? formData[field.name] : []}
+                      onChange={(next) => {
+                        setFormData(prev => ({ ...prev, [field.name]: next }));
+                        setErrors(prev => ({
+                          ...prev,
+                          [field.name]: (field.required && (!next || next.length === 0)) ? "Este campo es obligatorio." : ""
+                        }));
+                      }}
+                      placeholder={field.placeholder || "Escribe y pulsa Enter para añadir…"}
+                      hint={field.hint}
+                      disabled={field.disabled}
+                      max={field.max}
+                    />
+                    {errors[field.name] && <p className={styles.modalError}>{errors[field.name]}</p>}
+                  </>
+                )}
+
+
 
                 {/* Otros tipos: text, email, etc. */}
-                {!["file", "select", "date", "textarea", "selectMultiple", "checkboxGroup"].includes(
+                {!["file", "select", "date", "textarea", "selectMultiple", "checkboxGroup", "info", "multiChips"].includes(
                   field.type
                 ) && (
                     <>

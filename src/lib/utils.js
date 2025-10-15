@@ -2,90 +2,90 @@ import { DateTime } from 'luxon';
 import { useState, useEffect } from 'react';
 
 
-export const formatDatetime=(date)=>{
-    const dateAux=DateTime.fromISO(date)
+export const formatDatetime = (date) => {
+  const dateAux = DateTime.fromISO(date)
     .toFormat('dd-MM-yyyy HH:mm:ss');
-    return dateAux
+  return dateAux
 }
 
-export const formatDate=(date)=>{
-    const dateAux=DateTime.fromISO(date)
+export const formatDate = (date) => {
+  const dateAux = DateTime.fromISO(date)
     .toFormat('dd-MM-yyyy');
-    return dateAux
+  return dateAux
 }
 
 export const deepClone = (obj) => {
-    if (obj === null || typeof obj !== 'object') {
-        return obj;
-    }
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
 
-    // Si es una instancia de File, la devolvemos tal cual (no clonamos)
-    if (obj instanceof File) {
-        return obj;
-    }
+  // Si es una instancia de File, la devolvemos tal cual (no clonamos)
+  if (obj instanceof File) {
+    return obj;
+  }
 
-    const copy = Array.isArray(obj) ? [] : {};
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            copy[key] = deepClone(obj[key]);  // Recursión para copiar sub-objetos
-        }
+  const copy = Array.isArray(obj) ? [] : {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      copy[key] = deepClone(obj[key]);  // Recursión para copiar sub-objetos
     }
-    return copy;
+  }
+  return copy;
 };
 
-export const splitName=(fullName)=>{
-    // Quitar espacios sobrantes al inicio y al final
-    const trimmed = fullName.trim();
-  
-    // Dividir por espacios (uno o más)
-    const parts = trimmed.split(/\s+/);
-  
-    // El primer elemento será el "firstName"
-    const firstName = parts.shift() || "";
-  
-    // El resto de las partes (si las hay) se unen como "lastName"
-    const lastName = parts.join(" ") || "";
-  
-    return { firstName, lastName };
+export const splitName = (fullName) => {
+  // Quitar espacios sobrantes al inicio y al final
+  const trimmed = fullName.trim();
+
+  // Dividir por espacios (uno o más)
+  const parts = trimmed.split(/\s+/);
+
+  // El primer elemento será el "firstName"
+  const firstName = parts.shift() || "";
+
+  // El resto de las partes (si las hay) se unen como "lastName"
+  const lastName = parts.join(" ") || "";
+
+  return { firstName, lastName };
+}
+
+export const getJobIdFromNameOffer = (nameOffer, jobsIndex) => {
+  if (!nameOffer) return null;
+
+  // 1) Separar la parte antes del guion si existe
+  //    "Atención Sociosanitaria - Almería Norte"
+  //    => ["Atención Sociosanitaria", "Almería Norte"]
+  const [jobName] = nameOffer.split("-").map((x) => x.trim());
+  // jobName = "Atención Sociosanitaria"
+
+  // 2) Buscar en jobsIndex un objeto cuyo job.name coincida EXACTAMENTE
+  //    con jobName
+  //    Object.entries(jobsIndex) => [ [key, {name, _id}], [key2, {name, _id}]... ]
+  const found = Object.entries(jobsIndex).find(
+    ([, job]) => job.name === jobName
+  );
+
+  if (!found) {
+    // No se encontró trabajo con ese nombre
+    return null;
   }
 
-  export const  getJobIdFromNameOffer=(nameOffer, jobsIndex)=>{
-    if (!nameOffer) return null;
-  
-    // 1) Separar la parte antes del guion si existe
-    //    "Atención Sociosanitaria - Almería Norte"
-    //    => ["Atención Sociosanitaria", "Almería Norte"]
-    const [jobName] = nameOffer.split("-").map((x) => x.trim());
-    // jobName = "Atención Sociosanitaria"
-  
-    // 2) Buscar en jobsIndex un objeto cuyo job.name coincida EXACTAMENTE
-    //    con jobName
-    //    Object.entries(jobsIndex) => [ [key, {name, _id}], [key2, {name, _id}]... ]
-    const found = Object.entries(jobsIndex).find(
-      ([, job]) => job.name === jobName
-    );
-  
-    if (!found) {
-      // No se encontró trabajo con ese nombre
-      return null;
-    }
-  
-    // found = [ "66a765e946af20840262d1da", { name:"Atención Sociosanitaria", ... } ]
-    // El primer elemento del array es la key (ID)
-    const jobId = found[0];
-    return jobId;
-  }
+  // found = [ "66a765e946af20840262d1da", { name:"Atención Sociosanitaria", ... } ]
+  // El primer elemento del array es la key (ID)
+  const jobId = found[0];
+  return jobId;
+}
 
-  export function capitalizeWords(str) {
-    return str
-      .split(' ')                     // Separa el string en palabras
-      .map(word => 
-        word.length > 0 
-          ? word[0].toUpperCase() + word.slice(1).toLowerCase() 
-          : word
-      )
-      .join(' ');                     // Une las palabras de nuevo en un string
-  }
+export function capitalizeWords(str) {
+  return str
+    .split(' ')                     // Separa el string en palabras
+    .map(word =>
+      word.length > 0
+        ? word[0].toUpperCase() + word.slice(1).toLowerCase()
+        : word
+    )
+    .join(' ');                     // Une las palabras de nuevo en un string
+}
 
 
 export function calcularTiempoRestante(dateString, durationDays) {
@@ -136,7 +136,7 @@ export function calcularTiempoRestante(dateString, durationDays) {
   return partes.length ? partes.join(" ") : "Menos de un día restante";
 }
 
-export const obtenerNombreMes=(numeroMes)=>{
+export const obtenerNombreMes = (numeroMes) => {
   const meses = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -178,3 +178,59 @@ export function buildUserEmail(user) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
   return `${normalizedFirst}.${normalizedLast}@${DOMAIN}`;
 }
+
+export function formatESPhone(value) {
+  if (value == null) return "";
+
+  // 1) Solo dígitos
+  let d = String(value).replace(/\D+/g, "");
+
+  // 2) Quita prefijo internacional español opcional: +34, 0034, 34
+  d = d.replace(/^(?:00)?34/, "");
+
+  // 3) Nos quedamos con máximo 9 dígitos (formato nacional)
+  d = d.slice(0, 9);
+
+  // 4) Agrupar 3-2-2-2 de forma progresiva (mientras se escribe)
+  const parts = [];
+  if (d.length > 0) parts.push(d.slice(0, Math.min(3, d.length)));
+  if (d.length > 3) parts.push(d.slice(3, Math.min(5, d.length)));
+  if (d.length > 5) parts.push(d.slice(5, Math.min(7, d.length)));
+  if (d.length > 7) parts.push(d.slice(7, Math.min(9, d.length)));
+
+  return parts.join(" ");
+}
+
+export function titleCaseES(s) {
+  return s.replace(/\p{L}[\p{L}\p{M}\p{N}'’\-]*/gu, (word) =>
+    word
+      .toLocaleLowerCase('es-ES')
+      .replace(/(^|[-’'])\p{L}/gu, (m) => m.toLocaleUpperCase('es-ES'))
+  );
+}
+
+export function compact(s) {
+  if (typeof s !== 'string' && !(s instanceof String)) return '';
+  const txt = String(s);
+  return txt
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9 ]/g, ' ')       // deja solo letras/números/espacio
+    .trim()
+    .split(/\s+/)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join('');
+}
+
+  export const buildOptionsFromIndex = (idx, { onlySub = false } = {}) => {
+    if (!idx || typeof idx !== "object") return [];
+    return Object.entries(idx)
+      .filter(([, obj]) => (onlySub ? obj?.isSub : true))
+      .map(([value, obj]) => ({
+        value,
+        label: obj?.name || "(sin nombre)",
+      }))
+      .sort((a, b) =>
+        a.label.localeCompare(b.label, "es", { sensitivity: "base" })
+      );
+  };

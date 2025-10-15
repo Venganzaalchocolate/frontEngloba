@@ -1,12 +1,8 @@
 // src/components/employee/FormCreateEmployer.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
-import {
-  createEmployer,
-  getDataEmployer,
-  updateOffer,
-} from "../../lib/data";
+import { createEmployer, getDataEmployer, offerUpdate } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import {
   validateDNIorNIE,
@@ -18,38 +14,29 @@ import {
 import { textErrors } from "../../lib/textErrors";
 import { useLogin } from "../../hooks/useLogin";
 import { useOffer } from "../../hooks/useOffer";
-import { deepClone } from "../../lib/utils";
+import { buildOptionsFromIndex } from "../../lib/utils";
 
-/**
- * FormCreateEmployer
- * ------------------
- * • Crea un empleado y su primer periodo de contratación.  
- * • Si el candidato ya tiene oferta, pregunta si quieres desactivarla.
- */
 const FormCreateEmployer = ({
   modal,
   charge,
   closeModal,
-  chargeUser= () => {},
+  chargeUser = () => {},
   enumsData = null,
   user = null,
   lockedFields = [],
   chargeOffers = () => {},
-  selectedResponsibility = null,
-  offerId=null,
-  changeUser
+  selectedResponsibility = null, // string JSON con { deviceId } (opcional)
+  offerId = null,
+  changeUser,
 }) => {
   const { logged } = useLogin();
-  const {changeOffer } = useOffer();
-  
+  const { changeOffer } = useOffer();
+
   const [enums, setEnumsEmployer] = useState(enumsData);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
 
-  
-  /* ------------------------------------------------------------------
-   *  Cargar enumeraciones si no llegan por props
-   * -----------------------------------------------------------------*/
+  // Cargar enums si no llegan por props
   useEffect(() => {
     if (!enumsData) {
       (async () => {
@@ -59,12 +46,12 @@ const FormCreateEmployer = ({
     }
   }, [enumsData]);
 
-  /* ═════════════════════════════════════════════════════════════════
-   *  HELPERS
-   * ═════════════════════════════════════════════════════════════════ */
+  /* helpers para opciones desde *index* */
 
-  /** Construye el payload y llama a createEmployer */
+
+  /** Crear usuario en backend */
   const createUser = async (formData) => {
+    charge(true);
     const token = getToken();
 
     const newUser = {
@@ -78,89 +65,77 @@ const FormCreateEmployer = ({
       gender: formData.gender,
       fostered: formData.fostered || "no",
       apafa: formData.apafa || "no",
-      studies: formData.studies || [],
       disability: {
         percentage: formData.disPercentage || 0,
         notes: formData.disNotes || "",
       },
       phoneJobNumber: formData.phoneJobNumber,
       phoneJobExtension: formData.phoneJobExtension,
+
+      // 👇 ahora enviamos los IDs directamente
+      studiesId: Array.isArray(formData.studiesId) ? formData.studiesId : [],
+
+      // Primer periodo de contratación
       hiringPeriods: [
         {
           startDate: formData.startDate,
           endDate: formData.endDate || null,
-          device: formData.device,
+          device: formData.device, // id de Dispositive
           workShift: { type: formData.workShift },
-          category: formData.category || "",
-          position: formData.position,
+          position: formData.position, // id de Job
           active: true,
-          reason: { dni: formData.reason },
+          dnireplacement: formData.reason,
+          ...(offerId ? { selectionProcess: offerId } : {}),
         },
       ],
     };
 
-  
-    if (offerId) newUser.hiringPeriods[0].selectionProcess = offerId;
-
     const res = await createEmployer(token, newUser);
 
     if (res.error) {
+      charge(false);
       modal("Error", res.message || "No se pudo crear el usuario");
     } else {
       modal("Usuario", "El usuario se ha creado con éxito");
-      res.workedInEngloba=true
-      chargeUser();
-      changeUser(res)
       closeModal();
+      chargeUser();
+      changeUser(res);
     }
   };
 
-  /** Confirma (o no) la desactivación de la oferta previa */
+  /** Confirmación de desactivar oferta previa (si existe) */
   const handleConfirmOfferChange = async (formData, deactivate) => {
-  try {
-    charge(true);
-
-    if (deactivate && offerId) {
-      const token = getToken();
-      const updated = await updateOffer({ id: offerId, active: "no" }, token);
-      
-      chargeOffers(updated);
-      changeOffer(null);
+    try {
+      if (deactivate && offerId) {
+        const token = getToken();
+        const updated = await offerUpdate({ offerId, active: false }, token);
+        chargeOffers(updated);
+        changeOffer(null);
+      }
+      await createUser(formData);
+    } catch (e) {
+      closeModal();
+      modal("Error", e.message || "Ocurrió un error al crear el usuario");
     }
-
-    await createUser(formData);
-  } catch (e) {
-    modal("Error", e.message || "Ocurrió un error al crear el usuario");
-    closeModal();
-  } finally {
-    charge(false);
     setShowConfirmation(false);
     setPendingFormData(null);
-  }
-};
+  };
 
+  /** Submit */
+  const handleSubmit = async (formData) => {
+    if (offerId) {
+      setPendingFormData(formData);
+      setShowConfirmation(true);
+    } else {
+      await createUser(formData);
+    }
+  };
 
-  /* ═════════════════════════════════════════════════════════════════
-   *  HANDLE SUBMIT
-   * ═════════════════════════════════════════════════════════════════ */
-  const handleSubmit = (formData) => {
-  if (offerId) {
-    setPendingFormData(formData);
-    setShowConfirmation(true);
-  } else {
-    createUser(formData);
-  }
-};
-
-
-  /* ═════════════════════════════════════════════════════════════════
-   *  BUILD FIELDS (idéntico a tu versión original)
-   * ═════════════════════════════════════════════════════════════════ */
-  const buildFields = () => {
+  /* -------- build fields con NUEVOS enums ---------- */
+  const fields = useMemo(() => {
     const hPeriod = user?.hiringPeriods?.[0] || {};
 
-    /* ------------- dispositive options ------------------- */
-    let deviceOptions = [];
+    // Preselección de dispositivo si viene en selectedResponsibility
     let selectedDeviceId = null;
     if (selectedResponsibility) {
       try {
@@ -169,31 +144,30 @@ const FormCreateEmployer = ({
         selectedDeviceId = null;
       }
     }
-    if (selectedDeviceId && enums?.programsIndex) {
-      const d = enums.programsIndex[selectedDeviceId];
-      deviceOptions = [{ value: d._id, label: d.name }];
-    } else if (enums?.programs) {
-      deviceOptions = enums.programs.flatMap((p) =>
-        p.devices.map((d) => ({ value: d._id, label: d.name }))
-      );
-    }
 
-    /* ------------- studies & jobs options ---------------- */
-    const studiesOptions = enums?.studies?.flatMap((s) =>
-      s.subcategories
-        ? s.subcategories.map((sub) => ({ value: sub._id, label: sub.name }))
-        : [{ value: s._id, label: s.name }]
-    ) || [];
+    // Dispositivos (desde dispositiveIndex)
+    const deviceOptions =
+      selectedDeviceId && enums?.dispositiveIndex?.[selectedDeviceId]
+        ? [
+            {
+              value: selectedDeviceId,
+              label: enums.dispositiveIndex[selectedDeviceId].name,
+            },
+          ]
+        : buildOptionsFromIndex(enums?.dispositiveIndex);
 
-    const positionOptions = enums?.jobs?.flatMap((j) =>
-      j.subcategories
-        ? j.subcategories.map((sub) => ({ value: sub._id, label: sub.name }))
-        : [{ value: j._id, label: j.name }]
-    ) || [];
+    // Estudios (desde studiesIndex, preferimos solo subcategorías si existen)
+    const studiesOptions =
+      buildOptionsFromIndex(enums?.studiesIndex, { onlySub: true }) ||
+      buildOptionsFromIndex(enums?.studiesIndex);
 
-    /* ------------- fields array -------------------------- */
+    // Puestos (desde jobsIndex, preferimos solo subcategorías si existen)
+    const positionOptions =
+      buildOptionsFromIndex(enums?.jobsIndex, { onlySub: true }) ||
+      buildOptionsFromIndex(enums?.jobsIndex);
+   
     return [
-      /* Datos personales ------------------------------------------------ */
+      // Datos personales
       {
         name: "firstName",
         label: "Nombre",
@@ -217,23 +191,22 @@ const FormCreateEmployer = ({
         label: "Fecha de Nacimiento",
         type: "date",
         required: true,
-        defaultValue: user?.birthday
-          ? new Date(user.birthday).toISOString().split("T")[0]
-          : "",
+        defaultValue: "",
         disabled: lockedFields.includes("birthday"),
       },
+
+      // 👇 ahora el campo se llama studiesId y usa IDs
       {
         name: "studies",
         label: "Estudios",
-        type: "selectMultiple",
+        type: "multiChips",
         required: true,
-        defaultValue: user?.studies || [],
-        disabled: lockedFields.includes("studies"),
-        options: [
-          { value: "", label: "Seleccione una o varias opciones" },
-          ...studiesOptions,
-        ],
+        defaultValue: user?.studiesId || [],
+        options: [{ value: "", label: "Seleccione una o varias opciones" }, ...studiesOptions],
+        placeholder:
+          "Busca y añade 1 o varias opciones (puedes pulsar enter o hacer click)",
       },
+
       ...(logged.user.role === "root"
         ? [
             {
@@ -322,6 +295,8 @@ const FormCreateEmployer = ({
           { value: "", label: "Seleccione" },
           { value: "male", label: "Masculino" },
           { value: "female", label: "Femenino" },
+          { value: "nonBinary", label: "No binario" },
+          { value: "others", label: "Otros" },
         ],
       },
       {
@@ -342,8 +317,7 @@ const FormCreateEmployer = ({
         type: "number",
         defaultValue: user?.disability?.percentage ?? 0,
         disabled: lockedFields.includes("disability.percentage"),
-        isValid: (v) =>
-          validNumberPercentage(v) ? "" : textErrors("percentage"),
+        isValid: (v) => (validNumberPercentage(v) ? "" : textErrors("percentage")),
       },
       {
         name: "disNotes",
@@ -352,7 +326,8 @@ const FormCreateEmployer = ({
         defaultValue: user?.disability?.notes || "",
         disabled: lockedFields.includes("disability.notes"),
       },
-      /* --- Sección contratación --------------------------------------- */
+
+      // Contratación
       { type: "section", label: "PRIMER PERIODO DE CONTRATACIÓN" },
       {
         name: "startDate",
@@ -369,8 +344,7 @@ const FormCreateEmployer = ({
         label: "Dispositivo",
         type: "select",
         required: true,
-        defaultValue:
-          hPeriod.device || selectedDeviceId || "",
+        defaultValue: hPeriod.device || selectedDeviceId || "",
         disabled: lockedFields.includes("device"),
         options: [{ value: "", label: "Seleccione" }, ...deviceOptions],
       },
@@ -388,57 +362,34 @@ const FormCreateEmployer = ({
         ],
       },
       {
-        name: "category",
-        label: "Categoría",
-        type: "select",
-        required: true,
-        defaultValue: hPeriod.category || "",
-        disabled: lockedFields.includes("category"),
-        options: [
-          { value: "", label: "Seleccione" },
-          { value: "1", label: "Categoría 1" },
-          { value: "2", label: "Categoría 2" },
-          { value: "3", label: "Categoría 3" },
-        ],
-      },
-      {
         name: "position",
         label: "Cargo (puesto)",
         type: "select",
         required: true,
         defaultValue: hPeriod.position || "",
         disabled: lockedFields.includes("position"),
-        options: [
-          { value: "", label: "Seleccione" },
-          ...positionOptions,
-        ],
+        options: [{ value: "", label: "Seleccione" }, ...positionOptions],
       },
       {
         name: "reason",
         label: "DNI trabajador sustituido (si aplica)",
         type: "text",
         disabled: lockedFields.includes("reason"),
-        isValid: (v) =>
-          v ? (validateDNIorNIE(v) ? "" : textErrors("dni")) : "",
+        isValid: (v) => (v ? (validateDNIorNIE(v) ? "" : textErrors("dni")) : ""),
       },
     ];
-  };
+  }, [enums, lockedFields, selectedResponsibility, user]);
 
-  const fields = buildFields();
-
-  /* ═════════════════════════════════════════════════════════════════
-   *  RENDER
-   * ═════════════════════════════════════════════════════════════════ */
   return (
     <>
-          {showConfirmation && (
-      <ModalConfirmation
-        title="Desactivar oferta"
-        message="¿Quieres desactivar la oferta?"
-        onConfirm={() => handleConfirmOfferChange(pendingFormData, true)}
-        onCancel={()  => handleConfirmOfferChange(pendingFormData, false)}
-      />
-    )}
+      {showConfirmation && (
+        <ModalConfirmation
+          title="Desactivar oferta"
+          message="¿Quieres desactivar la oferta?"
+          onConfirm={() => handleConfirmOfferChange(pendingFormData, true)}
+          onCancel={() => handleConfirmOfferChange(pendingFormData, false)}
+        />
+      )}
 
       <ModalForm
         title="Añadir Empleado"

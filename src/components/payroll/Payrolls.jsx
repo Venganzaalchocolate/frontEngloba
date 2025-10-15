@@ -58,10 +58,19 @@ const Payrolls = ({ user, modal, charge, changeUser, listResponsability, title =
   return (
     <div className={title ? styles.contenedor : styles.contenedorModuloNominas}>
       {title && (
-        <h2>
-          NÓMINAS {(logged.user.role=='global' || logged.user.role=='root') && <FaSquarePlus onClick={() => setShowUploadModal(true)}/> } 
-        </h2>
-      )}
+  <h2>
+    NÓMINAS
+    {(logged.user.role=='global' || logged.user.role=='root') && (
+      <FaSquarePlus
+        tabIndex={0}
+        role="button"
+        aria-label="Subir nómina"
+        onKeyDown={(e)=> (e.key==='Enter'||e.key===' ') && setShowUploadModal(true)}
+        onClick={() => setShowUploadModal(true)}
+      />
+    )}
+  </h2>
+)}
 
       {/* Modal nuevo CV */}
       {showUploadModal && (

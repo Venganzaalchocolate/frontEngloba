@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react";
-import styles from "./multiSelectChips.module.css";
+import styles from "./../styles/multiSelectChips.module.css";
 
 export default function MultiSelectChips({
   options = [],              // [{ value, label }]
@@ -19,8 +19,8 @@ export default function MultiSelectChips({
   const filtered = useMemo(() => {
     let base = term
       ? options.filter(o =>
-          (o.label || "").toLowerCase().includes(term.toLowerCase())
-        )
+        (o.label || "").toLowerCase().includes(term.toLowerCase())
+      )
       : options;
 
     if (!allowDuplicates) {
@@ -35,11 +35,8 @@ export default function MultiSelectChips({
     if (!allowDuplicates && selectedSet.has(val)) return;
 
     onChange?.([...value, val]);
-    setTerm("");                         // limpia búsqueda
-    if (selectRef.current) {
-      selectRef.current.selectedIndex = 0; // vuelve al placeholder
-      selectRef.current.blur();            // contrae
-    }
+    setTerm("");
+    selectRef.current?.blur();
   };
 
   const remove = (val) => {
@@ -57,9 +54,11 @@ export default function MultiSelectChips({
     }
   };
 
-  // Para controlar el valor del select (siempre “sin selección”)
-  const selectValue = "";
-
+  if(disabled){
+    return 
+  }else {
+    
+  }
   return (
     <div className={styles.msc} aria-disabled={disabled}>
       {/* BUSCADOR */}
@@ -76,25 +75,25 @@ export default function MultiSelectChips({
       {/* SELECT NATIVO (contraído) */}
       <select
         ref={selectRef}
-        value={selectValue}
+        value=""                                   // sin selección real
         onChange={(e) => add(e.target.value)}
         disabled={disabled || (term && filtered.length === 0)}
       >
-        {/* Si NO hay término de búsqueda: muestra placeholder arriba */}
-        {(!term || term.trim() === "") && (
-          <option value="">
-        Selecciona una opción
-          </option>
-        )}
+        {/* Placeholder con texto; se oculta del desplegable si hay búsqueda */}
+        <option
+          value=""
+          disabled
+          hidden={!!term}
+          aria-hidden={!!term}
+          style={{ display: term ? "none" : undefined }} // fallback cross-browser
+        >
+          {(term && filtered.length > 0) ? filtered[0].label : 'Selecciona una opción'}
+        </option>
 
-        {/* Si hay término y NO hay resultados: muestra “Sin coincidencias” deshabilitado */}
         {term && filtered.length === 0 && (
-          <option value="" disabled>
-            Sin coincidencias
-          </option>
+          <option value="" disabled>Sin coincidencias</option>
         )}
 
-        {/* Opciones filtradas (cuando hay o no término) */}
         {filtered.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}

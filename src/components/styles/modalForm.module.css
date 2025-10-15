@@ -284,3 +284,7 @@
   margin-bottom: 8px;
   margin-top: 3px;
 }
+
+.modalContenedor h4{
+ color: var(--color-info);
+}

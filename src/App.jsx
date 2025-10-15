@@ -3,13 +3,11 @@ import './App.css'
 import Header from './components/globals/Header'
 import { getToken } from './lib/serviceToken'
 import { useLogin } from './hooks/useLogin.jsx';
-import { tokenUser } from './lib/data.js'
-import Login from './components/globals/Login.jsx';
+import { getDispositiveResponsable, tokenUser } from './lib/data.js'
 import MenuStart from './components/globals/MenuStart.jsx';
 import JobsPanel from './components/jobs/JobsPanel.jsx';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import WorkerMenu from './components/globals/WorkerMenu.jsx';
-import FormJob from './components/globals/FormJob.jsx';
 import Modal from './components/globals/Modal.jsx';
 import NotFound from './components/globals/NotFound.jsx';
 import Spinnning from './components/globals/Spinning.jsx';
@@ -21,6 +19,8 @@ import FormJobUp from './components/globals/FormJobUp.jsx';
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()
+  const [listResponsability, setlistResponsability] = useState([]);
+
 
   const [modal, setModal] = useState({
     open: false,
@@ -38,6 +38,14 @@ function App() {
     setModal(textAux)
   }
 
+    const chargeResponsability = async (user, token) => {
+      if (user.role !== 'root' && user.role !== 'global') {
+        const idUser = user._id;
+        const dataAux = { _id: idUser };
+        const responsability = await getDispositiveResponsable(dataAux, token);
+        setlistResponsability(responsability);
+      }
+    };
 
 
   useEffect(() => {
@@ -49,6 +57,7 @@ function App() {
           logout();
         } else {
           changeLogged(user);
+          chargeResponsability(user,token)
         }
       } else {
         logout();
@@ -65,9 +74,9 @@ function App() {
       <OfferProvider>
         <MenuWorkerProvider>
           <BrowserRouter>
-            <Header />
+            <Header listResponsability={listResponsability}/>
             <Routes>
-              <Route path="/" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
+              <Route path="/" element={<WorkerMenu listResponsability={listResponsability} charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
               <Route path="/*" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
               <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
               <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
@@ -86,7 +95,6 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<MenuStart charge={(x) => setCharge(x)} />}></Route>
-          <Route path="/login" element={<Login charge={(x) => setCharge(x)} />}></Route>
            <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
           <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
           <Route path="/trabajaconnosotros" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>

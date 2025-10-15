@@ -89,22 +89,22 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
 
     const handleDayClick = (date) => {
         if (!date || !isEditing || !selectedType) return;
-    
+
         // Verificar si el día está en la lista opuesta
         const isDayInOtherList =
             selectedType === 'Vacaciones'
                 ? selectedPersonalDays.some((d) => d.toDateString() === date.toDateString())
                 : selectedVacationDays.some((d) => d.toDateString() === date.toDateString());
-    
+
         if (isDayInOtherList) return;
-    
+
         if (selectedType === 'Vacaciones') {
             const updatedDays = selectedVacationDays.some(
                 (d) => d.toDateString() === date.toDateString()
             )
                 ? selectedVacationDays.filter(
-                      (d) => d.toDateString() !== date.toDateString()
-                  ) // Eliminar si ya está seleccionado
+                    (d) => d.toDateString() !== date.toDateString()
+                ) // Eliminar si ya está seleccionado
                 : [...selectedVacationDays, date]; // Agregar si no está
             setSelectedVacationDays(updatedDays);
         } else if (selectedType === 'Asuntos Propios') {
@@ -112,13 +112,13 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                 (d) => d.toDateString() === date.toDateString()
             )
                 ? selectedPersonalDays.filter(
-                      (d) => d.toDateString() !== date.toDateString()
-                  ) // Eliminar si ya está seleccionado
+                    (d) => d.toDateString() !== date.toDateString()
+                ) // Eliminar si ya está seleccionado
                 : [...selectedPersonalDays, date]; // Agregar si no está
             setSelectedPersonalDays(updatedDays);
         }
     };
-    
+
 
     const saveDays = async () => {
         const updatedUser = {
@@ -173,21 +173,19 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                                 const isSelectedPersonalDay = selectedPersonalDays.some(
                                     (d) => d.toDateString() === (day ? day.toDateString() : '')
                                 );
+                                const isToday = day && new Date().toDateString() === day.toDateString();
 
                                 return (
                                     <td
                                         key={j}
                                         onClick={() => handleDayClick(day)}
-                                        className={day ? styles.dayCell : ''}
-                                        style={{
-                                            backgroundColor: day
-                                                ? isSelectedVacationDay 
-                                                    ? 'lightgreen'
-                                                    : isSelectedPersonalDay
-                                                        ? 'lightblue'
-                                                        : ''
-                                                : '',
-                                        }}
+                                        className={[
+                                            day ? styles.dayCell : '',
+                                            !day ? styles.dayDisabled : '',
+                                            isSelectedVacationDay ? styles.vacationDay : '',
+                                            isSelectedPersonalDay ? styles.personalDay : '',
+                                            isToday ? styles.dayToday : '',
+                                        ].join(' ').trim()}
                                     >
                                         {day ? day.getDate() : ''}
                                     </td>
@@ -235,6 +233,7 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                         </option>
                     ))}
                 </select>
+
                 {isEditing && (
                     <div className={styles.selectionTypeBox}>
                         <button
@@ -258,6 +257,16 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                     <FaEdit onClick={() => setIsEditing(true)} />
                 )}
             </div>
+            <div className={styles.legend}>
+                <span className={styles.legendItem}>
+                    <span className={`${styles.legendSwatch} ${styles.swatchVacation}`} />
+                    Vacaciones
+                </span>
+                <span className={styles.legendItem}>
+                    <span className={`${styles.legendSwatch} ${styles.swatchPersonal}`} />
+                    Asuntos propios
+                </span>
+            </div>
             {monthView === 1 && (
                 <div className={styles.navigationContainer}>
                     <button className={styles.navButton} onClick={handlePreviousMonth}>
@@ -271,6 +280,16 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                     </h3>
                     <button className={styles.navButton} onClick={handleNextMonth}>
                         &gt;
+                    </button>
+                    <button
+                        className={styles.navButtonToday}
+                        onClick={() => {
+                            const today = new Date();
+                            setCurrentMonth(today.getMonth());
+                            setCurrentYear(today.getFullYear());
+                        }}
+                    >
+                        Hoy
                     </button>
                 </div>
             )}
@@ -299,6 +318,7 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                     ))
                 )}
             </div>
+
         </div>
     );
 };

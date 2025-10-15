@@ -1,86 +1,52 @@
-.contenedorOferta{
-    display: flex;
-    max-width: 600px;
-    padding: 1rem;
-    color: var(--color-morado);
-    flex-wrap: wrap;
-    border-radius: 2rem;
-    background-color: white;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 
-                        0 6px 6px rgba(0, 0, 0, 0.2);
-    height: fit-content;
+.card {
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-malva-oscuro) 28%, transparent);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  padding: .9rem;
+  color: var(--color-morado);
 }
 
-.contenedorOferta>h2{
-    flex: 1 100%;
-    border-bottom: solid 1px var(--color-morado);
-    padding-bottom: 1rem;
-    text-align: center;
+.title {
+  margin: 0 0 .6rem 0;
+  font-weight: 900;
+  color: color-mix(in srgb, var(--color-morado) 88%, #000 12%);
 }
 
-.contenedorOferta>.campo, .contenedorOferta>.campoLineas{
-    display: flex;
-    flex: 1 100%;
-    flex-direction: column;
-    padding: 0.8rem 0;
+.iconGrid { display: grid; gap: .6rem; margin-bottom: .6rem; }
+.iconRow { display: grid; grid-template-columns: auto 1fr; gap: .6rem; align-items: center; }
+.iconBubble {
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 999px;
+  color: var(--color-blanco);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-morado) 92%, #000 8%), var(--color-morado));
+  box-shadow: 0 1px 0 color-mix(in srgb, #000 18%, transparent);
 }
 
-.contenedorOferta>.campo>h3, .contenedorOferta>.campoLineas>h3{
-    font-size: 12pt;
-    color: var(--color-morado);
-}
+.k { margin: 0; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
+.v { margin: 0; font-weight: 700; color: color-mix(in srgb, var(--color-morado) 85%, #000 15%); }
 
-.contenedorOferta>.campo>p,  .contenedorOferta>.campoLineas>p, .contenedorOferta>.campo>ul>li{
-    font-size: 11pt;
-    color: black;
+.block {
+  background: color-mix(in srgb, var(--color-malva) 10%, #fff 90%);
+  border: 1px solid color-mix(in srgb, var(--color-malva-oscuro) 22%, transparent);
+  border-radius: 10px;
+  padding: .7rem .8rem;
+  margin: .6rem 0;
 }
+.block h3 { margin: 0 0 .3rem 0; font-size: 1rem; color: color-mix(in srgb, var(--color-morado) 88%, #000 12%); }
+.conditions { white-space: pre-line; }
 
-.campoLineas>p{
-    white-space: pre-line;
+.list { margin: 0; padding-left: 1.1rem; color: color-mix(in srgb, var(--color-morado) 80%, #000 20%); }
+
+.actions {
+  display: flex; gap: .6rem; justify-content: space-between; margin-top: .8rem;
 }
-
-.contenedorBotones{
-    display: flex;
-    flex: 1 100%;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
+.actions button {
+  border: 0; border-radius: 10px; padding: .55rem .9rem; font-weight: 800; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-morado) 92%, #000 8%), var(--color-morado));
+  box-shadow: 0 1px 0 color-mix(in srgb, #000 18%, transparent);
 }
-
-.contenedorOferta>.campo>p.conditions{
-    font-weight: 400;
-}
-
-.ofertaSeleccionada{
-    background-color: var(--color-crema);
-}
-
-.contenedorIconos{
-    display: flex;
-    background-color: var(--color-malva);
-    padding: 1rem;
-    border-radius: 1rem;
-    flex: 1 100%;
-    justify-content: space-around;
-    height: fit-content;
-    color: var(--color-morado);
-    margin: 1rem 0;
-    >div{
-        display: flex;
-        font-size: 9pt;
-        font-weight: bold;
-        height: fit-content;
-        gap: 5px;
-        >svg{
-            width: 2rem;
-            height: 2rem;
-        }
-    }
-}
-
-@media (width < 700px){
-    .contenedorIconos{
-        flex-direction: column;
-        gap: 0.5rem;
-    }
+.actions .btn-outline-danger {
+  color: var(--color-morado);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--color-malva-oscuro) 35%, transparent);
 }

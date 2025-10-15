@@ -1,116 +1,169 @@
-.contenedor{
-    display: flex;
-    background-color: var(--color-malva);
-    padding: 1rem;
-    flex-wrap: wrap;
-    gap: 1rem 0.5rem;
-
-    
-}
-
-.contenedor>h2{
-    display: flex;
-    flex: 1 100%;
-    border-bottom: 3px solid var(--color-morado);
-    gap: 1rem;
-    padding-bottom: 0.5rem;
-}
-
-.contenedor>h2>button{
-    font-size: 10pt;
-}
-
-.contenedor div{
-        display: flex;
-        flex-direction: column;
-        flex: 1 100%;
-    }
-
-.contenedor div input:disabled, .contenedor div span{
-    background-color: transparent;
-    padding: 0;
-    font-weight: 600;
-    padding-bottom: 0.5rem;
-    font-size: 9pt;
-}
-
-.contenedor div select:disabled{
-    background-color: transparent;
-    padding: 0;
-    font-weight: 600;
-    padding-bottom: 0.5rem;
+/* ====== CONTENEDOR GENERAL ====== */
+.contenedor {
+    --radius: 12px;
+  --pad: 16px;
+  --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  --shadow: 0 6px 18px rgba(0,0,0,.06);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 8px;
+  padding: 16px;
+  border-radius: 12px;
+  box-sizing: border-box;
+    padding: var(--pad);
+  border-radius: var(--radius);
+  border: var(--bd);
+  background: #fff;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 
 
-.contenedor button{
-    background-color: var(--color-morado);
-    color: var(--color-malva);
-    flex: 0;
-    width: fit-content;
+
+/* Título */
+.contenedor > h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 100%;
+  padding-bottom: 8px;
+  margin: 0 0 4px 0;
+  font-size: 13pt;
+  border-bottom: 1px solid var(--color-morado);
 }
 
-.contenedor button:hover{
-    color: var(--color-morado)
+/* Botones dentro del título */
+.contenedor > h2 > button {
+  font-size: 10pt;
 }
 
-.contenedor>div>select.consetmentDataProtection, .contenedor>div>select{
-    all: unset;
-    flex:0;
-    padding: 0.5rem;
-    background-color: white;
-    border-radius: 0.5rem;
-    text-overflow: ellipsis;
-    font-size: 9pt;
+.contenedor > h2 svg {
+  cursor: pointer;
+  transition: transform .15s ease, color .15s ease, opacity .15s ease;
+  opacity: .95;
 }
 
-.contenedor>div>select.consetmentDataProtection:disabled, .contenedor>div>select:disabled{
-    background-color: transparent;
-    padding: 0;
-    font-weight: 600;
-    padding-bottom: 0.5rem;
+.contenedor > h2 svg:hover {
+  color: var(--color-chicle);
+  transform: translateY(-1px);
+  opacity: 1;
 }
 
-.contenedor div.studiesContainer{
-    display: flex;
-    flex-direction: column;
-    font-size: 9pt;
-    font-weight: 600;
-    >div{
-        display: flex;
-        flex-direction: row;
-        padding: 0.5rem 0;
-    }
-    .studiesList{
-        flex-direction: column;
-        padding-right:1rem;
-        >div{
-            display: flex;
-            justify-content: space-between;
-            flex-direction:row;
-        }
-    }
-    .addStudy{
-        display: flex;
-        padding-right: 1rem;
-        >select{
-            flex: 1rem;
-        }
-        >svg{
-            margin-left: 1rem;
-            width: 2rem;
-            height: 2rem;
-        }
-    }
-    
+/* Bloques de campo (cada div directo del contenedor) */
+.contenedor > div {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 100%;
 }
 
-@media(width>1000px){
-    .contenedor{
-        border-radius: 1rem;
-    }
-    .contenedor div {
-        flex: 0 0 30%;
-      }
+/* Etiquetas y mensajes de error */
+.contenedor label {
+  color: var(--color-malva);
+  font-size: 9pt;
+  margin-bottom: 4px;
+}
+
+.errorSpan {
+  color: tomato;
+  font-size: 0.85rem;
+  margin-top: 6px;
+}
+
+/* ====== CONTROLES ====== */
+.contenedor input,
+.contenedor select {
+  background: var(--color-gris-claro);
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 10pt;
+  outline: none;
+  box-sizing: border-box;
+
 
 }
 
+/* Uniformar date inputs */
+.contenedor input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Hover/focus sutil */
+.contenedor input:focus,
+.contenedor select:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-morado) 25%, transparent);
+}
+
+/* Estado deshabilitado → aspecto de texto */
+.contenedor :is(input, select):disabled {
+  background: transparent;
+  padding: 0;
+  border: 0;
+  font-weight: 600;
+  padding: 0 0 0.5rem 0;
+}
+
+/* Botones genéricos */
+.contenedor button {
+  background: var(--color-morado);
+  color: var(--color-malva);
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.contenedor button:hover {
+  color: var(--color-morado);
+  background: color-mix(in srgb, var(--color-morado) 15%, white);
+}
+
+/* ====== ESPECÍFICOS ====== */
+.roleContainer { display: flex; align-items: center; flex: 1 1 100%; }
+.roleLabel { color: var(--color-malva); font-size: 9pt; }
+.role { min-width: 160px; }
+
+.phoneJobContainer, .phoneJobExtensionContainer { flex: 1 1 100%; }
+
+.genderContainer, .fosteredContainer, .apafaContainer, .consetmentDataProtectionContainer { flex: 1 1 100%; }
+
+/* ====== ESTUDIOS ====== */
+.studiesContainer { display: flex; flex-direction: column; font-size: 10pt; font-weight: 500;}
+.studiesList { display: flex; flex-direction: column; padding-right: 1rem; }
+.studyItem { display: flex; align-items: center; justify-content: space-between; display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0.8rem 0.2rem 0.8rem;
+  background-color: var(--color-crema);
+  margin: 2px;
+  border-radius: 1rem;
+  width: fit-content;
+  gap: 1rem;
+align-items: baseline;
+>svg{
+  margin-top: 1px;
+}
+}
+.addStudy { display: flex; align-items: center; gap: 12px; padding-right: 1rem; }
+.studySelect { flex: 1 1 auto; background: var(--color-gris-claro); margin-top: 0.5rem;}
+.plusIcon { width: 2rem; height: 2rem; cursor: pointer; }
+.noStudies { font-weight: 500; opacity: 0.7; }
+
+.studiesContainer p:first-of-type {
+  margin-top: -5px; /* ejemplo */
+}
+
+
+/* ====== LAYOUT RESPONSIVE ====== */
+@media (min-width: 1000px) {
+  .contenedor { border-radius: 1rem; }
+  .contenedor > div { flex: 0 0 30%; }
+  .studiesContainer p:first-of-type {
+    margin-top: -5px; /* ejemplo */
+}
+select[name="fostered"] {
+  flex: 0 2rem;
+}
+}

@@ -1,161 +1,437 @@
-.contenedor{
-    display: flex;
-    background-color: var(--color-malva);
-    padding: 1rem;
-    flex-wrap: wrap;
-    gap: 1rem 0.5rem;
-    border-radius: 1rem;
-    
+/* ===== Contenedor principal ===== */
+.contenedor {
+  --radius: 12px;
+  --pad: 16px;
+  --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  --shadow: 0 6px 18px rgba(0,0,0,.06);
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  border: var(--bd);
+  background: #fff;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+  display: flex;
+  flex: 1;
 }
 
-.contenedor>h2{
-    display: flex;
-    flex: 1 100%;
-    border-bottom: 3px solid var(--color-morado);
-    gap: 1rem;
-    padding-bottom: 0.5rem;
-    align-items: center;
+.contenedor > h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 2px 0;
+  padding-bottom: 8px;
+  font-size: 13pt;
+  color: var(--color-morado);
+  border-bottom: 1px solid var(--color-morado);
 }
 
-
-.contenedorSelectorvista{
-    display: flex;
-    flex: 1 100%;
-    gap: 1rem;
-    align-items: center;
-    >svg{
-        width: 1.5rem;
-        height: 1.5rem;
-        padding-bottom: 0.3rem;
-    }
-    >.contenedorSelectorVistaMes{
-        color: white;
-        border-bottom: 2px solid white;
-    }
-    >select{
-        flex: 0 4rem;
-        background-color: var(--color-morado);
-        color: white;
-        text-align: center;
-        font-weight: bold;
-    }
-    
+/* ===== Resumen de días ===== */
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f6f6fe;
+  color: var(--color-morado);
+  border: 1px solid color-mix(in srgb, var(--color-morado) 22%, #fff);
+  font-weight: 700;
+}
 
-  .selectionBox {
-    background-color: var(--color-crema);
-    padding: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    border-radius: 1rem;
-    gap: 10px;
-    flex: 1 100%;
-    >h3{
-      text-align: center;
-      flex: 1 100%;
-      text-transform: uppercase;
-    }
-    >select{
-        flex: 0 15rem;
-        background-color: var(--color-morado);
-        color: white;
-        text-align: center;
-        font-weight: bold;
-    }
-    >div{
-      flex: 1 100%;
-    }
-  }
+.badgeWarn {
+  background: #fff7f7;
+  color: #b23b3b;
+  border: 1px solid color-mix(in srgb, #d9534f 28%, #fff);
+}
 
-  .selectionTypeBox{
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    >button.NotSelectedTypeButton{
-      border: solid 1px var(--color-morado);
-    }
-    >button.SelectedTypeButton{
-      background-color: var(--color-verde-hoja);
-      color: white;
-    }
-  }
+/* ===== Barra de controles (vista / año / edición) ===== */
+.contenedorSelectorvista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.contenedorSelectorVistaMes {
   
-  .dayCell {
-    cursor: pointer;
-    padding: 10px;
-    text-align: center;
-    transition: background-color 0.3s;
-  }
-
-  .navigationContainer{
-    display: flex;
-    flex: 1 100%;
-    align-items: center;
-    gap: 1rem;
-    text-transform: uppercase;
-    >button{
-      background-color: var(--color-morado);
-      color: var(--color-malva);
-    }
-  }
-  
-  .navigation {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  
-  .navButton {
-    background-color: transparent;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
-  
-  .navButton:hover {
-    color: #007bff;
-  }
-
-  .calendarBox{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2rem;
-  }
-
-  .calendarMonth{
-    background-color: #f0f0f0;
-    padding: 1rem;
-    box-shadow: 1rem 1rem 1.5rem rgba(0, 0, 0, 0.2); /* Sombra en rem */
-    border-radius: 0.5rem; /* Esquinas redondeadas */
-    >h3{
-      text-align: center;
-      padding-bottom: 0.5rem;
-      text-transform: uppercase;
-    }
-  }
-
-  .dayCell {
-    text-align: center;
-    padding: 10px;
-    cursor: pointer;
-    border: 1px solid #ddd;
 }
 
-.dayVacation {
-    background-color: lightgreen; /* Días normales de vacaciones */
+.contenedorSelectorvista select {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: #fff;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+  font-weight: 600;
+  border: solid 1px var(--color-morado);
+  flex: 0 5rem;
+  justify-content: left;
+  text-align: center;
 }
 
-.dayPersonal {
-    background-color: lightblue; /* Días normales de asuntos propios */
+.selectionTypeBox {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: 4px;
 }
 
-.dayExceeded {
-    background-color: red; /* Días excedidos */
-    color: white; /* Texto blanco para mejor visibilidad */
+.SelectedTypeButton,
+.NotSelectedTypeButton {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-morado);
+  background: #fff;
+  color: var(--color-morado);
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
-
+.SelectedTypeButton {
+  background: var(--color-morado);
+  color: #fff;
 
   
+}
+.SelectedTypeButton:hover,
+.NotSelectedTypeButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.08);
+}
+
+/* Botón “Cancelar” y “Guardar” dentro de la barra */
+.selectionTypeBox + button,
+.contenedorSelectorvista > button {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 22%, #fff);
+  background: #fff;
+  color: var(--color-morado);
+  font-weight: 800;
+  cursor: pointer;
+}
+.contenedorSelectorvista > button.tomato {
+  color: #fff;
+  background: #d9534f;
+  border-color: #d9534f;
+}
+
+/* Icono de editar */
+.contenedorSelectorvista svg {
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-morado);
+}
+.contenedorSelectorvista svg:hover {
+  color: var(--color-chicle);
+  transform: translateY(-1px);
+}
+
+.contenedorSelectorvista .contenedorSelectorVistaMes{
+  color: var(--color-chicle);
+}
+
+/* ===== Navegación del mes (vista 1 mes) ===== */
+.navigationContainer {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  gap: 12px;
+}
+.navigationContainer h3 {
+  margin: 0;
+  color: var(--color-morado);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.navButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 22%, #fff);
+  background: #fff;
+  color: var(--color-morado);
+  font-weight: 900;
+  cursor: pointer;
+}
+.navButton:hover {
+  background: color-mix(in srgb, var(--color-morado) 12%, #fff);
+}
+
+/* ===== Rejilla de calendarios ===== */
+.calendarBox {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 860px) {
+  .calendarBox {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1220px) {
+  .calendarBox {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.calendarMonth {
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #fff);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,.04);
+  padding: 10px;
+}
+.calendarMonth > h3 {
+  margin: 0 0 8px 0;
+  color: var(--color-morado);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* ===== Tabla del calendario ===== */
+.calendarMonth table {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.calendarMonth thead th {
+  text-align: center;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-morado);
+  padding: 6px 0;
+  font-size: 10pt;
+}
+.calendarMonth tbody td {
+  text-align: center;
+  padding: 10px 0;
+  border: 1px solid #f0f0ff;
+  vertical-align: middle;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+}
+
+/* Celda de día interactiva */
+.dayCell {
+  cursor: pointer;
+  user-select: none;
+  transition: transform .08s ease, background .12s ease, box-shadow .12s ease, color .12s ease, border-color .12s ease;
+  border-radius: 8px;
+}
+.dayCell:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
+  background: #fafaff;
+}
+
+/* Estados */
+.vacationDay {
+  background: #e9f8ec !important;
+  border-color: color-mix(in srgb, #2e7d32 26%, #fff) !important;
+  color: #1b5e20 !important;
+  border-radius: 0;
+}
+.personalDay {
+  background: #eef6ff !important;
+  border-color: color-mix(in srgb, #0d47a1 70%, #fff) !important;
+  color: #0d47a1 !important;
+  border-radius: 0;
+}
+
+.dayToday {
+  outline: 2px solid color-mix(in srgb, var(--color-chicle) 36%, #fff);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+.dayDisabled {
+  background: #fafafa;
+  color: #aaa;
+  cursor: default;
+}
+
+/* Leyenda (opcional) */
+.legend {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 6px;
+}
+.legendItem {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: color-mix(in srgb, var(--color-morado) 75%, #333);
+  font-weight: 700;
+}
+.legendSwatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid #dcdcdc;
+}
+.swatchVacation { background: var(--color-verde-hoja); border-color: color-mix(in srgb, #2e7d32 26%, #fff); }
+.swatchPersonal  { background: #5186c3; border-color: color-mix(in srgb, #0d47a1 22%, #fff); }
+
+/* === Rejilla de calendarios (12M) === */
+.calendarBox {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+/* 2 columnas >=860px, 3 columnas >=1220px */
+@media (min-width: 900px) {
+  .calendarBox { grid-template-columns: repeat(2, minmax(260px, 400px)); }
+}
+@media (min-width: 1300px) {
+  .calendarBox { grid-template-columns: repeat(3, minmax(260px, 400px)); }
+}
+
+/* === Tarjeta de mes === */
+.calendarMonth {
+  min-width: 260px;                 /* evita compresión extrema */
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #fff);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,.04);
+  padding: 12px;
+}
+
+.calendarMonth > h3 {
+  margin: 0 0 10px 0;
+  color: var(--color-morado);
+  font-weight: 800;
+  font-size: 1rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* === Tabla del calendario === */
+.calendarMonth table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;               /* columnas iguales */
+  font-size: 0.92rem;
+}
+
+/* Cabecera de días */
+.calendarMonth thead th {
+  text-align: center;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-morado);
+  padding: 6px 0;
+  font-size: 0.78rem;                /* más pequeño para que quepa */
+  white-space: nowrap;               /* evita saltos raros */
+  letter-spacing: .2px;
+}
+.calendarMonth thead th + th {
+  border-left: 1px solid rgba(255,255,255,.18);  /* separadores sutiles */
+}
+.calendarMonth thead tr:first-child th:first-child {
+  border-top-left-radius: 8px;
+}
+.calendarMonth thead tr:first-child th:last-child {
+  border-top-right-radius: 8px;
+}
+
+/* Celdas de días */
+.calendarMonth tbody td {
+  text-align: center;
+  padding: 0;                        /* controlamos con height/line-height */
+  border: 1px solid #f0f0ff;
+  vertical-align: middle;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+  height: 36px;                      /* alto cómodo */
+  line-height: 36px;                 /* centra el número */
+  background: #fff;
+}
+
+/* Celda interactiva */
+.dayCell {
+  cursor: pointer;
+  user-select: none;
+  transition: transform .08s ease, background .12s ease, box-shadow .12s ease, color .12s ease, border-color .12s ease;
+  border-radius: 8px;
+}
+.dayCell:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
+  background: #fafaff;
+}
+
+/* Estados de selección (si usas clases en vez de inline styles) */
+.vacationDay {
+  background: #e9f8ec !important;
+  border-color: color-mix(in srgb, #2e7d32 26%, #fff) !important;
+  color: #1b5e20 !important;
+}
+.personalDay {
+  background: #eef6ff !important;
+  border-color: color-mix(in srgb, #0d47a1 22%, #fff) !important;
+  color: #0d47a1 !important;
+}
+.dayToday {
+  outline: 2px solid color-mix(in srgb, var(--color-chicle) 36%, #fff);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+.dayDisabled {
+  background: #fafafa;
+  color: #aaa;
+  cursor: default;
+}
+
+/* Navegación de un solo mes */
+.navigationContainer {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  gap: 12px;
+}
+.navigationContainer h3 {
+  margin: 0;
+  color: var(--color-morado);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.navButton, .navButtonToday {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 22%, #fff);
+  background: #fff;
+  color: var(--color-morado);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.navButtonToday{
+  width: auto;
+}
+
+.navButton:hover, .navButtonToday:hover {
+  background: color-mix(in srgb, var(--color-morado) 12%, #fff);
+}
+
+/* Resumen (usa estas clases en lugar de <p> sueltos si quieres chips) */
+.summary { display:flex; flex-wrap:wrap; gap:8px; }
+.badge    { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:#f6f6fe; color:var(--color-morado); border:1px solid color-mix(in srgb, var(--color-morado) 22%, #fff); font-weight:700; }
+.badgeWarn{ background:#fff7f7; color:#b23b3b; border:1px solid color-mix(in srgb, #d9534f 28%, #fff); }

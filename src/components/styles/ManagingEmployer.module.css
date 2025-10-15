@@ -212,9 +212,9 @@
 
 .contenedorEmployer{
     display: flex;
-    flex-direction: column;
     gap: 0.5rem;
     margin: 0.5rem 0;
+    flex-direction: column;
 }
 
 .botonMailto{
@@ -249,11 +249,132 @@ a.botonMailto:hover{
     color: lightskyblue;
 }
 
+/* por defecto (móvil): columna, uno debajo del otro */
+.rcGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/*
+filtros
+*/
+/* WRAP + INPUT */
+.pdSearchWrap {
+  position: relative;
+}
+
+.pdSearchInput {
+  width: 100%;
+  padding-right: 2rem; /* espacio para la X */
+}
+
+/* CLEAR BUTTON (la X dentro del input) */
+.pdClearBtn {
+  position: absolute;
+  right: .5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+}
+.pdClearBtn:hover { opacity: 1; }
+
+/* DROPDOWN */
+.pdSearchList {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  z-index: 9999; /* por encima de selects */
+}
+
+/* ITEM – resetea estilos para que no parezca tu botón morado */
+.pdSearchItem {
+  all: unset;                 /* limpia estilos heredados */
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  cursor: pointer;
+  font-size: 10pt;
+}
+.pdSearchItem:hover,
+.pdSearchItem:focus {
+  background: #f5f6fb;
+}
+
+/* BADGE + LABEL */
+.pdBadge {
+  font-size: .75rem;
+  padding: .125rem .375rem;
+  border-radius: .375rem;
+  background: #eef1ff;
+  color: #3b4db7;
+  white-space: nowrap;
+}
+.pdLabel {
+  color: #1f2340;
+}
+
+.isOnLeave{
+    background-color: var(--color-gris-medio);
+    /* border-color:  var(--color-gris-medio); */
+    >.tableCell, .tableCellStatus{
+        color: white;
+    }
+}
+
+.isSubstituting{
+      background-color: lightblue;
+}
+
+.sectionTitle{
+    padding-top: 1rem;
+}
+
+/* desktop: lado a lado */
+@media (min-width: 721px) {
+    .contenedor{
+        padding: 1rem 2rem;
+    }
+    .contenedorEmployer{
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    flex-direction: row;
+    
+}
+
+  .rcGrid {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .rcGrid > .contenedor {
+    flex: 1 1 0;
+    margin-top: 0; /* aseguramos que no herede margen */
+  }
+}
 
 @media (min-width: 1080px) {
-
-    .contenedor {
-        padding: 0 4rem;
+    .containerEmployer{
+        flex-direction: row;
     }
 
     .contendor select {

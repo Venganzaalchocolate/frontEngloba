@@ -1,355 +1,251 @@
-/* 
-   ESTRUCTURA BÁSICA DE TU CONTENEDOR
-   (Igual que antes)
-*/
+/* ===== Variables base (comparten look con Info/Documentos) ===== */
 .contenedor {
-    display: flex;
-    background-color: var(--color-malva);
-    padding: 1rem;
-    flex-wrap: wrap;
-    gap: 1rem 0.5rem;
-    flex-direction: column;
-    border-radius: 1rem;
-}
+  --radius: 12px;
+  --pad: 16px;
+  --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  --shadow: 0 6px 18px rgba(0,0,0,.06);
 
-.contenedor svg{
-  width: 2rem;
-}
-
-.contenedor > h2 {
-    display: flex;
-    flex: 1 100%;
-    border-bottom: 3px solid var(--color-morado);
-    gap: 1rem;
-    padding-bottom: 0.5rem;
-}
-
-.contenedor > h2 > button {
-    font-size: 10pt;
-}
-
-.contenedor div {
-    display: flex;
-    flex: 1 100%;
-}
-
-.contenedor div input:disabled {
-    background-color: transparent;
-    padding: 0;
-    font-weight: 600;
-    padding-bottom: 0.5rem;
-}
-
-.contenedor button {
-    background-color: var(--color-morado);
-    color: var(--color-malva);
-    width: fit-content;
-    cursor: pointer;
-}
-
-.contenedor button:hover {
-    color: var(--color-morado);
-}
-
-.tableResponsive {
-    border-radius: 1rem;
-    background-color: white;
-    padding: 0.5rem;
-}
-
-.tableResponsiveReason {
-    border-radius: 1rem;
-    background-color: var(--color-chicle);
-    padding: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    color: white;
-}
-
-.tableResponsiveReason > h3 {
-    display: flex;
-    gap: 1rem;
-    padding: 0.5rem;
-}
-
-/* Contenedor general que simulará tu "tabla" con divs */
-.myTable {
-    width: 100%;
-    /* 
-       Para móvil (por defecto), usaremos "tarjetas" 
-       en lugar de filas y columnas:
-    */
-    display: block;
-}
-
-/*
-   Cabecera "simulada". 
-   En mobile la podemos ocultar o mostrar como un bloque.
-   Aquí, la dejaremos visible como un simple contenedor.
-*/
-.myTableHeader {
-    display: none; /* Oculto en mobile; se activa en escritorio */
-    background-color: var(--color-malva);
-    color: #fff;
-    font-weight: bold;
-    padding: 0.5rem;
-    border-radius: 0.5rem 0.5rem 0 0;
-}
-
-/* Cuerpo simulado */
-.myTableBody {
-    display: block;
-}
-
-/* Cada "fila" -> en móvil será un "card" */
-.myTableRow {
-    display: block; 
-    margin-bottom: 1rem; 
-    border-radius: 0.5rem; 
-    padding: 0.5rem; 
-    background-color: #fff;
-}
-
-/* Cada "celda" */
-.myTableCell {
-    display: block; 
-    position: relative; 
-    padding: 0.4rem 0.8rem;
-    border: none;
-    text-align: left;
-    color: var(--color-morado);
-}
-
-/* 
-   Pseudo-elemento para la etiqueta (nombre de la columna) 
-   Se muestra en mobile. 
-*/
-.myTableCell::before {
-    content: attr(data-label) ": ";
-    font-weight: bold;
-    display: inline-block;
-    width: auto;
-    margin-right: 0.5rem;
-    color: #333;
-}
-
-/* 
-   El "thead" y "tbody" antiguos ya no se usan, 
-   pero si quieres mantener .myTable thead .myTableBody, 
-   asegúrate de no chocar con estas clases. 
-*/
-
-/* Estilos extra */
-.botonBaja {
-    font-size: 8pt;
-}
-
-.cajaAcciones {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    justify-content: end;
-}
-
-/* Para resaltar celdas de "fecha" */
-.fecha {
-    width: 8rem; /* Esto no hará efecto en mobile (display block) 
-                    pero sí puede funcionar en escritorio con Grid */
-}
-
-/* LEAVE TABLE WRAPPER (interior para hijos) */
-.leaveTableWrapper {
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    background-color: var(--color-crema);
-    flex-direction: column;
-}
-
-.leaveTableWrapper h3 {
-    padding: 0.5rem;
-}
-
-/* 
-   *****************
-   MEDIA QUERY ESCRITORIO
-   *****************
-*/
-@media (min-width: 768px) {
-
-  /* Convertimos el contenedor en un grid para simular la tabla */
-  .contenedor .myTable {
-    display: grid;
-    grid-template-rows: auto 1fr; 
-    
-  }
-
-  /* Cabecera aparece como una fila en grid */
-  .myTableHeader {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr); /* Ajusta según tus columnas */
-    background-color: var(--color-malva);
-    color: #fff;
-    font-weight: bold;
-    padding: 0.5rem;
-    border-bottom: 2px solid var(--color-malva);
-  }
-
-  /* Cuerpo también como grid */
-  .myTableBody {
-    display: block;  
-    flex-wrap: wrap;
-  }
-
-  /* Cada fila en pantalla grande */
-  .myTableRow {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr); 
-    margin-bottom: 0;
-    border-radius: 0;
-    padding: 0.2rem;
-    border-bottom: 1px solid var(--color-malva);
-  }
-
-  /* Cada "celda" en escritorio */
-  .myTableCell {
-    display: block; /* Aun display block */
-    padding: 0.5rem;
-    border: none;
-    /* 
-      Queremos que se vea como una celda normal, 
-      si deseas vertical-align, puedes usar align-self:
-    */
-    align-self: center;
-  }
-
-  /* 
-     Ocultamos la pseudo-etiqueta ::before porque 
-     en escritorio tenemos la cabecera real (myTableHeader).
-  */
-  .myTableCell::before {
-    content: none;
-  }
-
-  /* Para forzar que la celda "Dispositivo" ocupe más espacio: 
-     Podrías usar grid-column en .myTableRow si quieres. 
-  */
-
-
-  /* Ajustes para la "fecha" en escritorio */
-  .contenedor .fecha {
-    width: auto; /* O un valor si lo prefieres */
-  }
-
-  /* Estilos de "tableResponsive" en escritorio */
-  .contenedor .tableResponsive {
-    padding: 1rem;
-  }
-
-  .contenedor .tableResponsiveReason {
-    border-radius: 1rem;
-    background-color: cornflowerblue;
-    padding: 1rem;
-    color: white;
-  }
-
-  /* LEAVE TABLE WRAPPER ESCRITORIO */
-  .contenedor .leaveTableWrapper {
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    background-color: var(--color-crema);
-  }
-}
-
-
-.contenedor .leaveTableWrapper {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  background-color: var(--color-crema);
+  display: flex;
   flex-direction: column;
+  gap: 14px;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  border: var(--bd);
+  background: #fff;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 
-.contenedor .myLeaveTable {
-  width: 100%;
-  display: block; /* modo cards en mobile */
-}
-
-.contenedor .myLeaveTableHeader {
-  display: none; /* se mostrará en desktop con media query */
-  background-color: var(--color-malva);
-  color: #fff;
-  font-weight: bold;
-  padding: 0.5rem;
-}
-
-.contenedor .myLeaveTableBody {
-  display: block;
-}
-
-.contenedor .myLeaveTableRow {
-  display: block;
-  margin-bottom: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-  background-color: #fff;
-  padding: 0.5rem;
-}
-
-.contenedor .myLeaveTableCell {
-  display: block;
-  position: relative;
-  padding: 0.3rem 0.5rem;
-  text-align: left;
-}
-
-.contenedor .myLeaveTableCell::before {
-  content: attr(data-label) ": ";
-  font-weight: bold;
-  display: inline-block;
-  width: auto;
-  margin-right: 0.5rem;
-  color: #333;
-}
-
-.contenedor .cajaAcciones {
+/* ===== Título del bloque principal ===== */
+.contenedor > h2 {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 12px;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  font-size: 13pt;
+  color: var(--color-morado);
+  border-bottom: 1px solid var(--color-morado);
+}
+.contenedor > h2 svg {
+  cursor: pointer;
+  transition: transform .15s ease, color .15s ease;
+}
+.contenedor > h2 svg:hover {
+  color: var(--color-chicle);
+  transform: translateY(-1px);
 }
 
-/* MEDIA QUERY ESCRITORIO */
-@media (min-width: 768px) {
-  .contenedor .myLeaveTable {
-    display: grid; /* o lo que desees para emular tabla */
-    border-radius: 0.5rem;
-  }
+/* ==================
+   Tarjeta de periodo
+   ================== */
+.card, .cardPrincipal {
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #fff);
+  border-radius: var(--radius);
+  background: var(--color-gris-claro);;
+  box-shadow: 0 4px 12px rgba(0,0,0,.04);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-  .contenedor .myLeaveTableHeader {
+.cardPrincipal{
+  background: white;
+}
+.cardReplacement {
+  background: color-mix(in srgb, lightblue 8%, #fff);
+  border-color: color-mix(in srgb, lightblue 32%, #fff);
+}
+
+/* Cabecera compacta */
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+.headerMain { display: flex; align-items: center; gap: 10px; }
+.cardTitle { margin: 0; font-size: 12.5pt; color: var(--color-morado); font-weight: 800; }
+
+/* Acciones de cabecera */
+.headerActions { display: flex; align-items: center; gap: 8px; }
+
+.chipButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--color-yema);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(44,25,102,.12);
+  transition: transform .12s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+.chipButton:hover {
+  background: color-mix(in srgb, var(--color-morado) 18%, #fff);
+  color: var(--color-morado);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.08);
+}
+.iconAction, .iconActionDanger {
+  width: 1.1rem; height: 1.1rem; cursor: pointer; opacity: .9;
+  transition: transform .12s ease, color .12s ease, opacity .12s ease;
+}
+.iconAction:hover, .iconActionDanger:hover { transform: translateY(-1px); opacity: 1; }
+.iconAction { color: var(--color-morado); }
+.iconActionDanger { color: color-mix(in srgb, #d9534f 85%, #000); }
+.iconActionDanger:hover { color: #d9534f; }
+
+/* ==================
+   Metadatos del periodo
+   ================== */
+.meta { padding: 6px 0 0; }
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px 12px;
+  margin: 0;
+}
+.metaGrid > div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+}
+.metaGrid dt { font-weight: 700; color: var(--color-malva); }
+.metaGrid dd { margin: 0; color: color-mix(in srgb, var(--color-morado) 92%, #222); }
+
+/* monoespaciado para fechas */
+.mono {
+  font: 700 10pt ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+  color: color-mix(in srgb, var(--color-morado) 90%, #222);
+}
+
+/* ==============
+   Bajas/Excedencias
+   ============== */
+.leaves { display: flex; flex-direction: column; gap: 8px; }
+h4.tituloBajas { margin: 0; color: var(--color-yema); font-weight: 800; }
+
+.leafList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+/* Cabecera de la lista (oculta en móvil) */
+.leafHeader { display: none; }
+
+.leafRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fafaff;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+}
+.leafCell { display: flex; align-items: center; }
+.leafCell::before {
+  content: attr(data-label) ": ";
+  font-weight: 700;
+  color: var(--color-malva);
+  margin-right: 6px;
+}
+.leafActions { justify-content: flex-end; gap: 8px; }
+.leafActions .iconAction, .leafActions .iconActionDanger { margin-left: 4px; }
+
+.buttonBajas{
+ background-color: var(--color-yema);
+}
+/* ===== Desktop ===== */
+@media (min-width: 720px) {
+  .metaGrid { grid-template-columns: repeat(5, 1fr); }
+  .metaGrid > div { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 840px) {
+  /* Cabecera visible en desktop como "thead" */
+  .contenedor{
+    min-width: 30rem;
+  }
+  .leafHeader {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); 
-    background-color: antiquewhite;
-    color: var(--color-morado);
-    padding: 0.5rem;
+    grid-template-columns: repeat(5, 1fr); /* Inicio | Prevista | Fin | Descripción | Acciones */
+    align-items: center;
+    padding: 10px;
+    border-radius: 10px 10px 0 0;
+    background: var(--color-yema);
+    color: #fff;
+    font-weight: 700;
   }
 
-  .contenedor .myLeaveTableBody {
-    display: block;
-  }
-
-  .contenedor .myLeaveTableRow {
-    display: grid;
+  .leafRow {
     grid-template-columns: repeat(5, 1fr);
-    border: none;
-    border-bottom: 1px solid #ccc;
-    margin-bottom: 0;
-    border-radius: 0;
-    padding: 0.3rem;
+    align-items: center;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
-  .contenedor .myLeaveTableCell {
-    display: block;
-    padding: 0.5rem;
-  }
-  .contenedor .myLeaveTableCell::before {
-    content: none; /* se elimina la etiqueta, ya tenemos cabecera */
-  }
+  .leafCell::before { content: none; } /* hay cabecera */
+  .leafActions { justify-content: end; }
+}
+
+/* ==============
+   Periodos anteriores (toggle)
+   ============== */
+.pastWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.togglePast {
+  align-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--color-morado);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  box-shadow: 0 2px 8px rgba(44,25,102,.08);
+}
+.togglePast:hover {
+
+  background: color-mix(in srgb, var(--color-morado) 18%, #fff);
+  color: var(--color-morado);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.08);
+
+}
+
+.pastPanel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: max-height .28s ease, opacity .2s ease, transform .2s ease;
+}
+.pastOpen {
+  max-height: 3000px; /* suficiente para una lista; ajusta si hace falta */
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pastPanel .card {
+  margin-bottom: 16px; /* separa cada tarjeta */
+}
+
+.pastPanel .card:last-child {
+  margin-bottom: 0; /* al último no le dejes hueco extra */
 }

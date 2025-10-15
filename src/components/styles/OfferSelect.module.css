@@ -12,14 +12,14 @@
 /* ‼️ chips en varias filas */
 .list {
   display: flex;
-  flex-wrap: wrap;        /* permite “romper” de línea */
+  flex-direction: column;
   gap: 0.35rem;
   justify-content: flex-start;
 }
 
 /* Estilo pill-shape, igual que .chip en InfoUser pero clicable */
 .chip {
-  background: var(--color-malva-oscuro);
+  background: white;
   color: #fff;
   padding: 0.25rem 0.8rem;
   border-radius: 0.3rem;
@@ -28,17 +28,30 @@
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
+  >p{
+    color: var(--color-morado);
+    display: flex;
+    gap: 0.5rem;
+  }
+  >p:last-child{
+    color:  var(--color-chicle);
+    font-weight: 600;
+
+  }
 }
 
 .chip:hover {
-  background: var(--color-crema);
-  color: var(--color-morado);
+  background: var(--color-verde-hoja);
+  
+  >p{
+   color: white; 
+  }
 }
 
 p.function{
   font-size: 10pt;
   font-weight: bold;
-  color: white;
+  color: var(--color-malva-oscuro);
 }
 
 .chip>p.location{

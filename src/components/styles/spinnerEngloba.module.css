@@ -1,0 +1,43 @@
+/* src/components/styles/spinnerEngloba.module.css */
+
+.wrapper {
+  display: inline-block;
+  /* leve giro para darle vida al conjunto (puedes quitarlo si lo quieres estático) */
+  animation: spin 10s linear infinite;
+  color: var(--color-morado);
+}
+
+.track {
+  /* halo sutil */
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, .06));
+}
+
+.segment {
+  /* truco de “dibujo”: arrancamos con 0% de trazo y lo animamos */
+  stroke-dasharray: 0 100;
+  /* desplazamos el dash para situar la pala en su posición */
+  stroke-dashoffset: var(--start);
+  /* cada pala se “dibuja”, queda un instante y se desvanece */
+  animation: draw var(--speed, 1.25s) ease-in-out infinite;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 45%, transparent));
+  opacity: 0.85;
+}
+
+/* Dibujado del borde (outline) */
+@keyframes draw {
+  0%   { stroke-dasharray: 0 100;    opacity: .25; }
+  40%  { stroke-dasharray: var(--len) calc(100 - var(--len)); opacity: 1; }
+  65%  { stroke-dasharray: var(--len) calc(100 - var(--len)); opacity: 1; }
+  100% { stroke-dasharray: 0 100;    opacity: .25; }
+}
+
+/* Giro muy lento del conjunto (opcional) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Accesibilidad: sin animaciones para quien lo solicite */
+@media (prefers-reduced-motion: reduce) {
+  .wrapper { animation: none; }
+  .segment { animation: none; stroke-dasharray: var(--len) calc(100 - var(--len)); }
+}

@@ -1,0 +1,137 @@
+
+/* ====== Base & fondo ====== */
+.contenedor{
+  display: flex;
+  flex-direction: column;
+  flex: 1 100%;
+  justify-content: center;
+  align-items: center;
+  background-image: url('../../../public/img/fondo_menuStart.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding: 24px;
+}
+
+/* Contenedor específico del menú */
+#contenedorWorkerMenu{
+
+}
+
+/* ====== Encabezado ====== */
+.menuHeader { 
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto 18px auto; 
+  text-align: left;
+  >h2{
+    color: var(--color-malva);
+  }
+}
+.name { color: white; font-weight: 700; }
+.subtitle { color: #6b7280; margin-top: 6px; }
+
+/* ====== Grid responsive ====== */
+.grid{
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 14px;
+}
+@media (min-width: 520px){ .grid{ grid-template-columns: repeat(3,1fr); } }
+@media (min-width: 768px){ .grid{ grid-template-columns: repeat(4,1fr); } }
+@media (min-width: 1024px){ .grid{ grid-template-columns: repeat(6,1fr); } }
+
+/* ====== Tile (card) ====== */
+.tile{
+  position: relative;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(148,163,184,0.25);
+  border-radius: 18px;
+  padding: 18px 12px 14px;
+  box-shadow: 0 10px 25px rgba(2,6,23,0.08);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.tile:hover{ 
+  transform: translateY(-2px); 
+  box-shadow: 0 14px 28px rgba(2,6,23,0.12);
+}
+.tile:active{ transform: translateY(0) scale(0.98); }
+.tile:focus-visible{
+  box-shadow: 0 0 0 3px rgba(148,163,184,0.6), 0 12px 26px rgba(2,6,23,0.10);
+}
+
+/* ====== Icono grande ====== */
+.tileIcon{
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(108,92,231,0.12);          /* fallback si no hay accent */
+  border: 1px solid rgba(108,92,231,0.25);     /* fallback */
+}
+
+/* Adaptar color según --tile-accent inline */
+.tile{
+  --tile-accent: #6C5CE7; /* valor por defecto, se sobreescribe inline */
+}
+.tileIcon{
+  background: color-mix(in srgb, var(--tile-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--tile-accent) 35%, transparent);
+}
+
+/* TAMAÑO/Color de react-icons */
+.tileIcon :global(svg){
+  width: 30px;
+  height: 30px;
+  color: var(--tile-accent);
+}
+
+/* ====== Texto ====== */
+.tileLabel{
+  text-align: center;
+  font-size: 0.95rem;
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* ====== Modo oscuro (opcional) ====== */
+@media (prefers-color-scheme: dark){
+  .subtitle{ color: #9aa3af; }
+  .tile{
+    background: rgba(17,24,39,0.45);
+    border-color: rgba(148,163,184,0.18);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+  }
+  .tileLabel{ color: #e5e7eb; }
+  .tile:focus-visible{
+    box-shadow: 0 0 0 3px rgba(148,163,184,0.45), 0 12px 26px rgba(0,0,0,0.35);
+  }
+}
+
+/* ====== Layout heredado que ya no se usa con tiles ======
+   (lo dejo por si lo usas en otros sitios; si no, puedes eliminarlo) */
+.contenedor > .menu{
+  background: rgba(79,82,159,0.42);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+  backdrop-filter: blur(4.4px);
+  -webkit-backdrop-filter: blur(4.4px);
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.moduleFallback{
+  display: flex;
+  flex: 1 100%;
+  background-color: #0f172a;
+  justify-content: center;
+  align-content: center;
+}

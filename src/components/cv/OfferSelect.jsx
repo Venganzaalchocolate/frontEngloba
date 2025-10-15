@@ -1,35 +1,75 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
-import { updateOffer } from "../../lib/data";
+import { offerUpdate } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import { useOffer } from "../../hooks/useOffer";
 import { deepClone } from "../../lib/utils";
-import styles from "./OfferSelect.module.css";       // ← estilos para el <ul>
+import styles from "../styles/OfferSelect.module.css";
+import { FaBriefcase, FaBuilding } from "react-icons/fa6";
+import { useEffect } from "react";
 
 const OfferSelect = ({
   offers,
   closeModal,
   userSelected,
+  enumsData,
   type,
-  onChosen = () => {},
-  list = false,                   // ← NUEVO: valor por defecto = false
+  onChosen = () => { },
+  list = false,
 }) => {
   const { changeOffer } = useOffer();
 
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
+  const [offersMod, setOffersMod] = useState([])
+  const [fieldsForm, setFieldsModal] = useState([])
+
+
+
+  useEffect(() => {
+    const getOfferTitle = (o) => {
+      const idJob = o?.jobId || '';
+      const idDispositive = o?.dispositive?.newDispositiveId || ''
+      const job = enumsData?.jobsIndex[idJob]?.name;
+      const disp = enumsData?.dispositiveIndex[idDispositive]?.name;
+      const jobTitleAux = `${job} - ${disp}`
+      const data={ jobName: job, dispositiveName: disp, jobTitle: jobTitleAux };
+   
+      return data
+    };
+    const mapped = offers.map((x) => ({
+      ...x,
+      dataAux: getOfferTitle(x),
+    }));
+
+    setOffersMod(mapped);
+ 
+      const fieldsAux = [
+        {
+          name: "offer",
+          label: "Ofertas de Empleo",
+          type: "select",
+          required: true,
+          options: [
+            { value: "", label: "Seleccione una opción" },
+            ...mapped.map((o) => ({ value: o._id, label: o.dataAux.jobTitle })),
+          ],
+        },
+      ]
+      setFieldsModal(fieldsAux)
+
+  }, [])
+
 
   /* ---------- Lógica común para cualquier modo ---------- */
   const selectOffer = (offerAux) => {
-    // 1) ¿Hace falta añadir el user a la oferta?
-    if (type !== "select" && userSelected && !offerAux.userCv.includes(userSelected._id)) {
+    const alreadyIn = (offerAux?.userCv || []).includes(userSelected?._id);
+    if (type !== "select" && userSelected && !alreadyIn) {
       setSelectedOffer(offerAux);
       setShowConfirmation(true);
       return;
     }
-
-    // 2) No hace falta confirmación → cambiamos oferta y salimos
     changeOffer(offerAux);
     closeModal();
     onChosen(offerAux);
@@ -37,7 +77,7 @@ const OfferSelect = ({
 
   /* ---------- Handler para el formulario (modo por defecto) ---------- */
   const handleSubmit = (formData) => {
-    const offerAux = offers.find((o) => o._id === formData.offer);
+    const offerAux = offersMod.find((o) => o._id === formData.offer);
     if (offerAux) selectOffer(offerAux);
   };
 
@@ -47,13 +87,13 @@ const OfferSelect = ({
 
     if (userSelected && selectedOffer) {
       let updated = deepClone(selectedOffer);
+      const list = Array.isArray(updated.userCv) ? updated.userCv : [];
 
-      if (!updated.userCv.includes(userSelected._id)) {
-        updated.userCv.push(userSelected._id);
-        updated.id = updated._id;
-
+      if (!list.includes(userSelected._id)) {
+        list.push(userSelected._id);
+        const data = { offerId: updated._id, userCv: list };
         const token = getToken();
-        updated = await updateOffer(updated, token);
+        updated = await offerUpdate(data, token);
         changeOffer(updated);
       } else {
         changeOffer(updated);
@@ -66,46 +106,38 @@ const OfferSelect = ({
     onChosen(finalOffer);
   };
 
-  /* ---------- Campos del ModalForm ---------- */
-  const fields = [
-    {
-      name: "offer",
-      label: "Ofertas de Empleo",
-      type: "select",
-      required: true,
-      options: [
-        { value: "", label: "Seleccione una opción" },
-        ...offers.map((o) => ({ value: o._id, label: o.job_title })),
-      ],
-    },
-  ];
 
   /* ---------- Render ---------- */
   return (
     <>
-      {/* Modal de confirmación (lo usamos en ambos modos) */}
+      {/* Modal de confirmación */}
       {showConfirmation && (
         <ModalConfirmation
           title="Confirmar selección"
-          message={`¿Quieres agregar a ${userSelected.name} a la oferta ${selectedOffer?.job_title}?`}
+          message={`¿Quieres agregar a ${userSelected?.name || "la persona"
+            } a la oferta "${selectedOffer?.dataAux.jobTitle || "Oferta"}"?`}
           onConfirm={handleConfirm}
           onCancel={() => setShowConfirmation(false)}
         />
       )}
 
-
-      {/* Modo LISTA ---------------------------------------------------- */}
       {list && (
         <div className={styles.listWrapper}>
           <ul className={styles.list}>
-            {offers.map((offer) => (
+            {offersMod.map((offer) => (
               <li
                 key={offer._id}
                 className={styles.chip}
                 onClick={() => selectOffer(offer)}
+                title={offer.jobTitle}
+                aria-label={`Seleccionar oferta ${offer.jobTitle}`}
               >
-                <p className={styles.function}>{offer.functions}</p>
-                <p className={styles.location}>{(offer.location).toUpperCase()} - ({offer.province})</p>
+                <p>
+                  <FaBriefcase /> <span>{offer.dataAux.jobName}</span>
+                </p>
+                <p>
+                  <FaBuilding /> <span>{offer.dataAux.dispositiveName}</span>
+                </p>
               </li>
             ))}
           </ul>
@@ -117,7 +149,7 @@ const OfferSelect = ({
         <ModalForm
           title="Oferta de empleo"
           message="Selecciona una oferta de empleo"
-          fields={fields}
+          fields={fieldsForm}
           onSubmit={handleSubmit}
           onClose={closeModal}
         />

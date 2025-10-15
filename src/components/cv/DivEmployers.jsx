@@ -1,34 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
-// Importar iconos de react-icons (ajusta según tu caso)
-import { FaCheckCircle, FaTimesCircle, FaRegEyeSlash, FaEye, FaMailBulk, FaWheelchair } from 'react-icons/fa';
+// Iconos
+import { FaCheckCircle, FaTimesCircle, FaWheelchair, FaHouseUser } from 'react-icons/fa';
 import { GoStarFill, GoStar } from 'react-icons/go';
 import { BsExclamationOctagonFill, BsExclamationOctagon } from 'react-icons/bs';
 import { MdEmail } from "react-icons/md";
 
-// Importa tu componente CvPanel (ajusta la ruta según tu estructura)
+// Componentes
 import CvPanel from './CvPanel';
+import OfferSelect from './OfferSelect';
 
-// Importa tus estilos (ajusta las rutas y nombres según tu proyecto)
+// Estilos
 import styles from '../styles/managingResumenes.module.css';
 import stylesTooltip from '../styles/tooltip.module.css';
-import { FaHouseUser } from "react-icons/fa";
-import OfferSelect from './OfferSelect';
-/**
- * Este componente mostrará la lista de usuarios, con la lógica de mapeo que antes tenías en createDivEmployer.
- * @param {Array} users - Lista de usuarios
- * @param {String} keySuffix - Sufijo para las keys (ej: "bag")
- * @param {Function} checkUser - Función que retorna la clase CSS a usar
- * @param {Function} lookCV - Función para manejar el click y mostrar el CV
- * @param {Function} formatDatetime - Función para formatear la fecha
- * @param {Object} userSelected - Usuario actualmente seleccionado
- * @param {any} charge - Prop que usas dentro del CvPanel (si aplica)
- * @param {String} urlCv - URL del CV (para el panel)
- * @param {Function} changeUser - Función para actualizar el usuario (en CvPanel)
- * @param {Boolean} modal - Estado de un modal (si aplica)
- * @param {Function} deleteUser - Función para eliminar el usuario (si aplica)
- * @param {Object} enumsEmployer - Objeto con enumeraciones para el empleador
- */
+
+// Utils
+import { formatESPhone } from '../../lib/utils';
+
+/* Helpers */
+const idsToNames = (ids, indexObj) => {
+  if (!Array.isArray(ids) || !ids.length || !indexObj) return [];
+  return ids.map((id) => indexObj?.[id]?.name).filter(Boolean);
+};
+
 function DivEmployers({
   users = [],
   keySuffix = '',
@@ -41,136 +35,185 @@ function DivEmployers({
   changeUser,
   modal,
   deleteUser,
-  enumsEmployer,
+  enumsEmployer,     // { jobsIndex, studiesIndex, provincesIndex, ... }
   offerSelected,
   changeOffer,
   listOffers,
-  chargeOffers
+  chargeOffers,
 }) {
   const [selectedOfferAndAddUser, setSelectedOfferAndAddUser] = useState(null);
 
+  // Si solo hay 1 resultado, ábrelo automáticamente (evita bucles si ya está seleccionado)
+  useEffect(() => {
+    if (Array.isArray(users) && users.length === 1) {
+      const only = users[0];
+      if (!userSelected || userSelected._id !== only._id) {
+        lookCV?.(only._id, only);
+      }
+    }
+  }, [users, userSelected, lookCV]);
+
+  // Total de provincias "seleccionables" (hojas): subcategorías + raíces sin hijos
+  const totalSelectableProvinces = useMemo(() => {
+    const entries = Object.entries(enumsEmployer?.provincesIndex || {}); // [id, { name, parent?, isSub?, isRoot? }]
+    if (!entries.length) return 0;
+
+    // ids que son parent de alguien
+    const parentIds = new Set(entries.map(([, v]) => v?.parent).filter(Boolean));
+    // hoja = isSub || (no parent y no es parent de otros)
+    const leaves = entries.filter(([id, v]) => v?.isSub || (!v?.parent && !parentIds.has(id)));
+    return leaves.length;
+  }, [enumsEmployer?.provincesIndex]);
 
   return (
     <>
       {users.length > 0 &&
-        users.map((user) => (
-          <div key={user._id + keySuffix}>
-            {/* Fila principal con la información del usuario */}
-            <div className={checkUser(user)} onClick={() => lookCV(user._id, user)}>
-              <div className={`${styles.tableCell}`}>{
-                (user?.workedInEngloba) && <span className={stylesTooltip.tooltip}>
-                  <FaHouseUser className={styles.iconworkedInEngloba} />
-                  <span className={`${stylesTooltip.tooltiptext}`}>
-                    Ha trabajado o trabaja en Engloba
-                  </span>
-                </span>}
+        users.map((user) => {
+          // Usar NUEVOS campos (fallback a legacy por si acaso)
+          const jobsIds       = Array.isArray(user.jobsId) ? user.jobsId : (Array.isArray(user.jobs) ? user.jobs : []);
+          const studiesIds    = Array.isArray(user.studiesId) ? user.studiesId : (Array.isArray(user.studies) ? user.studies : []);
+          const provincesIds  = Array.isArray(user.provincesId) ? user.provincesId : (Array.isArray(user.provinces) ? user.provinces : []);
 
+          const jobNames       = idsToNames(jobsIds,      enumsEmployer?.jobsIndex).join(', ')      || '—';
+          const studyNames     = idsToNames(studiesIds,   enumsEmployer?.studiesIndex).join(', ')   || '—';
+          const provinceNames  = idsToNames(provincesIds, enumsEmployer?.provincesIndex);
+          const provincesText  =
+            provincesIds?.length
+              ? (totalSelectableProvinces && provincesIds.length === totalSelectableProvinces
+                  ? 'Todas'
+                  : (provinceNames.join(', ') || '—'))
+              : '—';
 
-                <p className={styles.capitalize}>{user.name}</p></div>
-              <div className={styles.tableCell}><MdEmail size="1.5rem" onClick={() => modal(`${user.name}`, `${user.email}`)} /></div>
-              <div className={styles.tableCell}>{user.phone}</div>
-              <div className={styles.tableCell}>{user.jobs.join(', ')}</div>
-              <div className={styles.tableCell}>{user.studies.join(', ')}</div>
-              <div className={styles.tableCell}>
-                {user.provinces.length !== 11 ? user.provinces.join(', ') : 'Todas'}
-              </div>
-              <div className={styles.tableCell}>
+          // Tooltip de oferta: muestra el job name desde jobsIndex usando offer.jobId
+          const offerObj = Array.isArray(listOffers)
+            ? listOffers.find((x) => x._id === user.offer)
+            : null;
+          const offerJobName = offerObj?.jobId
+            ? (enumsEmployer?.jobsIndex?.[offerObj.jobId]?.name || 'Oferta')
+            : 'Oferta desconocida';
 
-                {user.offer != null ? (
-                  <span className={stylesTooltip.tooltip}>
-                    <FaCheckCircle />
-                    <span className={stylesTooltip.tooltiptext}>
-                      {listOffers.find((x) => x._id === user.offer)?.job_title || 'Oferta desconocida'}
+          return (
+            <div key={user._id + keySuffix}>
+              {/* Fila principal */}
+              <div className={checkUser(user)} onClick={() => lookCV(user._id, user)}>
+                <div className={styles.tableCell}>
+                  <p className={styles.capitalize}>
+                    {user?.workedInEngloba?.status && (
+                      <span className={stylesTooltip.tooltip}>
+                        <FaHouseUser className={styles.iconworkedInEngloba} />
+                        <span className={stylesTooltip.tooltiptext}>
+                          {user?.workedInEngloba?.active
+                            ? 'Trabaja actualmente en Engloba'
+                            : 'Ha trabajado anteriormente en Engloba'}
+                        </span>
+                      </span>
+                    )}{' '}
+                    {user.name}
+                  </p>
+                </div>
 
+                <div className={styles.tableCell}>
+                  <MdEmail size="1.5rem" onClick={() => modal(`${user.name}`, `${user.email}`)} />
+                </div>
+
+                <div className={styles.tableCell}>{formatESPhone(user.phone)}</div>
+                <div className={styles.tableCell}>{jobNames}</div>
+                <div className={styles.tableCell}>{studyNames}</div>
+                <div className={styles.tableCell}>{provincesText}</div>
+
+                <div className={styles.tableCell}>
+                  {user.offer != null ? (
+                    <span className={stylesTooltip.tooltip}>
+                      <FaCheckCircle />
+                      <span className={stylesTooltip.tooltiptext}>
+                        {offerJobName}
+                      </span>
                     </span>
-                  </span>
-                ) : (
-                  <span className={stylesTooltip.tooltip}>
-                    <FaTimesCircle />
-                    <span className={stylesTooltip.tooltiptext}>
-                      No asociado a una oferta
+                  ) : (
+                    <span className={stylesTooltip.tooltip}>
+                      <FaTimesCircle />
+                      <span className={stylesTooltip.tooltiptext}>
+                        No asociado a una oferta
+                      </span>
                     </span>
+                  )}
+                </div>
+
+                <div className={styles.tableCell}>
+                  <span className={stylesTooltip.tooltip}>
+                    {user.numberCV}
+                    <span className={stylesTooltip.tooltiptext}>Versión</span>
                   </span>
-                )}
+                </div>
+
+                <div className={styles.tableCell}>
+                  {user.favorite ? (
+                    <span className={stylesTooltip.tooltip}>
+                      <GoStarFill />
+                      <span className={stylesTooltip.tooltiptext}>Favorito</span>
+                    </span>
+                  ) : (
+                    <span className={stylesTooltip.tooltip}>
+                      <GoStar />
+                      <span className={stylesTooltip.tooltiptext}>No Favorito</span>
+                    </span>
+                  )}
+
+                  {user.reject ? (
+                    <span className={stylesTooltip.tooltip}>
+                      <BsExclamationOctagonFill />
+                      <span className={stylesTooltip.tooltiptext}>Rechazado</span>
+                    </span>
+                  ) : (
+                    <span className={stylesTooltip.tooltip}>
+                      <BsExclamationOctagon />
+                      <span className={stylesTooltip.tooltiptext}>No Rechazado</span>
+                    </span>
+                  )}
+
+                  {user.disability > 0 && (
+                    <span className={stylesTooltip.tooltip}>
+                      <FaWheelchair />
+                      <span className={stylesTooltip.tooltiptext}>
+                        Tiene {user.disability}% de discapacidad
+                      </span>
+                    </span>
+                  )}
+                </div>
+
+                <div className={styles.tableCell}>{formatDatetime(user.date)}</div>
               </div>
-              <div className={styles.tableCell}>
-                <span className={stylesTooltip.tooltip}>
-                  {user.numberCV}
-                  <span className={stylesTooltip.tooltiptext}>Versión</span>
-                </span>
-              </div>
-              <div className={styles.tableCell}>
-                {user.view ? (
-                  <span className={stylesTooltip.tooltip}>
-                    <FaEye />
-                    <span className={stylesTooltip.tooltiptext}>Visto</span>
-                  </span>
-                ) : (
-                  <span className={stylesTooltip.tooltip}>
-                    <FaRegEyeSlash />
-                    <span className={stylesTooltip.tooltiptext}>No Visto</span>
-                  </span>
-                )}
-                {user.favorite ? (
-                  <span className={stylesTooltip.tooltip}>
-                    <GoStarFill />
-                    <span className={stylesTooltip.tooltiptext}>Favorito</span>
-                  </span>
-                ) : (
-                  <span className={stylesTooltip.tooltip}>
-                    <GoStar />
-                    <span className={stylesTooltip.tooltiptext}>No Favorito</span>
-                  </span>
-                )}
-                {user.reject ? (
-                  <span className={stylesTooltip.tooltip}>
-                    <BsExclamationOctagonFill />
-                    <span className={stylesTooltip.tooltiptext}>Rechazado</span>
-                  </span>
-                ) : (
-                  <span className={stylesTooltip.tooltip}>
-                    <BsExclamationOctagon />
-                    <span className={stylesTooltip.tooltiptext}>No Rechazado</span>
-                  </span>
-                )}
-                {user.disability > 0 && (
-                  <span className={stylesTooltip.tooltip}>
-                    <FaWheelchair />
-                    <span className={stylesTooltip.tooltiptext}>Tiene {user.disability}% de discapacidad</span>
-                  </span>
-                )}
-              </div>
-              <div className={styles.tableCell}>{formatDatetime(user.date)}</div>
+
+              {/* Panel de CV si es el seleccionado */}
+              {userSelected && userSelected._id === user._id && (
+                <CvPanel
+                  chargeOffers={chargeOffers}
+                  setSelectedOfferAndAddUser={(u) => setSelectedOfferAndAddUser(u)}
+                  charge={charge}
+                  urlpdf={urlCv}
+                  user={userSelected}
+                  changeUser={changeUser}
+                  modal={modal}
+                  deleteUser={deleteUser}
+                  offers={listOffers}
+                  enumsEmployer={enumsEmployer}
+                  offerSelected={offerSelected}
+                  changeOffer={(x) => changeOffer(x)}
+                />
+              )}
+
+              {selectedOfferAndAddUser && (
+                <OfferSelect
+                  offers={listOffers}
+                  closeModal={() => setSelectedOfferAndAddUser(null)}
+                  type="add"
+                  userSelected={selectedOfferAndAddUser}
+                  enumsData={enumsEmployer}
+                />
+              )}
             </div>
-
-            {/* Renderiza el panel si el usuario está seleccionado */}
-            {userSelected && userSelected._id === user._id && (
-              <CvPanel
-                chargeOffers={chargeOffers}
-                setSelectedOfferAndAddUser={(user) => setSelectedOfferAndAddUser(user)}
-                charge={charge}
-                urlpdf={urlCv}
-                user={userSelected}
-                changeUser={changeUser}
-                modal={modal}
-                deleteUser={deleteUser}
-                offers={listOffers}
-                enumsEmployer={enumsEmployer}
-                offerSelected={offerSelected}
-                changeOffer={(x) => changeOffer(x)}
-              />
-            )}
-            {selectedOfferAndAddUser && (
-              <OfferSelect
-                offers={listOffers}
-                closeModal={() => setSelectedOfferAndAddUser(null)}
-                type="add"
-                userSelected={selectedOfferAndAddUser}
-              />
-            )}
-
-          </div>
-        ))}
+          );
+        })}
     </>
   );
 }

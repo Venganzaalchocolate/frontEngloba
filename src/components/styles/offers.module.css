@@ -1,0 +1,398 @@
+.contenedor {
+    display: flex;
+    flex-direction: row;
+    flex: 1 100%;
+    background-color: var(--color-morado);
+    gap: 1rem;
+}
+
+.contenido {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    flex-wrap: wrap;
+    color: var(--color-morado);
+
+}
+
+.contendor select {
+    flex: 0;
+    max-width: auto;
+    width: 100%;
+}
+
+.containerEmployer {
+    display: flex;
+    flex: 100%;
+    align-items: center;
+    >div:nth-child(1) {
+        flex: 1;
+    }
+    >:nth-child(2) {
+        width: 2rem;
+    }
+}
+
+.titulo {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.titulo>div>h2 {
+    padding: 0.5rem 2rem 0 1rem;
+    border-left: 10px solid var(--color-morado);
+    display: flex;
+    flex: 1;
+}
+
+.titulo svg {
+    width: 3rem;
+    height: 3rem;
+    justify-content: end;
+    align-self: flex-end;
+}
+
+.titulo>div {
+    display: flex;
+}
+/* ===== Tabla ===== */
+.tableWrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 12%, #fff);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(0,0,0,.04);
+}
+
+.table thead tr {
+  background: var(--color-yema);
+  color: #fff;
+}
+.table thead th {
+  text-align: left;
+  font-weight: 800;
+  padding: 10px 12px;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+.thAcciones { text-align: right; }
+
+.row:nth-child(even) { background: #fafaff; }
+
+.cell {
+  padding: 10px 12px;
+  vertical-align: middle;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+  border-top: 1px solid color-mix(in srgb, var(--color-morado) 10%, #fff);
+}
+
+/* badges & text */
+.device { font-weight: 700; color: var(--color-morado); }
+.function { color: color-mix(in srgb, var(--color-morado) 85%, #222); }
+.mono {
+  font: 700 10pt ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+  color: color-mix(in srgb, var(--color-morado) 90%, #222);
+}
+
+.badge {
+  display: inline-flex;
+  min-width: 2ch;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  font-weight: 800;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-morado) 10%, var(--color-yema));
+  color: #fff;
+}
+
+/* acciones (iconos) */
+.iconAction, .iconActionDanger {
+  width: 1.15rem;
+  height: 1.15rem;
+  cursor: pointer;
+  opacity: .9;
+  transition: transform .12s ease, color .12s ease, opacity .12s ease;
+  margin-left: 8px;
+}
+.iconAction:hover, .iconActionDanger:hover { transform: translateY(-1px); opacity: 1; }
+.iconAction { color: var(--color-morado); }
+.iconActionDanger { color: color-mix(in srgb, #d9534f 85%, #000); }
+.iconActionDanger:hover { color: #d9534f; }
+
+.empty {
+  text-align: center;
+  padding: 18px;
+  color: color-mix(in srgb, var(--color-morado) 65%, #333);
+}
+
+.actions{
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pageBtn{
+  padding: 6px 8px;
+}
+
+.box{
+  
+  display: flex;
+  flex: 1;
+  gap: 0.5rem;
+  > label{
+    align-self: center;
+  };
+  > select{
+    width: fit-content;
+  }
+  >button{
+    height: fit-content;
+    align-self: center;
+  }
+}
+
+.pagination{
+  padding-top: 1rem;
+  display: flex;
+  justify-content: end;
+  gap: 1rem;
+  align-content: center;
+  >span{
+    align-content: center;
+  }
+}
+
+/* Wrapper compatible con .contenedorfiltro */
+.pdGroup {
+  display: flex;
+  gap: .35rem;
+  min-width: 280px;
+  flex: 1;
+}
+
+/* Label alineado con tu esquema de colores */
+.pdFieldLabel {
+  align-self: center;
+  color: var(--color-morado);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding-left: 1rem;
+}
+
+/* --- Combobox --- */
+.pdSearchWrap {
+  position: relative;
+}
+
+.pdSearchInput {
+  min-width: 300px;
+  padding: .65rem 2.2rem .65rem .75rem; /* hueco para la X */
+  border: 1px solid var(--color-morado);
+  border-radius: .5rem;
+  outline: none;
+  background: #fff;
+  color: var(--color-morado);
+  transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.pdSearchInput::placeholder {
+  color: rgba(0,0,0,.45);
+}
+
+.pdSearchInput:focus {
+  border-color: var(--color-malva);
+  box-shadow: 0 0 0 3px rgba(190, 195, 244, .35); /* malva */
+  background: #fff;
+}
+
+/* Botón limpiar (X) */
+.pdClearBtn {
+  position: absolute;
+  right: .5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 .25rem;
+  color: var(--color-morado);
+  opacity: .75;
+}
+.pdClearBtn:hover { opacity: 1; }
+
+/* Dropdown */
+.pdSearchList {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  z-index: 9999; /* por encima de selects */
+}
+
+/* Item */
+.pdSearchItem {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem .75rem;
+  cursor: pointer;
+  font-size: 10pt;
+  color: #1f2340;
+  border-radius: .5rem;
+}
+
+.pdSearchItem:hover,
+.pdSearchItem:focus {
+  background: var(--color-malva);
+}
+
+/* Badge + texto */
+.pdBadge {
+  font-size: .75rem;
+  padding: .125rem .4rem;
+  border-radius: .375rem;
+  background: var(--color-rosa-palo);
+  color: var(--color-morado);
+  border: 1px solid rgba(79, 82, 159, .15); /* morado suave */
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.pdLabel {
+  color: var(--color-morado);
+  letter-spacing: .2px;
+}
+
+/* Lista vertical dentro del modal */
+.linkedList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 50vh;
+  overflow: auto;
+}
+
+/* Tarjeta de cada contratación */
+.linkedCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--color-morado);
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* Fila etiqueta/valor */
+.linkedRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Etiqueta (columna izquierda) */
+.linkedLabel {
+  width: 180px;
+  min-width: 180px;
+  font-weight: 700;
+  color: var(--color-morado);
+}
+
+/* Valor (columna derecha) */
+.linkedValue {
+  flex: 1;
+}
+
+/* Badges de estado */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.badgeOk     { background: #e8f7ee; color: #1b7f44; }
+.badgeWarn   { background: #fff7e6; color: #a86305; }
+.badgeDanger { background: #fdeaea; color: #a01111; }
+.badgeMuted  { background: #edf1f7; color: #394B61; }
+
+.modalContenedor{
+  box-sizing: content-box;
+}
+
+.modalInfoText {
+  color: var(--color-morado, #6c63ff);
+  font-size: .98em;
+  background: white;
+  border-left:none;
+  padding: .35em 1em;
+  border-radius: 0;
+  margin-bottom: 0;
+  margin-top: 0;
+}
+
+/* Responsive con tu grid */
+@media (min-width: 721px) {
+  .pdGroup { min-width: 320px; }
+}
+
+
+/* responsive tweaks */
+@media (max-width: 680px) {
+  .table thead th:nth-child(2),
+  .table tbody td:nth-child(2) { /* oculta "Función" si no cabe */
+    display: none;
+  }
+}
+
+/* desktop: lado a lado */
+@media (min-width: 721px) {
+    .contenedor{
+        padding: 1rem 2rem;
+    }
+
+}
+
+@media (min-width: 1080px) {
+    .containerEmployer{
+        flex-direction: row;
+    }
+
+    .contendor select {
+        flex: 1;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .titulo {
+        flex-direction: row;
+
+    }
+
+}

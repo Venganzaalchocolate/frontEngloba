@@ -1,180 +1,288 @@
+/* ===== Wrapper general ===== */
 .wrapper {
-  width: 100%;
-}
-
-/* Card activo */
-.card {
-  background: #fff;
-  width: fit-content;
-  border-radius: 14px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.06);
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-malva, #d1d5fa) 65%, #fff 35%);
-}
-.cardHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--color-morado, #6158c7);
-  color: #fff;
-  padding: .6rem .8rem;
-  border-top-left-radius: 14px;
-  border-top-right-radius: 14px;
-}
-.cardTitle {
-  font-weight: 700;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.actions{
-  display: flex;
-  gap: 0.5rem;
-}
-.actions button {
-  background: transparent;
-  border: 0;
-  color: #fff;
-  cursor: pointer;
-  padding: .15rem .25rem;
-  font-size: 1rem;
-}
-.cardBody {
-  padding: .8rem .9rem;
-  color: var(--color-morado, #6158c7);
-}
-
+/* ===== Tarjeta traslado activo ===== */
 .activeGrid {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr);
+  grid-template-columns: 1fr;
 }
 
-/* Botón histórico */
+.card {
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #fff);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,.05);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 12.5pt;
+  font-weight: 800;
+  color: var(--color-morado);
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: #f6f6fe;
+  color: var(--color-morado);
+  border-radius: 10px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
+  box-shadow: 0 2px 8px rgba(44,25,102,.08);
+}
+.actions > button:hover {
+  background: color-mix(in srgb, var(--color-morado) 16%, #fff);
+  color: var(--color-morado);
+  transform: translateY(-1px);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+}
+
+/* Badge “Autorizado por” (desktop) */
+.badgeAuth, .badgeDate {
+  margin-left: auto;
+  margin-right: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f7ef;
+  border: 1px solid color-mix(in srgb, #2e7d32 22%, #fff);
+  color: color-mix(in srgb, #2e7d32 85%, #111);
+  font-weight: 700;
+  font-size: 10pt;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+}
+
+
+/* Versión inline para móvil */
+.metaRowMobileOnly { display: none; }
+.metaLabel { color: var(--color-malva); font-weight: 700; }
+.badgeAuthInline {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f7ef;
+  border: 1px solid color-mix(in srgb, #2e7d32 22%, #fff);
+  color: color-mix(in srgb, #2e7d32 85%, #111);
+  font-weight: 700;
+  font-size: 10pt;
+}
+
+/* Fecha en “pill” */
+.badgeDate {
+
+  background: #eef0ff;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 22%, #fff);
+  color: var(--color-morado);
+}
+.badgeDate svg {
+  font-size: 10pt;
+  margin-right: 0.5rem;
+}
+
+/* Provincias / Puestos */
+.gridTwoCols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px 16px;
+}
+
+.fieldLabel {
+  display: block;
+  font-weight: 700;
+  color: var(--color-malva);
+  margin-bottom: 6px;
+}
+
+.chipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+  border: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+}
+
+/* ===== Barra de histórico ===== */
 .historyBar {
-  margin-top: .5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 .historyBtn {
-  border: 1px solid var(--color-morado, #6158c7);
-  background: color-mix(in srgb, var(--color-crema, #f5f5ff) 75%, #fff 25%);
-  color: var(--color-morado, #6158c7);
-  padding: .35rem .6rem;
-  border-radius: 8px;
+align-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--color-morado);
+  color: white;
   font-weight: 700;
   cursor: pointer;
+  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  box-shadow: 0 2px 8px rgba(44,25,102,.08);
 }
 .historyBtn:hover {
-  background: color-mix(in srgb, var(--color-malva, #d1d5fa) 25%, #fff 75%);
+background: color-mix(in srgb, var(--color-morado) 18%, #fff);
+  color: var(--color-morado);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.08);
 }
 
-/* Tabla histórico */
+/* ===== Tabla histórico ===== */
 .historyTableWrapper {
-  margin-top: .8rem;
-  overflow-x: auto;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,.04);
 }
 
 .historyTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: .95rem;
 }
 
-.historyTable th {
-  background: var(--color-morado, #6158c7);
-  color: #fff;
-  text-align: left;
-  padding: .5rem;
+/* Móvil: modo “cards” */
+.historyTable thead { display: none; }
+
+.historyTable tbody tr {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--color-morado) 18%, #fff);
 }
+.historyTable tbody tr:last-child { border-bottom: 0; }
 
 .historyTable td {
-  border-bottom: 1px solid #ddd;
-  padding: .45rem .5rem;
-  color: var(--color-morado, #6158c7);
+  display: block;
+  width: 100%;
+  padding: 0;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
 }
-
-.historyTable tr:nth-child(even) td {
-  background-color: #f8f8ff;
-}
-
-.historyTable tr:hover td {
-  background-color: #f1f1fc;
+.historyTable td::before {
+  content: attr(data-label) ": ";
+  font-weight: 700;
+  color: var(--color-malva);
+  margin-right: 6px;
 }
 
 .emptyHistory {
-  margin-top: .5rem;
-  color: var(--color-morado, #6158c7);
-  opacity: .8;
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  color: color-mix(in srgb, var(--color-morado) 70%, #666);
+  background: #fff;
+  border: 1px dashed color-mix(in srgb, var(--color-morado) 25%, #fff);
 }
 
-.historyTableWrapper {
-  margin-top: .8rem;
-  overflow-x: auto; /* fallback por si acaso */
+.iconAction, .iconActionDanger{
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+  opacity: .9;
+  transition: transform .12s ease, color .12s ease, opacity .12s ease;
+}
+.iconAction:hover, .iconActionDanger:hover{
+  transform: translateY(-1px);
+  opacity: 1;
 }
 
-.historyTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: .95rem;
+.iconActionDanger{
+  color: color-mix(in srgb, #d9534f 85%, #000);
 }
 
-.historyTable th,
-.historyTable td {
-  padding: .55rem .6rem;
-  text-align: left;
-}
 
-.historyTable th {
-  background: var(--color-morado, #6158c7);
-  color: #fff;
-}
+/* ===== Responsive ===== */
+@media (min-width: 820px) {
+  /* Mostrar autorización en header; ocultar inline */
+  .badgeAuth { align-items: baseline; }
+  .metaRowMobileOnly { display: none; }
 
-.historyTable td {
-  border-bottom: 1px solid #e8e9ff;
-  color: var(--color-morado, #6158c7);
-}
+  .gridTwoCols {
+    grid-template-columns: 1fr 2fr; /* Provincias más estrecho, Puestos más ancho */
+  }
 
-.historyTable tr:nth-child(even) td {
-  background-color: #f8f8ff;
-}
-
-.historyTable tr:hover td {
-  background-color: #f1f1fc;
-}
-
-/* —— Responsive: en móviles la tabla se “apila” — */
-@media (max-width: 640px) {
+  .historyTable {
+    table-layout: fixed;
+  }
   .historyTable thead {
-    display: none;
+    display: table-header-group;
+    background: var(--color-morado);
+    color: #fff;
   }
-  .historyTable,
-  .historyTable tbody,
-  .historyTable tr,
-  .historyTable td {
-    display: block;
-    width: 100%;
-  }
-  .historyTable tr {
-    background: #fff;
-    border: 1px solid color-mix(in srgb, var(--color-malva, #d1d5fa) 65%, #fff 35%);
-    border-radius: 10px;
-    margin-bottom: .65rem;
-    box-shadow: 0 2px 6px rgba(0,0,0,.04);
-  }
-  .historyTable td {
-    border: 0;
-    border-bottom: 1px dashed #e8e9ff;
-    position: relative;
-    padding-left: 7.5rem; /* espacio para la etiqueta */
-    min-height: 40px;
-  }
-  .historyTable td:last-child {
-    border-bottom: 0;
-  }
-  .historyTable td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: .6rem;
-    top: 50%;
-    transform: translateY(-50%);
+  .historyTable thead th {
+    text-align: left;
     font-weight: 700;
-    color: var(--color-morado, #6158c7);
-    opacity: .85;
+    padding: 10px 12px;
+    border: 0;
   }
+  .historyTable tbody tr {
+    display: table-row;
+    padding: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  }
+  .historyTable td {
+    display: table-cell;
+    padding: 10px 12px;
+    vertical-align: middle;
+    border: 0;
+    word-wrap: break-word;
+    white-space: normal;
+  }
+  /* Ajuste de anchos desktop por columna (4 cols) */
+  .historyTable tbody tr td:nth-child(1) { width: 18%; } /* Provincias */
+  .historyTable tbody tr td:nth-child(2) { width: 42%; } /* Puestos */
+  .historyTable tbody tr td:nth-child(3) { width: 20%; } /* Fecha */
+  .historyTable tbody tr td:nth-child(4) { width: 20%; } /* Autorizado por */
+}
+
+@media (max-width: 720px) {
+  .badgeAuth { display: none; }         /* oculto en móvil */
+  .metaRowMobileOnly { display: flex; } /* se muestra inline en el body */
 }

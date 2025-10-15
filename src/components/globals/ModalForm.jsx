@@ -278,7 +278,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
                   <>
                     {/* ——— 3.1 Input de búsqueda (se muestra si hay muchas opciones o campo.searchable ——— */}
                     {(field.searchable ||
-                      filterOptions(field.options).length > 15) && (
+                      filterOptions(field.options).length > 15) && (field?.disabled!=true) && (
 
                         <input
                           type="text"

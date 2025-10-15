@@ -6,6 +6,7 @@ import { FaSquarePlus } from "react-icons/fa6";
 import ModalForm from "../globals/ModalForm";
 import PreferentsList from "./PreferentList";
 import ModalConfirmation from "../globals/ModalConfirmation";
+import { buildOptionsFromIndex } from "../../lib/utils";
 
 const PreferentsEmployee = ({ user, enumsData, modal, charge, authorized }) => {
   const [preferentsInfoUser, setPreferentsInfoUser] = useState([]);
@@ -20,6 +21,7 @@ const PreferentsEmployee = ({ user, enumsData, modal, charge, authorized }) => {
       const token = getToken();
       const data = await preferentFilter({ userId: user._id }, token);
       setPreferentsInfoUser(data);
+
     };
     fetchPreferents();
   }, [user._id]);
@@ -31,17 +33,20 @@ const PreferentsEmployee = ({ user, enumsData, modal, charge, authorized }) => {
 
   const buildFields = useCallback((pref) => {
     pref = pref || {};
-    const positionOptions = enumsData?.jobs?.flatMap((j) =>
-      j.subcategories
-        ? j.subcategories.map((sub) => ({ value: sub._id, label: sub.name }))
-        : [{ value: j._id, label: j.name }]
-    ) || [];
+      
+        // Estudios (desde studiesIndex, preferimos solo subcategorías si existen)
 
-    const provincesOptions = enumsData?.provinces?.flatMap((j) =>
-      j.subcategories
-        ? j.subcategories.map((sub) => ({ value: sub._id, label: sub.name }))
-        : [{ value: j._id, label: j.name }]
-    ) || [];
+        const provincesOptions = buildOptionsFromIndex(enumsData?.provincesIndex).filter((x)=>{
+          if(x.label!='Almería' && x.label!='Málaga') return x
+        }) 
+    
+        // Puestos (desde jobsIndex, preferimos solo subcategorías si existen)
+        const positionOptions =
+          buildOptionsFromIndex(enumsData?.jobsIndex, { onlySub: true }) ||
+          buildOptionsFromIndex(enumsData?.jobsIndex);
+
+
+
 
     return [
       { name: "section1", type: "section", label: `${user.firstName} ${user.lastName}` },
@@ -131,8 +136,8 @@ const PreferentsEmployee = ({ user, enumsData, modal, charge, authorized }) => {
     <>
       <div className={styles.contenedor}>
         <h2>
-          PREFERENCIAS&nbsp;
-          <FaSquarePlus onClick={handleAdd} style={{ cursor: "pointer" }} />
+          TRASLADOS Y REINCORPORACIONES&nbsp;
+          {/* <FaSquarePlus onClick={handleAdd} style={{ cursor: "pointer" }} /> */}
         </h2>
         <PreferentsList
           preferentsInfoUser={preferentsInfoUser}

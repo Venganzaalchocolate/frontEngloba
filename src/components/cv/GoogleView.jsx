@@ -1,19 +1,17 @@
-import { useEffect, useState } from "react";
-import React from 'react';
+const VisualizadorPDF = ({ url }) => {
+  return (
+    <div style={{ width: '100%', height: '80vh' }}>
+      {url ? (
+        <embed
+          src={url}                 // URL presignada directa
+          type="application/pdf"
+          style={{ width: '100%', height: '100%', border: 'none' }}
+        />
+      ) : (
+        <div>Sin documento</div>
+      )}
+    </div>
+  );
+};
 
-const VisualizadorPDF = ({url}) => {
-  
-    const blobUrl = url;
-    return (
-        <div>
-          {blobUrl && (
-            <embed
-              src={blobUrl}
-              type="application/pdf"
-            />
-          )}
-        </div>
-      );
-  };
-
-  export default VisualizadorPDF;
+export default VisualizadorPDF;

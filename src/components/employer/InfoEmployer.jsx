@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import styles from "../styles/infoEmployer.module.css";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
@@ -11,7 +11,7 @@ import {
 } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 import { getToken } from "../../lib/serviceToken";
-import { editUser } from "../../lib/data";
+import { createChangeRequest, editUser } from "../../lib/data";
 import { deepClone, formatDate } from "../../lib/utils";
 import { useLogin } from "../../hooks/useLogin";
 
@@ -22,10 +22,11 @@ const InfoEmployer = ({
   changeUser,
   listResponsability,
   enumsData,
-  chargeUser = () => { },
-  soloInfo = false
+  chargeUser = () => {},
+  soloInfo = false,
+  onRequestCreated,
 }) => {
-  // Convertir booleanos a "si"/"no" en el estado inicial
+  // Estado inicial (booleanos como "si"/"no")
   const initialState = {
     ...user,
     fostered: user.fostered ? "si" : "no",
@@ -33,116 +34,82 @@ const InfoEmployer = ({
     consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
   };
 
-  // Guardamos una copia inmutable para saber cómo estaban los datos antes de editar
   const [originalData] = useState(() => deepClone(initialState));
   const [isEditing, setIsEditing] = useState(false);
   const [datos, setDatos] = useState(initialState);
   const [errores, setErrores] = useState({});
   const { logged, changeLogged } = useLogin();
 
-  // Estado para el select de estudios a agregar
   const [selectedStudy, setSelectedStudy] = useState("");
 
-  // Función auxiliar para generar las opciones de estudios a partir de enumsData
-  const getStudiesOptions = () => {
-    let studiesOptions = [];
-    if (enumsData?.studies) {
-      studiesOptions = enumsData.studies.flatMap((x) =>
-        x.subcategories
-          ? x.subcategories.map((sub) => ({ value: sub._id, label: sub.name }))
-          : [{ value: x._id, label: x.name }]
-      );
-    }
-    return studiesOptions;
-  };
+  // Supervisión / permisos
+  const isSupervisor = Array.isArray(listResponsability)
+    ? listResponsability.length > 0
+    : Number(listResponsability) > 0;
 
-  // Obtenemos las opciones totales de estudios
-  const studiesOptions = getStudiesOptions();
+  const canDirectEdit = isSupervisor || ["global", "root"].includes(logged.user.role);
 
-  // Calculamos las opciones disponibles filtrando los estudios ya añadidos
-  const availableStudiesOptions = studiesOptions.filter(
-    (option) => !datos.studies || !datos.studies.includes(option.value)
-  );
+  // ---------- NUEVO: normalización de studiesIndex (soporta objeto o array)
+  const studiesOptions = useMemo(() => {
+    const idx = enumsData?.studiesIndex;
+    if (!idx) return [];
 
-  // --- FUNCIONES AUXILIARES ---
-  // Cancelar edición: revertir a los datos originales
-  const reset = () => {
-    setErrores({});
-    setIsEditing(false);
-    setDatos(deepClone(originalData));
-  };
 
-  // Convierte una fecha ISO (o string) a 'YYYY-MM-DD'
+    // Nuevo: índice como objeto { [id]: { name, isRoot?, isSub? } }
+    return Object.entries(idx)
+      .filter(([, v]) => v?.isSub || !v?.isRoot) // evita raíces
+      .map(([id, v]) => ({ value: id, label: v?.name || id }));
+  }, [enumsData?.studiesIndex]);
+
+  const availableStudiesOptions = useMemo(() => {
+    const taken = new Set(Array.isArray(datos.studies) ? datos.studies : []);
+    return studiesOptions.filter((o) => !taken.has(o.value));
+  }, [datos.studies, studiesOptions]);
+
+  // Helper fecha -> YYYY-MM-DD
   function toInputDate(isoString) {
     if (!isoString) return "";
     const d = new Date(isoString);
-    // Ajustamos al huso horario (por si no quieres problemas con UTC).
-    // OJO, si tu ISO no es local, tenlo en cuenta. 
     return d.toISOString().slice(0, 10);
   }
 
-
-  // Manejo de cambios en campos generales
+  // Handle change con validaciones
   const handleChange = (e) => {
     const { name, value } = e.target;
     const auxErrores = { ...errores };
     const auxDatos = { ...datos };
 
-
     auxErrores["mensajeError"] = null;
-    let valido = true;
 
     if (name.includes(".")) {
-      // Manejo de campos anidados (ej: "disability.percentage")
+      // Campos anidados (p.ej. disability.percentage)
       const [parentKey, childKey] = name.split(".");
-      if (!auxDatos[parentKey]) {
-        auxDatos[parentKey] = {};
-      }
+      if (!auxDatos[parentKey]) auxDatos[parentKey] = {};
       auxDatos[parentKey][childKey] = value;
 
-      // Validación para disability.percentage
       if (parentKey === "disability" && childKey === "percentage") {
-        valido = validNumber(value);
-        auxErrores[name] = valido ? null : textErrors("disPercentage");
+        if (value === "") auxErrores[name] = null;
+        else auxErrores[name] = validNumber(value) ? null : textErrors("disPercentage");
+      } else {
+        auxErrores[name] = null;
       }
     } else {
-      // Validaciones de nivel superior
       if (name === "firstName") {
-        valido = validText(value, 3, 100);
-        auxErrores[name] = !valido ? textErrors(name) : null;
+        auxErrores[name] = validText(value, 3, 100) ? null : textErrors(name);
       } else if (name === "email_personal") {
-        valido = validEmail(value);
-        auxErrores[name] = !valido ? textErrors(name) : null;
+        auxErrores[name] = validEmail(value) ? null : textErrors(name);
       } else if (name === "phone") {
-        valido = validNumber(value);
-        auxErrores[name] = !valido ? textErrors(name) : null;
+        auxErrores[name] = validNumber(value) ? null : textErrors(name);
       } else if (name === "dni") {
-        if (value !== "") {
-          valido = validateDNIorNIE(value);
-          auxErrores[name] = !valido ? textErrors(name) : null;
-        } else {
-          auxErrores[name] = null;
-        }
+        auxErrores[name] = value ? (validateDNIorNIE(value) ? null : textErrors(name)) : null;
       } else if (name === "bankAccountNumber") {
-        if (value !== "") {
-          valido = validateBankAccount(value);
-          auxErrores[name] = !valido ? textErrors(name) : null;
-        } else {
-          auxErrores[name] = null;
-        }
-      } else if (name === "phoneJobNumber" ) {
-        valido = validNumber(value);
-        auxErrores[name] = valido ? null : textErrors("phone");
+        auxErrores[name] = value ? (validateBankAccount(value) ? null : textErrors(name)) : null;
+      } else if (name === "phoneJobNumber") {
+        auxErrores[name] = value ? (validNumber(value) ? null : textErrors("phone")) : null;
       } else if (name === "socialSecurityNumber") {
-        if (value !== "") {
-          valido = true;
-          auxErrores[name] = !valido ? textErrors(name) : null;
-        } else {
-          auxErrores[name] = null;
-        }
-      } else {
-        // gender, fostered, etc. sin validaciones específicas
         auxErrores[name] = null;
+      } else {
+        auxErrores[name] = null; // gender, fostered, apafa, etc.
       }
       auxDatos[name] = value;
     }
@@ -151,32 +118,54 @@ const InfoEmployer = ({
     setErrores(auxErrores);
   };
 
+  // Solo estos pueden quedar vacíos al guardar
+  const ALLOW_EMPTY = new Set([
+    "socialSecurityNumber",
+    "bankAccountNumber",
+    "phoneJobNumber",
+    "phoneJobExtension",
+    "disability.percentage",
+    "disability.notes",
+    "studies",
+  ]);
+
+  const REQUIRED_TOP = [
+    "firstName",
+    "lastName",
+    "dni",
+    "birthday",
+    "employmentStatus",
+    "email",
+    "email_personal",
+    "gender",
+    "fostered",
+    "apafa",
+    "consetmentDataProtection",
+    "phone",
+  ];
+
+  const isEmpty = (v) => v == null || String(v).trim() === "";
+
   // Validar campos antes de guardar
   const validateFields = () => {
     const newErrors = {};
 
-    // Comprobamos si ya existen errores en "errores"
     for (let key in errores) {
-      if (errores[key] != null && datos[key] !== "") {
-        return false;
-      }
+      if (errores[key] != null) return false;
     }
 
-    // Campos requeridos básicos
-    if (!datos.firstName) newErrors.firstName = "El nombre es requerido.";
-    // if (!datos.email) newErrors.email = "El email es requerido.";
-    if (!datos.phone) newErrors.phone = "El teléfono es requerido.";
+    for (const field of REQUIRED_TOP) {
+      if (ALLOW_EMPTY.has(field)) continue;
+      if (isEmpty(datos[field])) newErrors[field] = textErrors(field) || "Campo requerido.";
+    }
 
     setErrores(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Determina qué campos se han modificado comparando "datos" vs "originalData"
-  // y mapeando disability -> disPercentage / disNotes
+  // Calcular campos modificados
   const getModifiedFields = () => {
     const changed = {};
-
-    // Campos simples
     const fieldsToCompare = [
       "firstName",
       "lastName",
@@ -194,151 +183,186 @@ const InfoEmployer = ({
       "phone",
     ];
 
-    fieldsToCompare.forEach((field) => {
-      if (datos[field] !== originalData[field]) {
-        changed[field] = datos[field];
-      }
+    fieldsToCompare.forEach((f) => {
+      if (datos[f] !== originalData[f]) changed[f] = datos[f];
     });
 
-    // Para disability, se separan en disPercentage y disNotes
-    const oldPercentage = originalData.disability?.percentage || "";
-    const oldNotes = originalData.disability?.notes || "";
-    const newPercentage = datos.disability?.percentage || "";
-    const newNotes = datos.disability?.notes || "";
+    const oldP = originalData.disability?.percentage || "";
+    const oldN = originalData.disability?.notes || "";
+    const newP = datos.disability?.percentage || "";
+    const newN = datos.disability?.notes || "";
+    if (newP !== oldP) changed.disPercentage = newP;
+    if (newN !== oldN) changed.disNotes = newN;
 
-    if (newPercentage !== oldPercentage) {
-      changed.disPercentage = newPercentage;
-    }
-    if (newNotes !== oldNotes) {
-      changed.disNotes = newNotes;
-    }
-
-    // Agregamos studies si han cambiado
     if (JSON.stringify(datos.studies) !== JSON.stringify(originalData.studies)) {
       changed.studies = datos.studies;
     }
 
     const oldJobPhone = originalData.phoneJob?.number || "";
-    const newJobPhone = datos.phoneJobNumber || "";
-    if (oldJobPhone !== newJobPhone) {
-      changed.phoneJobNumber = newJobPhone;
-    }
+    const newJobPhone = datos.phoneJob?.number ?? datos.phoneJobNumber ?? "";
+    if (oldJobPhone !== newJobPhone) changed.phoneJobNumber = newJobPhone;
 
     const oldJobExt = originalData.phoneJob?.extension || "";
-    const newJobExt = datos.phoneJobExtension || "";
-    if (oldJobExt !== newJobExt) {
-      changed.phoneJobExtension = newJobExt;
-    }
+    const newJobExt = datos.phoneJob?.extension ?? datos.phoneJobExtension ?? "";
+    if (oldJobExt !== newJobExt) changed.phoneJobExtension = newJobExt;
 
     return changed;
   };
 
-  // Manejo de edición
-  const handleEdit = () => {
-    setIsEditing(!isEditing);
+  // Mapeo modified -> changes (dot paths)
+  const toChangeLines = (modified, original) => {
+    const map = {
+      disPercentage: "disability.percentage",
+      disNotes: "disability.notes",
+      phoneJobNumber: "phoneJob.number",
+      phoneJobExtension: "phoneJob.extension",
+    };
+
+    const changes = [];
+
+    for (const key of Object.keys(modified)) {
+      const path = map[key] || key;
+
+      let to = modified[key];
+      if (["fostered", "apafa", "consetmentDataProtection"].includes(path)) {
+        if (to === "si") to = true;
+        else if (to === "no") to = false;
+      }
+
+      const from = path.split(".").reduce((acc, k) => (acc ? acc[k] : undefined), original);
+
+      changes.push({ path, from, to });
+    }
+
+    return changes;
   };
 
-  // Guardar cambios
+  const handleEdit = () => setIsEditing(!isEditing);
+
   const handleSave = async () => {
-   
     if (!validateFields()) return;
 
-    // Obtenemos sólo los campos modificados
     const modifiedData = getModifiedFields();
-
-    // Para studies, aseguramos que se envíe como un string JSON que representa un array
-    if (modifiedData.studies) {
-      modifiedData.studies = JSON.stringify(modifiedData.studies);
-    }
-    // Si no hay cambios, salimos del modo edición
     if (Object.keys(modifiedData).length === 0) {
       setIsEditing(false);
       return;
     }
 
-    // Agregamos _id para que el backend sepa a quién editar
-    modifiedData._id = originalData._id;
-
     setIsEditing(false);
     charge(true);
-
     const token = getToken();
-   
-    const response = await editUser(modifiedData, token);
 
-    if (!response.error) {
-      // Actualizamos el usuario global con los datos "datos" (o lo que el back retorne)
-      changeUser(response);
-      modal("Editar Usuario", "Usuario editado con éxito");
-      if (logged.user == user) changeLogged(response);
-      chargeUser();
-    } else {
-      reset();
-      modal("Error al editar", response.message);
+    try {
+      if (canDirectEdit) {
+        const payload = { ...modifiedData, _id: originalData._id };
+        if (payload.studies) {
+          payload.studies = JSON.stringify(payload.studies);
+        }
+
+        const response = await editUser(payload, token);
+        if (!response.error) {
+          changeUser(response);
+          modal("Editar Usuario", "Usuario editado con éxito");
+          if (logged.user === user) changeLogged(response);
+          chargeUser();
+        } else {
+          throw new Error(response.message || "Error al editar");
+        }
+      } else {
+        const changes = toChangeLines(modifiedData, originalData);
+        const payload = {
+          userId: originalData._id,
+          changes,
+          note: "",
+        };
+        const resp = await createChangeRequest(payload, token);
+        if (!resp?.error) {
+          const created = resp?.data && resp?.data?._id ? resp.data : resp;
+          onRequestCreated?.(created);
+          modal("Solicitud enviada", "Tu supervisor revisará los cambios");
+          setDatos(deepClone(originalData));
+        } else {
+          throw new Error(resp.message || "No se pudo crear la solicitud");
+        }
+      }
+    } catch (e) {
+      setDatos(deepClone(originalData));
+      modal("Error", e.message || "No se pudo procesar la operación");
+    } finally {
+      charge(false);
     }
-
-    charge(false);
   };
 
-  // Botón de edición/guardado
+  const reset = () => {
+    setErrores({});
+    setIsEditing(false);
+    setDatos(deepClone(originalData));
+  };
+
   const boton = () => {
-    if (!!soloInfo) return ''
-    if (!!listResponsability && listResponsability.length < 1) return "";
+    if (soloInfo) return "";
     return !isEditing ? (
-      <FaEdit onClick={handleEdit} />
+      !canDirectEdit ? (
+        <button onClick={handleEdit}>Pedir cambios</button>
+      ) : (
+        <FaEdit onClick={handleEdit} />
+      )
     ) : (
       <>
-        <button onClick={handleSave}>Guardar</button>
+        <button onClick={handleSave}>{canDirectEdit ? "Guardar" : "Enviar solicitud"}</button>
         <button onClick={reset}>Cancelar</button>
       </>
     );
   };
 
+  // ---------- NUEVO: label por id usando índice nuevo si hace falta
+  const getStudyLabel = useCallback(
+    (id) => {
+      const byOption = studiesOptions.find((o) => o.value === id)?.label;
+      if (byOption) return byOption;
+      const idx = enumsData?.studiesIndex;
+      if (idx && !Array.isArray(idx)) return idx?.[id]?.name || id;
+      return id;
+    },
+    [studiesOptions, enumsData?.studiesIndex]
+  );
+
   // Campos de texto principales
   const textFields = [
+    ["employmentStatus", "Estado Laboral"],
+    ["dni", "DNI"],
     ["firstName", "Nombre"],
     ["lastName", "Apellidos"],
-    ["dni", "DNI"],
     ["birthday", "Fecha de Nacimiento"],
-    ["employmentStatus", "Estado Laboral"],
     ["email", "Email Corporativo"],
-    ["email_personal", "Email Personal"], // editable
+    ["email_personal", "Email Personal"],
     ["socialSecurityNumber", "Número de Seguridad Social"],
     ["bankAccountNumber", "Número de Cuenta Bancaria"],
     ["phone", "Teléfono Personal"],
   ];
 
-  // Función para agregar un estudio seleccionado
+  // Estudios
   const handleAddStudy = () => {
-    if (selectedStudy !== "") {
-      setDatos((prev) => ({
-        ...prev,
-        studies: prev.studies ? [...prev.studies, selectedStudy] : [selectedStudy],
-      }));
-      setSelectedStudy("");
-    }
+    if (!selectedStudy) return;
+    setDatos((prev) => ({
+      ...prev,
+      studies: prev.studies ? [...prev.studies, selectedStudy] : [selectedStudy],
+    }));
+    setSelectedStudy("");
   };
 
-  // Función para eliminar un estudio de la lista
   const handleDeleteStudy = (studyToDelete) => {
     setDatos((prev) => ({
       ...prev,
-      studies: prev.studies.filter((study) => study !== studyToDelete),
+      studies: prev.studies.filter((s) => s !== studyToDelete),
     }));
-  };
-
-  // Función auxiliar para obtener el label a partir del _id de estudio
-  const getStudyLabel = (studyId) => {
-    const study = studiesOptions.find((opt) => opt.value === studyId);
-    return study ? study.label : studyId;
   };
 
   return (
     <div className={styles.contenedor}>
-      <h2>
-        DATOS {boton()}
-      </h2>
-      {logged.user.role === "root" &&
+      <h2>INFORMACIÓN PERSONAL {boton()}</h2>
+
+      {logged.user.role === "root" && (
         <div className={styles.roleContainer}>
           <label className={styles.roleLabel}>Rol</label>
           <select
@@ -352,24 +376,42 @@ const InfoEmployer = ({
             <option value="root">Root</option>
             <option value="global">Global</option>
             <option value="employee">Empleado</option>
+            <option value="responsable">Responsable</option>
+            <option value="auditor">Auditor</option>
           </select>
         </div>
-      }
-      {/* Renderizado de cada campo en textFields */}
+      )}
+
+      {/* Apafa */}
+      <div className={styles.apafaContainer}>
+        <label className={styles.apafaLabel}>Apafa</label>
+        <select
+          className={styles.apafa}
+          name="apafa"
+          value={datos.apafa || "no"}
+          onChange={handleChange}
+          disabled={!isEditing}
+        >
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+        </select>
+        {errores.apafa && <span className={styles.errorSpan}>{errores.apafa}</span>}
+      </div>
+
+      {/* Campos principales */}
       {textFields.map(([fieldName, label]) => {
         if (fieldName === "birthday") {
-          // Si es 'birthday', mostramos la fecha formateada cuando no se edita
           return (
             <div key={fieldName} className={styles[fieldName + "Container"]}>
               <label className={styles[fieldName + "Label"]}>{label}</label>
-
               {!isEditing ? (
-                // Modo lectura: usamos 'formatDate'
-                <span className={styles[fieldName]}>
-                  {datos[fieldName] ? formatDate(datos[fieldName]) : ""}
-                </span>
+                <input
+                  className={styles[fieldName]}
+                  type="text"
+                  value={datos[fieldName] ? formatDate(datos[fieldName]) : ""}
+                  disabled
+                />
               ) : (
-                // Modo edición: input de tipo date
                 <input
                   className={styles[fieldName]}
                   type="date"
@@ -378,7 +420,6 @@ const InfoEmployer = ({
                   onChange={handleChange}
                 />
               )}
-
               {errores[fieldName] && (
                 <span className={styles.errorSpan}>{errores[fieldName]}</span>
               )}
@@ -386,13 +427,11 @@ const InfoEmployer = ({
           );
         }
 
-        // Para otros campos normales:
         return (
           <div key={fieldName} className={styles[fieldName + "Container"]}>
             <label className={styles[fieldName + "Label"]}>{label}</label>
-
             {fieldName === "employmentStatus" &&
-              (logged.user.role === "global" || logged.user.role === "root") ? (
+            (logged.user.role === "global" || logged.user.role === "root") ? (
               <select
                 className={styles[fieldName]}
                 name={fieldName}
@@ -400,7 +439,7 @@ const InfoEmployer = ({
                 onChange={handleChange}
                 disabled={!isEditing}
               >
-                {enumsData.status.map((x) => (
+                {(enumsData?.status || []).map((x) => (
                   <option value={x} key={x}>
                     {x}
                   </option>
@@ -414,13 +453,10 @@ const InfoEmployer = ({
                 value={datos[fieldName] || ""}
                 onChange={handleChange}
                 disabled={
-                  fieldName === "employmentStatus" || fieldName === "email"
-                    ? true
-                    : !isEditing
+                  fieldName === "employmentStatus" || fieldName === "email" ? true : !isEditing
                 }
               />
             )}
-
             {errores[fieldName] && (
               <span className={styles.errorSpan}>{errores[fieldName]}</span>
             )}
@@ -428,7 +464,7 @@ const InfoEmployer = ({
         );
       })}
 
-      {/* Campos nuevos: Teléfono laboral y extensión */}
+      {/* Teléfono laboral y extensión */}
       <div className={styles.phoneJobContainer}>
         <label className={styles.phoneJobLabel}>Teléfono Laboral</label>
         <input
@@ -469,10 +505,10 @@ const InfoEmployer = ({
           <option value="">Seleccionar</option>
           <option value="male">Hombre</option>
           <option value="female">Mujer</option>
+          <option value="others">Otros</option>
+          <option value="nonBinary">No binario</option>
         </select>
-        {errores.gender && (
-          <span className={styles.errorSpan}>{errores.gender}</span>
-        )}
+        {errores.gender && <span className={styles.errorSpan}>{errores.gender}</span>}
       </div>
 
       {/* Extutelado */}
@@ -493,29 +529,10 @@ const InfoEmployer = ({
         )}
       </div>
 
-      <div className={styles.apafaContainer}>
-        <label className={styles.apafaLabel}>Apafa</label>
-        <select
-          className={styles.apafa}
-          name="apafa"
-          value={datos.apafa || "no"}
-          onChange={handleChange}
-          disabled={!isEditing}
-        >
-          <option value="si">Sí</option>
-          <option value="no">No</option>
-        </select>
-        {errores.apafa && (
-          <span className={styles.errorSpan}>{errores.apafa}</span>
-        )}
-      </div>
-
-      {/* Consentimiento de protección de datos */}
+      {/* Consentimiento PD (solo si es "no" o en edición) */}
       {(isEditing || (!!datos && datos.consetmentDataProtection === "no")) && (
         <div className={styles.consetmentDataProtectionContainer}>
-          <label className={styles.consetmentDataProtectionLabel}>
-            Consentimiento PD
-          </label>
+          <label className={styles.consetmentDataProtectionLabel}>Consentimiento PD</label>
           <select
             className={styles.consetmentDataProtection}
             name="consetmentDataProtection"
@@ -527,20 +544,16 @@ const InfoEmployer = ({
             <option value="no">No</option>
           </select>
           {errores.consetmentDataProtection && (
-            <span className={styles.errorSpan}>
-              {errores.consetmentDataProtection}
-            </span>
+            <span className={styles.errorSpan}>{errores.consetmentDataProtection}</span>
           )}
         </div>
       )}
 
-      {/* Campos de discapacidad */}
+      {/* Discapacidad (solo si hay valor o en edición) */}
       {(isEditing || (datos?.disability?.percentage || 0) > 0) && (
         <>
           <div className={styles.disabilityPercentageContainer}>
-            <label className={styles.disabilityPercentageLabel}>
-              Porcentaje de Discapacidad
-            </label>
+            <label className={styles.disabilityPercentageLabel}>Porcentaje de Discapacidad</label>
             <input
               className={styles.disabilityPercentage}
               type="number"
@@ -550,16 +563,12 @@ const InfoEmployer = ({
               disabled={!isEditing}
             />
             {errores["disability.percentage"] && (
-              <span className={styles.errorSpan}>
-                {errores["disability.percentage"]}
-              </span>
+              <span className={styles.errorSpan}>{errores["disability.percentage"]}</span>
             )}
           </div>
 
           <div className={styles.disabilityNotesContainer}>
-            <label className={styles.disabilityNotesLabel}>
-              Notas sobre la discapacidad
-            </label>
+            <label className={styles.disabilityNotesLabel}>Notas sobre la discapacidad</label>
             <input
               className={styles.disabilityNotes}
               type="text"
@@ -569,9 +578,7 @@ const InfoEmployer = ({
               disabled={!isEditing}
             />
             {errores["disability.notes"] && (
-              <span className={styles.errorSpan}>
-                {errores["disability.notes"]}
-              </span>
+              <span className={styles.errorSpan}>{errores["disability.notes"]}</span>
             )}
           </div>
         </>
@@ -581,9 +588,9 @@ const InfoEmployer = ({
       <div className={styles.studiesContainer}>
         <label className={styles.studiesLabel}>Estudios</label>
         {!isEditing ? (
-          datos.studies && datos.studies.length > 0 ? (
-            datos.studies.map((study, index) => (
-              <p key={index} className={styles.studyItem}>
+          datos.studies?.length ? (
+            datos.studies.map((study, i) => (
+              <p key={i} className={styles.studyItem}>
                 {getStudyLabel(study)}
               </p>
             ))
@@ -593,10 +600,10 @@ const InfoEmployer = ({
         ) : (
           <>
             <div className={styles.studiesList}>
-              {datos.studies && datos.studies.length > 0 ? (
-                datos.studies.map((study, index) => (
-                  <div key={index} className={styles.studyItem}>
-                    <span>{getStudyLabel(study)}</span>
+              {datos.studies?.length ? (
+                datos.studies.map((study, i) => (
+                  <div key={i} className={styles.studyItem}>
+                    <p>{getStudyLabel(study)}</p>
                     <FaTrashAlt
                       onClick={() => handleDeleteStudy(study)}
                       className={styles.trashIcon}
@@ -614,9 +621,9 @@ const InfoEmployer = ({
                 onChange={(e) => setSelectedStudy(e.target.value)}
               >
                 <option value="">Añadir estudios</option>
-                {availableStudiesOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {availableStudiesOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
                   </option>
                 ))}
               </select>
@@ -627,7 +634,6 @@ const InfoEmployer = ({
       </div>
     </div>
   );
-
 };
 
 export default InfoEmployer;

@@ -1,187 +1,283 @@
-import styles from '../styles/menuStart.module.css';
+// src/components/worker/WorkerMenu.jsx
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  Suspense,
+  useTransition,
+} from "react";
+import styles from "../styles/workMenu.module.css";
 
-import ManagingResumenes from '../cv/ManagingResumes';
-import ManagingSocial from '../social/ManagingSocial';
-import { useMenuWorker } from '../../hooks/useMenuWorker';
-import OfferJobsPanel from '../offerJobs/OfferJobsPanel';
-import { useLogin } from '../../hooks/useLogin';
-import ManagingPrograms from '../programs/ManagingPrograms';
-import ManagingEmployer from '../employer/ManagingEmployer';
-import PanelRoot from '../root/panelRoot';
-import ManagingMySelf from '../myself/ManagingMySelf';
-import { useEffect, useState } from 'react';
-import { getDataEmployer, getDispositiveResponsable } from '../../lib/data';
-import { getToken } from '../../lib/serviceToken';
-import FormCreateEmployer from '../employer/FormCreateEmployer';
-import ManagingAuditors from '../auditor/ManagingAuditors';
-import ManagingLists from '../lists/ManagingLists';
-import ManagingWorkspace from '../woprkspace/Managingworkspace';
+import { useMenuWorker } from "../../hooks/useMenuWorker";
+import { useLogin } from "../../hooks/useLogin";
+import { getDataEmployer } from "../../lib/data";
+import { getMenuOptions } from "../../lib/menuOptions";
+import Spinnning from "./Spinning";
 
 
-const WorkerMenu = ({ modal, charge }) => {
-    const { MenuWorker, changeMenuWorker } = useMenuWorker()
-    const { logged } = useLogin()
-    const [listResponsability, setlistResponsability] = useState({})
-    const [enumsEmployer, setEnumsEmployer] = useState(null);
+// === Importación diferida (lazy) de los módulos pesados ===
+// Nota: con esto React hace code-splitting y cada panel se descarga solo cuando se usa.
+// Así evitamos que toda la app se cargue de golpe.
+const ManagingResumenes = React.lazy(() => import("../cv/ManagingResumes"));
+const ManagingSocial = React.lazy(() => import("../social/ManagingSocial"));
+const OfferJobsPanelV2 = React.lazy(() => import("../offerJobs/OfferJobsPanelV2"));
+const ManagingPrograms = React.lazy(() => import("../programs/ManagingPrograms"));
+const ManagingEmployer = React.lazy(() => import("../employer/ManagingEmployer"));
+const PanelRoot = React.lazy(() => import("../root/panelRoot"));
+const ManagingMySelf = React.lazy(() => import("../myself/ManagingMySelf"));
+const ManagingAuditors = React.lazy(() => import("../auditor/ManagingAuditors"));
+const ManagingLists = React.lazy(() => import("../lists/ManagingLists"));
+const ManagingWorkspace = React.lazy(() => import("../woprkspace/Managingworkspace"));
+const FormCreateEmployer = React.lazy(() => import("../employer/FormCreateEmployer"));
 
-
-    const chargeResponsability = async () => {
-        if (logged.user.role != 'root' && logged.user.role != 'global') {
-            const token = getToken();
-            const idUser = logged.user._id
-            const dataAux = { _id: idUser }
-            const responsability = await getDispositiveResponsable(dataAux, token);
-            setlistResponsability(responsability)
+/* === Tile reutilizable (card clickable con icono y texto) ===
+   Le paso un icono, label, color de acento y callback onClick */
+function MenuTile({ label, icon, onClick, accent = "#6C5CE7", disabled = false }) {
+  return (
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      className={styles.tile}
+      onClick={() => !disabled && onClick?.()}
+      onKeyDown={(e) => {
+        if (disabled) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
         }
-    }
+      }}
+      style={{ ["--tile-accent"]: accent }}
+    >
+      <div className={styles.tileIcon}>{icon}</div>
+      <div className={styles.tileLabel}>{label}</div>
+    </div>
+  );
+}
 
-    useEffect(() => {
-        const fetchAll = async () => {
-            try {
-              charge(true); // Mostrar el spinner antes de empezar
-              await chargeResponsability(); // Cargar responsabilidades
-              await chargeEnums();         // Cargar enumeraciones
-            } catch (error) {
-              modal('Error', "Error al cargar los datos");
-            } finally {
-              charge(false); // Ocultar el spinner al final
-            }
-          };
-        
-          fetchAll();
-    }, [])
+/* === Fallbacks visuales (skeletons / loading states) ===
+   Los muestro mientras React descarga los módulos en lazy */
+function GridSkeleton() {
+  return (
+    <div className={styles.grid}>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className={styles.tile + " " + styles.tileSkeleton}>
+          <div className={styles.tileIconSkeleton} />
+          <div className={styles.tileLabelSkeleton} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
-    //borrar
-    // Cargar enumeraciones desde la API
-    const chargeEnums = async () => {
-        const enumsData = await getDataEmployer();
-        setEnumsEmployer(enumsData);
-        return enumsData;
+function ModuleFallback() {
+  return (
+    <div className={styles.moduleFallback}>
+      <Spinnning status={true}></Spinnning>
+    </div>
+  );
+}
+
+const WorkerMenu = ({ modal, charge, listResponsability }) => {
+  const { MenuWorker, changeMenuWorker } = useMenuWorker();
+  const { logged } = useLogin();
+  const [enumsEmployer, setEnumsEmployer] = useState(null);
+
+  // === Hook de transición (para que el cambio de menú no bloquee la UI) ===
+  const [isPending, startTransition] = useTransition();
+
+  // Cargar enumeraciones iniciales (programas, dispositivos, etc.)
+  // IMPORTANTE: ya no activo el spinner global aquí porque no quiero ver el logo gigante
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        await chargeEnums(); // lo cargo en background
+      } catch (error) {
+        modal("Error", "Error al cargar los datos");
+      }
     };
+    fetchAll();
+  }, []);
 
-    const chargePrograms = (updatedPrograms) => {
-        let updateProgramsList = updatedPrograms;
-        if (!Array.isArray(updatedPrograms)) {
-          updateProgramsList = enumsEmployer.programs.map(program =>
-            program._id === updatedPrograms._id ? updatedPrograms : program
-          );
-        }
-        
-        // Aquí se crea un nuevo índice a partir de la lista actualizada
-        const updatedIndex = updateProgramsList.reduce((acc, program) => {
-          acc[program._id] = {
-            ...program,
-            devicesIds: program.devices ? program.devices.map(device => device._id) : []
-          };
-          return acc;
-        }, {});
-      
-        setEnumsEmployer((prev) => ({
-          ...prev,
-          programs: updateProgramsList,
-          programsIndex: updatedIndex
-        }));
-      };
-      
-  // Actualiza lista e índice de OFERTAS
-const chargeOffers = (updatedOffers) => {
+  // Función que obtiene enumeraciones de la API
+  const chargeEnums = async () => {
+    const enumsData = await getDataEmployer();
+    setEnumsEmployer(enumsData);
+    return enumsData;
+  };
+
+
+
+
+  // Actualizar lista de ofertas en memoria
+  const chargeOffers = (updatedOffers) => {
+    setEnumsEmployer((prev) => {
+      let list;
+      if (Array.isArray(updatedOffers)) {
+        list = updatedOffers;
+      } else {
+        const exists = prev.offers.some((o) => o._id === updatedOffers._id);
+        list = exists
+          ? prev.offers.map((o) => (o._id === updatedOffers._id ? updatedOffers : o))
+          : [...prev.offers, updatedOffers];
+      }
+      list = list.filter((o) => o.active === true || o.active === "si");
+      return { ...prev, offers: list };
+    });
+  };
+
+  // Opciones del menú (tiles) usando helper centralizado
+  const tiles = useMemo(() => {
+    return getMenuOptions({
+      role: logged.user.role,
+      listResponsability,
+    });
+  }, [logged.user.role, listResponsability]);
+
+  // Función helper para cambiar de módulo sin bloquear
+  const go = (key) => {
+    startTransition(() => {
+      changeMenuWorker(key);
+    });
+  };
+
+
+    
   
-  setEnumsEmployer((prev) => {
-    let list;
 
-    // 1) Si llega un ARRAY, sustituimos todo
-    if (Array.isArray(updatedOffers)) {
-      list = updatedOffers;
-    } else {
-      // 2) Si llega UNA sola oferta…
-      const exists = prev.offers.some((o) => o._id === updatedOffers._id);
+  // === Render de módulos ===
+  if (MenuWorker != null) {
+    return (
+      <Suspense fallback={<ModuleFallback />}>
+        {MenuWorker === "cv" && (
+          <ManagingResumenes
+            chargeOffers={chargeOffers}
+            chargeEnums={chargeEnums}
+            enumsEmployer={enumsEmployer}
+            closeAction={() => changeMenuWorker(null)}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "socialForm" && (
+          <ManagingSocial enumsData={enumsEmployer} modal={modal} charge={charge} />
+        )}
+        {MenuWorker === "offersJobs" && (
+          <OfferJobsPanelV2
+            chargeOffers={chargeOffers}
+            enumsData={enumsEmployer}
+            closeAction={() => changeMenuWorker(null)}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "programs" && (
+          <ManagingPrograms
+            listResponsability={listResponsability}
+            enumsData={enumsEmployer}
+            closeAction={() => changeMenuWorker(null)}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "employer" && (
+          <ManagingEmployer
+            enumsData={enumsEmployer}
+            listResponsability={listResponsability}
+            closeAction={() => changeMenuWorker(null)}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "myself" && (
+          <ManagingMySelf
+            myself={logged.user}
+            enumsData={enumsEmployer}
+            listResponsability={listResponsability}
+            closeAction={() => changeMenuWorker(null)}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "root" && (
+          <PanelRoot
+            chargeEnums={() => chargeEnums()}
+            enumsData={enumsEmployer}
+            closeAction={() => changeMenuWorker(null)}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "formCreatePersonal" && (
+          <FormCreateEmployer
+            enumsData={enumsEmployer}
+            modal={modal}
+            charge={charge}
+            closeModal={() => changeMenuWorker(null)}
+            chargeUser={() => changeMenuWorker(null)}
+          />
+        )}
+        {MenuWorker === "auditor" && (
+          <ManagingAuditors
+            closeModule={() => changeMenuWorker(null)}
+            listResponsability={listResponsability}
+            enumsData={enumsEmployer}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "lists" && (
+          <ManagingLists
+            listResponsability={listResponsability}
+            enumsData={enumsEmployer}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "workspace" && (
+          <ManagingWorkspace
+            listResponsability={listResponsability}
+            enumsData={enumsEmployer}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+      </Suspense>
+    );
+  }
 
-      list = exists
-        ? prev.offers.map((o) =>
-            o._id === updatedOffers._id ? updatedOffers : o
-          )
-        : [...prev.offers, updatedOffers];    // ← ¡la añadimos!
-    }
-    list = list.filter((o) => o.active === true || o.active === 'si');
-    return {
-      ...prev,
-      offers: list,
-    };
-  });
+  // === Pantalla inicial con la parrilla de tiles ===
+  return (
+    <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
+      <div className={styles.menuHeader}>
+        <h2>
+          {logged.user.gender=='female'?'Bienvenida':'Bienvenido'}, <span className={styles.name}>{logged.user.firstName}</span>
+        </h2>
+        <p className={styles.subtitle}>¿Qué quieres hacer hoy?</p>
+      </div>
+
+      {/* Suspense aquí me permitiría incluso poner un skeleton del grid si quiero */}
+      <Suspense fallback={<GridSkeleton />}>
+        <div className={styles.grid}>
+          {tiles.map((t) => {
+            const Icon = t.icon;
+            return (
+              <MenuTile
+                key={t.key ?? "home"}
+                label={t.label}
+                icon={<Icon />}
+                accent={t.accent}
+                onClick={() => go(t.key)}
+              />
+            );
+          })}
+        </div>
+      </Suspense>
+
+      {/* Si isPending es true, puedo enseñar un indicador sutil */}
+      <Spinnning status={isPending}></Spinnning>
+    </div>
+  );
 };
 
-
-        if (MenuWorker != null) {
-            if (MenuWorker == 'cv') return <ManagingResumenes chargeOffers={chargeOffers} chargeEnums={chargeEnums} enumsEmployer={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'socialForm') return <ManagingSocial  enumsData={enumsEmployer} modal={modal} charge={charge} />;
-            if (MenuWorker == 'offersJobs') return <OfferJobsPanel chargeOffers={chargeOffers} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'programs') return <ManagingPrograms listResponsability={listResponsability} chargePrograms={chargePrograms} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'employer') return <ManagingEmployer chargePrograms={chargePrograms} enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'myself') return <ManagingMySelf myself={logged.user} enumsData={enumsEmployer} listResponsability={listResponsability} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'root') return <PanelRoot chargeEnums={() => chargeEnums()} enumsData={enumsEmployer} closeAction={() => changeMenuWorker(null)} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'formCreatePersonal') return <FormCreateEmployer enumsData={enumsEmployer} modal={modal} charge={charge} closeModal={() => changeMenuWorker(null)} chargeUser={() => changeMenuWorker(null)} />
-            if (MenuWorker == 'auditor') return <ManagingAuditors closeModule={()=>changeMenuWorker(null)} listResponsability={listResponsability} enumsData={enumsEmployer} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'lists') return <ManagingLists listResponsability={listResponsability} enumsData={enumsEmployer} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-            if (MenuWorker == 'workspace') return <ManagingWorkspace listResponsability={listResponsability} enumsData={enumsEmployer} modal={(title, message) => modal(title, message)} charge={(x) => charge(x)} />;
-        } else return (
-            <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
-                <div>
-                    <h2>Bienvenido, {logged.user.firstName}</h2>
-
-                    {logged.user.role == 'root'
-                        ?
-                        <>
-                            <button onClick={() => changeMenuWorker('auditor')}>AUDITORIA</button>
-                            <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
-                            <button onClick={() => changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>
-                            <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
-                            <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
-                            <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
-                            <button onClick={() => changeMenuWorker('root')}> PANEL ROOT</button>
-                            <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
-                            <button onClick={() => changeMenuWorker('lists')}>LISTIN DE CONTACTO</button>
-                            <button onClick={() => changeMenuWorker('workspace')}>GESTIÓN DE WORKSPACE</button>
-                        </>
-
-
-                        : logged.user.role == 'global'
-                            ?
-                            <>
-                                
-                                <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
-                                <button onClick={() => changeMenuWorker('offersJobs')}> GESTIONAR OFERTAS</button>
-                                <button onClick={() => changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>
-                                <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
-                                <button onClick={() => changeMenuWorker('auditor')}>AUDITORIA</button>
-                                <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
-                                <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
-                                <button onClick={() => changeMenuWorker('lists')}>LISTIN DE CONTACTO</button>
-                            </>
-
-                            : listResponsability.length > 0
-                                ?
-                                <>
-                                    <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
-                                    <button onClick={() => changeMenuWorker('cv')}>SOLICITUDES DE EMPLEO</button>
-                                    <button onClick={() => changeMenuWorker('socialForm')}> IMPACTO SOCIAL</button>
-                                    <button onClick={() => changeMenuWorker('offersJobs')}>GESTIONAR OFERTAS</button>
-                                    <button onClick={() => changeMenuWorker('employer')}>GESTIONAR EMPLEADOS</button>
-                                    <button onClick={() => changeMenuWorker('programs')}>GESTIONAR PROGRAMAS Y DISPOSITVOS</button>
-                                    <button onClick={() => changeMenuWorker('lists')}>LISTIN DE CONTACTO</button>
-                                </>
-                                :
-                                <>
-                                    <button onClick={() => changeMenuWorker('myself')}>MIS DATOS</button>
-                                </>
-
-                    }
-
-
-                </div>
-
-            </div>
-
-        )
-    }
-
-    export default WorkerMenu;
+export default WorkerMenu;

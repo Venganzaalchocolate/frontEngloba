@@ -1,77 +1,283 @@
-.contenedor{
+.contenedor {
+  display: flex;
+  flex: 1 100%;
+  flex-direction: column;
+  background-color: white;
+}
+
+.cabecera {
+  display: grid
+}
+
+.imagen {
+  display: flex;
+  flex: 1;
+  >{
+    object-fit: cover;
+  }
+
+}
+
+.imagen { position: relative; }
+.imagen picture, .imagen img{
+  display:block;
+  width:100%;
+  height:auto;
+}
+
+.areas {
+  display: flex;
+  flex: 1 100%;
+  gap: 1rem;
+  padding: 2rem;
+
+  >div {
     display: flex;
-    flex-direction: column;
     flex: 1 100%;
-    background-image: url('../../../public/img/fondo_menuStart.jpg');
-    background-repeat: no-repeat;
-    background-size: cover;
-    justify-content: center;
-    align-items: center;
-    /* From https://css.glass */
-
+    height: 2rem;
+  }
 }
 
-.contenedor div{
-    flex-direction: column;
+.igualdad {
+  background-color: var(--color-morado);
+}
+
+.infancia {
+  background-color: var(--color-malva);
+}
+
+.mayores {
+  background-color: var(--color-verde-hoja);
+}
+
+.lgtbi {
+  background-color: var(--color-chicle);
+}
+
+.desarrollo {
+  background-color: var(--color-naranja);
+}
+
+.discapacidad {
+  background-color: var(--color-yema);
+}
+
+.areaMenu{
+  display: flex;
+  flex: 1 100%;
+  >div{
     display: flex;
-    justify-content: center;
-    align-items: center;
-    max-width: 25rem;
-    flex: 0;
-    flex-wrap: wrap;
+    flex: 1 50%;
+    padding: 2rem;
+  }
+
 }
 
-.contenedor>.menu{
-    background-color: var(--color-malva);
-    height: auto;
-    border-radius: 1rem;
-    background: rgba(79, 82, 159, 0.42);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(4.4px);
-    -webkit-backdrop-filter: blur(4.4px);
+.areaMenu>.menu{
+  display: flex;
+  align-items: center;
+  padding-left: 0;
+}
+
+.menuPrimer{
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  border-left: solid 4px var(--color-morado);
+  padding: 0 1rem;
+}
+
+.menuItem{
+}
+
+.menuText{
+  border-bottom: 3px solid var(--color-morado);
+  font-weight: bold;
+    color: var(--color-morado);
+    font-size: 16pt;
+    gap: 1rem;
+    display: flex;
+    align-items: center;
+    text-transform: uppercase;
+      /* subrayado fino animado (sobre-escribimos el propio borde) */
+  background: linear-gradient(var(--color-morado), var(--color-morado))
+             left bottom / 0 2px no-repeat;
+  transition: background-size .25s ease, color .2s ease, transform .06s ease;
+}
+
+.menuItem:hover .menuText,
+.menuItem:focus-visible .menuText,
+.menuText:hover{
+  color: var(--color-yema);
+  background-size: 100% 2px;
+  transform: translateX(1px);
+  outline: none;
+}
+
+.logo{
+  display: flex;
+  flex-direction: column;
+  >img{
+    max-width: 30rem;
+    
+  }
+  >p{
+    display: flex;
+    flex: 1 100%;
+    font-size: 16pt;
+    font-weight: 100;
+    padding-left: 1rem;
+    color: var(--color-morado);
+  }
+}
+
+.loginInline{
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+}
+
+.inputs{
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  >label{
+    flex:0;
+  }
+  >input{
+    flex: 1 100%;
+  }
+  
+}
+.errorSpan{
+    flex: 1 100%;
+    color: tomato;
+    font-size: 10pt;
+  }
+.email{
+  flex: 1;
+  display: flex;
+  >input{
+    flex: 1 100%;
+  }
+}
+
+.cajabotones{
+  display: flex;
+  gap: 0.5rem;
+}
+
+.colaEmail{
+  color: var(--color-morado);
+  font-size: 9pt;
+  padding-left: 0.5rem;
+  align-content: center;
+  font-weight: bold;
+}
+/* =======================================================
+   SOLO MÓVIL / TABLET  (no toca desktop)
+   ======================================================= */
+@media (max-width: 900px){
+
+  /* cabecera más compacta */
+  .cabecera{
     padding: 1rem;
     gap: 1rem;
-}
-
-
-.menu p{
-    text-transform: uppercase;
-}
-
-.menu button, .menu a{
-    display: flex;
     flex: 1 100%;
-    justify-content: center;
-}
+    align-content: baseline;
+  }
 
-#contenedorWorkerMenu>div{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
+  /* barras de color más finas y con menos separación */
+  .areas{
+    gap: .5rem;
+    padding: 1rem 0;
+  }
+  .areas > div{
+    height: 10px;
+  }
 
-#contenedorWorkerMenu h2{
-    color: var(--color-malva);
-}
+  /* logo y menú en columna */
+  .areaMenu{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+  /* quito padding interno fuerte de cada columna */
+  .areaMenu > div{
+    padding: 0;
+  }
 
-#contenedorWorkerMenu>div>button{
-    flex: 1 100%;
+  /* bloque de marca */
+  .logo{
+    flex-basis: auto; /* que no fuerce ancho */
+  }
+  .logo > img{
+    max-width: min(75vw, 24rem);
+  }
+  .logo > p{
+    font-size: 1rem;
+    padding-left: .25rem;
+  }
+
+  /* menú vertical: ocupa ancho disponible */
+  .menu{
+    align-self: stretch;
+  }
+  .menuPrimer{
+    flex: 1;
+  }
+  .menuText{
+    font-size: 1rem;
+    padding: .5rem 0;
+    gap: .5rem;
+    border-bottom-width: 2px;
+  }
+
+  /* login inline */
+  .loginInline{
+    padding: .75rem;
+  }
+  .inputs{
+    gap: .35rem;
+  }
+  .inputs input,
+  .email > input{
     width: 100%;
+    padding: .6rem .75rem;
+    font-size: 1rem;
+  }
+  .cajabotones{
+    flex-wrap: wrap;
+  }
+  .cajabotones > *{
+    flex: 1 1 auto;           /* botones a dos líneas si hace falta */
+  }
+
+  /* imagen inferior: llena y recorta correctamente */
+  .imagen{
+    flex: 0;
+  }
+  .imagen img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* (opcional) fundido blanco superior de 2rem; sube a 4rem si quieres */
+  .imagen::before{
+    content:"";
+    position:absolute;
+    left:0; right:0; top:0;
+    height: var(--fade, 2rem);
+    background: linear-gradient(to bottom, #fff 0, rgba(255,255,255,0));
+    pointer-events:none;
+  }
 }
 
-@media (min-width: 600px) {
-    .contenedor div{
-        flex: 50%;
-    }
-    .contenedor>.menu{
-        width: auto;
-
-    }
-    .contenedor{
-        flex-direction: row;
-    }
-
-    
-    
+/* micro-ajuste para móviles muy pequeños */
+@media (max-width: 480px){
+  .menuText{ font-size: .95rem; }
+  .areas > div{ height: 8px; }
 }

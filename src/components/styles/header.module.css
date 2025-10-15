@@ -1,79 +1,194 @@
-.header{
-    display: flex;
-    padding: 2rem 4rem 1rem 4rem;
-    justify-content: center;
-    flex: 0 auto;
-    background-color: var(--color-morado);
-    flex-wrap: wrap;
+/* ====== HEADER GENERAL ====== */
+.header {
+  display: flex; /* uso flex para organizar logo a la izquierda y acciones a la derecha */
+  align-items: center;
+  justify-content: space-between;
+
+  height: 64px; /* altura fija del header */
+  padding: 0 2rem; /* respiro horizontal */
+
+  background: var(--gradiente-principal); /* degradado principal corporativo */
+  color: var(--color-blanco);
+
+  backdrop-filter: blur(8px); /* efecto glass */
+  -webkit-backdrop-filter: blur(8px);
+
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); /* sombra para dar profundidad */
+  position: sticky; /* que siempre se quede arriba */
+  top: 0;
+  z-index: 100;
+  overflow: visible; /* para que el dropdown no se corte */
 }
 
-.header>div{
-    display: flex;
-    flex: 1 50%;
-}
-
-.header>div:nth-child(1){
-    max-width: 10rem;
-}
-
-.header>:nth-child(1){
-    justify-content: flex-start;
-}
-
-.header>:nth-child(2){
-    justify-content: end;
-}
-
-.header>.menuHeader{
-    display: flex;
-    justify-content: center;
-    margin-top: 0.5rem;
-    border-top: 3px solid var(--color-malva);
-    border-bottom: 3px solid var(--color-malva);
-
-}
-
-.header>.menuHeader>ul{
-    display: flex;
-    gap: 1rem;
-}
-
-.header>.menuHeader>ul>li{
-    padding: 0.5rem;
-    color: var(--color-malva);
-    text-transform: uppercase;
-    font-weight: 900;
-}
-
-.header>.menuHeader>ul>li:hover{
-    background-color: var(--color-crema);
-    color: var(--color-morado);
-}
-
+/* ====== LOGOTIPO ====== */
 .contenedorLogotipo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0; /* que no se encoja nunca */
 }
-  
+
 .contenedorLogotipo img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
+  height: 40px;
+  cursor: pointer;
+  transition: transform 150ms ease; /* animación suave al hover */
+}
+.contenedorLogotipo img:hover {
+  transform: scale(1.05); /* pequeño zoom al pasar el ratón */
 }
 
-.contenedorIconos{
-    align-items: center;
-    gap: 3rem;
+/* ====== ICONOS (lado derecho) ====== */
+.contenedorIconos {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* espacio entre iconos */
+  flex-shrink: 0;
 }
 
-
-.contenedorIconos svg{
-    color: var(--color-crema);
-    width: 1.5rem;
-    height: 1.5rem;
+/* ====== TOOLTIP PARA CERRAR SESIÓN ====== */
+.tooltip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-blanco);
+  font-size: 22px; /* tamaño del icono */
 }
 
-.contenedorIconos > span:hover>svg {
-    color: tomato;
+.tooltiptext {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--color-blanco);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+
+  white-space: nowrap; /* que no salte de línea */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease; /* fade suave */
+}
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ====== DROPDOWN GENERAL ====== */
+.dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Botón que abre el menú */
+.dropdownBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--color-morado); /* color corporativo */
+  border: 1px solid var(--color-malva-oscuro);
+  padding: 6px 12px;
+  border-radius: 8px;
+
+  color: var(--color-blanco);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.dropdownBtn:hover {
+  background: var(--color-malva-oscuro); /* un poco más oscuro en hover */
+  transform: translateY(-1px);
+}
+.dropdownBtn:active {
+  transform: translateY(0); /* efecto de pulsación */
+}
+
+/* Lista desplegable */
+.dropdownList {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+
+  display: flex;
+  flex-direction: column;
+
+  background: var(--color-blanco);
+  color: var(--color-gris-oscuro);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  padding: 8px 0;
+
+  z-index: 200;
+  max-height: min(70vh, 500px); /* no se sale de la pantalla */
+  overflow-y: auto; /* si hay muchas opciones aparece scroll */
+
+  animation: fadeIn 0.2s ease;
+}
+
+/* Piñita triangular bajo el botón */
+.dropdownList::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  right: 14px;
+  border: 8px solid transparent;
+  border-bottom-color: var(--color-blanco);
+}
+
+/* Opciones del menú */
+.dropdownList li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px 10px 18px; /* mismo padding en todos los lados */
+  cursor: pointer;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.dropdownList li:hover {
+  background: var(--color-malva);
+}
+
+/* Icono dentro del menú */
+.menuIcon {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+  color: var(--color-morado); /* icono en color corporativo */
+}
+
+/* ====== ANIMACIÓN ====== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 600px) {
+  .header {
+    height: 56px;
+    padding: 0 0.75rem;
   }
+
+  .contenedorLogotipo img {
+    height: 32px; /* logo más pequeño en móvil */
+  }
+
+  .tooltip {
+    font-size: 20px; /* icono más pequeño */
+  }
+
+  .dropdownBtn {
+    font-size: 0.8rem;
+    padding: 5px 10px; /* botón más compacto */
+  }
+}

@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
 import { deepClone } from "../../lib/utils";
-import { rehireEmployee, updateOffer } from "../../lib/data";
+import { rehireEmployee, offerUpdate, hiringCreate, editUser } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import { useOffer } from "../../hooks/useOffer";
 import FormCreateEmployer from "../employer/FormCreateEmployer";
 import OfferSelect from "./OfferSelect";
-import { getJobIdFromNameOffer, splitName } from "../../lib/utils";
+import { splitName } from "../../lib/utils";
 import RehireEmployee from "./RehireEmployee";
+import ModalConfirmation from "../globals/ModalConfirmation";
+
 
 const ToHireEmployee = ({
   offers,
@@ -14,17 +16,21 @@ const ToHireEmployee = ({
   enumsEmployer,
   modal,
   charge,
-  chargeOffers,        // ← seguimos recibiendo el callback global
-  changeUser
+  chargeOffers,
+  changeUser,
 }) => {
   const { Offer, changeOffer } = useOffer();
-  const [step, setStep] = useState(null); // null │ "select" │ "hire"
+  const [step, setStep] = useState(null); // null │ "select" │ "hire" │ "rehire"
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  // ------ helpers ------
+// Id del dispositivo (nuevo) de una oferta
+ const getOfferDeviceId = (o) =>
+  o?.dispositive?.newDispositiveId ?? null;
 
   /* ---------- click “Contratar” ---------- */
   const handleClick = async () => {
-
     if (!Offer) {
-      // Sin oferta → elegir una
       setStep("select");
       return;
     }
@@ -32,85 +38,67 @@ const ToHireEmployee = ({
     const alreadyInOffer = Offer.userCv?.includes(userSelected._id);
 
     if (!alreadyInOffer) {
-      /* 1· Añadir el usuario a la oferta seleccionada */
+      // 1) Añadir el usuario a la oferta seleccionada
       const token = getToken();
-      const upd = {
-        ...deepClone(Offer),
-        id: Offer._id,
-        userCv: [...Offer.userCv, userSelected._id],
+      const data = {
+        offerId: Offer._id,
+        userCv: [...(Offer.userCv || []), userSelected._id],
       };
-      const updatedOffer = await updateOffer(upd, token);
+      const updatedOffer = await offerUpdate(data, token);
 
-      /* 2· Propagar cambios */
-      changeOffer(updatedOffer);   // contexto
-      chargeOffers(updatedOffer);  // enumsEmployer.offers
+      // 2) Propagar cambios
+      changeOffer(updatedOffer);
+      chargeOffers(updatedOffer);
     }
 
-    /* 3· Pasamos al formulario de contratación */
-    (userSelected?.workedInEngloba)?setStep("rehire"):setStep("hire");
+    // 3) Siguiente paso
+    (userSelected?.workedInEngloba?.status) ? setStep("rehire") : setStep("hire");
   };
 
   /* ---------- callback del selector ---------- */
   const handleOfferChosen = (chosen) => {
     changeOffer(chosen);
-    // Si es recontratación, ve directo a rehire; si no, a hire
-    if (userSelected?.workedInEngloba) setStep("rehire");
+    if (userSelected?.workedInEngloba?.status) setStep("rehire");
     else setStep("hire");
   };
 
-  const normalizeDni = (s) => String(s || "").replace(/\s+/g, "").toUpperCase();
   /* ---------- Guardado de REHIRE ---------- */
   const handleRehireSave = async (hiringNew) => {
-  const token = getToken();
+    charge(true);
+    const token = getToken();
 
-  // Validación básica en cliente (evita viajes innecesarios)
-  if (!hiringNew?.device || !hiringNew?.position) {
-    modal?.("Datos incompletos", "Faltan el dispositivo o el puesto.");
-    return;
-  }
-  if (!hiringNew?.workShift?.type) {
-    modal?.("Datos incompletos", "Selecciona el tipo de jornada.");
-    return;
-  }
+    const data = { ...hiringNew, idUser: userSelected.workedInEngloba.idUser };
+    const created = await hiringCreate(data, token);
+    if (created?.error) {
+      modal?.("Error recontratando", created.message || "No se pudo completar la recontratación.");
+      charge(false);
+      return;
+    } else {
+      const dataActive = {
+        _id: userSelected.workedInEngloba.idUser,
+        employmentStatus: "en proceso de contratación",
+      };
+      const activeUser = await editUser(dataActive, token);
+      if (activeUser?.error)
+        modal("Error", "Se ha creado el periodo de contratación pero no se ha podido cambiar el status del trabajador");
 
-  // Limpia reason si viene vacío
-  const hiringClean = {
-    ...hiringNew,
-    ...(hiringNew.reason?.dni ? {} : { reason: undefined }),
+      setShowConfirmation(true);
+      modal?.(
+        "Recontratación creada",
+        "Se ha abierto un nuevo periodo de contratación y el estado se ha puesto en 'en proceso de contratación'."
+      );
+    }
+    charge(false);
+    setStep(null);
   };
-
-  const payload = {
-    dni: normalizeDni(userSelected?.dni),
-    hiring: hiringClean, // { startDate, device, workShift:{type,nota}, category, position, active, reason? }
-  };
-
-  const result = await rehireEmployee(payload, token);
-
-  if (result?.error) {
-    modal?.("Error recontratando", result.message || "No se pudo completar la recontratación.");
-    return;
-  }
-
-  // El endpoint devuelve el usuario actualizado
-  changeUser(result);
-  charge?.(result);
-  modal?.(
-    "Recontratación creada",
-    "Se ha abierto un nuevo periodo de contratación y el estado se ha puesto en 'en proceso de contratación'."
-  );
-  setStep?.(null);
-};
 
   /* ---------- datos para FormCreateEmployer ---------- */
   const userAux = useMemo(() => {
     if (!Offer) return null;
 
     const { firstName, lastName } = splitName(userSelected.name);
-    const idJob = getJobIdFromNameOffer(
-      Offer.nameOffer,
-      enumsEmployer.jobsIndex
-    );
-
+    const deviceId = getOfferDeviceId(Offer);
+      console.log(deviceId)
     return {
       firstName: userSelected.firstName || firstName,
       lastName: userSelected.lastName || lastName,
@@ -119,29 +107,35 @@ const ToHireEmployee = ({
       phone: userSelected.phone,
       role: "employee",
       fostered: userSelected.fostered,
+      gender: userSelected.gender,
       disability: { percentage: userSelected.disability },
       hiringPeriods: [
         {
           startDate: new Date(),
-          device: Offer.dispositive.dispositiveId,
-          position: idJob,
+          dispositiveId: deviceId,          // ← NUEVO id del Dispositivo (fallback a legacy si no hay)
+          position: Offer?.jobId || null,
           active: true,
         },
       ],
       ...(userSelected.offer && { offer: userSelected.offer }),
-      ...(userSelected.studies && {
-        studies: userSelected.studies.reduce((acc, s) => {
-          enumsEmployer.studies.forEach((g) => {
-            if (s.trim() === g.name.trim()) acc.push(g._id);
-            g.subcategories?.forEach((sub) => {
-              if (s.trim() === sub.name.trim()) acc.push(sub._id);
-            });
-          });
-          return acc;
-        }, []),
+      ...(userSelected.studiesId && {
+        studiesId: userSelected.studiesId,
       }),
     };
   }, [Offer, userSelected, enumsEmployer]);
+
+  const handleConfirmOfferChange = async (deactivate) => {
+    charge(true);
+    if (deactivate && Offer?._id) {
+      const token = getToken();
+      const updated = await offerUpdate({ offerId: Offer._id, active: false }, token);
+      if (updated?.error) modal("Error", "No se ha podido desactivar la oferta");
+      chargeOffers(updated);
+      changeOffer(null);
+    }
+    setShowConfirmation(false);
+    charge(false);
+  };
 
   /* ---------- render ---------- */
   return (
@@ -150,11 +144,21 @@ const ToHireEmployee = ({
         Contratar
       </button>
 
+      {showConfirmation && (
+        <ModalConfirmation
+          title="Desactivar oferta"
+          message="¿Quieres desactivar la oferta?"
+          onConfirm={() => handleConfirmOfferChange(true)}
+          onCancel={() => handleConfirmOfferChange(false)}
+        />
+      )}
+
       {step === "select" && (
         <OfferSelect
           offers={offers}
           userSelected={userSelected}
           onChosen={handleOfferChosen}
+          enumsData={enumsEmployer}
           closeModal={() => setStep(null)}
         />
       )}
@@ -166,10 +170,10 @@ const ToHireEmployee = ({
           charge={charge}
           chargeOffers={chargeOffers}
           user={userAux}
-          lockedFields={["email", "phone", "role", "device"]}
+          lockedFields={["email", "phone", "role", "device", "position"]}
           closeModal={() => setStep(null)}
           changeUser={(x) => changeUser(x)}
-          offerId={(Offer.userCv?.includes(userSelected._id))?Offer._id:null}
+          offerId={Offer?.userCv?.includes(userSelected._id) ? Offer._id : null}
         />
       )}
 

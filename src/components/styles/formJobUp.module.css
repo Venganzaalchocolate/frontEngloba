@@ -8,7 +8,8 @@
 .contenedor {
   display: flex;
   flex: 1 100%;
-  background-image: url('../../../public/img/fondo_menuStart.jpg');
+  /* background-image: url('../../../public/img/fondo_menuStart.jpg'); */
+  background-color: white;
   flex-direction: column;
   background-repeat: no-repeat;
   background-size: cover;
@@ -17,8 +18,84 @@
   /* padding: 2rem; */
   flex-wrap: wrap;
   gap: 2rem;
-  
+
   /* From https://css.glass */
+}
+
+.areas {
+  display: flex;
+  flex: 1 100%;
+  gap: 1rem;
+  padding-bottom: 2rem;
+
+  >div {
+    display: flex;
+    flex: 1 100%;
+    height: 1rem;
+  }
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  flex: 0 20rem;
+
+  >img {
+    flex: 1 10rem;
+
+  }
+
+  >p {
+    display: flex;
+    flex: 1 100%;
+    font-size: 10pt;
+    font-weight: 100;
+    padding-left: 1rem;
+    color: var(--color-morado);
+  }
+}
+
+.igualdad {
+  background-color: var(--color-morado);
+}
+
+.infancia {
+  background-color: var(--color-malva);
+}
+
+.mayores {
+  background-color: var(--color-verde-hoja);
+}
+
+.lgtbi {
+  background-color: var(--color-chicle);
+}
+
+.desarrollo {
+  background-color: var(--color-naranja);
+}
+
+.discapacidad {
+  background-color: var(--color-yema);
+}
+
+.cabecera {
+  max-width: 760px;
+  flex: 1 100%;
+  display: flex;
+  flex-direction: column;
+
+  >h2 {
+    text-align: center;
+    color: var(--color-morado);
+  }
+}
+
+.areaMenu {
+  display: flex;
+  flex: 1 100%;
+  justify-items: center;
+
 }
 
 .formJob {
@@ -43,40 +120,68 @@
     linear-gradient(180deg, color-mix(in srgb, var(--malva) 30%, #fff 70%), #fff) padding-box,
     linear-gradient(180deg, color-mix(in srgb, var(--morado) 25%, transparent), transparent) border-box;
   border: 1px solid color-mix(in srgb, var(--malvaOsc) 35%, transparent);
-  
+
   box-shadow: 0 8px 28px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .06);
   color: var(--color-morado);
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--gap);
   border-radius: 0;
+
   label {
     color: var(--color-morado);
   }
 }
 
-.actionsCancel{
+.actionsCancel {
   display: flex;
   gap: 1rem;
 }
 
-.tituloOferta{
+.tituloOferta {
   font-size: 14pt;
-  
+
 }
-.bold{
+
+.bold {
   margin-top: -1rem;
   font-weight: bold;
 }
+
+/* en formJobUp.module.css */
+.fileInfo {
+  margin-top: .25rem;
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+
+.muted {
+  color: #6b7280;
+}
+
+/* gris suave */
+.linkButton {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: tomato;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
 @media (min-width: 720px) {
-  
+
   .formJob {
     border-radius: var(--radius);
     grid-template-columns: 1fr 1fr 1fr;
-    padding: 1.2rem 1.4rem;
+    padding: 0 1.4rem 1.2rem 1.4rem;
     gap: 1rem;
-    margin: 2rem;
-    
+    margin: 0 2rem 2rem 2rem;
+
   }
 }
 
@@ -84,9 +189,11 @@
   grid-column: 1 / -1;
 }
 
-.tituloOferta, .bold{
+.tituloOferta,
+.bold {
   grid-column: 1 / -1;
 }
+
 /* ===== Campos ===== */
 .field {
   display: grid;
@@ -321,4 +428,19 @@
   .btn {
     transition: none !important;
   }
+}
+
+.offerJob {
+  display: flex;
+  flex: 1 100%;
+  gap: 0.5rem;
+  color: white;
+  align-items: baseline;
+  font-weight: bold;
+  background-color: var(--color-morado);
+
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-malva-oscuro) 35%, transparent);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .06);
+  border-radius: 14px;
 }

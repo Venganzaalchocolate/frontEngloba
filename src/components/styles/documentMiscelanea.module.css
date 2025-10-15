@@ -1,230 +1,220 @@
-div.contenedorDocument {
-    display: flex;
-    background-color: var(--color-malva);
-    padding: 1rem;
-    flex-wrap: wrap;
-    gap: 1rem 0.5rem;
-    border-radius: 1rem;
-    flex-direction: column;
-    flex-wrap: nowrap
-}
+/* ====== DOCUMENTACIÓN (elegante y consistente con Información Personal) ====== */
+.contenedorDocument {
+  --radius: 12px;
+  --pad: 16px;
+  --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  --shadow: 0 6px 18px rgba(0,0,0,.06);
 
-/**/
-
-div.contenedorDocument>h2 {
-    display: flex;
-    flex: 1 100%;
-    border-bottom: 3px solid var(--color-morado);
-    gap: 1rem;
-    padding-bottom: 0.5rem;
-}
-
-div.contenedorDocument>div {
-    display: flex;
-}
-
-div.contenedorDocument svg {
-    width: 3rem;
-    height: 3rem;
-    margin: 0 1rem;
-}
-
-.infoFile {
-    display: flex;
-    flex-direction: column;
-    /* justify-content: center; */
-}
-
-
-div.dateFile {
-    display: flex;
-    flex-direction: column;
-    align-items: end;
-    background-color: white;
-      padding: 0.2rem 0.4rem;
-      border-radius: 0.3rem;
-    >p {
-        font-family: 'Courier New', Courier, monospace;
-        color: var(--color-morado);
-        font-size: 10pt;
-        font-weight: 900;
-        text-transform: initial;
-        align-self: baseline;
-
-    }
-
-
-}
-
-div.contenedorDocument>.extraFilesSection {
-    display: flex;
-    flex: 1 100%;
-    flex-wrap: wrap;
-}
-
-div.titulin {
-    flex: 1 100%;
-    display: flex;
-    align-items: center;
-}
-
-div.contenedorDocument>.extraFilesSection>div {
-    flex: 1 100%;
-    display: flex;
-    flex-wrap: wrap;
-}
-
-div.contenedorDocument>.extraFilesSection>div>div {
-    display: flex;
-    flex: 100%;
-}
-
-div.contenedorDocument>button.extraUploadBtn {
-    background-color: var(--color-morado);
-    color: var(--color-malva);
-}
-
-div.contenedorDocument>button.extraUploadBtn:hover {
-    background-color: var(--color-crema);
-    color: var(--color-morado);
-}
-
-div.contentDocument,
-.contentDocumentOficial {
-    display: flex;
-    flex: 1 100%;
-    flex-direction: column;
-    gap: 1rem;
-    >div {
-        flex-direction: column;
-    }
-
-}
-
-
-div.contenedorDocument .uploadButton {
-    width: 1.5rem;
-    height: 1.5rem;
-
-}
-
-
-.iconos {
-    display: flex;
-    padding: 0 1rem;
-    /* align-items: center; */
-}
-
-.contentDocument>div,
-.contentDocumentOficial>div {
-    display: flex;
-    padding: 0.5rem 0;
-    
-}
-
-.fileRow {
-    display: flex;
-    align-items: end;
-    padding: 0.3rem 0;
-    gap: 0.3rem;
-}
-
-.contentDocumentOficial>.categoryGroup{
-    padding:1rem;
-  border: solid 1px white;
-  border-radius:1rem;
-}
-
-.officialDocGroupUser{
-    display: flex;
-    flex-direction: column;
-    >label{
-        display: flex;
-        gap: 1rem;
-        color: var(--color-morado);
-        align-items: center;
-    }
-    >.fileRow{
-        align-items: center;
-        border: none;
-    }
-}
-
-.officialDocGroupUser .infoFile{
-    background-color: white;
-    padding: 0.2rem 0.4rem;
-    order: 3;
-    border-radius: 0.3rem;
-}
-
-.officialDocGroupUser .fileOn{
-    order: 1;
-}
-
-.officialDocGroupUser .trash{
-    order: 2;
-}
-
-.officialDocGroup{
-    padding-top: 1rem;
-    display: flex;
+  display: flex;
   flex-direction: column;
-    >label{
-        padding: 0.5rem;
-        background-color: var(--color-morado);
-        margin-bottom: 0.3rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
+  gap: 12px;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  border: var(--bd);
+  background: #fff;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 100%;
+}
+
+/* Título principal */
+.contenedorDocument > h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 100%;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  font-size: 13pt;
+  color: var(--color-morado);
+  border-bottom: 1px solid var(--color-morado);
+}
+
+/* Subtítulos de bloque */
+.titulin {
+  display: flex;
+  align-items: center;
+  
+  gap: 8px;
+  margin: 8px 0 0 0;
+  padding: 6px 0;
+  color: var(--color-morado);
+  font-weight: 600;
+  border-bottom: 1px dashed color-mix(in srgb, var(--color-morado) 40%, transparent);
+}
+
+/* Botón/ícono de subir */
+.uploadButton {
+    font-size: 18pt;
+  color: var(--color-morado);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: transform .15s ease, color .15s ease, background .15s ease;
+}
+.uploadButton:hover { color: var(--color-chicle); transform: translateY(-1px); }
+
+/* ====== LISTAS EN REJILLA ====== */
+.contentDocumentOficial,
+.contentDocumentMiscelanea,
+.contentDocument {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+/* ====== CATEGORÍAS ====== */
+.categoryGroup {
+  border: var(--bd);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Título de categoría (cápsula morada como “Registros”) */
+.categoryTitle {
+  display: block;
+  margin: 0 0 10px 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--color-morado);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  letter-spacing: .02em;
+  box-shadow: 0 2px 8px rgba(44,25,102,.15);
+}
+
+/* ====== DOCUMENTOS OFICIALES ====== */
+.officialDocGroup,
+.officialDocGroupUser {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Nombre del documento (chip claro) */
+.docLabel, .docLabeluploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f6f6fe;
+  color: var(--color-morado);
+  font-weight: 700;
+  letter-spacing: .04em;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  width: fit-content;
+   >svg{
+        font-size: 12pt;
     }
 }
 
-.contentDocument>.fileRow{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    >.infoFile{
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-        align-items: center;
-        >label{
-            color: var(--color-morado);
-            padding: 0;
-            display: flex;
-            align-self: center;
-        }
-        >.dateFile{
-            background-color: white;
-            padding:0.2rem 0.4rem;
-            border-radius:0.3rem;
-                    }
+
+.docLabeluploadButton:hover {
+    cursor: pointer;
+    background-color: var(--color-chicle);
+    color: white;
+    transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--color-morado) 28%, #fff);
+  box-shadow: 0 6px 14px rgba(0,0,0,.05);
+    >svg{
+        color: white;
+        font-size: 12pt;
     }
 }
-
-.contentDocument .dateFile{
-    background-color: white;
-    
-    border-radius: 0.3rem;
-    justify-content: center;
-    align-content: center;
+/* Fila de archivo (card blanca) */
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 12%, #fff);
+  
+  justify-content: space-between;
 }
 
 
-@media(width>1000px) {
-    div.contenedorDocument {
-        border-radius: 1rem;
-    }
+/* Info del archivo (fecha + label) */
+.infoFile {
+    cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  >p{transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease};
+}
 
+.infoFile:hover>p {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--color-morado) 28%, #fff);
+  box-shadow: 0 6px 14px rgba(0,0,0,.05);
+}
+/* Chip de fecha (limpio, sin doble borde) */
+.dateFile {
+  background: #fafaff;
+  border: none;                 /* quitar borde interior */
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.dateFile p {
+  margin: 0;
+  font: 800 10pt ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+  color: var(--color-morado);
+}
+/* por si alguna regla anterior añade borde */
+.fileRow .dateFile { border: 0 !important; box-shadow: none !important; }
 
+/* Iconos de acción (derecha) */
+.fileOn, .trash {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--color-morado);
+  cursor: pointer;
+  transition: transform .12s ease, color .12s ease, opacity .12s ease;
+}
+.infoFile { order: 1; }
+.fileOn   { order: 2; margin-left: auto; opacity: .9; }
+.trash    { order: 3; opacity: .9; }
+.fileOn:hover  { color: var(--color-chicle); transform: translateY(-1px); opacity: 1; }
+.trash:hover   { color: #d9534f;           transform: translateY(-1px); opacity: 1; }
 
+/* Variante “modelo antiguo” alineada */
+.officialDocGroupUser .fileRow { border: 0; background: transparent; padding: 6px 0; }
+.officialDocGroupUser .infoFile { background: #fff; padding: 2px 8px; border-radius: 8px; }
 
-    div.contenedorDocument svg {
-        width: 1.5rem;
-        height: 1.5rem;
-        margin: 0;
-    }
+/* ====== COMPLEMENTARIA ====== */
+.iconos { display: flex; align-items: center; gap: 10px; padding-right: 4px; }
+.contentDocument > .fileRow .infoFile > label { color: var(--color-morado); font-weight: 600; }
+.contentDocumentMiscelanea > .fileRow .infoFile > label { color: var(--color-morado); font-weight: 600; }
+/* Empty state elegante */
+.contentDocumentOficial p,
+.contentDocument p,  .contentDocumentMiscelanea p{
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: color-mix(in srgb, var(--color-morado) 70%, #666);
+  background: #fff;
+  border: 1px dashed color-mix(in srgb, var(--color-morado) 25%, #fff);
+}
 
+.contentDocumentMiscelanea .infoFile{
+    flex: 1;
+}
 
-
+/* ====== RESPONSIVE ====== */
+@media (min-width: 720px) {
+  .contentDocumentOficial,
+  .contentDocument { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1100px) {
+  .contentDocumentOficial,
+  .contentDocument { grid-template-columns: repeat(2, minmax(280px,1fr)); }
 }

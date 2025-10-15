@@ -17,6 +17,7 @@ export default function Tree({
   const info = openSubs[key];
   const open = !!info;
 
+
   return (
     <li className={styles.treeNode}>
       {/* etiqueta clicable */}

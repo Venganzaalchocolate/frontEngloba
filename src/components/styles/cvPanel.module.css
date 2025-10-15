@@ -136,6 +136,40 @@
     color: var(--color-malva);
 }
 
+.cajaBotonesContratar{
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.pdfSkeleton,
+.pdfEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-height: 60vh;            /* ajusta a la altura de tu visor */
+  border: 1px dashed var(--color-gris-claro);
+  border-radius: .5rem;
+  background: rgba(0,0,0,.02);
+  color: var(--color-gris-claro);
+  text-align: center;
+  padding: 1rem;
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(0,0,0,.1);
+  border-top-color: var(--color-morado);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
 /* Estilos para pantallas más grandes */
 @media (min-width: 600px) {
     .contenedorCV {

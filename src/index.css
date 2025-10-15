@@ -1,117 +1,213 @@
-:root{
-  --color-morado: #4f529f;
-  --color-malva:#bec3f4;
-  --color-malva-oscuro: #8f96d0;
-  --color-chicle:#e08fa7;
-  --color-verde-hoja:#94aa51;
-  --color-yema:#f5b136;
-  --color-naranja:#f3853a;
-  --color-rosa-palo:#eddcf2;
-  --color-crema:#f5dc98;
-  --color-gris-claro:rgb(237, 237, 237);
+:root {
+  /* ====== PALETA DE COLORES ====== */
+
+  /* Primarios */
+  --color-morado: #4f529f;         /* principal, corporativo */
+  --color-malva: #bec3f4;          /* suave para fondos */
+  --color-malva-oscuro: #8f96d0;   /* hover, sombras */
+
+  /* Secundarios */
+  --color-chicle: #e08fa7;
+  --color-verde-hoja: #94aa51;
+  --color-yema: #f5b136;
+  --color-naranja: #f3853a;
+  --color-rosa-palo: #eddcf2;
+  --color-crema: #f5dc98;
+
+  /* Neutros */
+  --color-gris-claro: #ededed;
+  --color-gris-medio: #bfbfbf;
+  --color-gris-oscuro: #4a4a4a;
+  --color-blanco: #ffffff;
+  --color-negro: #111111;
+
+  /* Feedback (estados) */
+  --color-exito: #2ecc71;
+  --color-error: #e74c3c;
+  --color-advertencia: #f39c12;
+  --color-info: #3498db;
+
+  /* Gradientes */
+  --gradiente-principal: linear-gradient(135deg, #4f529f, #8f96d0);
+  --gradiente-secundario: linear-gradient(135deg, #f5b136, #f3853a);
+  --gradiente-rosa: linear-gradient(135deg, #e08fa7, #eddcf2);
+
+  --icono:url('../public/graphic/icono.svg');
 }
 
-#root{
-display: flex;
-flex-direction: column;
-flex: 1 100%;
-}
-
-
-
-*{
+/* ====== RESETEO GENERAL ====== */
+* {
   margin: 0;
   padding: 0;
   list-style: none;
   text-decoration: none;
-  font-family:  Verdana, Geneva, Tahoma, sans-serif;
+  font-family: Figtree, Helvetica, sans-serif; /* fuente base de la app */
   border-collapse: collapse;
+  box-sizing: border-box; /* para que padding/border no rompan layouts */
 }
 
-body{
+/* ====== ROOT PRINCIPAL ====== */
+#root {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 100%;
+}
+
+/* ====== BODY ====== */
+body {
   display: flex;
   flex-direction: column;
   min-width: 100vw;
   min-height: 100vh;
+  background-color: var(--color-gris-claro); /* fondo neutro */
+  color: var(--color-negro); /* texto por defecto */
 }
 
+/* ====== IMÁGENES ====== */
 img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
 
-button, input::file-selector-button{
-  
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  font-size: 10pt;
-
-  background-color: var(--color-malva);
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  color: var(--color-morado);
-  font-weight: 900;
-  text-transform: uppercase;
-
-  display: flex;
-  justify-content: center;
+/* ====== BASE ====== */
+button {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+
+  font-family: Figtree, Helvetica, sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    background-color: var(--color-morado);
+  color: var(--color-blanco);
 }
 
-input::file-selector-button{
+/* ====== VARIANTES SOLID ====== */
+
+button:hover {
+  background-color: var(--color-malva-oscuro);
+}
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 82, 159, 0.35);
+}
+
+.btn-secondary {
+  background-color: var(--color-malva);
+  color: var(--color-morado);
+}
+.btn-secondary:hover {
+  background-color: var(--color-malva-oscuro);
+  color: var(--color-blanco);
+}
+
+.btn-success {
+  background-color: var(--color-exito);
+  color: var(--color-blanco);
+}
+.btn-success:hover {
+  background-color: #27ae60;
+}
+
+.btn-danger {
+  background-color: var(--color-error);
+  color: var(--color-blanco);
+}
+.btn-danger:hover {
+  background-color: #c0392b;
+}
+
+/* ====== VARIANTES OUTLINE ====== */
+.btn-outline {
+  background: transparent;
+  border: 1px solid currentColor;
+}
+
+.btn-outline-primary {
+  color: var(--color-morado);
+}
+.btn-outline-primary:hover {
+  background-color: var(--color-malva);
+  border-color: var(--color-morado);
+}
+
+.btn-outline-secondary {
+  background-color: var(--color-gris-claro);
+  color: var(--color-gris-oscuro);
+}
+.btn-outline-secondary:hover {
+  background-color: var(--color-gris-oscuro);
+  color:var(--color-gris-claro);
+}
+
+.btn-outline-danger {
+  color: var(--color-error);
+}
+.btn-outline-danger:hover {
+  background-color: rgba(231, 76, 60, 0.1);
+  border-color: var(--color-error);
+}
+
+/* ====== ESTADOS ====== */
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+button:active {
+  transform: scale(0.97);
+}
+
+
+
+
+/* ====== INPUTS Y FORMULARIOS ====== */
+input::file-selector-button {
   width: 100%;
 }
 
-input[type='file']{
+input[type='file'] {
   background: none;
   padding: 0;
   color: var(--color-chicle);
 }
 
-button:hover{
-  background-color: var(--color-crema);
-}
-
-a{
-  color: var(--color-yema);
-}
-a:hover{
-  color: var(--color-chicle);
-}
-
-label{
+label {
   text-align: left;
   text-transform: uppercase;
   padding: 0.5rem 0;
-  color: white;
+  color: var(--color-morado);
   font-weight: bold;
   letter-spacing: 2px;
   font-size: 9pt;
   align-self: flex-start;
 }
 
-input, select{
+input,
+select,
+textarea {
   border: none;
   padding: 0.5rem;
   border-radius: 0.5rem;
   font-size: 9pt;
-  background-color: white;
+  background-color: var(--color-blanco);
   color: var(--color-morado);
 }
 
-
-textarea{
-  width: auto;
-  height: auto;
+textarea {
   min-height: 10rem;
+  resize: vertical; /* que pueda crecer en vertical */
 }
-
-
 
 select {
   flex: 1;
@@ -120,9 +216,7 @@ select {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 0.5rem;
-  box-sizing: border-box;
-  appearance: none; /* Elimina los estilos nativos si es necesario */
+  appearance: none; /* quito estilos nativos */
 }
 
 option {
@@ -131,33 +225,37 @@ option {
   white-space: nowrap;
 }
 
+/* ====== LINKS ====== */
+a {
+  color: var(--color-yema);
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: var(--color-chicle);
+}
 
-.errorSpan{
-  color: tomato;
+/* ====== ESTADOS Y UTILIDADES ====== */
+.errorSpan {
+  color: var(--color-error);
   font-family: 'Courier New', Courier, monospace;
   font-weight: bold;
   padding: 0.5rem 0;
 }
 
-.green{
+.green {
   background-color: var(--color-verde-hoja);
-  color: white;
+  color: var(--color-blanco);
 }
 
-.tomato{
+.tomato {
   background-color: tomato;
-  color: white;
+  color: var(--color-blanco);
 }
 
-.crema{
+.crema {
   background-color: var(--color-crema);
 }
 
-.iconTomato{
+.iconTomato {
   color: tomato;
 }
-
-button{
-  font-family: Verdana, Geneva, Tahoma, sans-serif;
-}
-

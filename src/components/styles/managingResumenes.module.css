@@ -1,5 +1,5 @@
 /* Estilos base para móviles */
-.contenedor{
+.contenedor {
     display: flex;
     flex-direction: column;
     background-color: var(--color-morado);
@@ -9,19 +9,27 @@
     gap: 1rem;
 }
 
-.contenedor h2{
-    color: var(--color-yema);
+.contenedor h2 {
+
     text-transform: uppercase;
+
+  font-size: 1.25rem;
 }
 
-.paginacion{
+.paginacion {
     display: flex;
     justify-content: end;
     align-items: center;
     flex-direction: column;
     gap: 1rem;
-    >h2{
+
+    >h2 {
         flex: 1 100%;
+            color: white;
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+  border-left: 10px solid white;
+  font-size: 1.25rem;
     }
 }
 
@@ -35,7 +43,7 @@
     color: var(--color-morado);
 }
 
-.tableContainer>:nth-child(1){
+.tableContainer>:nth-child(1) {
     display: none;
 }
 
@@ -48,7 +56,7 @@
     background-color: #fff;
 }
 
-.selected{
+.selected {
     display: flex;
     flex-wrap: wrap;
     border: 1px solid #ddd;
@@ -58,7 +66,7 @@
     color: white;
 }
 
-.rejected{
+.rejected {
     display: flex;
     flex-wrap: wrap;
     border: 1px solid #ddd;
@@ -68,7 +76,7 @@
     color: white;
 }
 
-.favorite{
+.favorite {
     display: flex;
     flex-wrap: wrap;
     border: 1px solid #ddd;
@@ -78,11 +86,11 @@
     color: var(--color-morado);
 }
 
-.tableRow:hover{
+.tableRow:hover {
     background-color: var(--color-malva);
 }
 
-.tableContainer > :nth-child(1):hover{
+.tableContainer> :nth-child(1):hover {
     background-color: white;
 }
 
@@ -106,16 +114,16 @@
 
 
 
-.capitalize{
+.capitalize {
     text-transform: capitalize;
 }
 
-.tableCell>.capitalize{
+.tableCell>.capitalize {
     text-transform: capitalize;
     display: inline;
 }
 
-.contenedorfiltro{
+.contenedorfiltro {
     display: flex;
     flex-wrap: wrap;
     background-color: var(--color-malva);
@@ -125,67 +133,69 @@
     align-items: flex-end;
 }
 
-.contenedorfiltro > h3{
+.contenedorfiltro>h3 {
     flex: 1 100%;
     color: var(--color-morado);
 }
 
-.contenedorfiltro button{
+.contenedorfiltro button {
     color: var(--color-yema);
     background-color: var(--color-morado);
 }
 
-.contenedorfiltro button:hover{
+.contenedorfiltro button:hover {
     background-color: var(--color-yema);
     color: var(--color-morado);
 }
 
-.contenedorfiltro > div{
+.contenedorfiltro>div {
     display: flex;
     flex-direction: column;
     flex: 1 8rem;
 }
 
-.contenedorfiltro > div.cajaIconosFiltro{
+.contenedorfiltro>div.cajaIconosFiltro {
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
 }
 
-.contenedorfiltro > div.cajaIconosFiltro > div > span > svg{
+.contenedorfiltro>div.cajaIconosFiltro>div>span>svg {
     width: 2rem;
     height: 2rem;
     color: var(--color-morado);
 }
 
-.cajaOfertas{
+.cajaOfertas {
     padding: 1rem;
     border: solid 1px var(--color-malva);
     border-radius: 1rem;
     display: flex;
     flex-direction: column;
 }
-.cajaOfertas>.tituloProcesoActivo{
+
+.cajaOfertas>.tituloProcesoActivo {
     text-align: center;
     font-size: 14pt;
     color: var(--color-crema);
 }
-.cajaOfertas>.cajaOfertasBotones{
+
+.cajaOfertas>.cajaOfertasBotones {
     display: flex;
     justify-content: center;
     gap: 1rem;
     padding: 1rem;
 }
 
-.cajaOfertas>.cvAddBolsa{
+.cajaOfertas>.cvAddBolsa {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-.iconworkedInEngloba{
+.iconworkedInEngloba {
     padding-right: 0.5rem;
-    width: 1rem;
+    width: 1.5rem;
     height: 1rem;
     color: var(--color-morado);
     margin: 0 0 -2px 0;
@@ -194,8 +204,12 @@
 /*
 offers style
 */
-.containerOffer{
-    flex: 20rem;
+
+.botonCrearOferta{
+    background-color: var(--color-verde-hoja);
+}
+.containerOffer {
+    flex: 25rem;
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
@@ -203,82 +217,272 @@ offers style
     border-radius: 1rem;
     padding: 1rem;
     gap: 0.5rem;
-    >h3{
+
+    >h3 {
         font-size: 12pt;
         font-weight: bold;
         color: var(--color-gris-claro);
         flex: 100%;
     }
-    p{
+
+    p {
         font-size: 10pt;
     }
-    h4{
+
+    h4 {
         font-size: 10pt;
         color: var(--color-morado);
     }
-    >div{
+
+    >div {
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
     }
-    .offerSelected{
+
+    .offerSelected {
         display: flex;
         flex-direction: column;
         background-color: var(--color-gris-claro);
         padding: 0.5rem;
         border-radius: 0.4rem;
-        gap: 0.5rem;
-        
-    }
-    button{
-        font-size: 8pt;
-    }
-    .buttonsOfferSelected{
-          display: flex;  
-          gap: 0.5rem;
+        gap: 0.2rem;
+
+        >h4 {
+            align-items: center;
+            display: flex;
+            gap: 0.5rem;
         }
-    .listaCandidatos{
-        padding: 0.5rem;
-    }
-    .nombreCandidato{
-        text-transform: uppercase;
-        color: white;
 
     }
-    .nombreCandidato:hover{
+
+    .offerSelected>h4>span {
+        font-size: 10pt;
+        color: var(--color-morado);
+        border: solid 1px white;
+        border-radius: 0.5rem;
+        padding: 0.2rem;
+        background-color: white;
+    }
+
+    button {
+        font-size: 8pt;
+    }
+
+    .buttonsOfferSelected {
+        display: flex;
+        gap: 0.5rem;
+        flex: 0;
+        background-color: tomato;
+        align-self: end;
+        width: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .listaCandidatos {
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .nombreCandidato {
+        text-transform: uppercase;
+        color: white;
+        
+
+    }
+
+    .nombreCandidato:hover {
         color: var(--color-crema);
     }
-    .candidato{
-        display: flex;
-        justify-content: space-between;
-        padding: 0.2rem 0;
-    }
-    .candidato>svg:hover{
+
+    .candidato>svg:hover {
         color: tomato;
     }
 }
 
-.containerOfferAndUsers{
-        gap: 1rem;
+.containerOfferAndUsers {
+    gap: 1rem;
+}
+
+/* -------- Preferentes: estilos y chips -------- */
+
+.listaCandidatos {
+    padding: 0.5rem;
+    background: #fff;
+    border: 1px solid var(--color-gris-claro);
+    border-radius: 0.5rem;
+    gap: 0.5rem;
+}
+
+.listaCandidatos h5 {
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--color-morado);
+}
+
+/* Fila de cada preferente/candidato */
+.candidato,
+.candidatoNoPreferente {
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    padding: 0.5rem;
+    background-color: var(--color-gris-claro);
+    border-radius: 0.5rem;
+    gap: 2px;
+}
+
+.candidatoNoPreferente {
+    flex-direction: row;
+    align-content: center;
+    align-items: center;
+    justify-content: space-between;
+    >svg{
+            width: 1rem;
+            height: 1rem;
+            color: tomato;
+        }
+    >svg:hover{
+            color: var(--color-chicle);
+        }
+}
+
+.candidatoNoPreferente>:nth-child(1){
+    flex: 0 90%;
+}
+
+.candidato:last-child {
+    border-bottom: none;
+}
+
+/* Nombre clicable (mejor visible en fondos claros) */
+.nombreCandidato {
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    color: var(--color-morado);
+    text-transform: none;
+    /* más legible que todo mayúsculas */
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.nombreCandidato:hover {
+    color: var(--color-crema);
+}
+
+/* DNI al lado del nombre */
+.dniTag {
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--color-gris-claro);
+    background-color: var(--color-chicle);
+    border: 1px solid rgba(0, 0, 0, .06);
+    padding: .1rem .35rem;
+    border-radius: .35rem;
+}
+
+/* Chips de tipo */
+.badgeTraslado,
+.badgeReincorporacion {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .2rem .5rem;
+    border-radius: 999px;
+    font-size: 9pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    border: 1px solid transparent;
+    font-size: 7pt;
+}
+
+/* Colores semánticos */
+.badgeTraslado {
+    background: #e6f7ff;
+    /* azul claro */
+    border-color: #bde7ff;
+    color: #074b74;
+}
+
+.badgeReincorporacion {
+    background: #eafbe7;
+    /* verde claro */
+    border-color: #c9efc2;
+    color: #1f5e2a;
+}
+
+/* Icono de borrar en candidatos de oferta */
+.candidato>svg {
+    opacity: .7;
+    transition: transform .08s ease, opacity .08s ease;
+}
+
+.candidato>svg:hover {
+    color: tomato;
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+/* Estado vacío */
+.emptyState {
+    padding: .6rem .75rem;
+    border-radius: .5rem;
+    background: linear-gradient(0deg, rgba(0, 0, 0, .025), rgba(0, 0, 0, .025));
+    color: var(--color-gris-claro);
+    font-size: 10pt;
+}
+
+
+.nombreCandidato {
+    display: flex;
+    align-items: flex-start;
+    color: white;
+    text-align: left;
+    justify-content: space-between;
+
+    >svg {
+        width: 1rem;
+        height: 1rem;
+        color: tomato;
     }
+}
+
+.cajaInfoCandidatos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: space-between;
+}
+.resetFiltrosBtn{
+width: fit-content;
+}
+
 
 /* Estilos para pantallas más grandes */
 @media (min-width: 1080px) {
-    .contenedor{
+    .contenedor {
         padding: 1rem 4rem;
     }
 
-    .paginacion{
+    .paginacion {
         flex-direction: row;
-        >div{
+
+        >div {
             flex-wrap: nowrap;
-            >label{
+
+            >label {
                 display: flex;
-            }  
+            }
         }
     }
 
-    .tableContainer>:nth-child(1){
+    .tableContainer>:nth-child(1) {
         display: flex;
     }
 
@@ -291,27 +495,27 @@ offers style
     .tableCell:nth-child(2) {
         word-break: break-all;
         justify-content: center;
-        max-width: 3rem;
+        max-width: 4rem;
     }
 
     .tableCell:nth-child(3) {
-        max-width: 5rem;
-        min-width: 5rem;
+        max-width: 6rem;
+        min-width: 6rem;
     }
 
     .tableCell:nth-child(5) {
+        max-width: 12rem;
+        min-width: 12rem;
+    }
+
+    .tableCell:nth-child(6) {
         max-width: 7rem;
         min-width: 7rem;
     }
 
-    .tableCell:nth-child(6) {
-        max-width: 9rem;
-        min-width: 5rem;
-    }
-
     .tableCell:nth-child(7),
     .tableCell:nth-child(8) {
-        max-width: 1rem;
+        max-width: 2rem;
         min-width: 1rem;
     }
 
@@ -320,7 +524,7 @@ offers style
         max-width: 5rem;
         min-width: 5rem;
         display: flex;
-        justify-content:center;
+        justify-content: center;
 
         gap: 0.5rem;
     }
@@ -329,7 +533,7 @@ offers style
         border-right: none;
     }
 
-    .containerOfferAndUsers{
+    .containerOfferAndUsers {
         display: flex;
         flex-wrap: nowrap;
     }

@@ -1,226 +1,205 @@
-.contenedor{
-    display: flex;
-    background-color: var(--color-malva);
-    padding: 1rem;
-    flex-wrap: wrap;
-    gap: 1rem 0.5rem;
-    border-radius: 1rem;
-    
+/* ===== Contenedor ===== */
+.contenedor,
+.contenedorModuloNominas {
+  --radius: 12px;
+  --pad: 16px;
+  --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  --shadow: 0 6px 18px rgba(0,0,0,.06);
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  border: var(--bd);
+  background: #fff;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+  width: auto;
 }
 
-.contenedorModuloNominas{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem 0.5rem;
-    border-radius: 1rem;
+.contenedor > h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  font-size: 13pt;
+  color: var(--color-morado);
+  border-bottom: 1px solid var(--color-morado);
+}
+.contenedor > h2 svg {
+  cursor: pointer;
+  transition: transform .15s ease, color .15s ease;
+}
+.contenedor > h2 svg:hover { color: var(--color-chicle); transform: translateY(-1px); }
+
+/* ===== Selector de años ===== */
+.lista_nominas { display: flex; flex-direction: column; gap: 12px; }
+
+.lista_botonesAnios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.contenedor>h2{
-    display: flex;
-    flex: 1 100%;
-    border-bottom: 3px solid var(--color-morado);
-    gap: 1rem;
-    padding-bottom: 0.5rem;
-    align-items: center;
+.botonesNoSeleccionado,
+.botonesSeleccionado {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 22%, #fff);
+  background: #fafaff;
+  color: var(--color-morado);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  box-shadow: 0 2px 8px rgba(44,25,102,.08);
+}
+.botonesNoSeleccionado:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.08);
+}
+.botonesSeleccionado {
+  background: var(--color-morado);
+  color: #fff;
+  border-color: var(--color-morado);
 }
 
-.contenedor>h2>svg{
-    width: 1.5rem;
-    height: 1.5rem;
+/* ===== Lista de nóminas (del año) ===== */
+.lista_nominas ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
 }
 
-.contenedor div{
-    display: flex;
+/* Ítem de nómina en tarjeta compacta */
+.payrollItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #fff);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,.04);
 }
 
-
-.contenedor svg{
-    width: 1.5rem;
-    height: 1.5rem;
+@media (max-width: 600px) {
+.contenedor,
+.contenedorModuloNominas {
+    min-width: 400px;
+}
+  .payrollItem {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
-.createPayroll{
-    flex-direction: column;
-    display: flex;
-    flex-wrap: wrap;
-    background-color: var(--color-crema);
-    padding: 1rem;
-    border-radius: 1rem;
-    gap: 1rem;
-    flex: 20rem 0;
+/* Celda principal (mes + descargar) */
+.payrollmonth {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fafaff;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 14%, #fff);
+  color: var(--color-morado);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.payrollmonth:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--color-morado) 26%, #fff);
+  box-shadow: 0 6px 14px rgba(0,0,0,.06);
 }
 
-.createPayroll>div{
-    display: flex;
-    flex-direction: column;
+/* Botón firmar */
+.botonSubir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--color-morado);
+  color: #fff;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(44,25,102,.12);
+  transition: transform .12s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+.botonSubir:hover {
+  background: color-mix(in srgb, var(--color-morado) 18%, #fff);
+  color: var(--color-morado);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.08);
 }
 
-.createPayroll>div>label{
-    color: var(--color-morado);
+/* Firma (estado) */
+.firma { display: flex; align-items: center; justify-content: center; }
+.dowSig { cursor: pointer; }
+
+/* Borrar */
+.botonBorrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, #d9534f 85%, #000);
+  cursor: pointer;
+  transition: transform .12s ease, color .12s ease, opacity .12s ease;
+  opacity: .95;
+}
+.botonBorrar:hover { color: #d9534f; transform: translateY(-1px); opacity: 1; }
+
+/* Icono común */
+.botonNomina { width: 1.1rem; height: 1.1rem; }
+
+/* Mono para fechas/mes si lo necesitas en el futuro */
+.mono {
+  font: 700 10pt ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
 }
 
-.createPayroll>div.contenedorBotones{
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 1rem;
-    >button{
-        width: fit-content;
-
-    }
+.actualWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  box-shadow: 0 3px 10px rgba(0,0,0,.04);
 }
 
-.lista_nominas{
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+.actualTitle {
+  margin: 0;
+  color: var(--color-morado);
+  font-weight: 800;
 }
 
-.lista_detalleNominas{
-    flex-direction: column;
-    padding-top: 1rem;
-    >h3{
-        padding-bottom: 0.5rem;
-
-    }
+/* que el item no se pegue a los bordes */
+.actualWrapper ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-h3.titleYear{
-    padding: 1rem 0;
-}
-
-li.payrollItem:nth-child(1){
-    margin-top: 1rem;
-}
-
-li.payrollItem{
-    align-content: center;
-    padding: 0.2rem 0;
-    display: flex;
-    flex-wrap: wrap;
-    >div.payrollmonth{
-        display: flex;
-        flex: 10rem 0;
-        background-color: var(--color-verde-hoja);
-        padding: 5px 1rem;
-        border: 1px solid var(--color-verde-hoja);
-        border-radius: 1rem;
-        color: white;   
-        >div:nth-child(1){
-            flex: 1;
-        }
-        >div:nth-child(2){
-            gap: 0.3rem;
-            
-        }
-    }
-}
-
-li.payrollItem>div.payrollmonth:hover{
-    background-color: var(--color-morado);
-    border: 1px solid var(--color-morado);
-}
-
-div.confirmacionBorrar{
-    padding: 5px 1rem;
-    border: 1px solid var(--color-morado);
-    border-radius: 1rem;
-    display: flex;
-    flex: 1 100%;
-    margin-top: 0.5rem;
-    margin-bottom: 1rem;
-    background-color: tomato;
-    color: white;
-    gap: 1rem;
-    align-items: center;
-    border: tomato;
-    >button{
-        background-color: tomato;
-        color: white;
-    }
-    >button:hover{
-        color: var(--color-morado);
-    }
-}
-
-
-.lista_botonesAnios{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-}
-
-.botonesSeleccionado{
-    color: tomato;
-    background-color: var(--color-morado);
-}
-
-.botonesNoSeleccionado{
-    border: var(--color-morado) 1px solid;
-}
-
-.botonBorrar{
-    display: flex;
-    margin-left: 2rem;
-    padding: 0 0.4rem;
-    border: solid 1px tomato;
-    border-radius: 1rem;
-    background-color: tomato;
-    >svg.botonNomina{
-        color: white;
-    }
-}
-
-.botonSubir{
-    display: flex;
-    margin-left: 0.5rem;
-    padding: 0 0.4rem;
-    gap: 0.5rem ;
-    color: white;
-    border: solid 1px var(--color-chicle);
-    border-radius: 1rem;
-    background-color: var(--color-chicle);
-    >svg.botonNomina{
-        color: white;
-    }
-}
-
-.dowSig:hover{
-    color: var(--color-chicle);
-}
-
-.botonSubir:hover{
-    background-color: var(--color-morado);
-    border: var(--color-morado);
-  
-}
-
-.botonBorrar:hover{
-    background-color: var(--color-morado);
-    border: var(--color-morado);
-    >svg.botonNomina{
-        color: tomato;
-    }
-}
-
-svg.botonNomina{
-    width: 1rem;
-    height: 1rem;
-    align-self: center;
-}
-
-.firma{
-    
-    align-items: center;
-    margin-left: 0.5rem;
-}
-
-.firma svg{
-    width: 1.5rem;
-    height: 1.5rem;
+.actualWrapper, .payrollItem{
+  max-width: 30rem;
 }
 
 
-@media(width>1000px){
-
+@media (min-width: 600px){
+  .contenedor{
+  min-width: 30rem;
+}
 }

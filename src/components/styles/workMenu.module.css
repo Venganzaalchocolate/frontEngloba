@@ -12,10 +12,6 @@
   padding: 24px;
 }
 
-/* Contenedor específico del menú */
-#contenedorWorkerMenu{
-
-}
 
 /* ====== Encabezado ====== */
 .menuHeader { 
@@ -23,12 +19,14 @@
   max-width: 980px;
   margin: 0 auto 18px auto; 
   text-align: left;
-  >h2{
-    color: var(--color-malva);
-  }
+  
 }
 .name { color: white; font-weight: 700; }
 .subtitle { color: #6b7280; margin-top: 6px; }
+
+.menuHeader>h2{
+    color: var(--color-malva);
+  }
 
 /* ====== Grid responsive ====== */
 .grid{
@@ -103,7 +101,7 @@
 }
 
 /* ====== Modo oscuro (opcional) ====== */
-@media (prefers-color-scheme: dark){
+
   .subtitle{ color: #9aa3af; }
   .tile{
     background: rgba(17,24,39,0.45);
@@ -114,7 +112,7 @@
   .tile:focus-visible{
     box-shadow: 0 0 0 3px rgba(148,163,184,0.45), 0 12px 26px rgba(0,0,0,0.35);
   }
-}
+
 
 /* ====== Layout heredado que ya no se usa con tiles ======
    (lo dejo por si lo usas en otros sitios; si no, puedes eliminarlo) */

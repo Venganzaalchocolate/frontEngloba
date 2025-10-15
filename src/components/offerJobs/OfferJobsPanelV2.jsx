@@ -208,7 +208,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Filtros SOLO histórico
-  const [histFilters, setHistFilters] = useState({ programId: "", dispositiveId: "" });
+  const [histFilters, setHistFilters] = useState({ programId: "", newDispositiveId: "" });
 
   // Combobox Programa/Dispositivo (rehecho con los ÍNDICES)
   const [pdQuery, setPdQuery] = useState("");
@@ -245,7 +245,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
         type: "device",
         id: did,
         programId: d?.program || "",
-        deviceId: did,
+        newDispositiveId: did,
         display: d?.name || did,
         searchable: `${d?.name || ""} ${prog?.name || ""} ${acr}`.trim(),
       });
@@ -267,8 +267,8 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const clearPd = () => {
     setPdQuery("");
     handleHistFilterChange("programId", "");
-    handleHistFilterChange("dispositiveId", "");
-    fetchHistory(1, histLimit, { programId: "", dispositiveId: "" });
+    handleHistFilterChange("newDispositiveId", "");
+    fetchHistory(1, histLimit, { programId: "", newDispositiveId: "" });
   };
 
   const selectPd = (item) => {
@@ -277,9 +277,9 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
     // Siempre programId
     handleHistFilterChange("programId", item.programId);
     // Si es device, guardamos dispositiveId; si es programa, vaciamos dispositiveId
-    const deviceVal = item.type === "device" ? item.deviceId : "";
-    handleHistFilterChange("dispositiveId", deviceVal);
-    fetchHistory(1, histLimit, { programId: item.programId, dispositiveId: deviceVal });
+    const deviceVal = item.type === "device" ? item.newDispositiveId  : "";
+    handleHistFilterChange("newDispositiveId", deviceVal);
+    fetchHistory(1, histLimit, { programId: item.programId, newDispositiveId: deviceVal });
   };
 
   // Fetch histórico con filtros (mantiene dispositiveId en la query)
@@ -289,7 +289,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
 
       const currentFilters = {
         programId: histFilters.programId,
-        dispositiveId: histFilters.dispositiveId,
+        newDispositiveId: histFilters.newDispositiveId,
         ...(filtersArg || {}),
       };
 
@@ -302,7 +302,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
         params.limit = Number(limitStr);
       }
       if (currentFilters.programId) params.programId = currentFilters.programId;
-      if (currentFilters.dispositiveId) params.dispositiveId = currentFilters.dispositiveId;
+      if (currentFilters.newDispositiveId) params.newDispositiveId = currentFilters.newDispositiveId;
 
       const res = await offerList(params);
 
@@ -356,7 +356,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
     fetchHistory(1, next);
     setHistLimit(next);
   };
-
+ console.log(histItems)
   // ===== render =====
   return (
     <div className={styles.contenedor}>
@@ -386,9 +386,9 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
                 const nameJob = getFunctionLabel(o);
                 return (
                   <tr key={key} className={styles.row}>
-                    <td className={styles.cell}><span className={styles.device}>{getDeviceName(o)}</span></td>
-                    <td className={styles.cell}><span className={styles.function}>{nameJob}</span></td>
-                    <td className={`${styles.cell} ${styles.mono}`}>{fmtDate(getCreatedDate(o))}</td>
+                    <td className={styles.cell} onClick={() => openInfo(o)}><span className={styles.device}>{getDeviceName(o)}</span></td>
+                    <td className={styles.cell} onClick={() => openInfo(o)}><span className={styles.function}>{nameJob}</span></td>
+                    <td className={`${styles.cell} ${styles.mono}`} onClick={() => openInfo(o)}>{fmtDate(getCreatedDate(o))}</td>
                     <td className={styles.cell}>
                       <span className={styles.badge} title={o.type === 'internal' ? 'Oferta Privada' : 'Oferta Pública'}>
                         {o.type !== 'internal' ? <FaEye /> : <FaEyeSlash />}

@@ -28,39 +28,41 @@ const MenuStart = () => {
     setLoginOpen((v) => !v);
     // al abrir, enfocaremos el input por accesibilidad (opcional con ref)
   };
+const handleChange = (e) => {
+  const { name, value } = e.target;
 
-  const handleChange = (e) => {
-    setErrores({ email: null, code: null, mensajeError: null })
-    let { name, value } = e.target;
-    setDatos((prev) => ({ ...prev, [name]: value }));
+  // Actualiza los datos
+  setDatos((prev) => ({ ...prev, [name]: value }));
 
-    if (name === "email") {
-      valueAux=(!!value ? value  + '@engloba.org.es': '@engloba.org.es');
-      value = (value ?? '')
-      if (!validEmail(valueAux)) {
-        setErrores((prev) => ({ ...prev, email: textErrors("email") }));
-      } else {
-        setErrores((prev) => ({ ...prev, email: null }));
-      }
+  // Limpia errores del campo que estás tocando
+  setErrores((prev) => ({ ...prev, [name]: null, mensajeError: null }));
+
+  if (name === "email") {
+    const emailLocal = (value || "").trim();
+    const emailWithDomain = emailLocal ? `${emailLocal}@engloba.org.es` : "";
+    if (!emailLocal || !validEmail(emailWithDomain)) {
+      setErrores((prev) => ({ ...prev, email: textErrors(emailLocal ? "email" : "vacio") }));
     }
-    if (name === "code") {
-      setErrores((prev) => ({ ...prev, code: null }));
-    }
-    setErrores((prev) => ({ ...prev, mensajeError: null }));
-  };
+  }
 
-  const login = async () => {
-    let emailAux=datos.email;
-    if (!emailAux || emailAux.trim() === "") {
-      setErrores((prev) => ({ ...prev, email: textErrors("vacio") }));
-      return;
-    }
-    emailAux.trim()
-    emailAux+='@engloba.org.es'
-    if (!validEmail(emailAux)) return;
-    setLoading(true);
+  if (name === "code") {
+    // Si quieres, puedes validar que sea numérico o longitud
+    setErrores((prev) => ({ ...prev, code: null }));
+  }
+};
 
-    const loginResult = await loginUserCode(emailAux);
+const login = async () => {
+  let emailAux = datos.email || "";
+  emailAux = emailAux.trim();                 // ← guarda el trim
+  if (!emailAux) {
+    setErrores((prev) => ({ ...prev, email: textErrors("vacio") }));
+    return;
+  }
+  const emailWithDomain = `${emailAux}@engloba.org.es`;
+  if (!validEmail(emailWithDomain)) return;
+
+  setLoading(true);
+  const loginResult = await loginUserCode(emailWithDomain);
 
     if (!loginResult.error && loginResult.message) {
       const aux = deepClone(datos);

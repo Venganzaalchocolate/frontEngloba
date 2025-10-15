@@ -6,8 +6,8 @@ const FilterStatus = ({ filters, enums, handleFilterChange, resetFilters }) => {
         <div className={styles.contenedorfiltro}>
             {!!enums &&
 
-                <div>
-                    <div>
+                
+                    <div className={styles.contenedorfiltroOpciones}>
 
                         <label htmlFor="firstName">Nombre:</label>
                         <input type="text" id="firstName" name="firstName" value={filters.firstName} onChange={handleFilterChange} />
@@ -22,7 +22,7 @@ const FilterStatus = ({ filters, enums, handleFilterChange, resetFilters }) => {
                         </select>
                     </div>
 
-                </div>
+                
             }
 
 

@@ -329,8 +329,7 @@ offers style
     display: flex;
     flex-direction: column;
     align-items: left;
-    padding: 0.5rem;
-    background-color: var(--color-gris-claro);
+
     border-radius: 0.5rem;
     gap: 2px;
 }

@@ -348,6 +348,12 @@ filtros
     padding-top: 1rem;
 }
 
+.contenedorfiltro> .contenedorfiltroOpciones{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
 /* desktop: lado a lado */
 @media (min-width: 721px) {
     .contenedor{

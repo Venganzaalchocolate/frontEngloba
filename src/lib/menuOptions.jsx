@@ -18,7 +18,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     // { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
     // { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
     // { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
-    { key: 'lists',      label: 'Listín de contacto',      icon: FaRegAddressBook, accent: '#64748b' },
+    { key: 'lists', label: 'Listín de contacto', icon: FaRegAddressBook, accent: '#64748b' },
   ];
 
   const rootOnly = [

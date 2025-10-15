@@ -19,7 +19,7 @@ import FormJobUp from './components/globals/FormJobUp.jsx';
 
 function App() {
   const { logged, changeLogged, logout } = useLogin()
-  const [listResponsability, setlistResponsability] = useState([]);
+  const [listResponsability, setlistResponsability] = useState(null);
 
 
   const [modal, setModal] = useState({
@@ -39,74 +39,99 @@ function App() {
   }
 
     const chargeResponsability = async (user, token) => {
-      if (user.role !== 'root' && user.role !== 'global') {
-        const idUser = user._id;
-        const dataAux = { _id: idUser };
-        const responsability = await getDispositiveResponsable(dataAux, token);
-        setlistResponsability(responsability);
-      }
-    };
-
+  try {
+    if (user.role === 'root' || user.role === 'global') {
+      setlistResponsability([]); // listo aunque no tenga dispositivos
+      return;
+    }
+    const resp = await getDispositiveResponsable({ _id: user._id }, token);
+    setlistResponsability(Array.isArray(resp) ? resp : []); // fallback a []
+  } catch (e) {
+    console.error('Error cargando responsabilidades:', e);
+    setlistResponsability([]); // evita quedarse en null
+  }
+};
 
   useEffect(() => {
-    const isLogged = async () => {
+  let cancelled = false;
+
+  const isLogged = async () => {
+    setCharge(true);
+    try {
       const token = getToken();
-      if (token) {
-        const user = await tokenUser(token);
-        if (!user || user.error) {
-          logout();
-        } else {
-          changeLogged(user);
-          chargeResponsability(user,token)
-        }
-      } else {
-        logout();
-      }
-      setCharge(false);
-    };
+      if (!token) { logout(); return; }
 
-    isLogged();
-  }, []);
+      const user = await tokenUser(token);
+      if (!user || user.error) { logout(); return; }
+
+      await chargeResponsability(user, token);
+      if (cancelled) return;
+
+      changeLogged(user);
+    } catch (e) {
+      console.error(e);
+      logout();
+    } finally {
+      if (!cancelled) setCharge(false);
+    }
+  };
+
+  isLogged();
+  return () => { cancelled = true; };
+}, []);
 
 
-  if (logged.isLoggedIn) {
-    return (
-      <OfferProvider>
-        <MenuWorkerProvider>
-          <BrowserRouter>
-            <Header listResponsability={listResponsability}/>
-            <Routes>
-              <Route path="/" element={<WorkerMenu listResponsability={listResponsability} charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
-              <Route path="/*" element={<WorkerMenu charge={(x) => setCharge(x)} modal={(title, message) => changeModal(title, message)} />}></Route>
-              <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-              <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-              <Route path="/trabajaconnosotros" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-              <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-            </Routes>
-            {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })}></Modal>}
-            {charge && <Spinnning status={charge}></Spinnning>}
-          </BrowserRouter>
-        </MenuWorkerProvider>
-      </OfferProvider>
-    )
+  const ready = logged.isLoggedIn && listResponsability !== null;
 
-  } else {
-    return (
+if (!logged.isLoggedIn) {
+  // 👉 Rutas públicas (sin Header/WorkerMenu)
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MenuStart charge={setCharge} />} />
+        <Route path="/ofertas" element={<JobsPanel modal={changeModal} charge={setCharge} />} />
+        <Route path="/ofertas/:id" element={<JobsPanel modal={changeModal} charge={setCharge} />} />
+        <Route path="/trabajaconnosotros" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
+        <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
+        <Route path="/*" element={<NotFound />} />
+      </Routes>
+      {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}
+      {charge && <Spinnning status={charge} />}
+    </BrowserRouter>
+  );
+}
+
+if (!ready) {
+  return (
+    <>
+      {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}
+      <Spinnning status={true} />
+    </>
+  );
+}
+
+// 👉 Ramas privadas (ya tenemos listResponsability)
+return (
+  <OfferProvider>
+    <MenuWorkerProvider>
       <BrowserRouter>
+        <Header listResponsability={listResponsability} />
         <Routes>
-          <Route path="/" element={<MenuStart charge={(x) => setCharge(x)} />}></Route>
-           <Route path="/ofertas" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-          <Route path="/ofertas/:id" element={<JobsPanel modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)}></JobsPanel>}></Route>
-          <Route path="/trabajaconnosotros" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-          <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={(title, message) => changeModal(title, message)} charge={(x) => setCharge(x)} />}></Route>
-          <Route path="/*" element={<NotFound />} />
-          <Route path="/*" element={<NotFound />}></Route>
+          <Route path="/" element={
+            <WorkerMenu listResponsability={listResponsability} charge={setCharge} modal={changeModal} />
+          } />
+          <Route path="/*" element={<WorkerMenu charge={setCharge} modal={changeModal} />} />
+          <Route path="/ofertas" element={<JobsPanel modal={changeModal} charge={setCharge} />} />
+          <Route path="/ofertas/:id" element={<JobsPanel modal={changeModal} charge={setCharge} />} />
+          <Route path="/trabajaconnosotros" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
+          <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
         </Routes>
         {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}
-        {charge && <Spinnning status={charge}></Spinnning>}
+        {charge && <Spinnning status={charge} />}
       </BrowserRouter>
-    )
-  }
+    </MenuWorkerProvider>
+  </OfferProvider>
+);
 
 }
 

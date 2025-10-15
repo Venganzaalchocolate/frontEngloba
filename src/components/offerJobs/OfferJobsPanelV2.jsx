@@ -8,6 +8,7 @@ import styles from "../styles/offers.module.css";
 import { FaEye, FaEyeSlash, FaSquarePlus } from "react-icons/fa6";
 import { FaEdit, FaInfoCircle, FaTrashAlt, FaLockOpen, FaUserFriends } from "react-icons/fa";
 import { useLogin } from '../../hooks/useLogin';
+import logoUrl from '/graphic/logotipo.png';
 
 const normDni = (dni) => (dni ? String(dni).replace(/\s+/g, '').toUpperCase() : '—');
 const humanEmployment = (status) => {

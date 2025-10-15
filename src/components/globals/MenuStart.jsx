@@ -11,7 +11,7 @@ import { loginUserCode, tokenGenerate } from "../../lib/data";
 import { saveToken } from "../../lib/serviceToken";
 import { deepClone } from "../../lib/utils";
 import Modal from "./Modal";
-
+import logoUrl from '/graphic/logotipo.png';
 const MenuStart = () => {
   const navigate = useNavigate();
   const { changeLogged } = useLogin();
@@ -117,7 +117,7 @@ const login = async () => {
 
         <div className={styles.areaMenu}>
           <div className={styles.logo}>
-            <img src="public/graphic/logotipo.png" alt="logoEngloba" />
+            <img src={logoUrl} alt="logoEngloba" />
             <p>Integración Laboral, Educativa y Social</p>
           </div>
 

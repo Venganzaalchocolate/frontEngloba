@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getData, offerList } from "../../lib/data";
 import { FaArrowLeft } from "react-icons/fa";
 import { LuMapPin, LuClock3, LuChevronDown } from "react-icons/lu";
+import logoUrl from '/graphic/logotipo.png';
 
 const fmtDate = (d) => {
   if (!d) return "";
@@ -140,7 +141,7 @@ export default function JobsPanel({ modal, charge }) {
 
         <div className={styles.areaMenu}>
           <div className={styles.logo}>
-            <img src="public/graphic/logotipo.png" alt="logoEngloba" />
+            <img src={logoUrl} alt="logoEngloba" />
             <p>Integración Laboral, Educativa y Social</p>
           </div>
         </div>

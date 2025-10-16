@@ -308,8 +308,9 @@ filtros
 .pdSearchItem {
   all: unset;                 /* limpia estilos heredados */
   display: flex;
-  align-items: center;
-  gap: .5rem;
+  align-items: left;
+  flex-direction: column;
+
   padding: .5rem .75rem;
   cursor: pointer;
   font-size: 10pt;
@@ -330,6 +331,11 @@ filtros
 }
 .pdLabel {
   color: #1f2340;
+}
+
+.pdLabelName{
+    font-size: 8pt;
+  color: var(--color-malva-oscuro);
 }
 
 .isOnLeave{

@@ -86,6 +86,7 @@ export default function HiringPeriodsV2({
       try {
         charge?.(true);
         const res = await hiringList({ userId: user._id, page: 1, limit: 200 }, token);
+        console.log(res)
         if (res?.error) throw new Error(res.message || 'No se pudo cargar periodos');
         setPeriods(res.docs || []);
       } catch (e) {
@@ -97,6 +98,8 @@ export default function HiringPeriodsV2({
     fetchHiring();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id]);
+
+
 
   /* -------------------- helpers enums -------------------- */
   const objectValues = (o) => (o && typeof o === 'object' ? Object.values(o) : []);

@@ -74,13 +74,7 @@ const handleRequestCreated = (payload) => {
                         onRequestCreated={handleRequestCreated}
                     />
 
-                    <MyChangeRequests
-                        userId={myself._id}
-                        modal={modal}
-                        charge={charge}
-                        enumsData={enumsData}
-                        initialItems={optimisticReqs}
-                    />
+                    
 
                     <DocumentMiscelaneaGeneric
                         data={myself}
@@ -99,6 +93,14 @@ const handleRequestCreated = (payload) => {
                         charge={charge}
                         changeUser={changeUser}
                         listResponsability={listResponsability}
+                    />
+
+                    <MyChangeRequests
+                        userId={myself._id}
+                        modal={modal}
+                        charge={charge}
+                        enumsData={enumsData}
+                        initialItems={optimisticReqs}
                     />
 
                 </div>

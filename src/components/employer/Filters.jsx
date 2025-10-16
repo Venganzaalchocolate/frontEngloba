@@ -28,14 +28,15 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
   const toArrayFromIndex = (idxObj) =>
     Object.entries(idxObj || {}).map(([id, val]) => ({ _id: id, ...val }));
 
-  const programDisplay = (p) => (p ? `${p.name || ''}${p.acronym ? ` (${p.acronym})` : ''}` : '');
+  const programDisplay = (p) => (p ? p.acronym : '');
+  const programName = (p) => (p ? p.name : '');
 
   // === DATA desde enumsEmployer ===
-  const statusList       = Array.isArray(enumsEmployer?.status) ? enumsEmployer.status : [];
-  const jobsIndexArray   = toArrayFromIndex(enumsEmployer?.jobsIndex);
-  const programsArray    = toArrayFromIndex(enumsEmployer?.programsIndex);
-  const dispositivesArray= toArrayFromIndex(enumsEmployer?.dispositiveIndex);
-  const schedulesList    = Array.isArray(enumsEmployer?.work_schedule) ? enumsEmployer.work_schedule : [];
+  const statusList = Array.isArray(enumsEmployer?.status) ? enumsEmployer.status : [];
+  const jobsIndexArray = toArrayFromIndex(enumsEmployer?.jobsIndex);
+  const programsArray = toArrayFromIndex(enumsEmployer?.programsIndex);
+  const dispositivesArray = toArrayFromIndex(enumsEmployer?.dispositiveIndex);
+  const schedulesList = Array.isArray(enumsEmployer?.work_schedule) ? enumsEmployer.work_schedule : [];
 
   // Provincias agrupadas (root + subs)
   const provincesGroups = useMemo(() => {
@@ -58,6 +59,7 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
         id: p?._id,
         programId: p?._id,
         display: programDisplay(p),
+        name: programName(p),
         searchable: `${p?.name || ''} ${p?.acronym || ''}`,
       }))
       .sort((a, b) => a.display.localeCompare(b.display, 'es'));
@@ -90,20 +92,25 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
           display: d?.name || '',
           searchable: `${d?.name || ''} ${programDisplay(p)}`,
           programDisplay: programDisplay(p),
+          programName: programName(p)
         };
       })
       .sort((a, b) => a.display.localeCompare(b.display, 'es'));
   }, [dispositivesArray, enumsEmployer?.programsIndex]);
 
-  const ddResults = useMemo(() => {
-    const q = norm(ddQuery);
-    const base = filters.programId
-      ? flatDevices.filter((d) => String(d.programId) === String(filters.programId))
-      : flatDevices;
+const ddResults = useMemo(() => {
+  const q = norm(ddQuery);
+  const searching = q.length > 0;
 
-    if (!q) return base.slice(0, 50);
-    return base.filter((d) => norm(d.searchable).includes(q)).slice(0, 50);
-  }, [ddQuery, flatDevices, filters.programId]);
+  // 👉 si NO estás buscando por texto y hay programa, filtra por programa;
+  // si estás buscando por texto, ignora programa (búsqueda global)
+  const base = (!searching && filters.programId)
+    ? flatDevices.filter((d) => String(d.programId) === String(filters.programId))
+    : flatDevices;
+
+  if (!searching) return base.slice(0, 50);
+  return base.filter((d) => norm(d.searchable).includes(q)).slice(0, 50);
+}, [ddQuery, flatDevices, filters.programId]);
 
   const selectDevice = (item) => {
     setDdQuery(item.display);
@@ -250,8 +257,8 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
               {pdResults.map((item, i) => (
                 <li key={`${item.type}-${item.id}`} role="option" aria-selected={i === 0}>
                   <p className={styles.pdSearchItem} onClick={() => selectPd(item)}>
-                    <span className={styles.pdBadge}>Programa</span>
                     <span className={styles.pdLabel}>{item.display}</span>
+                    <span className={styles.pdLabelName}>{item.name}</span>
                   </p>
                 </li>
               ))}
@@ -271,8 +278,14 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
             placeholder={filters.programId ? "Busca dispositivo del programa…" : "Escribe para buscar dispositivos…"}
             value={ddQuery}
             onChange={(e) => {
-              setDdQuery(e.target.value);
+              const val = e.target.value;
+              setDdQuery(val);
               setDdOpen(true);
+              // 👉 si hay programa seleccionado, quítalo al empezar a escribir
+              if (filters.programId) {
+                handleFilterChange({ target: { name: 'programId', value: '' } });
+                setPdQuery('');
+              }
             }}
             onFocus={() => setDdOpen(true)}
             onKeyDown={(e) => {
@@ -294,6 +307,9 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
               onClick={() => {
                 setDdQuery('');
                 handleFilterChange({ target: { name: 'dispositive', value: '' } });
+                // 👉 limpia también el programa
+                handleFilterChange({ target: { name: 'programId', value: '' } });
+                setPdQuery('');
               }}
               aria-label="Limpiar búsqueda de dispositivo"
             >
@@ -306,11 +322,8 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
               {ddResults.map((item, i) => (
                 <li key={`${item.type}-${item.id}`} role="option" aria-selected={i === 0}>
                   <p className={styles.pdSearchItem} onClick={() => selectDevice(item)}>
-                    <span className={styles.pdBadge}>Dispositivo</span>
                     <span className={styles.pdLabel}>{item.display}</span>
-                    {item.programDisplay && (
-                      <span className={styles.pdHint}> — {item.programDisplay}</span>
-                    )}
+                    <span className={styles.pdLabelName}>{item.programDisplay}</span>
                   </p>
                 </li>
               ))}

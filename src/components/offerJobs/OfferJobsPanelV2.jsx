@@ -357,7 +357,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
     fetchHistory(1, next);
     setHistLimit(next);
   };
- console.log(histItems)
+
   // ===== render =====
   return (
     <div className={styles.contenedor}>

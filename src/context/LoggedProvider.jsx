@@ -6,13 +6,15 @@ export const LoggedContext = createContext();
 export function LoggedProvider({ children }) {
     const [logged, setLogged] = useState({
         isLoggedIn: false,
-        user: {}
+        user: {},
+        listResponsability:[]
     })
 
-    const changeLogged=(user)=>{
+    const changeLogged=(user, listResponsability=null)=>{
         const auxLogged= structuredClone(logged)
         auxLogged['isLoggedIn']=true
         auxLogged['user']=user
+        if(listResponsability!=null)auxLogged['listResponsability']=listResponsability
         setLogged(auxLogged)
     }
 
@@ -20,6 +22,7 @@ export function LoggedProvider({ children }) {
         const auxLogged= {}
         auxLogged['isLoggedIn']=false
         auxLogged['user']={}
+        auxLogged['listResponsability']=[]
         deleteToken()
         setLogged(auxLogged)
     }

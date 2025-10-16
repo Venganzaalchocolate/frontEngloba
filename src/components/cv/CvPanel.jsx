@@ -80,7 +80,7 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
         const last = await getLastHiring(user);
         const activo = isCurrentlyActive(user);
         const fmt = (d) => d ? new Date(d).toLocaleDateString('es-ES') : '—';
-        console.log(last)
+      
         const data = [
             { type: 'section', label: 'Infomación básica' },
             { name: 'nombre', label: 'Nombre', type: 'text', defaultValue: `${user.firstName || ''} ${user.lastName || ''}`.trim(), disabled: true },
@@ -91,7 +91,7 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
             { name: 'fin', label: 'Fin', type: 'text', defaultValue: last?.endDate ? fmt(last.endDate) : (last ? 'Abierto' : '—'), disabled: true },
             { name: 'jornada', label: 'Jornada', type: 'text', defaultValue: last?.workShift?.type || '—', disabled: true },
             { name: 'puesto', label: 'Puesto', type: 'text', defaultValue: enumsEmployer.jobsIndex[last?.position]?.name || '—', disabled: true },
-            { name: 'dispositivo', label: 'Dispositivo', type: 'text', defaultValue: enumsEmployer.dispositiveIndex[last?.dispositiveID]?.name || '—', disabled: true },
+            { name: 'dispositivo', label: 'Dispositivo', type: 'text', defaultValue: enumsEmployer.dispositiveIndex[last?.dispositiveId]?.name || '—', disabled: true },
         ];
 
         return data

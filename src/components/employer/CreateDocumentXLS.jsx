@@ -47,7 +47,7 @@ function getPositionName(enumsData, positionId) {
 /** Intenta extraer el id del dispositivo de un periodo con distintos nombres posibles */
 function resolveDeviceId(period) {
   return (
-    period?.dispositiveID ??
+    period?.dispositiveId ??
     period?.device ??
     period?.dispositive ??
     period?.deviceId ??
@@ -70,7 +70,7 @@ function getDeviceAndProgram(enumsData, deviceId) {
 
   const programName = prog?.name || (progId ? progId : "(desconocido)");
   const programAcronym = prog?.acronym || programName;
- console.log({ deviceName, programName, programAcronym })
+
   return { deviceName, programName, programAcronym };
 }
 

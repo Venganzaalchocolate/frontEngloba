@@ -80,7 +80,7 @@ const FormCreateEmployer = ({
         {
           startDate: formData.startDate,
           endDate: formData.endDate || null,
-          device: formData.device, // id de Dispositive
+          dispositiveId: formData.dispositiveId, // id de Dispositive
           workShift: { type: formData.workShift },
           position: formData.position, // id de Job
           active: true,
@@ -340,12 +340,12 @@ const FormCreateEmployer = ({
         disabled: lockedFields.includes("startDate"),
       },
       {
-        name: "device",
+        name: "dispositiveId",
         label: "Dispositivo",
         type: "select",
         required: true,
-        defaultValue: hPeriod.device || selectedDeviceId || "",
-        disabled: lockedFields.includes("device"),
+        defaultValue: hPeriod.dispositiveId || selectedDeviceId || "",
+        disabled: lockedFields.includes("dispositiveId"),
         options: [{ value: "", label: "Seleccione" }, ...deviceOptions],
       },
       {

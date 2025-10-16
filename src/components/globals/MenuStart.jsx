@@ -89,7 +89,7 @@ const login = async () => {
       setLoading(false);
     } else {
       setLoading(false);
-      changeLogged(loginResult.user);
+      changeLogged(loginResult.user, loginResult.listResponsability);
       saveToken(loginResult.token);
       // cerramos inline login y navegamos al home
       setLoginOpen(false);

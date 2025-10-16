@@ -377,12 +377,15 @@ if (ids.length) {
   // ==================================================
 const changeUserLocally = (updatedUser) => {
   const aux = deepClone(users);
+  let upUs=false
   aux.forEach((x, i) => {
     if (x._id === updatedUser._id) {
       aux[i] = updatedUser;
+      upUs=true
     }
   });
   setUserSelected(updatedUser);
+  if(!upUs && !!updatedUser._id) aux.push(updatedUser)
   setUsers(aux);
 
   // 🔁 Actualiza el indicador de peticiones pendientes para este usuario
@@ -560,6 +563,7 @@ const renderUserRow = (user) => {
                   charge={charge}
                   closeModal={closeModal}
                   chargeUser={() => loadUsers(true)}
+                  changeUser={changeUserLocally}
                 />
               )}
             </div>

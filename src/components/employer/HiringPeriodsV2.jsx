@@ -335,7 +335,7 @@ export default function HiringPeriodsV2({
     },
     {
       name: 'dispositiveId', label: 'Dispositivo', type: 'select', required: true,
-      defaultValue: editHiring.dispositiveID || '', options: deviceOptions
+      defaultValue: editHiring.dispositiveId || '', options: deviceOptions
     },
     {
       name: 'workShift.type', label: 'Jornada', type: 'select', required: true,
@@ -416,7 +416,7 @@ export default function HiringPeriodsV2({
             { leaveId: l._id, actualEndLeaveDate: effectiveIso, active: false },
             token
           );
-          console.log(closedLeave)
+        
           if (!closedLeave?.error) {
             setLeavesByPeriod(prev => {
               const pid = String(periodId);
@@ -719,7 +719,7 @@ export default function HiringPeriodsV2({
       const { periodId, leave } = rejoinCtx || {};
       const period = periods.find(p => String(p._id) === String(periodId));
       if (!period) throw new Error('No se encontró el periodo');
-      const deviceId=period?.dispositiveID ?? period?.dispositiveId
+      const deviceId=period?.dispositiveId ?? period?.dispositiveId
       const provinceId = getDeviceProvince(deviceId);
       if (!isValidObjectId(provinceId)) throw new Error('No se pudo resolver la provincia (_id).');
       if (!isValidObjectId(String(period.position))) throw new Error('No se pudo resolver el puesto (position).');
@@ -759,10 +759,6 @@ export default function HiringPeriodsV2({
 
       const closedLeave = await leaveClose({ leaveId: leave._id, actualEndLeaveDate: rejoinDateISO, active: false }, token);
       if (closedLeave?.error) throw new Error(closedLeave.message || 'No se pudo cerrar la excedencia');
-      console.log(pref)
-      console.log(payload)
-      console.log(closedLeave)
-      console.log({ leaveId: leave._id, actualEndLeaveDate: rejoinDateISO, active: false })
       setLeavesByPeriod(prev => ({
         ...prev,
         [periodId]: (prev[periodId] || []).map(l => String(l._id) === String(closedLeave._id) ? { ...closedLeave, periodId } : l),
@@ -773,9 +769,9 @@ export default function HiringPeriodsV2({
       if (updatedPeriod?.error) throw new Error(updatedPeriod.message || 'No se pudo cerrar el periodo');
 
       setPeriods(prev => prev.map(p => String(p._id) === String(updatedPeriod._id) ? updatedPeriod : p));
-      console.log(periodId)
+      
       const clossAll=await closeAllLeavesForPeriod(periodId, endDateForPeriod);
-      console.log(clossAll)
+      
       modal?.('Reincorporación', 'Reincorporación registrada. Excedencia y periodo cerrados correctamente.');
       setRejoinCtx(null);
     } catch (e) {
@@ -964,7 +960,7 @@ export default function HiringPeriodsV2({
                 <dl className={styles.metaGrid}>
                   <div><dt>Inicio</dt><dd className={styles.mono}>{fmt(hp.startDate)}</dd></div>
                   <div><dt>Fin</dt><dd className={styles.mono}>{fmt(hp.endDate)}</dd></div>
-                  <div><dt>Dispositivo</dt><dd>{getDeviceName(hp.dispositiveID) }</dd></div>
+                  <div><dt>Dispositivo</dt><dd>{getDeviceName(hp.dispositiveId) }</dd></div>
                   <div><dt>Jornada</dt><dd>{hp.workShift?.type || '—'}</dd></div>
                   <div><dt>Puesto</dt><dd>{getPositionName(hp.position)}</dd></div>
                 </dl>
@@ -1056,7 +1052,7 @@ export default function HiringPeriodsV2({
                     <dl className={styles.metaGrid}>
                       <div><dt>Inicio</dt><dd className={styles.mono}>{fmt(hp.startDate)}</dd></div>
                       <div><dt>Fin</dt><dd className={styles.mono}>{fmt(hp.endDate)}</dd></div>
-                      <div><dt>Dispositivo</dt><dd>{getDeviceName(hp.dispositiveID)}</dd></div>
+                      <div><dt>Dispositivo</dt><dd>{getDeviceName(hp.dispositiveId)}</dd></div>
                       <div><dt>Jornada</dt><dd>{hp.workShift?.type || '—'}</dd></div>
                       <div><dt>Puesto</dt><dd>{getPositionName(hp.position)}</dd></div>
                     </dl>

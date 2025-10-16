@@ -98,7 +98,6 @@ const ToHireEmployee = ({
 
     const { firstName, lastName } = splitName(userSelected.name);
     const deviceId = getOfferDeviceId(Offer);
-      console.log(deviceId)
     return {
       firstName: userSelected.firstName || firstName,
       lastName: userSelected.lastName || lastName,

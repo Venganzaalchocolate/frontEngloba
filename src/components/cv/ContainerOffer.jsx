@@ -5,6 +5,7 @@ import { getToken } from '../../lib/serviceToken';
 import { getusercvdniorphone, getuserscvs, preferentFilter } from '../../lib/data';
 import { BsFillBagDashFill } from "react-icons/bs";
 import { FaBriefcase, FaBuilding } from 'react-icons/fa6';
+import FormOffer from '../offerJobs/FormOffer';
 
 const ContainerOffer = ({
   Offer,

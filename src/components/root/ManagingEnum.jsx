@@ -1,7 +1,7 @@
 // src/pages/ManagingEnum.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {EnumCRUD} from "./EnumCRUD"
-import styles from "../styles/ManagingEnum.module.css";
+import styles from "../styles/enumStyleManaging.module.css";
 
 import {
   createData,

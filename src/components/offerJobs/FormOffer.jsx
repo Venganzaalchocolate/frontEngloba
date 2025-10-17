@@ -38,7 +38,7 @@ const FormOffer = ({
     const idx = enumsData?.jobsIndex || {};
     const entries = Object.entries(idx)
       .filter(([, v]) => v?.isSub) // solo sub
-      .filter(([, v]) => asStr(v?.name) !== "Director/a")
+      .filter(([, v]) => asStr(v?.public) !== false)
       .map(([id, v]) => ({ value: id, label: v.name }));
     return entries.sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [enumsData]);

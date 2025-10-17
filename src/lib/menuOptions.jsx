@@ -35,3 +35,4 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
 
   return hasResp ? [...base, ...global] : base;
 }
+

@@ -79,7 +79,7 @@ const ContainerOffer = ({
       try {
         const token = getToken();
         const data = { provinces: [provinceId], jobs: [Offer.jobId], active: true };
-        console.log(data)
+        
         const res = await preferentFilter(data, token);
         setPreferentUsers(Array.isArray(res) ? res : []);
       } catch (e) {

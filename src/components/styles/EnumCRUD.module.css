@@ -1,0 +1,164 @@
+/* src/components/EnumCRUD.module.css */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+}
+
+.h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.btnPrimary {
+    background: var(--color-verde-hoja);
+    color: #fff;
+    padding: .5rem .75rem;
+    border-radius: .5rem;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+.card {
+    border: 1px solid #e5e7eb;
+    border-radius: .5rem;
+    background: #fff;
+    padding: .75rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+}
+
+.cardHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cardTitle {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.iconBtn {
+    padding: .25rem .5rem;
+    border-radius: .5rem;
+    border: none;
+    cursor: pointer;
+}
+
+.addSub {
+    background: var(--color-info);
+}
+
+.edit {
+    background: var(--color-malva-oscuro);
+}
+
+.del {
+    background: tomato;
+}
+
+.subList {
+    margin-top: .5rem;
+    padding-left: 1rem;
+    border-left: 1px solid #e5e7eb;
+}
+
+.subItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .25rem 0;
+}
+
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 50;
+}
+
+.modalCard {
+    width: 100%;
+    max-width: 36rem;
+    background: #fff;
+    border-radius: .75rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .1);
+    padding: 1rem;
+}
+
+.formTitle {
+    font-weight: 600;
+    font-size: 1.125rem;
+    margin-bottom: .75rem;
+}
+
+.field {
+    margin-bottom: .75rem;
+}
+
+.label {
+    display: block;
+    font-size: .875rem;
+    font-weight: 500;
+    margin-bottom: .25rem;
+}
+
+.input,
+.select,
+.number {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: .5rem;
+    padding: .5rem .75rem;
+}
+
+.modalBtns {
+    display: flex;
+    gap: .5rem;
+    margin-top: 1rem;
+    justify-content: space-between;
+}
+
+.btn {
+    padding: .5rem .75rem;
+    border-radius: .5rem;
+    border: none;
+    cursor: pointer;
+}
+
+.btnGhost {
+    background: tomato;
+}
+
+.btnBlue {
+    background: var(--color-verde-hoja);
+    color: #fff;
+}
+
+.eye {
+    display: inline-block;
+    margin-left: .5rem;
+}

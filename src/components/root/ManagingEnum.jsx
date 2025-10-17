@@ -1,385 +1,260 @@
-// components/ManagingEnum.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import styles from "../styles/managingEnum.module.css";
-import ModalConfirmation from "../globals/ModalConfirmation";
-import ModalForm from "../globals/ModalForm";
-import { getToken } from "../../lib/serviceToken";
+// src/pages/ManagingEnum.jsx
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {EnumCRUD} from "./EnumCRUD"
+import styles from "../styles/ManagingEnum.module.css";
+
 import {
-  changeData, createData, deleteData,
-  createSubData, deleteSubData
-} from "../../lib/data";
+  createData,
+  changeData,
+  deleteData,
+  createSubData,
+  deleteSubData,
+} from "../../lib/data"; // <- ajusta la ruta si difiere
 
-import EnumCRUD from "./EnumCRUD";
-import { ENUM_OPTIONS, NO_SUB_ENUMS } from "./enumConfig";
+// Opciones
+export const ENUM_OPTIONS = [
+  { key: "documentation", label: "Documentación" },
+  { key: "studies",       label: "Estudios" },
+  { key: "jobs",          label: "Trabajos" },
+  { key: "provinces",     label: "Provincias" },
+  { key: "work_schedule", label: "Horarios" },
+  { key: "finantial",     label: "Financiación" },
+  { key: "leavetype",     label: "Excedencias" },
+];
 
+export const NO_SUB_ENUMS = [
+  "documentation",
+  "leavetype",
+  "work_schedule",
+  "finantial",
+];
 
+export const ENUM_LABEL = ENUM_OPTIONS.reduce((acc, it) => {
+  acc[it.key] = it.label;
+  return acc;
+}, {});
 
-export default function ManagingEnum({
-  enumsData = {},
-  charge,
-  modal,
-  chargeEnums
-}) {
-  const [selectedKey, setSelectedKey] = useState("");
+/** Convierte índice plano -> árbol { _id, name, public?, subcategories[] } */
+const indexToTree = (index = {}) => {
+  const roots = [];
+  const byId = {};
+
+  // Nodos base con "public" si existe
+  Object.entries(index).forEach(([id, v]) => {
+    byId[id] = {
+      _id: id,
+      name: v.name || "",
+      subcategories: [],
+      ...(typeof v.public === "boolean" ? { public: v.public } : {}),
+      _meta: { ...v },
+    };
+  });
+
+  // parent -> subs
+  Object.entries(index).forEach(([id, v]) => {
+    if (v.isSub && v.parent != null) {
+      const parentId = String(v.parent);
+      if (byId[parentId] && byId[id]) {
+        byId[parentId].subcategories.push(byId[id]);
+      }
+    }
+  });
+
+  // raíces
+  Object.entries(index).forEach(([id, v]) => {
+    if (v.isRoot) roots.push(byId[id]);
+  });
+
+  // ordenar
+  roots.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
+  roots.forEach((r) =>
+    r.subcategories.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }))
+  );
+
+  return roots;
+};
+
+export default function ManagingEnum({ chargeEnums, charge, enumsData }) {
+  const [selectedKey, setSelectedKey] = useState("studies");
   const [crudData, setCrudData] = useState({});
 
- const runWithSpinner = useCallback(async (fn) => {
+  // Token desde localStorage (ajústalo si usas contexto)
+  const getToken = () => {
     try {
-      charge(true);                 // mismo spinner
-      const result = await fn();    // operación de escritura
-      await chargeEnums();          // 🔄 vuelve a consultar todas las enums
-      return result;                // devuelve lo que devuelva la API
+      const raw = localStorage.getItem("token");
+      return raw ? raw.replace(/^"|"$/g, "") : null;
+    } catch { return null; }
+  };
+
+  // Normaliza índices del back a arrays con subcategorías
+  useEffect(() => {
+    const normalized = {
+      ...enumsData,
+
+      jobs:        enumsData.jobsIndex       ? indexToTree(enumsData.jobsIndex)       : (enumsData.jobs || []),
+      provinces:   enumsData.provincesIndex  ? indexToTree(enumsData.provincesIndex)  : (enumsData.provinces || []),
+      leavetype:   enumsData.leavesIndex     ? indexToTree(enumsData.leavesIndex)     : (enumsData.leavetype || []),
+      studies:     enumsData.studiesIndex    ? indexToTree(enumsData.studiesIndex)    : (enumsData.studies || []),
+
+      work_schedule: enumsData.work_schedule || [],
+      finantial:     enumsData.finantial || [],
+      documentation: enumsData.documentation || [],
+
+      categoryFiles: enumsData.categoryFiles || [],
+    };
+    setCrudData(normalized);
+  }, [enumsData]);
+
+  const selectedData = useMemo(() => crudData[selectedKey] || [], [crudData, selectedKey]);
+
+  /* -----------------------
+     Acciones CRUD (API)
+  ------------------------*/
+  const runWithSpinner = useCallback(async (fn) => {
+    try {
+      charge(true);
+
+      const res = await fn();
+      await chargeEnums?.(); // recarga del padre si existe
+      return res;
     } finally {
       charge(false);
     }
- }, [charge]);
+  }, [chargeEnums, charge]);
 
-  // --- side effects ---------------------------------------------------------
-  useEffect(() => setCrudData(enumsData), [enumsData]);
-  const closeMessage = () => setMessageModal({ open: false, title: "", message: "" });
+  // Crear raíz
+  const handleCreate = async (form) => {
+    const payload = buildCreatePayload(selectedKey, form);
 
-  // --- local modal states ---------------------------------------------------
-  const [messageModal, setMessageModal] = useState({ open: false, title: "", message: "" });
-  const [confirmModal, setConfirmModal] = useState({ open: false });
-  const [formModal,    setFormModal]    = useState({ open: false });
-
-  // --------------------------------------------------------------------------
-  // utilidades (sin cambios en la lógica, pero fuera del render principal)
-  // --------------------------------------------------------------------------
-  const getFields = useCallback(
-    (enumKey, baseFields, item = null) => {
-      const fields = [...baseFields];
-
-      if (enumKey === "documentation") {
-        fields.push(
-          // { name: "name",  label: "Nombre", defaultValue: item?.label || "", required: true },
-          {
-            name: "date",
-            label: "Fecha",
-            type: "select",
-            defaultValue: item?.date ? "si" : "no",
-            required: true,
-            options: [
-              { value: "si", label: "Si" },
-              { value: "no", label: "No" },
-            ],
-          },
-          {
-            name: "model",
-            label: "Sección",
-            type: "select",
-            defaultValue: item?.model || "",
-            required: true,
-            options: [
-              { value: "",        label: "Seleccione una opción" },
-              { value: "Program", label: "Programas y Dispositivos" },
-              { value: "User",    label: "Trabajadores" },
-            ],
-          },
-          {
-            name: "duration",
-            label: "Duración (Solo si tiene fecha)",
-            type: "number",
-            defaultValue: item?.duration || 0,
-          },
-          {
-            name: "categoryFiles",
-            label: "Categoría del archivo",
-            type: "select",
-            defaultValue: item?.categoryFiles || "",
-            options: [
-              { value: "", label: "Seleccione una opción" },
-              ...(enumsData.categoryFiles ?? []).map((d) => ({ value: d, label: d })),
-            ],
-          }
-        );
+    if (selectedKey === "documentation" && payload.date === "si") {
+      if (!payload.duration || payload.duration <= 0) {
+        alert("Duración es obligatoria y debe ser mayor que 0 cuando el documento tiene fecha.");
+        return;
       }
+    }
+    await runWithSpinner(() => createData(getToken(), payload));
+  };
 
-      if (enumKey === "jobs") {
-        fields.push({
-          name: "public",
-          label: "Pública",
-          type: "select",
-          required: true,
-          defaultValue: item?.public ? "si" : "no",
-          options: [
-            { value: "si", label: "Si" },
-            { value: "no", label: "No" },
-          ],
-        });
+  // Editar raíz o sub
+  const handleEdit = async (itemOrParent, form, extra) => {
+    const payload = buildEditPayload(selectedKey, itemOrParent, form, extra);
+
+    if (selectedKey === "documentation" && payload.date === "si") {
+      if (!payload.duration || payload.duration <= 0) {
+        alert("Duración es obligatoria y debe ser mayor que 0 cuando el documento tiene fecha.");
+        return;
       }
-
-      return fields;
-    },
-    [enumsData.categoryFiles]
-  );
-
-
-  // Editar un item
-  const handleEditItem = (enumKey, item) => {
-
-    const baseFields = [
-      { name: "name", label: "Nombre", defaultValue: item.name, required: true },
-    ];
-    setFormModal({
-      open: true,
-      title: "Editar Elemento",
-      message: `Editar elemento: ${item.name}`,
-      fields: getFields(enumKey, baseFields, item),
-      onSubmit: async (formData) => {
-        const payload = { id: item._id, type: enumKey, name: formData.name };
-        if (enumKey === "documentation") {
-          payload.date = formData.date;
-          payload.name = formData.name;
-          payload.model = formData.model;
-          payload.categoryFiles=formData.categoryFiles
-          if((!!item.date || !!formData.date) && !!formData.duration)  payload.duration = formData.duration;
-        }
-        if (enumKey === "jobs") payload.public = formData.public;
-        await runWithSpinner(() => changeData(getToken(), payload));
-        setCrudData((prev) => ({
-          ...prev,
-          [enumKey]: prev[enumKey].map((it) =>
-            it._id === item._id
-              ? {
-                  ...it,
-                  name: formData.name,
-                  ...(enumKey === "documentation" && {
-                    date: formData.date === "si",
-                    name: formData.name,
-                    model: formData.model,
-                    duration: formData.duration || 0,
-                    categoryFiles:formData.categoryFiles
-                  }),
-                  ...(enumKey === "jobs" && { public: formData.public === "si" }),
-                }
-              : it
-          ),
-        }));
-        modal("Actualizado", "Elemento actualizado con éxito");
-
-        setFormModal({ open: false });
-      },
-      onClose: () => setFormModal({ open: false }),
-    });
+    }
+    await runWithSpinner(() => changeData(getToken(), payload));
   };
 
-  // Borrar un item
-  const handleDeleteItem = (enumKey, item) => {
-
-    setConfirmModal({
-      open: true,
-      title: "Confirmar Eliminación",
-      message: `¿Deseas eliminar "${item.name}"?`,
-      onConfirm: async () => {
-        await runWithSpinner(() => deleteData(getToken(), { id: item._id, type: enumKey }));
-        
-        setCrudData((prev) => ({
-          ...prev,
-          [enumKey]: prev[enumKey].filter((it) => it._id !== item._id),
-        }));
-        modal("Eliminado", "Elemento eliminado con éxito");
-        setConfirmModal({ open: false });
-
-      },
-      onCancel: () => setConfirmModal({ open: false }),
-    });
+  // Borrar raíz
+  const handleDelete = async (item) => {
+    if (!window.confirm(`¿Eliminar "${item.name}"?`)) return;
+    await runWithSpinner(() => deleteData(getToken(), { id: item._id, type: selectedKey }));
   };
 
-  // Crear un nuevo item
-  const handleCreateItem = (enumKey) => {
-
-    const baseFields = [
-      { name: "name", label: "Nombre", defaultValue: "", required: true }
-    ];
-    setFormModal({
-      open: true,
-      title: "Crear Nuevo Elemento",
-      message: "Ingrese el nombre del nuevo elemento",
-      fields: getFields(enumKey, baseFields),
-      onSubmit: async (formData) => {
-        const payload = { name: formData.name, type: enumKey };
-        if (enumKey === "documentation") {
-          payload.date = formData.date;
-          payload.name = formData.name;
-          payload.model = formData.model;
-          payload.categoryFiles=formData.categoryFiles
-          if(!!payload.date) payload.duration=formData.duration;
-        }
-        if (enumKey === "jobs") payload.public = formData.public;
-        const newItem= await runWithSpinner(() => createData(getToken(), payload));
-        setCrudData((prev) => ({
-          ...prev,
-          [enumKey]: [...(prev[enumKey] || []), newItem],
-        }));
-        if (newItem.error) {
-          modal("Error", "No se pudo crear el elemento.");
-
-        } else {
-          modal("Creado", "Elemento creado exitosamente.");
-
-        }
-        setFormModal({ open: false });
-      },
-      onClose: () => setFormModal({ open: false }),
-    });
-  };
-
-  // Crear subcategoría (solo para enums que lo permiten)
-  const handleCreateSub = (enumKey, item) => {
-    if (NO_SUB_ENUMS.includes(enumKey)) return;
-    // Para subcategorías de "jobs" se añade también el campo "public"
-    const baseFields = [{ name: "name", label: "Nombre", defaultValue: "", required: true }];
-    const fields = enumKey === "jobs" ? getFields(enumKey, baseFields) : baseFields;
-    setFormModal({
-      open: true,
-      title: "Crear Subcategoría",
-      message: `Crear subcategoría para ${item.name}`,
-      fields,
-      onSubmit: async (formData) => {
-        const payload = { id: item._id, type: enumKey, name: formData.name };
-        if (enumKey === "jobs") payload.public = formData.public;
-        const newSub= await runWithSpinner( ()=> createSubData(getToken(), payload));
-        setCrudData((prev) => ({
-          ...prev,
-          [enumKey]: prev[enumKey].map((it) =>
-            it._id === item._id
-              ? { ...it, subcategories: [...(it.subcategories || []), newSub] }
-              : it
-          ),
-        }));
-        modal("Subcategoría Creada", "Subcategoría agregada.");
-        setFormModal({ open: false });
-      },
-      onClose: () => setFormModal({ open: false }),
-    });
-  };
-
-  // Editar subcategoría
-  const handleEditSub = (enumKey, item, sub) => {
-    // Para subcategorías de "jobs" se añade el campo "public"
-    const baseFields = [{ name: "name", label: "Nombre", defaultValue: sub.name, required: true }];
-    const fields = enumKey === "jobs" ? getFields(enumKey, baseFields, sub) : baseFields;
-    setFormModal({
-      open: true,
-      title: "Editar Subcategoría",
-      message: `Editar subcategoría: ${sub.name}`,
-      fields,
-      onSubmit: async (formData) => {
-        const payload = { id: item._id, type: enumKey, name: formData.name, subId: sub._id };
-        if (enumKey === "jobs") payload.public = formData.public;
-        
-        await runWithSpinner( ()=> changeData(getToken(), payload));
-        setCrudData((prev) => ({
-          ...prev,
-          [enumKey]: prev[enumKey].map((it) => {
-            if (it._id === item._id && it.subcategories) {
-              const updatedSubs = it.subcategories.map((s) =>
-                s._id === sub._id
-                  ? {
-                      ...s,
-                      name: formData.name,
-                      ...(enumKey === "jobs" && { public: formData.public === "si" }),
-                    }
-                  : s
-              );
-              return { ...it, subcategories: updatedSubs };
-            }
-            return it;
-          }),
-        }));
-        modal("Subcategoría Actualizada", "Subcategoría actualizada.");
-        setFormModal({ open: false });
-      },
-      onClose: () => setFormModal({ open: false }),
-    });
+  // Crear subcategoría
+  const handleAddSubcategory = async (parent, form) => {
+    const payload = {
+      id: parent._id,
+      type: selectedKey,
+      name: form.name?.trim(),
+    };
+    if (selectedKey === "jobs") {
+      payload.public = form.public; // 'si' | 'no'
+    }
+    await runWithSpinner(() => createSubData(getToken(), payload));
   };
 
   // Borrar subcategoría
-  const handleDeleteSub = (enumKey, item, sub) => {
-    setConfirmModal({
-      open: true,
-      title: "Confirmar Eliminación",
-      message: `¿Deseas eliminar la subcategoría "${sub.name}"?`,
-      onConfirm: async () => {
-        await runWithSpinner( ()=> deleteSubData(getToken(), { id: item._id, type: enumKey, idCategory: sub._id }));
-        
-        setCrudData((prev) => ({
-          ...prev,
-          [enumKey]: prev[enumKey].map((it) => {
-            if (it._id === item._id && it.subcategories) {
-              const updatedSubs = it.subcategories.filter((s) => s._id !== sub._id);
-              return { ...it, subcategories: updatedSubs };
-            }
-            return it;
-          }),
-        }));
-        modal("Subcategoría Eliminada", "Subcategoría eliminada.");
-        setConfirmModal({ open: false });
-      },
-      onCancel: () => setConfirmModal({ open: false }),
-    });
+  const handleDeleteSubcategory = async (parent, sc) => {
+    if (!window.confirm(`¿Eliminar subcategoría "${sc.name}"?`)) return;
+    const payload = {
+      id: parent._id,
+      idCategory: sc._id,
+      type: selectedKey,
+    };
+    await runWithSpinner(() => deleteSubData(getToken(), payload));
   };
 
-  // "modal" se recibe desde App y se trata como componente
-
-
-const actions = useMemo(
-    () => ({
-      createItem:     () => handleCreateItem(selectedKey),
-      createSub:      (item)         => handleCreateSub(selectedKey, item),
-      editItem:       (item)         => handleEditItem(selectedKey, item),
-      deleteItem:     (item)         => handleDeleteItem(selectedKey, item),
-      editSub:        (item, sub)    => handleEditSub(selectedKey, item, sub),
-      deleteSub:      (item, sub)    => handleDeleteSub(selectedKey, item, sub),
-      noSubEnums:     NO_SUB_ENUMS,   // lo exponemos para EnumCRUD
-    }),
-    [selectedKey]    // eslint-disable-line react-hooks/exhaustive-deps
-  );
-
-  // --------------------------------------------------------------------------
-  // JSX
-  // --------------------------------------------------------------------------
-  const ModalComponent = modal;
   return (
-    <div className={styles.contenedor}>
-      <h2>GESTIÓN DE ENUMERADOS</h2>
+    <div className={styles.container}>
+      <h1 className={styles.title}>Gestión de Enums</h1>
 
-      <div className={styles.contenido}>
-        <label htmlFor="enumSelect">Selecciona una categoría:</label>
+      <div className={styles.block}>
+        <label className={styles.label}>Tipo</label>
         <select
-          id="enumSelect"
+          className={styles.select}
           value={selectedKey}
           onChange={(e) => setSelectedKey(e.target.value)}
         >
-          <option value="">Selecciona una opción</option>
-          {ENUM_OPTIONS.map(({ key, label }) => (
-            <option key={key} value={key}>{label}</option>
+          {ENUM_OPTIONS.map((opt) => (
+            <option key={opt.key} value={opt.key}>
+              {opt.label}
+            </option>
           ))}
         </select>
-
-        {selectedKey && (
-          <EnumCRUD
-            selectedKey={selectedKey}
-            data={crudData[selectedKey] || []}
-            actions={actions}
-          />
-        )}
       </div>
 
-      {/* ---- modales ---- */}
-      {messageModal.open && (
-        <ModalComponent data={messageModal} closeModal={closeMessage} />
-      )}
 
-      {confirmModal.open && (
-        <ModalConfirmation {...confirmModal} />
-      )}
-
-      {formModal.open && (
-        <ModalForm {...formModal} />
-      )}
-
+      <EnumCRUD
+        selectedKey={selectedKey}
+        data={selectedData}
+        onCreate={handleCreate}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onAddSubcategory={handleAddSubcategory}
+        onDeleteSubcategory={handleDeleteSubcategory}
+        enumsData={crudData}
+      />
     </div>
   );
+}
+
+/* -------------------
+   Helpers de payload
+-------------------- */
+function buildCreatePayload(enumKey, form) {
+  const payload = {
+    type: enumKey,
+    name: form.name?.trim(),
+  };
+
+  if (enumKey === "jobs") {
+    payload.public = form.public; // 'si' | 'no'
+  }
+
+  if (enumKey === "documentation") {
+    payload.date = form.date;
+    payload.model = form.model;
+    payload.categoryFiles = form.categoryFiles || "";
+    payload.requiresSignature = form.requiresSignature === "si";
+    if (form.date === "si") payload.duration = Number(form.duration || 0);
+  }
+  return payload;
+}
+
+function buildEditPayload(enumKey, itemOrParent, form, extra = {}) {
+  const payload = {
+    id: itemOrParent._id,    // si subId, el back ya usa arrayFilters
+    type: enumKey,
+    name: form.name?.trim(),
+  };
+
+  if (extra.subId) payload.subId = extra.subId;
+
+  if (enumKey === "jobs") {
+    payload.public = form.public; // 'si' | 'no'
+  }
+
+  if (enumKey === "documentation") {
+    payload.date = form.date;
+    payload.model = form.model;
+    payload.categoryFiles = form.categoryFiles || "";
+    payload.requiresSignature = form.requiresSignature === "si";
+    if (form.date === "si") payload.duration = Number(form.duration || 0);
+  }
+
+  return payload;
 }

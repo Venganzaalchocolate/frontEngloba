@@ -357,6 +357,7 @@ function CreateDocumentXLS({ users, enumsData, closeXls }) {
       fields={fields}
       onSubmit={handleSubmit}
       onClose={() => closeXls(false)}
+
     />
   );
 }

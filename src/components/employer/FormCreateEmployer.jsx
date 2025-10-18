@@ -397,6 +397,7 @@ const FormCreateEmployer = ({
         fields={fields}
         onSubmit={handleSubmit}
         onClose={closeModal}
+        modal={modal}
       />
     </>
   );

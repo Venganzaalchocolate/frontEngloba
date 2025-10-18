@@ -281,7 +281,7 @@ const lookCV = useCallback(async (id, userData) => {
                 enumsData={enumsEmployer}
                 changeOffers={chargeOffers}
                 resetFilters={resetFilters}
-
+              
                 />
                 <div className={styles.tableContainer}>
                     <div className={`${styles.tableRow} ${styles.header}`}>

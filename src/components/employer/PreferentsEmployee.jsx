@@ -154,6 +154,7 @@ const PreferentsEmployee = ({ user, enumsData, modal, charge, authorized }) => {
           fields={buildFields(editPref)}
           onSubmit={handleSubmitPref}
           onClose={() => { setOpenModal(false); setEditPref(null); }}
+          modal={modal}
         />
       )}
 

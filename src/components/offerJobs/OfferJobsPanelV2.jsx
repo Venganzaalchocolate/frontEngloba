@@ -610,6 +610,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
             fields={buildInfoFields(infoOffer)}
             onSubmit={() => setInfoOffer(null)}
             onClose={() => setInfoOffer(null)}
+            modal={modal}
           />
         )}
 
@@ -684,6 +685,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
             ]}
             onSubmit={() => setLinkedUsers(null)}
             onClose={() => setLinkedUsers(null)}
+            modal={modal}
           />
         )}
       </div>

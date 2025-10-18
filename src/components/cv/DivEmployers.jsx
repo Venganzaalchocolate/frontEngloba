@@ -209,6 +209,7 @@ function DivEmployers({
                   type="add"
                   userSelected={selectedOfferAndAddUser}
                   enumsData={enumsEmployer}
+                  modal={modal}
                 />
               )}
             </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense } from 'react';
+import React, { useEffect, Suspense, useRef } from 'react';
 import { useState } from "react"
 import styles from '../styles/cvPanel.module.css';
 import { FaPhoneAlt } from "react-icons/fa";
@@ -53,6 +53,40 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
         return () => { alive = false; };
     }, [infoUserWork]);
 
+    // ——— Config del detector ———
+    const CAPS_MIN_STREAK = 6;        // 6+ letras seguidas en mayúscula
+    const CAPS_MIN_RATIO = 0.75;     // 75%+ del texto en mayúsculas
+    const CAPS_MIN_LEN = 12;       // evalúa a partir de 12 letras
+    const CAPS_COOLDOWN_MS = 15000;   // no avisar más de 1 vez/15s
+
+    const capsWarnedAtRef = useRef(0); // cooldown por bloque de comentarios
+
+    const shouldWarnCaps = (text) => {
+        if (!text) return false;
+        const letters = [...text].filter(ch => /\p{L}/u.test(ch)); // solo letras Unicode
+        if (letters.length < CAPS_MIN_LEN) return false;
+
+        let uppers = 0, cur = 0, maxStreak = 0;
+        for (const ch of letters) {
+            const isUpper = ch === ch.toLocaleUpperCase() && ch !== ch.toLocaleLowerCase();
+            if (isUpper) { uppers++; cur++; if (cur > maxStreak) maxStreak = cur; }
+            else { cur = 0; }
+        }
+        const ratio = uppers / letters.length;
+        return maxStreak >= CAPS_MIN_STREAK || ratio >= CAPS_MIN_RATIO;
+    };
+
+    const guardCapsAndMaybeWarn = (value) => {
+        const now = Date.now();
+        if (shouldWarnCaps(value) && now - capsWarnedAtRef.current > CAPS_COOLDOWN_MS) {
+            capsWarnedAtRef.current = now;
+            modal(
+                "Evita escribir en MAYÚSCULAS",
+                "Has escrito demasiadas mayúsculas seguidas. Por favor, usa mayúsculas solo al inicio de frases o en nombres propios 😊"
+            );
+        }
+    };
+
     const infoUserW = async (dni) => {
         const data = { dni: dni }
         const token = getToken()
@@ -80,7 +114,7 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
         const last = await getLastHiring(user);
         const activo = isCurrentlyActive(user);
         const fmt = (d) => d ? new Date(d).toLocaleDateString('es-ES') : '—';
-      
+
         const data = [
             { type: 'section', label: 'Infomación básica' },
             { name: 'nombre', label: 'Nombre', type: 'text', defaultValue: `${user.firstName || ''} ${user.lastName || ''}`.trim(), disabled: true },
@@ -110,7 +144,7 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
 
     useEffect(() => {
         isInOffer();
-    }, [[Offer, user._id]])
+    }, [Offer, user._id])
 
     const saveComment = async () => {
         if (!textComment.trim() || !typeComment) return;
@@ -151,7 +185,9 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
     }
 
     const handleChange = (e) => {
-        setTextComment(e.target.value)
+        const v = e.target.value;
+        guardCapsAndMaybeWarn(v);
+        setTextComment(v);
     }
 
     const handleChangeType = (type) => {
@@ -233,14 +269,14 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
                         <button onClick={() => deleteCv(user)}>Si, lo he meditado toda la noche</button>
                         <button onClick={() => deleteCvPanel(false)}>No, hoy no me he tomado el café</button>
                     </div>}
-                   
-                    
+
+
                     <div className={styles.cajaBotonesContratar}>
                         <ToHireEmployee changeUser={(x) => changeUser(x)} chargeOffers={chargeOffers} enumsEmployer={enumsEmployer} offers={offers} userSelected={user} modal={(title, message) => modal(title, message)} charge={() => charge()} />
                         {user.workedInEngloba.status && <button className='btn-outline-secondary' onClick={() => infoUserW(user.dni)}>Información del Empleado</button>}
                     </div>
 
-                    <InfoUser user={user} enumsEmployer={enumsEmployer}/>
+                    <InfoUser user={user} enumsEmployer={enumsEmployer} />
                     <div className={styles.boxComments}>
                         <h2>Notas <BsBookmarkPlusFill onClick={() => handleChangeType('notes')}></BsBookmarkPlusFill></h2>
                         <div>
@@ -363,6 +399,7 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
                             fields={fieldsModal}          // <- ahora es un array
                             onSubmit={closeInfoModal}
                             onClose={closeInfoModal}
+                            modal={modal}
                         />
                     )
                 )}

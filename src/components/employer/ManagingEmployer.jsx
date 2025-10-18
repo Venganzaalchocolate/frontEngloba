@@ -553,7 +553,7 @@ const renderUserRow = (user) => {
               <h2>GESTIÓN DE EMPLEADOS</h2>
               {isRootOrGlobal && <FaSquarePlus onClick={openModal} />}
               <TbFileTypeXml onClick={() => openXlsForm()} />
-              {!!userXLS && <CreateDocumentXLS users={userXLS} enumsData={enumsData} closeXls={() => setUsersXls(null)} />}
+              {!!userXLS && <CreateDocumentXLS users={userXLS} enumsData={enumsData} closeXls={() => setUsersXls(null)} modal={modal}/>}
 
               {isModalOpen && (
                 <FormCreateEmployer

@@ -116,6 +116,7 @@ const FormOffer = ({
       required: true,
       defaultValue: offer?.location || "",
       isValid: (v) => (validText(v, 2, 100) ? "" : textErrors("location")),
+      capsGuard: true,
     },
     {
       name: "expected_incorporation_date",
@@ -123,6 +124,7 @@ const FormOffer = ({
       type: "text",
       required: true,
       defaultValue: offer?.expected_incorporation_date || "",
+      capsGuard: true,
     },
     {
       name: "newDispositiveId",
@@ -148,6 +150,7 @@ const FormOffer = ({
       required: false,
       defaultValue: offer?.essentials_requirements || "",
       isValid: (v) => (validText(v, 2, 500, true) ? "" : textErrors("essentials_requirements")),
+      capsGuard: true,
     },
     {
       name: "optionals_requirements",
@@ -156,6 +159,7 @@ const FormOffer = ({
       required: false,
       defaultValue: offer?.optionals_requirements || "",
       isValid: (v) => (validText(v, 2, 500, true) ? "" : textErrors("essentials_requirements")),
+      capsGuard: true,
     },
     {
       name: "conditions",
@@ -164,6 +168,7 @@ const FormOffer = ({
       required: false,
       defaultValue: offer?.conditions || "",
       isValid: (v) => (validText(v, 2, 500, true) ? "" : textErrors("essentials_requirements")),
+      capsGuard: true,
     },
     {
       name: "sepe",
@@ -359,6 +364,7 @@ const FormOffer = ({
       fields={buildFields()}
       onSubmit={handleSubmit}
       onClose={closeModal}
+      modal={modal}
     />
   );
 };

@@ -1114,6 +1114,7 @@ export default function HiringPeriodsV2({
           fields={createHiringFields}
           onSubmit={handleCreateHiring}
           onClose={() => setShowCreateHiring(false)}
+          modal={modal}
         />
       )}
 
@@ -1124,6 +1125,7 @@ export default function HiringPeriodsV2({
           fields={editHiringFields}
           onSubmit={handleUpdateHiring}
           onClose={() => setEditHiring(null)}
+          modal={modal}
         />
       )}
 
@@ -1134,6 +1136,7 @@ export default function HiringPeriodsV2({
           fields={[{ name: 'closeDate', label: 'Fecha', type: 'date', required: true, defaultValue: todayYMD() }]}
           onSubmit={handleCloseHiring}
           onClose={() => setCloseHiringCtx(null)}
+          modal={modal}
         />
       )}
 
@@ -1160,6 +1163,7 @@ export default function HiringPeriodsV2({
           ]}
           onSubmit={() => setShowInfoModal(false)}
           onClose={() => setShowInfoModal(false)}
+          modal={modal}
         />
       )}
 
@@ -1170,6 +1174,7 @@ export default function HiringPeriodsV2({
           fields={createLeaveFields}
           onSubmit={handleCreateLeave}
           onClose={() => setCreateLeaveCtx(null)}
+          modal={modal}
         />
       )}
 
@@ -1180,6 +1185,7 @@ export default function HiringPeriodsV2({
           fields={editLeaveFields}
           onSubmit={handleUpdateLeave}
           onClose={() => setEditLeave(null)}
+          modal={modal}
         />
       )}
 
@@ -1190,6 +1196,7 @@ export default function HiringPeriodsV2({
           fields={[{ name: 'closeDate', label: 'Fecha', type: 'date', required: true, defaultValue: todayYMD() }]}
           onSubmit={handleCloseLeave}
           onClose={() => setCloseLeaveCtx(null)}
+          modal={modal}
         />
       )}
 
@@ -1200,6 +1207,7 @@ export default function HiringPeriodsV2({
           fields={[{ name: 'rejoinDate', label: 'Fecha de reincorporación', type: 'date', required: true, defaultValue: todayYMD() }]}
           onSubmit={handleRejoinSubmit}
           onClose={() => setRejoinCtx(null)}
+          modal={modal}
         />
       )}
 
@@ -1209,6 +1217,7 @@ export default function HiringPeriodsV2({
           message={rejoinConfirm.message}
           onConfirm={doConfirmRejoin}
           onCancel={() => setRejoinConfirm(null)}
+          
         />
       )}
 
@@ -1220,6 +1229,7 @@ export default function HiringPeriodsV2({
           fields={buildFieldsPreferents()}
           onSubmit={handleSubmitPref}
           onClose={() => { setOpenModalPreferents(false); }}
+          modal={modal}
         />
       )}
     </div>

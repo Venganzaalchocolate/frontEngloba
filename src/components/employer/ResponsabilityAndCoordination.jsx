@@ -349,6 +349,7 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
           fields={buildFields(openModal)}
           onSubmit={(form) => handleSubmitAdd(openModal, form)}
           onClose={() => setOpenModal(null)}
+          modal={modal}
         />
       )}
 

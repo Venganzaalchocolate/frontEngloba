@@ -170,6 +170,7 @@ export default function RecibiSignDigital({
           }]}
           onSubmit={handleVerify}
           onClose={() => { setStep('idle'); setQueue([]); onClose(); }}
+          
         />
       )}
     </div>

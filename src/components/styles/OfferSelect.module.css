@@ -33,6 +33,9 @@
     display: flex;
     gap: 0.5rem;
   }
+  >p:nth-child(2){
+    color: var(--color-verde-hoja);
+  }
   >p:last-child{
     color:  var(--color-chicle);
     font-weight: 600;

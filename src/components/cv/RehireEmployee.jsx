@@ -13,6 +13,7 @@ const RehireEmployee=({
   onClose,
   offer,
   lockedFields = ["device", "position"],
+  modal
 })=>{
 
   // ViewModel derivado de props (sin estados intermedios)
@@ -93,6 +94,7 @@ const vm = useMemo(() => {
       fields={fields}
       onSubmit={handleSubmit}
       onClose={onClose}
+      modal={modal}
     />
   );
 }

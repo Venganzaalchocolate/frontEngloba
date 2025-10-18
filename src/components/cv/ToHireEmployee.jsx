@@ -159,6 +159,7 @@ const ToHireEmployee = ({
           onChosen={handleOfferChosen}
           enumsData={enumsEmployer}
           closeModal={() => setStep(null)}
+          modal={modal}
         />
       )}
 
@@ -183,6 +184,7 @@ const ToHireEmployee = ({
           lockedFields={["device", "position"]}
           save={handleRehireSave}
           onClose={() => setStep(null)}
+          modal={modal}
         />
       )}
     </>

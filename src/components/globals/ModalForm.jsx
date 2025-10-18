@@ -1,13 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "../styles/modalForm.module.css";
 import MultiSelectChips from "./MultiSelectChips";
 
-const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
+
+const ModalForm = ({ title, message, fields, onSubmit, onClose, modal=()=>{} }) => {
   // =========== CONSTANTES ===============
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const ALLOWED_FILE_TYPES = ["application/pdf"];
   const [showDropdown, setShowDropdown] = useState({}); // Para múltiples desplegables
   const [searchTerm, setSearchTerm] = useState({});
+
+  // ——— Config del detector ———
+  const capsWarnedAtRef = useRef({});
+const CAPS_MIN_STREAK = 6;        // 6 o más letras seguidas en mayúscula
+const CAPS_MIN_RATIO  = 0.75;     // 75% o más del texto en mayúsculas
+const CAPS_MIN_LEN    = 8;       // evalúa a partir de 12 letras escritas
+const CAPS_COOLDOWN_MS = 15000;   // no avisar más de 1 vez/15s por campo
+
+// Detecta si el texto “grita”
+const shouldWarnCaps = (text) => {
+  if (!text) return false;
+  // Solo letras (Unicode): \p{L}
+  const letters = [...text].filter(ch => /\p{L}/u.test(ch));
+  if (letters.length < CAPS_MIN_LEN) return false;
+
+  let uppers = 0, cur = 0, maxStreak = 0;
+  for (const ch of letters) {
+    const isUpper = ch === ch.toLocaleUpperCase() && ch !== ch.toLocaleLowerCase();
+    if (isUpper) {
+      uppers++; cur++; if (cur > maxStreak) maxStreak = cur;
+    } else {
+      cur = 0;
+    }
+  }
+  const ratio = uppers / letters.length;
+  return maxStreak >= CAPS_MIN_STREAK || ratio >= CAPS_MIN_RATIO;
+};
 
   // =========== ESTADOS ===============
   const [formData, setFormData] = useState(() =>
@@ -87,8 +115,27 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose }) => {
         setErrors((prev) => ({ ...prev, [name]: "" }));
       }
     }
+
+     // ——— Anti-mayúsculas: solo para text/textarea y si el campo lo pide (capsGuard) ———
+ const isTextual = fieldConfig && (fieldConfig.type === "text" || fieldConfig.type === "textarea");
+ if (isTextual && fieldConfig.capsGuard && typeof value === "string") {
+   const now = Date.now();
+   const last = capsWarnedAtRef.current[name] || 0;
+   if (shouldWarnCaps(value) && now - last > CAPS_COOLDOWN_MS) {
+     capsWarnedAtRef.current[name] = now;
+     if (typeof modal === "function") {
+       modal(
+         "Evita escribir en MAYÚSCULAS",
+         "Has escrito demasiadas mayúsculas seguidas. Por favor, usa mayúsculas solo al inicio de frases o en nombres propios 😊"
+       );
+     }
+   }
+ }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+
 
   const handleChangeMultiple = (name, value) => {
     setFormData((prev) => {

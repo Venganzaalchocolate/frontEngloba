@@ -815,6 +815,7 @@ export default function MyChangeRequests({
           fields={reqUploadForm.fields}
           onSubmit={reqUploadForm.onSubmit}
           onClose={() => setIsReqUploadOpen(false)}
+          modal={modal}
         />
       )}
 
@@ -829,6 +830,7 @@ export default function MyChangeRequests({
             setIsReqChangeOpen(false);
             setChangeWizard({ step: 1, path: "" });
           }}
+          modal={modal}
         />
       )}
     </div>

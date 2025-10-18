@@ -6,7 +6,7 @@ import { getToken } from "../../lib/serviceToken";
 import { useOffer } from "../../hooks/useOffer";
 import { deepClone } from "../../lib/utils";
 import styles from "../styles/OfferSelect.module.css";
-import { FaBriefcase, FaBuilding } from "react-icons/fa6";
+import { FaBriefcase, FaBuilding, FaLocationDot } from "react-icons/fa6";
 import { useEffect } from "react";
 
 const OfferSelect = ({
@@ -17,6 +17,7 @@ const OfferSelect = ({
   type,
   onChosen = () => { },
   list = false,
+  modal
 }) => {
   const { changeOffer } = useOffer();
 
@@ -33,7 +34,7 @@ const OfferSelect = ({
       const idDispositive = o?.dispositive?.newDispositiveId || ''
       const job = enumsData?.jobsIndex[idJob]?.name;
       const disp = enumsData?.dispositiveIndex[idDispositive]?.name;
-      const jobTitleAux = `${job} - ${disp}`
+      const jobTitleAux = `${job} - ${o?.location} - ${disp}`
       const data={ jobName: job, dispositiveName: disp, jobTitle: jobTitleAux };
    
       return data
@@ -136,6 +137,9 @@ const OfferSelect = ({
                   <FaBriefcase /> <span>{offer.dataAux.jobName}</span>
                 </p>
                 <p>
+                  <FaLocationDot /> <span>{offer?.location}</span>
+                </p>
+                <p>
                   <FaBuilding /> <span>{offer.dataAux.dispositiveName}</span>
                 </p>
               </li>
@@ -152,6 +156,7 @@ const OfferSelect = ({
           fields={fieldsForm}
           onSubmit={handleSubmit}
           onClose={closeModal}
+          modal={modal} 
         />
       )}
     </>

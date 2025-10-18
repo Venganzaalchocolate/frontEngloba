@@ -66,6 +66,7 @@ const ContainerOffer = ({
     return dispId ? enumsData?.dispositiveIndex?.[dispId]?.province || null : null;
   };
 
+  
   /* --------- Carga preferentes (provincia + jobId) --------- */
   useEffect(() => {
     const fetchPreferents = async () => {
@@ -155,7 +156,7 @@ const ContainerOffer = ({
           <div className={styles.offerSelected}>
             <h4>
               <FaBriefcase />{" "}
-              <span>{enumsData?.jobsIndex?.[Offer.jobId]?.name || '—'}</span>
+              <span>{enumsData?.jobsIndex?.[Offer.jobId]?.name || '—'} - {Offer?.location}</span>
             </h4>
             <h4>
               <FaBuilding />{" "}
@@ -320,6 +321,7 @@ const ContainerOffer = ({
             type="select"
             list
             onChosen={changeOffer}
+            modal={modal}
           />
         </div>
       )}

@@ -761,6 +761,7 @@ const DocumentMiscelaneaGeneric = ({
           fields={formConfig.fields}
           onSubmit={formConfig.onSubmit}
           onClose={() => setIsModalOpen(false)}
+          modal={modal}
         />
       )}
 

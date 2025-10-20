@@ -289,7 +289,8 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
                                 </div>}
                             {!user.notes && <p>No hay notas todavía</p>}
                             {!!user.notes && user.notes.map((x) => {
-                                const nameUserNotes = `${titleCaseES(x.userCv.firstName)} ${titleCaseES(x.userCv.lastName)}`
+                                
+                                const nameUserNotes = (!!x.userCv?.firstName)?`${titleCaseES(x.userCv?.firstName)} ${titleCaseES(x.userCv?.lastName)}`: ''
                                 return <div key={`notes${x._id}`} className={styles.commentBox}>
                                     <p><PiPersonFill /> {nameUserNotes}</p>
                                     <p><FaCalendarAlt /> {formatDatetime(x.date)}</p>

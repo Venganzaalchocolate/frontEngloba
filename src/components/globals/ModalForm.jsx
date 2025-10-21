@@ -325,7 +325,7 @@ const shouldWarnCaps = (text) => {
                   <>
                     {/* ——— 3.1 Input de búsqueda (se muestra si hay muchas opciones o campo.searchable ——— */}
                     {(field.searchable ||
-                      filterOptions(field.options).length > 15) && (field?.disabled!=true) && (
+                      filterOptions(field.options).length > 15) && (field?.disabled!=true) && (field?.searchable!=false) && (
 
                         <input
                           type="text"

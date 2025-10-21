@@ -160,6 +160,7 @@ const ToHireEmployee = ({
           enumsData={enumsEmployer}
           closeModal={() => setStep(null)}
           modal={modal}
+          
         />
       )}
 
@@ -170,7 +171,7 @@ const ToHireEmployee = ({
           charge={charge}
           chargeOffers={chargeOffers}
           user={userAux}
-          lockedFields={["email", "phone", "role", "device", "position"]}
+          lockedFields={["email", "phone", "role", "dispositiveId", "position"]}
           closeModal={() => setStep(null)}
           changeUser={(x) => changeUser(x)}
           offerId={Offer?.userCv?.includes(userSelected._id) ? Offer._id : null}

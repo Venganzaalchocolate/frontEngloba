@@ -135,7 +135,6 @@ const InfoEmployer = ({
     "dni",
     "birthday",
     "employmentStatus",
-    "email",
     "email_personal",
     "gender",
     "fostered",

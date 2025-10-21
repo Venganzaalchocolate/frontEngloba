@@ -306,6 +306,7 @@ export default function MyChangeRequests({
           name: "path",
           type: "select",
           required: true,
+          searchable:false,
           options: [{ value: "", label: "Selecciona un campo" }].concat(
             ALLOWED_QUICK_FIELDS.map((p) => ({ value: p, label: labelFor(p) }))
           ),

@@ -22,8 +22,10 @@ import MultiSelectGrouped from './MultiSelectGrouped';
 import MultiSelectFlat from './MultiSelectFlat';
 import { Link, useNavigate, useParams } from 'react-router';
 import logoUrl from '/graphic/logotipo.png';
+import ModalForm from './ModalForm';
+import { buildOptionsFromIndex } from '../../lib/utils';
 
-export default function FormJobUp({ modal, charge, user, changeUser }) {
+export default function FormJobUp({ modal, charge, user, changeUser, closeModalEdit = () => { } }) {
   const fileInputRef = useRef(null);
   const { id } = useParams();
   const idForm = useId();
@@ -245,7 +247,7 @@ export default function FormJobUp({ modal, charge, user, changeUser }) {
       const values = {
         firstName: fd.get('firstName') ?? '',
         lastName: fd.get('lastName') ?? '',
-        dni: fd.get('dni') ?? '',
+        dni: fd.get('dni').toUpperCase() ?? '',
         email: fd.get('email') ?? '',
         phone: fd.get('phone') ?? '',
         gender: fd.get('gender') ?? '',
@@ -303,6 +305,177 @@ export default function FormJobUp({ modal, charge, user, changeUser }) {
   );
 
   const boolToAttr = (v) => (v ? 'on' : '');
+
+  if (user) {
+
+    // Estudios (desde studiesIndex, preferimos solo subcategorías si existen)
+    const studiesOptions =
+      buildOptionsFromIndex(enums?.studiesIndex, { onlySub: true }) ||
+      buildOptionsFromIndex(enums?.studiesIndex);
+
+    // Puestos (desde jobsIndex, preferimos solo subcategorías si existen)
+    const positionOptions =
+      buildOptionsFromIndex(enums?.jobsIndex, { onlySub: true }) ||
+      buildOptionsFromIndex(enums?.jobsIndex);
+
+    let provincesOptions =
+      buildOptionsFromIndex(enums?.provincesIndex, { onlySub: false }) ||
+      buildOptionsFromIndex(enums?.provincesIndex);
+    
+    provincesOptions=provincesOptions.filter((x)=>x._id!='66a7369b08bebc63c0f89a05' && x._id!='66a7366208bebc63c0f8992d')
+
+    const fields = [
+      { type: "section", label: "Datos personales" },
+      { label: "Nombre", name: "firstName", type: "text", required: true, defaultValue: user.firstName },
+      { label: "Apellidos", name: "lastName", type: "text", required: true, defaultValue: user.lastName },
+      { label: "DNI/NIE", name: "dni", type: "text", required: true, defaultValue: user.dni },
+      { label: "Email", name: "email", type: "email", required: true, defaultValue: user.email },
+      { label: "Teléfono", name: "phone", type: "text", required: true, defaultValue: user.phone },
+      {
+        label: "Género",
+        name: "gender",
+        type: "select",
+        required: true,
+        defaultValue: user.gender,
+        options: [
+          { value: "", label: "Selecciona…" },
+          { value: "female", label: "Mujer" },
+          { value: "male", label: "Hombre" },
+          { value: "nonBinary", label: "No binario" },
+          { value: "others", label: "Otro/a" },
+        ],
+      },
+      {
+        label: "Disponibilidad horaria",
+        name: "work_schedule",
+        type: "select",
+        required: true,
+        defaultValue: Array.isArray(user.work_schedule) ? user.work_schedule[0] : "",
+        options: (enums.work_schedule || []).map((w) => ({
+          value: w.name,
+          label: w.name,
+        })),
+      },
+      { type: "section", label: "Situación personal" },
+      {
+        label: "¿Eres extutelado?",
+        name: "fostered",
+        type: "select",
+        required: true,
+        defaultValue: user.fostered ? "si" : "no",
+        options: [
+          { value: "si", label: "Sí" },
+          { value: "no", label: "No" },
+        ],
+      },
+      {
+        label: "¿Tienes discapacidad?",
+        name: "hasDisability",
+        type: "select",
+        required: true,
+        defaultValue: user.disability > 0 ? "si" : "no",
+        options: [
+          { value: "si", label: "Sí" },
+          { value: "no", label: "No" },
+        ],
+      },
+      ...(user.disability > 0
+        ? [
+          {
+            label: "Porcentaje discapacidad (1-100)",
+            name: "disability",
+            type: "number",
+            required: true,
+            defaultValue: user.disability,
+          },
+        ]
+        : []),
+
+      { type: "section", label: "Puestos, estudios y zonas" },
+      {
+        name: "jobsId",
+        label: "Puestos de interés",
+        type: "multiChips",
+        required: true,
+        defaultValue: user?.jobsId || [],
+        options: [{ value: "", label: "Seleccione una o varias opciones" }, ...positionOptions],
+        placeholder:
+          "Busca y añade 1 o varias opciones (puedes pulsar enter o hacer click)",
+      }
+      ,
+
+      {
+        name: "studies",
+        label: "Estudios Realizados",
+        type: "multiChips",
+        required: true,
+        defaultValue: user?.studiesId || [],
+        options: [{ value: "", label: "Seleccione una o varias opciones" }, ...studiesOptions],
+        placeholder:
+          "Busca y añade 1 o varias opciones (puedes pulsar enter o hacer click)",
+      },
+      {
+        name: "provincesId",
+        label: "Provincias de interés",
+        type: "multiChips",
+        required: true,
+        defaultValue: user?.provincesId || [],
+        options: [{ value: "", label: "Seleccione una o varias opciones" }, ...provincesOptions],
+        placeholder:
+          "Busca y añade 1 o varias opciones (puedes pulsar enter o hacer click)",
+      },
+      { type: "section", label: "Otros datos" },
+      {
+        label: "Sobre mí",
+        name: "about",
+        type: "textarea",
+        required: false,
+        defaultValue: user.about || "",
+      },
+      {
+        label: "Currículum (PDF)",
+        name: "file",
+        type: "file",
+      },
+    ];
+
+    const handleModalSubmit = async (formValues) => {
+      const values = {
+        ...user,
+        ...formValues,
+        work_schedule: [formValues.work_schedule],
+        fostered: formValues.fostered === "si",
+        disability: formValues.hasDisability === "si" ? formValues.disability || 0 : 0,
+        file: formValues.file,
+      };
+
+      try {
+        charge(true);
+        const res = await sendFormCv(values, values.file, true);
+        if (res?.error) {
+          modal("Error", res.message || "No se pudo actualizar el CV");
+          return;
+        }
+        modal("CV actualizado", "Los datos del usuario se han modificado con éxito.");
+        changeUser?.(res);
+      } catch (err) {
+        modal("Error", err.message || "Error inesperado");
+      } finally {
+        charge(false);
+      }
+    };
+
+    return (
+      <ModalForm
+        title="Actualizar Currículum"
+        message="Revisa o modifica tus datos antes de enviar."
+        fields={fields}
+        onSubmit={handleModalSubmit}
+        onClose={() => closeModalEdit()}
+        modal={modal}
+      />
+    );
+  }
 
   // ===== Render =====
   return (
@@ -368,8 +541,9 @@ export default function FormJobUp({ modal, charge, user, changeUser }) {
             onChange={handleChange}
             placeholder="12345678A"
           />
+          {formErrors.dni && <small className={styles.errorMsg}>{formErrors.dni}</small>}
         </div>
-        {formErrors.dni && <small className={styles.errorMsg}>{formErrors.dni}</small>}
+
 
         <div className={styles.field}>
           <label htmlFor={`${idForm}-email`}>Email</label>

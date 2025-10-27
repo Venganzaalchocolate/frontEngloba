@@ -294,7 +294,7 @@ const lookCV = useCallback(async (id, userData) => {
                         <div className={styles.tableCell}></div>
                         <div className={styles.tableCell}>V</div>
                         <div className={styles.tableCell}></div>
-                        <div className={styles.tableCell}>Fecha</div>
+                        <div className={styles.tableCell}>Última versión</div>
                     </div>
 
                     {!!userSelectedOffer 

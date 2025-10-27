@@ -93,13 +93,18 @@ export const getusercvs = (page, limit, filters, token) => fetchData('/usercvs',
 export const getuserscvs = (datos, token) => fetchData('/userscv', 'POST', token, datos)
 export const sendFormCv = async (dataForm, file, editUser = false) => {
   // 1) buscar/crear/actualizar usuario
-  let userExist = await fetchData('/filterusercv', 'POST', null, editUser ? { id: dataForm.id } : dataForm);
 
-  if (!userExist || userExist.length === 0) {
+  let userExist = await fetchData('/filterusercv', 'POST', null, editUser ? { id: dataForm._id } : dataForm);
+
+  if (userExist.length === 0 || !userExist ) {
     userExist = await fetchData('/createusercv', 'POST', null, dataForm);
   } else {
     dataForm._id = userExist[0]._id;
-    if (file) dataForm.numberCV = (userExist[0].numberCV || 0) + 1;
+    if (file){
+      dataForm.numberCV = (userExist[0].numberCV || 0) + 1;
+      dataForm.date=new Date()
+    } 
+
     userExist = await fetchData('/modifyusercv', 'PUT', null, dataForm);
   }
 

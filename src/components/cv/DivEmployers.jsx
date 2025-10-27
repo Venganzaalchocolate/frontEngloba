@@ -180,8 +180,7 @@ function DivEmployers({
                     </span>
                   )}
                 </div>
-
-                <div className={styles.tableCell}>{formatDatetime(user.date)}</div>
+                <div className={styles.tableCell}>{formatDatetime(user.updatedAt)}</div>
               </div>
 
               {/* Panel de CV si es el seleccionado */}

@@ -520,8 +520,8 @@ width: fit-content;
 
     .tableCell:nth-child(9),
     .tableCell:nth-child(10) {
-        max-width: 5rem;
-        min-width: 5rem;
+        max-width: 7rem;
+        min-width: 7rem;
         display: flex;
         justify-content: center;
 

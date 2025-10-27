@@ -341,6 +341,11 @@ const officialById = useMemo(() => {
     return <span className={`${styles.chip} ${cls}`}>{txt}</span>;
   };
 
+  const nameDocumentation=(id)=>{
+    if(!id) return ''
+    const documentationData=enumsData.documentation.filter((x)=>id==x._id)
+    return documentationData[0]?.name
+  }
 return (
   <div className={styles.contenedor}>
     <h2>SOLICITUDES</h2>
@@ -359,7 +364,9 @@ return (
         const reqId = String(req._id);
         const list = docsByReq[reqId] || [];
         const isLoadingDocs = !!docsLoading[reqId];
-
+        let idDocumentation=req.uploads[0]?.originDocumentation
+        let nameDocumentationAux=(!!idDocumentation)?nameDocumentation(idDocumentation):''
+        
         return (
           <div key={req._id} className={styles.card}>
             <div className={styles.header}>
@@ -398,16 +405,17 @@ return (
                     )}
 
                     {list.length > 0 && (
+                      
                       <li key={list[0].key} className={styles.changeRow}>
                         <div className={styles.valuesDoc}>
                           <p className={styles.to}>
-                            <span>Tipo:</span> {list[0].originDocumentation ? "Oficial" : "Varios"}
+                            <span>Tipo:</span> {list[0].category=='Oficial' ? "Oficial" : "Varios"}
                           </p>
                           <p className={styles.to}>
-                            <span>Nombre del documento:</span> {list[0].fileLabel}
+                            <span>{(list[0].category=='Oficial')?'Subtipo: ':'Nombre del documento:'} </span> {(list[0].category=='Oficial')?nameDocumentationAux:list[0].fileLabel}
                           </p>
                           {list[0].date && (
-                            <p className={styles.to}>
+                            <p className={styles.to}>     
                               <span>Fecha:</span> {fmtDate(list[0].date)}
                             </p>
                           )}
@@ -471,7 +479,7 @@ return (
       <div className={styles.historyWrapper}>
         <h3 className={styles.title}>Histórico de solicitudes</h3>
         {history.length === 0 && <p className={styles.empty}>No hay histórico disponible.</p>}
-
+        
         {history.map((req) => (
           <div key={req._id} className={styles.card}>
             <div className={styles.header}>
@@ -508,6 +516,7 @@ return (
                   const u = req.uploads[0] || {};
                   const isOfficial = !!u.originDocumentation;
                   const off = isOfficial ? officialById.get(String(u.originDocumentation)) : null;
+                  
                   const name = isOfficial
                     ? (off?.name || "Documento oficial")
                     : (u.labelFile || "Documento");

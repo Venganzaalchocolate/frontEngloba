@@ -22,6 +22,7 @@ import { getToken } from "../../lib/serviceToken";
 import { useOffer } from '../../hooks/useOffer.jsx';
 import InfoUser from './infoUser.jsx';
 import ModalForm from '../globals/ModalForm.jsx';
+import FormJobUp from '../globals/FormJobUp.jsx';
 
 
 
@@ -404,6 +405,18 @@ const CvPanel = ({ modalBagView, urlpdf, user, changeUser, modal, charge, delete
                         />
                     )
                 )}
+                {panelEditUser && (
+                    <FormJobUp
+                        modal={modal}
+                        charge={charge}
+                        user={user}
+                        changeUser={(updatedUser) => {
+                        changeUser(updatedUser);
+                        setPanelEditUser(false); // cerrar modal tras guardar
+                        }}
+                        closeModalEdit={()=>setPanelEditUser(false)}
+                    />
+                    )}
             </div>
         )
     }

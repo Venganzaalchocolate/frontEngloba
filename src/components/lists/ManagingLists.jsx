@@ -86,6 +86,7 @@ export default function ManagingLists({ enumsData, modal, charge }) {
         token,
         { [currentFilter]: true }
       );
+      
       setRows(Array.isArray(data) ? data : []);
     } catch (err) {
       modal('Error', err.message || 'No se pudo obtener la información.');

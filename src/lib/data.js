@@ -270,11 +270,12 @@ export const offerId = (datos) => fetchData('/offerid', 'POST', null, datos);
 
 //program
 export const getPrograms = () => fetchData('/programs', 'GET');
+export const getProgramId=(datos, token)=>fetchData('/program', 'POST', token, datos)
 export const createProgram = (datos, token) => fetchData('/createprogram', 'POST', token, datos);
 export const createDispositive = (dispositiveData, token) => fetchData('/createdispositive', 'POST', token, dispositiveData);
 export const updateDispositive = (dispositiveData, token) => fetchData('/updatedevice', 'PUT', token, dispositiveData);
 export const deleteDispositive = (dispositiveData, token) => fetchData('/deletedispositive', 'DELETE', token, dispositiveData);
-export const getDispositive = (dispositiveData, token) => fetchData('/programs', 'POST', token, dispositiveData);
+export const getDispositiveId = (dispositiveData, token) => fetchData('/dispositive', 'POST', token, dispositiveData);
 export const getDispositiveResponsable = (datos, token) => fetchData('/dispositiveresponsable', 'POST', token, datos);
 export const deleteProgram = (datos, token) => fetchData('/deleteprogram', 'DELETE', token, datos);
 export const updateProgram = (datos, token) => fetchData('/updateprogram', 'PUT', token, datos);

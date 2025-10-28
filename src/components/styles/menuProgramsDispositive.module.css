@@ -1,0 +1,142 @@
+.divContenedor {
+  border: 1px solid var(--color-morado);
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  flex: 1 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-family: inherit;
+  height: fit-content;
+  box-sizing: border-box;
+}
+
+/* --- buscador --- */
+.searchBox {
+display: flex;
+gap: 0.5rem;
+}
+
+.searchInput {
+  display: flex;
+  flex: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.8rem;
+  border: 1px solid var(--color-morado);
+  border-radius: 0.6rem;
+  font-size: 0.95rem;
+}
+
+.clearBtn {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--color-morado);
+  cursor: pointer;
+}
+
+/* --- lista principal --- */
+.divContenedor ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.programItem {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border-radius: 0.6rem;
+  color: var(--color-morado);
+  font-size: 0.95rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.programItem:hover {
+  background: var(--color-malva);
+  color: #fff;
+}
+
+.programItem.active {
+  background: var(--color-chicle);
+  color: #fff;
+  font-weight: 600;
+}
+
+.icon {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+}
+
+
+
+.name {
+  color: #777;
+  font-size: 0.85rem;
+    flex: 1 100%;
+}
+
+/* --- sublista (dispositivos) --- */
+.deviceList {
+  margin-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.deviceItem {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.4rem;
+  color: var(--color-morado);
+  transition: background 0.2s, color 0.2s;
+}
+
+.deviceItem:hover {
+  background: var(--color-morado);
+  color: #fff;
+}
+
+.deviceItem.active {
+  background: var(--color-chicle);
+  color: #fff;
+  font-weight: 600;
+}
+
+.iconSmall {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.empty {
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: 1rem;
+}
+
+.programLabel{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.activeProgram{
+    color: var(--color-chicle);
+}
+/* --- responsive --- */
+@media (min-width: 721px) {
+  .divContenedor {
+    flex: 0 0 300px;
+    width: 300px;
+  }
+}

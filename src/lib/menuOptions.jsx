@@ -24,6 +24,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
   const rootOnly = [
     { key: 'root',       label: 'Panel Root',              icon: FaToolbox,        accent: '#d946ef' },
     { key: 'workspace',  label: 'Gestión de Workspace',    icon: FaUserCog,        accent: '#4ade80' },
+    { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
   ];
 
   if (role === 'root')   return [...global, ...rootOnly, ...base];

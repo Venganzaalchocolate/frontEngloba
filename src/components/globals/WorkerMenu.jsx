@@ -29,6 +29,7 @@ const ManagingAuditors = React.lazy(() => import("../auditor/ManagingAuditors"))
 const ManagingLists = React.lazy(() => import("../lists/ManagingLists"));
 const ManagingWorkspace = React.lazy(() => import("../woprkspace/Managingworkspace"));
 const FormCreateEmployer = React.lazy(() => import("../employer/FormCreateEmployer"));
+const ManagingProgramsDispositive=React.lazy(() => import("../programsanddispositives/ManagingProgramsDispositive"));
 
 /* === Tile reutilizable (card clickable con icono y texto) ===
    Le paso un icono, label, color de acento y callback onClick */
@@ -172,7 +173,7 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
           />
         )}
         {MenuWorker === "programs" && (
-          <ManagingPrograms
+          <ManagingProgramsDispositive
             listResponsability={listResponsability}
             enumsData={enumsEmployer}
             closeAction={() => changeMenuWorker(null)}

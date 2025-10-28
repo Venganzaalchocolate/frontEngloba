@@ -1,0 +1,125 @@
+.contenedor {
+  border: 1px solid var(--color-morado);
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  box-sizing: border-box;
+  font-family: inherit;
+  color: #333;
+  height: fit-content;
+}
+
+.contenedor h2 {
+  color: var(--color-morado);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Campos genéricos */
+.fieldContainer {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.fieldLabel {
+  font-weight: 600;
+  color: var(--color-morado);
+  margin-bottom: 0.3rem;
+  font-size: 0.95rem;
+}
+
+.field {
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  color: #333;
+  background: #fafafa;
+}
+
+.textarea {
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  color: #333;
+  background: #fafafa;
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.4;
+}
+
+/* Texto simple o vacío */
+.fieldText {
+  margin: 0.2rem 0;
+  font-size: 0.95rem;
+}
+
+.fieldTextEmpty {
+  font-size: 0.9rem;
+  color: #777;
+  font-style: italic;
+}
+
+/* Listas */
+.list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.listItem {
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.listItem:hover {
+  background: #f1eefc;
+  transform: translateY(-1px);
+}
+
+.listItem strong {
+  display: block;
+  font-weight: 600;
+  color: var(--color-morado);
+}
+
+.subtext {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.1rem;
+}
+
+/* Scroll suave para textos largos */
+.textarea,
+.field {
+  overflow-y: auto;
+}
+
+/* Adaptativo */
+@media (min-width: 721px) {
+  .contenedor {
+    flex: 1;
+    padding: 2rem;
+  }
+
+  .fieldContainer {
+    margin-bottom: 1.2rem;
+  }
+}

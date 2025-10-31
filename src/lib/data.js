@@ -162,6 +162,7 @@ export const getEmployers = (token) => fetchData('/users', 'GET', token);
 export const infoUser = (token, data) => fetchData('/user', 'POST', token, data);
 export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
 export const getusersnotlimit = (filters, token) => fetchData('/usersfilternotlimit', 'POST', token, { ...filters });
+export const searchusername = (filters, token) => fetchData('/searchusername', 'POST', token, { ...filters });
 export const usersName = (datos, token) => fetchData('/usersname', 'POST', token, datos);
 export const hirings = (data, token) => fetchData('/hirings', 'POST', token, data);
 export const rehireEmployee = (data, token) => fetchData('/rehireemployee', 'POST', token, data);

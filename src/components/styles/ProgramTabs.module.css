@@ -1,0 +1,65 @@
+.container{
+  flex: 1;
+}
+.content {
+border-right: 1px solid var(--color-morado);
+border-bottom: 1px solid var(--color-morado);
+  border-left: 1px solid var(--color-morado);
+  border-radius: 0 0 1rem 1rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+/* === CABECERA DE PESTAÑAS === */
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  background: #fff;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+  
+}
+
+/* === BOTONES DE PESTAÑA === */
+.tab {
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-morado);
+  background: #f3f3f3;
+  border: 1px solid var(--color-morado);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  border-radius: 1rem 1rem 0 0;
+  box-sizing: border-box;
+
+  flex: 1 100%;
+  border-radius: 1rem 1rem 0 0;
+  text-align: justify;
+  display: flex;
+  justify-content: flex-start;
+  font-size: 20px;
+  font-weight: lighter;
+  text-transform: uppercase;
+}
+
+/* Estado activo */
+.active {
+  background: #fff;
+  color: var(--color-morado);
+  font-weight: 700;
+  border-bottom: 2px solid #fff;
+  z-index: 2;
+  border-bottom: 0px solid #fff;
+}
+
+/* Hover suave */
+.tab:hover:not(.active) {
+  background: #eee;
+}
+
+/* === CONTENIDO === */

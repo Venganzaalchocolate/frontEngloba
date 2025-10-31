@@ -13,13 +13,12 @@
 .contenedor{
   display: flex;
   justify-content: center;
-  align-items: center;
   background-color: white;
   flex:0;
-  max-width: 20rem;
+  max-width: 30rem;
   flex-direction: column;
   padding: 2rem;
-  gap: 2rem;
+  gap: 1rem;
   border-radius: 1rem;
   color: var(--color-morado);
 }
@@ -32,5 +31,10 @@
 
 .contenedor p {
   color: var(--color-morado);
+}
+
+.contenedor button{
+  width: fit-content;
+  align-self: center;
 }
 

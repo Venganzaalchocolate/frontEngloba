@@ -5,13 +5,14 @@ const Modal = ({ data, closeModal}) => {
     if (!data.open) {
       return null;
     }
-    
-  
     return (
       <div className={styles.ventana}>
         <div className={styles.contenedor}>
           <h2>{data.title}</h2>
-          <p>{data.message}</p>
+         {Array.isArray(data.message)
+          ? data.message.map((x, i) => <p key={i}>{x}</p>)
+          : <p>{data.message}</p>
+        }
 
           <button onClick={closeModal}>Cerrar</button>
         </div>

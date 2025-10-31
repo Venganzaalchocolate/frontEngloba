@@ -160,10 +160,6 @@ const DocumentMiscelaneaGeneric = ({
     try {
       charge(true);
       const token = getToken();
-      if (modelName.toLowerCase() === "device" && !parentId) {
-        modal("Error", "Falta el idModel (parentId) para el dispositivo.");
-        return;
-      }
       const payload = {
         fileId: fileObj._id,
         originModel: modelName,
@@ -234,10 +230,6 @@ const DocumentMiscelaneaGeneric = ({
           }
           if (chosen.date === true && !date) {
             modal("Error", `El documento "${chosen.name}" requiere fecha obligatoria.`);
-            return;
-          }
-          if (modelName.toLowerCase() === "device" && !parentId) {
-            modal("Error", "Falta el idModel (parentId) para el dispositivo.");
             return;
           }
 
@@ -404,10 +396,7 @@ const DocumentMiscelaneaGeneric = ({
             modal("Permisos insuficientes", "Esta acción requiere permisos de edición.");
             return;
           }
-          if (modelName.toLowerCase() === "device" && !parentId) {
-            modal("Error", "Falta el idModel (parentId) para el dispositivo.");
-            return;
-          }
+
           charge(true);
           const token = getToken();
           const payload = {
@@ -793,21 +782,6 @@ function transformFiles(data, modelName) {
           fileLabel: f.fileLabel || "",
           description: f.description || "",
           subDocId: item._id,
-          idDrive: f.idDrive,
-        };
-      })
-      .filter(Boolean);
-  } else if (modelName === "Device") {
-    return (data.files || [])
-      .map((f) => {
-        if (!f || !f._id) return null;
-        return {
-          _id: f._id,
-          originDocumentation: f.originDocumentation,
-          date: f.date || null,
-          fileLabel: f.fileLabel || "",
-          description: f.description || "",
-          subDocId: null,
           idDrive: f.idDrive,
         };
       })

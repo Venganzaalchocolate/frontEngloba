@@ -179,6 +179,7 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
             closeAction={() => changeMenuWorker(null)}
             modal={(title, message) => modal(title, message)}
             charge={(x) => charge(x)}
+            chargeEnums={chargeEnums}
           />
         )}
         {MenuWorker === "employer" && (

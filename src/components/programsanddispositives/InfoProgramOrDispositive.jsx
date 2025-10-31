@@ -1,6 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import styles from "../styles/infoPrgramOrDispositive.module.css";
-import { formatDate } from "../../lib/utils";
+import { getToken } from "../../lib/serviceToken";
+import { coordinators, responsibles } from "../../lib/data";
+import ModalForm from "../globals/ModalForm";
+import ModalConfirmation from "../globals/ModalConfirmation";
+import {  FaTrash } from "react-icons/fa6";
+import { IoArrowUndo, IoPersonAdd } from "react-icons/io5";
+import { BsPersonFillAdd } from "react-icons/bs";
 
 const InfoProgramOrDispositive = ({
   modal,
@@ -9,91 +15,148 @@ const InfoProgramOrDispositive = ({
   enumsData,
   info,
   onSelect,
+  searchUsers,
 }) => {
+  const token = getToken();
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addType, setAddType] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, type: null, personId: null });
+
+  // 👇 nuevo estado para el modal de información de persona
+  const [personInfo, setPersonInfo] = useState(null);
+
+  const openAddModal = (type) => {
+    setAddType(type);
+    setShowAddModal(true);
+  };
+
+  const handleAddPerson = async (formData) => {
+    if (!info?._id || !addType) return;
+
+    try {
+      charge(true);
+      const personId = formData.person;
+      if (!personId) throw new Error("Debe seleccionar una persona.");
+
+      if (addType === "coordinator") {
+        await coordinators(
+          { action: "add", deviceId: info._id, coordinators: [personId] },
+          token
+        );
+      } else {
+        await responsibles(
+          {
+            type: info.type === "program" ? "program" : "device",
+            action: "add",
+            [info.type === "program" ? "programId" : "deviceId"]: info._id,
+            responsible: [personId],
+          },
+          token
+        );
+      }
+
+      modal("Actualizado", `Se ha añadido correctamente el ${addType === "responsible" ? "responsable" : "coordinador"}.`);
+      setShowAddModal(false);
+      onSelect(info);
+    } catch (e) {
+      console.error(e);
+      modal("Error", e.message || "No se pudo añadir la persona.");
+    } finally {
+      charge(false);
+    }
+  };
+
+  const fieldsAddPerson = [
+    {
+      name: "person",
+      label: `Seleccionar ${addType === "responsible" ? "responsable" : "coordinador"}`,
+      type: "async-search-select",
+      placeholder: "Escriba al menos 3 letras...",
+      required: true,
+      loadOptions: searchUsers,
+    },
+  ];
+
+  const dispositivos = useMemo(() => {
+    if (!info || info.type !== "program") return [];
+    const all = Object.values(enumsData?.dispositiveIndex || {});
+    return all.filter((d) => d.program === info._id);
+  }, [info, enumsData]);
+
   if (!info) {
     return (
       <div className={styles.contenedor}>
-        <h2>INFORMACIÓN</h2>
         <p style={{ color: "#666" }}>Selecciona un programa o dispositivo.</p>
       </div>
     );
   }
 
   const isProgram = info?.type === "program";
-  const typeLabel = isProgram ? "Programa" : "Dispositivo";
 
-  // Normalizar responsables y coordinadores
-  const responsables = useMemo(() => {
-    const list = info?.responsible || [];
-    if (!list.length) return [];
-    return list.map((r) =>
-      typeof r === "string"
-        ? enumsData?.employeesIndex?.[r]
-          ? `${enumsData.employeesIndex[r].firstName} ${enumsData.employeesIndex[r].lastName}`
-          : r
-        : `${r.firstName} ${r.lastName}`
-    );
-  }, [info, enumsData]);
+  const handleRemovePerson = async () => {
+    if (!info?._id || !confirmDelete.personId) return;
+    const { type, personId } = confirmDelete;
+    const isCoordinator = type === "coordinator";
 
-  const coordinadores = useMemo(() => {
-    const list = info?.coordinators || [];
-    if (!list.length) return [];
-    return list.map((r) =>
-      typeof r === "string"
-        ? enumsData?.employeesIndex?.[r]
-          ? `${enumsData.employeesIndex[r].firstName} ${enumsData.employeesIndex[r].lastName}`
-          : r
-        : `${r.firstName} ${r.lastName}`
-    );
-  }, [info, enumsData]);
+    try {
+      charge(true);
+      if (isCoordinator) {
+        await coordinators({ action: "remove", deviceId: info._id, coordinatorId: personId }, token);
+      } else {
+        await responsibles(
+          {
+            type: info.type === "program" ? "program" : "device",
+            action: "remove",
+            [info.type === "program" ? "programId" : "deviceId"]: info._id,
+            responsibleId: personId,
+          },
+          token
+        );
+      }
 
-  // 🔍 Obtener dispositivos asociados al programa desde enumsData.dispositiveIndex
-  const dispositivos = useMemo(() => {
-    if (!isProgram) return [];
-    const all = Object.values(enumsData?.dispositiveIndex || {});
-    return all.filter((d) => d.program === info._id);
-  }, [info, enumsData, isProgram]);
-
-  const selectDispositive = (x) => {
-    const data = { ...x, type: "dispositive" };
-    onSelect(data);
+      modal("Actualizado", `${isCoordinator ? "Coordinador" : "Responsable"} eliminado correctamente.`);
+      setConfirmDelete({ show: false, type: null, personId: null });
+      onSelect(info);
+    } catch (e) {
+      console.error(e);
+      modal("Error", e.message || "No se pudo eliminar la persona.");
+    } finally {
+      charge(false);
+    }
   };
 
   return (
     <div className={styles.contenedor}>
-      <h2>INFORMACIÓN DEL {typeLabel.toUpperCase()}</h2>
-
+       {/* ✅ Botón para ir al programa si el info actual es un dispositivo */}
+      {!isProgram && info.program && (
+        <div className={styles.fieldContainer}>
+          <button
+            className={styles.btnInfoProgram}
+            onClick={() => onSelect({ type: "program", _id: info.program })}
+          >
+            <IoArrowUndo/>
+            Info del Programa
+            
+          </button>
+        </div>
+      )}
       {/* Nombre */}
       <div className={styles.fieldContainer}>
         <label className={styles.fieldLabel}>Nombre</label>
-        <input
-          type="text"
-          value={info.name || ""}
-          disabled
-          className={styles.field}
-        />
+        <p className={styles.fieldTextStatic}>{info.name || "—"}</p>
       </div>
 
       {/* Acrónimo o Dirección */}
       {isProgram ? (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Acrónimo</label>
-          <input
-            type="text"
-            value={info.acronym || ""}
-            disabled
-            className={styles.field}
-          />
+          <p className={styles.fieldTextStatic}>{info.acronym || "—"}</p>
         </div>
       ) : (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Dirección</label>
-          <input
-            type="text"
-            value={info.address || ""}
-            disabled
-            className={styles.field}
-          />
+          <p className={styles.fieldTextStatic}>{info.address || "—"}</p>
         </div>
       )}
 
@@ -101,118 +164,161 @@ const InfoProgramOrDispositive = ({
       {isProgram ? (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Área</label>
-          <input
-            type="text"
-            value={info.area || ""}
-            disabled
-            className={styles.field}
-          />
+          <p className={styles.fieldTextStatic}>{info.area || "—"}</p>
         </div>
       ) : (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Provincia</label>
-          <input
-            type="text"
-            value={
-              enumsData?.provincesIndex?.[info.province]?.name ||
-              info.province ||
-              ""
-            }
-            disabled
-            className={styles.field}
-          />
+          <p className={styles.fieldTextStatic}>
+            {enumsData?.provincesIndex?.[info.province]?.name || info.province || "—"}
+          </p>
         </div>
       )}
 
-      {/* Responsables */}
-      <div className={styles.fieldContainer}>
-        <label className={styles.fieldLabel}>Responsables</label>
-        {responsables.length > 0 ? (
-          responsables.map((r, i) => (
-            <p key={i} className={styles.fieldText}>
-              {r}
-            </p>
-          ))
-        ) : (
-          <p className={styles.fieldTextEmpty}>Sin responsables</p>
-        )}
-      </div>
-
-      {/* Coordinadores */}
-      <div className={styles.fieldContainer}>
-        <label className={styles.fieldLabel}>Coordinadores</label>
-        {coordinadores.length > 0 ? (
-          coordinadores.map((r, i) => (
-            <p key={i} className={styles.fieldText}>
-              {r}
-            </p>
-          ))
-        ) : (
-          <p className={styles.fieldTextEmpty}>Sin coordinadores</p>
-        )}
-      </div>
-
-      {/* Descripción / Objetivos / Perfil (solo programa) */}
+      {/* Descripción / Objetivos / Perfil */}
       {isProgram && (
         <>
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Descripción</label>
-            <textarea
-              value={info?.about?.description || ""}
-              disabled
-              className={styles.textarea}
-              rows={6}
-            />
+            <div className={styles.textBlock}>{info?.about?.description || "Sin descripción"}</div>
           </div>
 
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Objetivos</label>
-            <textarea
-              value={info?.about?.objectives || ""}
-              disabled
-              className={styles.textarea}
-              rows={6}
-            />
+            <div className={styles.textBlock}>{info?.about?.objectives || "Sin objetivos"}</div>
           </div>
 
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Perfil</label>
-            <textarea
-              value={info?.about?.profile || ""}
-              disabled
-              className={styles.textarea}
-              rows={4}
-            />
+            <div className={styles.textBlock}>{info?.about?.profile || "Sin perfil"}</div>
           </div>
         </>
       )}
 
-      {/* Dispositivos asociados al programa */}
+{/* Responsables */}
+<div className={styles.fieldContainer}>
+  <label className={styles.fieldLabel}>
+    Responsables
+    <BsPersonFillAdd onClick={() => openAddModal("responsible")}/>
+
+  </label>
+
+  {info.responsible?.length > 0 ? (
+    info.responsible.map((r, i) => (
+      <div className={styles.boxPerson} key={r._id || i}>
+        <p
+          className={styles.fieldText}
+          onClick={() =>
+            modal(
+              `${r.firstName} ${r.lastName}`,
+              [` Email: ${r.email || "—"}`, `Teléfono laboral: ${r.phoneJob?.number || "—"}`]
+            )
+          }
+        >
+          {r.firstName} {r.lastName}
+        </p>
+        <FaTrash
+          className={styles.trash}
+          onClick={() =>
+            setConfirmDelete({
+              show: true,
+              type: "responsible",
+              personId: r._id,
+            })
+          }
+        />
+      </div>
+    ))
+  ) : (
+    <p className={styles.fieldTextEmpty}>Sin responsables</p>
+  )}
+</div>
+
+{/* Coordinadores */}
+{!isProgram && (
+  <div className={styles.fieldContainer}>
+    <label className={styles.fieldLabel}>
+      Coordinadores
+      <BsPersonFillAdd  onClick={() => openAddModal("coordinator")}/>
+
+    </label>
+
+    {info.coordinators?.length > 0 ? (
+      info.coordinators.map((r, i) => (
+        <div className={styles.boxPerson} key={r._id || i}>
+          <p
+            className={styles.fieldText}
+            onClick={() =>
+              modal(
+                `${r.firstName} ${r.lastName}`,
+                [` Email: ${r.email || "—"}`, `Teléfono laboral: ${r.phoneJob?.number || "—"}`]
+              )
+            }
+          >
+            {r.firstName} {r.lastName}
+          </p>
+          <FaTrash
+            className={styles.trash}
+            onClick={() =>
+              setConfirmDelete({
+                show: true,
+                type: "coordinator",
+                personId: r._id,
+              })
+            }
+          />
+        </div>
+      ))
+    ) : (
+      <p className={styles.fieldTextEmpty}>Sin coordinadores</p>
+    )}
+  </div>
+)}
+
+
+      {/* Dispositivos asociados */}
       {isProgram && (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Dispositivos asociados</label>
           {dispositivos.length > 0 ? (
             <ul className={styles.list}>
               {dispositivos.map((d) => (
-                <li
-                  key={d._id}
-                  className={styles.listItem}
-                  onClick={() => selectDispositive(d)}
-                >
+                <li key={d._id} className={styles.listItem} onClick={() => onSelect(d)}>
                   <strong>{d.name}</strong>
-                  {d.address && (
-                    <span className={styles.subtext}>{d.address}</span>
-                  )}
+                  {d.address && <span className={styles.subtext}>{d.address}</span>}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className={styles.fieldTextEmpty}>
-              No hay dispositivos asociados
-            </p>
+            <p className={styles.fieldTextEmpty}>No hay dispositivos asociados</p>
           )}
         </div>
       )}
+
+      {/* === Modal añadir persona === */}
+      {showAddModal && (
+        <ModalForm
+          title={`Añadir ${addType === "responsible" ? "Responsable" : "Coordinador"}`}
+          message={`Busque y seleccione el ${addType === "responsible" ? "responsable" : "coordinador"} que desea añadir.`}
+          fields={fieldsAddPerson}
+          onSubmit={handleAddPerson}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
+
+      {/* === Modal confirmar eliminación === */}
+      {confirmDelete.show && (
+        <ModalConfirmation
+          title={`Eliminar ${confirmDelete.type === "coordinator" ? "Coordinador" : "Responsable"}`}
+          message={`¿Seguro que deseas eliminar este ${confirmDelete.type === "coordinator" ? "coordinador" : "responsable"}?`}
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          onConfirm={handleRemovePerson}
+          onCancel={() => setConfirmDelete({ show: false, type: null, personId: null })}
+        />
+      )}
+
+
     </div>
   );
 };

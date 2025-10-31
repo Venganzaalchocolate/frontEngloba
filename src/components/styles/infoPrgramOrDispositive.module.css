@@ -1,6 +1,4 @@
 .contenedor {
-  border: 1px solid var(--color-morado);
-  border-radius: 1rem;
   background: #fff;
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -11,7 +9,10 @@
   font-family: inherit;
   color: #333;
   height: fit-content;
+
 }
+
+
 
 .contenedor h2 {
   color: var(--color-morado);
@@ -27,14 +28,25 @@
 .fieldContainer {
   display: flex;
   flex-direction: column;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
 }
 
 .fieldLabel {
   font-weight: 600;
   color: var(--color-morado);
-  margin-bottom: 0.3rem;
   font-size: 0.95rem;
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+  padding: 0;
+
+}
+
+.fieldLabel svg{
+  width: 1.5rem;
+  height: 1.5rem;
+
 }
 
 .field {
@@ -47,12 +59,8 @@
 }
 
 .textarea {
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-  padding: 0.6rem 0.75rem;
   font-size: 0.95rem;
   color: #333;
-  background: #fafafa;
   resize: vertical;
   min-height: 100px;
   line-height: 1.4;
@@ -60,8 +68,23 @@
 
 /* Texto simple o vacío */
 .fieldText {
-  margin: 0.2rem 0;
   font-size: 0.95rem;
+  display: flex;
+  align-content: center;
+  gap: 1rem;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  font-size: .8rem;
+  border: 1px solid transparent;
+    border-top-color: transparent;
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+  background-color: var(--color-info);
+  border-color: var(--color-info);
+  background-color: lightcyan;
+  color: var(--color-morado);
+  width: fit-content;
 }
 
 .fieldTextEmpty {
@@ -112,6 +135,46 @@
   overflow-y: auto;
 }
 
+.trash{
+  color: tomato;
+
+}
+
+.fieldTextStatic {
+  background: none;
+  border: none;
+  padding: 0.2rem 0;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.4;
+  background: #f8f8f8;
+  border-radius: 0.5rem;
+  padding: 0.8rem 1rem;
+}
+
+.textBlock {
+  background: #f8f8f8;
+  border-radius: 0.5rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.2;
+  white-space: pre-line; /* respeta saltos de línea */
+}
+
+.boxPerson{
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btnInfoProgram{
+  width: fit-content;
+  display: flex;
+  gap: 1rem;
+}
+
+
 /* Adaptativo */
 @media (min-width: 721px) {
   .contenedor {
@@ -119,7 +182,4 @@
     padding: 2rem;
   }
 
-  .fieldContainer {
-    margin-bottom: 1.2rem;
-  }
 }

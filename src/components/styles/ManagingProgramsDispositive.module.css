@@ -108,7 +108,22 @@
     display: flex;
 }
 
+.botones{
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
 
+.botones>button{
+  display: flex;
+  gap: 1rem;
+  height: fit-content;
+}
+
+.botones svg{
+  width: 1rem;
+  height: 1rem;
+}
 
 /* desktop: lado a lado */
 @media (min-width: 721px) {

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import styles from "../styles/modalForm.module.css";
 import MultiSelectChips from "./MultiSelectChips";
+import AsyncSearchSelect from "./AsyncSearchSelect";
 
 
-const ModalForm = ({ title, message, fields, onSubmit, onClose, modal=()=>{} }) => {
+const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { } }) => {
   // =========== CONSTANTES ===============
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const ALLOWED_FILE_TYPES = ["application/pdf"];
@@ -12,30 +13,30 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal=()=>{} }) 
 
   // ——— Config del detector ———
   const capsWarnedAtRef = useRef({});
-const CAPS_MIN_STREAK = 6;        // 6 o más letras seguidas en mayúscula
-const CAPS_MIN_RATIO  = 0.75;     // 75% o más del texto en mayúsculas
-const CAPS_MIN_LEN    = 8;       // evalúa a partir de 12 letras escritas
-const CAPS_COOLDOWN_MS = 15000;   // no avisar más de 1 vez/15s por campo
+  const CAPS_MIN_STREAK = 6;        // 6 o más letras seguidas en mayúscula
+  const CAPS_MIN_RATIO = 0.75;     // 75% o más del texto en mayúsculas
+  const CAPS_MIN_LEN = 8;       // evalúa a partir de 12 letras escritas
+  const CAPS_COOLDOWN_MS = 15000;   // no avisar más de 1 vez/15s por campo
 
-// Detecta si el texto “grita”
-const shouldWarnCaps = (text) => {
-  if (!text) return false;
-  // Solo letras (Unicode): \p{L}
-  const letters = [...text].filter(ch => /\p{L}/u.test(ch));
-  if (letters.length < CAPS_MIN_LEN) return false;
+  // Detecta si el texto “grita”
+  const shouldWarnCaps = (text) => {
+    if (!text) return false;
+    // Solo letras (Unicode): \p{L}
+    const letters = [...text].filter(ch => /\p{L}/u.test(ch));
+    if (letters.length < CAPS_MIN_LEN) return false;
 
-  let uppers = 0, cur = 0, maxStreak = 0;
-  for (const ch of letters) {
-    const isUpper = ch === ch.toLocaleUpperCase() && ch !== ch.toLocaleLowerCase();
-    if (isUpper) {
-      uppers++; cur++; if (cur > maxStreak) maxStreak = cur;
-    } else {
-      cur = 0;
+    let uppers = 0, cur = 0, maxStreak = 0;
+    for (const ch of letters) {
+      const isUpper = ch === ch.toLocaleUpperCase() && ch !== ch.toLocaleLowerCase();
+      if (isUpper) {
+        uppers++; cur++; if (cur > maxStreak) maxStreak = cur;
+      } else {
+        cur = 0;
+      }
     }
-  }
-  const ratio = uppers / letters.length;
-  return maxStreak >= CAPS_MIN_STREAK || ratio >= CAPS_MIN_RATIO;
-};
+    const ratio = uppers / letters.length;
+    return maxStreak >= CAPS_MIN_STREAK || ratio >= CAPS_MIN_RATIO;
+  };
 
   // =========== ESTADOS ===============
   const [formData, setFormData] = useState(() =>
@@ -116,21 +117,21 @@ const shouldWarnCaps = (text) => {
       }
     }
 
-     // ——— Anti-mayúsculas: solo para text/textarea y si el campo lo pide (capsGuard) ———
- const isTextual = fieldConfig && (fieldConfig.type === "text" || fieldConfig.type === "textarea");
- if (isTextual && fieldConfig.capsGuard && typeof value === "string") {
-   const now = Date.now();
-   const last = capsWarnedAtRef.current[name] || 0;
-   if (shouldWarnCaps(value) && now - last > CAPS_COOLDOWN_MS) {
-     capsWarnedAtRef.current[name] = now;
-     if (typeof modal === "function") {
-       modal(
-         "Evita escribir en MAYÚSCULAS",
-         "Has escrito demasiadas mayúsculas seguidas. Por favor, usa mayúsculas solo al inicio de frases o en nombres propios 😊"
-       );
-     }
-   }
- }
+    // ——— Anti-mayúsculas: solo para text/textarea y si el campo lo pide (capsGuard) ———
+    const isTextual = fieldConfig && (fieldConfig.type === "text" || fieldConfig.type === "textarea");
+    if (isTextual && fieldConfig.capsGuard && typeof value === "string") {
+      const now = Date.now();
+      const last = capsWarnedAtRef.current[name] || 0;
+      if (shouldWarnCaps(value) && now - last > CAPS_COOLDOWN_MS) {
+        capsWarnedAtRef.current[name] = now;
+        if (typeof modal === "function") {
+          modal(
+            "Evita escribir en MAYÚSCULAS",
+            "Has escrito demasiadas mayúsculas seguidas. Por favor, usa mayúsculas solo al inicio de frases o en nombres propios 😊"
+          );
+        }
+      }
+    }
 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -325,7 +326,7 @@ const shouldWarnCaps = (text) => {
                   <>
                     {/* ——— 3.1 Input de búsqueda (se muestra si hay muchas opciones o campo.searchable ——— */}
                     {(field.searchable ||
-                      filterOptions(field.options).length > 15) && (field?.disabled!=true) && (field?.searchable!=false) && (
+                      filterOptions(field.options).length > 15) && (field?.disabled != true) && (field?.searchable != false) && (
 
                         <input
                           type="text"
@@ -595,10 +596,16 @@ const shouldWarnCaps = (text) => {
                   </>
                 )}
 
-
+                {field.type === "async-search-select" && (
+  <AsyncSearchSelect
+    key={field.name}
+    field={field}
+    onChange={handleChange} // ✅ el componente ya genera el evento compatible
+  />
+)}
 
                 {/* Otros tipos: text, email, etc. */}
-                {!["file", "select", "date", "textarea", "selectMultiple", "checkboxGroup", "info", "multiChips"].includes(
+                {!["file", "select", "date", "textarea", "selectMultiple", "checkboxGroup", "info", "multiChips", "async-search-select"].includes(
                   field.type
                 ) && (
                     <>

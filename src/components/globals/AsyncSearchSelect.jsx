@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import styles from "../styles/ModalForm.module.css";
+import styles from "../styles/modalForm.module.css";
 import useDebounce from "../../lib/utils";
 
 const AsyncSearchSelect = ({ field, onChange }) => {

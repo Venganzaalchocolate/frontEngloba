@@ -21,7 +21,6 @@ import Spinnning from "./Spinning";
 const ManagingResumenes = React.lazy(() => import("../cv/ManagingResumes"));
 const ManagingSocial = React.lazy(() => import("../social/ManagingSocial"));
 const OfferJobsPanelV2 = React.lazy(() => import("../offerJobs/OfferJobsPanelV2"));
-const ManagingPrograms = React.lazy(() => import("../programs/ManagingPrograms"));
 const ManagingEmployer = React.lazy(() => import("../employer/ManagingEmployer"));
 const PanelRoot = React.lazy(() => import("../root/panelRoot"));
 const ManagingMySelf = React.lazy(() => import("../myself/ManagingMySelf"));

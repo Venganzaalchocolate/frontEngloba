@@ -15,12 +15,14 @@ import { validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 import { compact, formatDate } from "../../lib/utils";
 
-import { FaTrash } from "react-icons/fa6";
+import { FaRegClock, FaTrash } from "react-icons/fa6";
 import { AiOutlineCloudUpload } from "react-icons/ai";
 import { CiFileOn } from "react-icons/ci";
 
 import styles from "../styles/documentMiscelanea.module.css";
 
+import { BsCheckCircleFill } from "react-icons/bs";
+import { MdWarningAmber } from "react-icons/md";
 /**
  * @param {Object} props
  * @param {Object} props.data - El objeto user, program o device
@@ -40,7 +42,6 @@ const DocumentMiscelaneaGeneric = ({
   modal,
   charge,
   onChange,
-  parentId = null,
   authorized = false,
   onRequestCreated = () => {},
 }) => {
@@ -163,8 +164,7 @@ const DocumentMiscelaneaGeneric = ({
       const payload = {
         fileId: fileObj._id,
         originModel: modelName,
-        idModel: modelName.toLowerCase() === "device" ? parentId : data._id,
-        ...(modelName.toLowerCase() === "device" ? { deviceId: data._id } : {}),
+        idModel: data._id,
       };
       const updatedData = await deleteFileDrive(payload, token);
       if (!updatedData || updatedData.error) {
@@ -237,8 +237,7 @@ const DocumentMiscelaneaGeneric = ({
           const payload = {
             file,
             originModel: modelName,
-            idModel: modelName.toLowerCase() === "device" ? parentId : data._id,
-            ...(modelName.toLowerCase() === "device" ? { deviceId: data._id } : {}),
+            idModel: data._id,
             originDocumentation: docId, // ← OFICIAL
             date,
             description: chosen.name,
@@ -402,8 +401,7 @@ const DocumentMiscelaneaGeneric = ({
           const payload = {
             file,
             originModel: modelName,
-            idModel: modelName.toLowerCase() === "device" ? parentId : data._id,
-            ...(modelName.toLowerCase() === "device" ? { deviceId: data._id } : {}),
+            idModel: data._id,
             fileName: fileName.trim(),
             fileLabel: fileName.trim(),
             date,
@@ -512,8 +510,7 @@ const DocumentMiscelaneaGeneric = ({
           const payload = {
             fileId: fileObj._id,
             originModel: modelName,
-            idModel: modelName.toLowerCase() === "device" ? parentId : data._id,
-            ...(modelName.toLowerCase() === "device" ? { deviceId: data._id } : {}),
+            idModel: data._id,
             description: (description ?? fileObj.description) || "",
           };
           if (fileName && fileName.trim()) {
@@ -632,7 +629,36 @@ const DocumentMiscelaneaGeneric = ({
 
     setIsModalOpen(true);
   };
+function getRenewalInfo(files, renewalDays = 365) {
+  console.log(files)
+  if (!Array.isArray(files) || files.length === 0) return null;
 
+  // Filtra solo archivos con fecha válida
+  const validFiles = files.filter((f) => {
+    if (!f?.date) return false;
+    const d = new Date(f.date);
+    return !isNaN(d.getTime());
+  });
+  if (validFiles.length === 0) return null;
+
+  // Ordena de más reciente a más antiguo
+  const sorted = [...validFiles].sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+
+  const last = sorted[0];
+  const lastDate = new Date(last.date);
+  const today = new Date();
+
+  const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+  const remaining = Math.max(renewalDays - diffDays, 0);
+
+  return {
+    lastDate: !isNaN(lastDate.getTime()) ? lastDate : null,
+    diffDays,
+    remaining,
+  };
+}
   // ====================== RENDER ======================
   return (
     <div className={styles.contenedorDocument}>
@@ -647,42 +673,82 @@ const DocumentMiscelaneaGeneric = ({
           <div key={category} className={styles.categoryGroup}>
             <h4 className={styles.categoryTitle}>{category}</h4>
 
-            {docsArray.map(({ doc, files }) => (
+            {docsArray.map(({ doc, files }) => {
+  const renewal = getRenewalInfo(files, 365); // ← 365 días por defecto
+
+  return (
+    <div
+      key={doc._id}
+      className={doc.model === "antiguomodelo" ? styles.officialDocGroupUser : styles.officialDocGroup}
+    >
+      <div className={styles.docHeader}>
+        <label
+          className={styles.docLabeluploadButton}
+          onClick={
+            authorized
+              ? () => handleUploadOfficialFromSelect(doc._id)
+              : () => handleRequestOfficialUpload(doc)
+          }
+          title={
+            authorized
+              ? "Subir documento oficial"
+              : "Solicitar subida de este documento oficial"
+          }
+        >
+          {doc.name} <AiOutlineCloudUpload />
+        </label>
+
+        {/* Indicador de fecha */}
+        {doc.date && renewal && renewal.lastDate && (
+  <div
+    className={`${styles.renewalStatus} ${
+      renewal.remaining > 0 ? styles.ok : styles.expired
+    }`}
+  >
+    {renewal.remaining > 0 ? (
+      <>
+        <FaRegClock className={styles.icon} />
+        <span>
+          Próxima renovación en{" "}
+          <strong>{renewal.remaining}</strong> días
+        </span>
+      </>
+    ) : (
+      <>
+        <MdWarningAmber className={`${styles.icon} ${styles.iconWarning}`} />
+        <span>¡Documento caducado o pendiente de renovar!</span>
+      </>
+    )}
+  </div>
+)}
+      </div>
+
+      {/* Archivos existentes */}
+      {files.length !== 0 &&
+        files.map((file) => (
+          <div key={file._id} className={styles.fileRow}>
+            {file.date && (
               <div
-                key={doc._id}
-                className={doc.model === "antiguomodelo" ? styles.officialDocGroupUser : styles.officialDocGroup}
+                className={styles.infoFile}
+                onClick={() => handleDownloadFile(doc, file)}
               >
-                <div className={styles.docHeader}>
-                  <label
-                    className={styles.docLabeluploadButton}
-                    onClick={authorized ? () => handleUploadOfficialFromSelect(doc._id) :  () =>handleRequestOfficialUpload(doc)}
-                    title={authorized ? "Subir documento oficial" : "Solicitar subida de este documento oficial"}
-                  >
-                    {doc.name} <AiOutlineCloudUpload />
-                  </label>
-
-                  
-                </div>
-
-                {/* Archivos existentes para este doc */}
-                {files.length !== 0 &&
-                  files.map((file) => (
-                    <div key={file._id} className={styles.fileRow}>
-                      {file.date && (
-                        <div className={styles.infoFile} onClick={() => handleDownloadFile(doc, file)}>
-                          <p>
-                            {`Fecha: ${formatDate(file.date)} `}
-                            <CiFileOn />
-                          </p>
-                        </div>
-                      )}
-                      {authorized && (
-                        <FaTrash className={styles.trash} onClick={() => handleDeleteFile(file)} />
-                      )}
-                    </div>
-                  ))}
+                <p>
+                  {`Fecha: ${formatDate(file.date)} `}
+                  <CiFileOn />
+                </p>
               </div>
-            ))}
+            )}
+            {authorized && (
+              <FaTrash
+                className={styles.trash}
+                onClick={() => handleDeleteFile(file)}
+              />
+            )}
+          </div>
+        ))}
+    </div>
+  );
+})}
           </div>
         ))}
       </div>
@@ -767,9 +833,12 @@ const DocumentMiscelaneaGeneric = ({
     </div>
   );
 };
-
 function transformFiles(data, modelName) {
   if (!data) return [];
+
+  const extractOriginId = (od) =>
+    typeof od === "object" && od !== null ? od._id : od;
+
   if (modelName === "User") {
     return (data.files || [])
       .map((item) => {
@@ -777,7 +846,7 @@ function transformFiles(data, modelName) {
         const f = item.filesId;
         return {
           _id: f._id,
-          originDocumentation: f.originDocumentation,
+          originDocumentation: extractOriginId(f.originDocumentation),
           date: f.date || null,
           fileLabel: f.fileLabel || "",
           description: f.description || "",
@@ -792,7 +861,7 @@ function transformFiles(data, modelName) {
         if (!f || !f._id) return null;
         return {
           _id: f._id,
-          originDocumentation: f.originDocumentation,
+          originDocumentation: extractOriginId(f.originDocumentation),
           date: f.date || null,
           fileLabel: f.fileLabel || "",
           description: f.description || "",
@@ -803,5 +872,6 @@ function transformFiles(data, modelName) {
       .filter(Boolean);
   }
 }
+
 
 export default DocumentMiscelaneaGeneric;

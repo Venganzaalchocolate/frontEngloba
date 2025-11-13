@@ -1,17 +1,19 @@
-// src/components/EnumCRUD.jsx
 import React, { useState } from "react";
 import { FaEdit, FaTrash, FaPlus, FaEye, FaEyeSlash } from "react-icons/fa";
+import ModalConfirmation from "../globals/ModalConfirmation";
 import styles from "../styles/EnumCRUD.module.css";
 
-
+/* ===============================
+   CONFIGURACIÓN
+================================= */
 export const ENUM_OPTIONS = [
   { key: "documentation", label: "Documentación" },
-  { key: "studies",       label: "Estudios" },
-  { key: "jobs",          label: "Trabajos" },
-  { key: "provinces",     label: "Provincias" },
+  { key: "studies", label: "Estudios" },
+  { key: "jobs", label: "Trabajos" },
+  { key: "provinces", label: "Provincias" },
   { key: "work_schedule", label: "Horarios" },
-  { key: "finantial",     label: "Financiación" },
-  { key: "leavetype",     label: "Excedencias" },
+  { key: "finantial", label: "Financiación" },
+  { key: "leavetype", label: "Excedencias" },
 ];
 
 export const NO_SUB_ENUMS = [
@@ -26,21 +28,21 @@ export const ENUM_LABEL = ENUM_OPTIONS.reduce((acc, it) => {
   return acc;
 }, {});
 
-/** Icono de visibilidad solo si el valor es booleano */
+/* ===============================
+   ICONO DE VISIBILIDAD
+================================= */
 const Eye = ({ val }) => {
   if (typeof val !== "boolean") return null;
   return val ? <FaEye className={styles.eye} /> : <FaEyeSlash className={styles.eye} />;
 };
 
-/** Formulario reutilizable para crear/editar según tipo */
-function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData }) {
+/* ===============================
+   FORMULARIO BASE PARA CREAR/EDITAR
+================================= */
+function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData, modal }) {
   const [form, setForm] = useState(() => {
     const base = { name: item?.name ?? "" };
-
-    if (enumKey === "jobs") {
-      base.public = item?.public ? "si" : "no";
-    }
-
+    if (enumKey === "jobs") base.public = item?.public ? "si" : "no";
     if (enumKey === "documentation") {
       base.date = item?.date ? "si" : "no";
       base.requiresSignature = item?.requiresSignature ? "si" : "no";
@@ -48,7 +50,6 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData }) {
       base.duration = item?.duration || 0;
       base.categoryFiles = item?.categoryFiles || "";
     }
-
     return base;
   });
 
@@ -60,21 +61,13 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData }) {
   };
 
   const handleSubmit = () => {
-    if (!form.name || !form.name.trim()) {
-      alert("El nombre es obligatorio");
-      return;
-    }
+    if (!form.name.trim()) return modal("Campo obligatorio", "El nombre es obligatorio.");
     if (enumKey === "documentation") {
-      if (!form.model) {
-        alert("El campo 'Sección (model)' es obligatorio");
-        return;
-      }
+      if (!form.model) return modal("Campo obligatorio", "El campo 'Sección (model)' es obligatorio.");
       if (form.date === "si") {
         const d = Number(form.duration || 0);
-        if (!Number.isFinite(d) || d <= 0) {
-          alert("Duración es obligatoria y debe ser mayor que 0 cuando el documento tiene fecha.");
-          return;
-        }
+        if (!Number.isFinite(d) || d <= 0)
+          return modal("Campo obligatorio", "Duración debe ser mayor que 0 cuando el documento tiene fecha.");
       }
     }
     onSubmit(form);
@@ -98,13 +91,8 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData }) {
       {enumKey === "jobs" && (
         <div className={styles.field}>
           <label className={styles.label}>Público</label>
-          <select
-            className={styles.select}
-            name="public"
-            value={form.public}
-            onChange={handleChange}
-          >
-            <option value="si">Si</option>
+          <select className={styles.select} name="public" value={form.public} onChange={handleChange}>
+            <option value="si">Sí</option>
             <option value="no">No</option>
           </select>
         </div>
@@ -114,13 +102,8 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData }) {
         <>
           <div className={styles.field}>
             <label className={styles.label}>¿Tiene fecha?</label>
-            <select
-              className={styles.select}
-              name="date"
-              value={form.date}
-              onChange={handleChange}
-            >
-              <option value="si">Si</option>
+            <select className={styles.select} name="date" value={form.date} onChange={handleChange}>
+              <option value="si">Sí</option>
               <option value="no">No</option>
             </select>
           </div>
@@ -133,37 +116,34 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData }) {
               value={form.requiresSignature}
               onChange={handleChange}
             >
-              <option value="si">Si</option>
+              <option value="si">Sí</option>
               <option value="no">No</option>
             </select>
           </div>
 
           <div className={styles.field}>
             <label className={styles.label}>Sección</label>
-            <select
-              className={styles.select}
-              name="model"
-              value={form.model}
-              onChange={handleChange}
-            >
+            <select className={styles.select} name="model" value={form.model} onChange={handleChange}>
               <option value="">Seleccione una opción</option>
-              <option value="Program">Programas y Dispositivos</option>
+              <option value="Program">Programas</option>
+              <option value="Dispositive">Dispositivos</option>
               <option value="User">Trabajadores</option>
             </select>
           </div>
 
-          <div className={styles.field}>
-            <label className={styles.label}>Duración (días) — requerido si tiene fecha</label>
-            <input
-              type="number"
-              className={styles.number}
-              name="duration"
-              value={form.duration}
-              onChange={handleChange}
-              placeholder="0"
-              min="0"
-            />
-          </div>
+          {form.date === "si" && (
+            <div className={styles.field}>
+              <label className={styles.label}>Duración (días)</label>
+              <input
+                type="number"
+                className={styles.number}
+                name="duration"
+                value={form.duration}
+                onChange={handleChange}
+                min="0"
+              />
+            </div>
+          )}
 
           <div className={styles.field}>
             <label className={styles.label}>Categoría del archivo</label>
@@ -192,8 +172,10 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData }) {
   );
 }
 
-/** Formulario para crear subcategoría (usa 'public' solo en jobs) */
-function SubcategoryForm({ enumKey, parent, onCancel, onSubmit }) {
+/* ===============================
+   FORMULARIO DE SUBCATEGORÍAS
+================================= */
+function SubcategoryForm({ enumKey, parent, onCancel, onSubmit, modal }) {
   const [form, setForm] = useState({ name: "", public: "si" });
 
   const handleChange = (e) => {
@@ -202,17 +184,14 @@ function SubcategoryForm({ enumKey, parent, onCancel, onSubmit }) {
   };
 
   const handleSubmit = () => {
-    if (!form.name.trim()) {
-      alert("El nombre es obligatorio");
-      return;
-    }
+    if (!form.name.trim()) return modal("Campo obligatorio", "El nombre de la subcategoría es obligatorio.");
     onSubmit(form);
   };
 
   return (
     <div className={styles.modalCard}>
       <h3 className={styles.formTitle}>
-        Añadir subcategoría a: <span style={{fontWeight:400}}>{parent?.name}</span>
+        Añadir subcategoría a: <span style={{ fontWeight: 400 }}>{parent?.name}</span>
       </h3>
 
       <div className={styles.field}>
@@ -229,13 +208,8 @@ function SubcategoryForm({ enumKey, parent, onCancel, onSubmit }) {
       {enumKey === "jobs" && (
         <div className={styles.field}>
           <label className={styles.label}>Pública</label>
-          <select
-            className={styles.select}
-            name="public"
-            value={form.public}
-            onChange={handleChange}
-          >
-            <option value="si">Si</option>
+          <select className={styles.select} name="public" value={form.public} onChange={handleChange}>
+            <option value="si">Sí</option>
             <option value="no">No</option>
           </select>
         </div>
@@ -249,7 +223,9 @@ function SubcategoryForm({ enumKey, parent, onCancel, onSubmit }) {
   );
 }
 
-/** Lista + acciones CRUD */
+/* ===============================
+   COMPONENTE PRINCIPAL CRUD
+================================= */
 export const EnumCRUD = ({
   selectedKey,
   data,
@@ -259,21 +235,29 @@ export const EnumCRUD = ({
   onAddSubcategory,
   onDeleteSubcategory,
   enumsData,
+  modal,
 }) => {
   const label = ENUM_LABEL[selectedKey] || selectedKey;
   const allowSub = !NO_SUB_ENUMS.includes(selectedKey);
 
-  const [mode, setMode] = useState(null); // 'create' | 'edit' | 'sub'
-  const [current, setCurrent] = useState(null); // item actual
+  const [mode, setMode] = useState(null);
+  const [current, setCurrent] = useState(null);
+  const [confirm, setConfirm] = useState(null);
 
   const close = () => { setMode(null); setCurrent(null); };
+
   const startCreate = () => { setMode("create"); setCurrent(null); };
   const startEdit = (item) => { setMode("edit"); setCurrent(item); };
   const startAddSub = (parent) => { setMode("sub"); setCurrent(parent); };
 
-  const handleCreate = (formData) => { onCreate(formData); close(); };
-  const handleEdit = (formData) => { onEdit(current, formData); close(); };
-  const handleAddSub = (formData) => { onAddSubcategory(current, formData); close(); };
+  const handleDelete = (item) => {
+    setConfirm({
+      title: "Confirmar eliminación",
+      message: `¿Eliminar "${item.name}"?`,
+      onConfirm: () => { onDelete(item); setConfirm(null); },
+      onCancel: () => setConfirm(null),
+    });
+  };
 
   return (
     <div>
@@ -301,13 +285,13 @@ export const EnumCRUD = ({
                 <button className={`${styles.iconBtn} ${styles.edit}`} onClick={() => startEdit(item)}>
                   <FaEdit />
                 </button>
-                <button className={`${styles.iconBtn} ${styles.del}`} onClick={() => onDelete(item)}>
+                <button className={`${styles.iconBtn} ${styles.del}`} onClick={() => handleDelete(item)}>
                   <FaTrash />
                 </button>
               </div>
             </div>
 
-            {allowSub && (item.subcategories?.length > 0) && (
+            {allowSub && item.subcategories?.length > 0 && (
               <div className={styles.subList}>
                 <ul>
                   {item.subcategories.map((sc) => (
@@ -317,12 +301,26 @@ export const EnumCRUD = ({
                         {selectedKey === "jobs" && <Eye val={sc.public} />}
                       </div>
                       <div className={styles.actions}>
-                        <button className={`${styles.iconBtn} ${styles.edit}`}
-                          onClick={() => startEdit({ ...item, _sub: sc })}>
+                        <button
+                          className={`${styles.iconBtn} ${styles.edit}`}
+                          onClick={() => startEdit({ ...item, _sub: sc })}
+                        >
                           <FaEdit />
                         </button>
-                        <button className={`${styles.iconBtn} ${styles.del}`}
-                          onClick={() => onDeleteSubcategory(item, sc)}>
+                        <button
+                          className={`${styles.iconBtn} ${styles.del}`}
+                          onClick={() =>
+                            setConfirm({
+                              title: "Confirmar eliminación",
+                              message: `¿Eliminar subcategoría "${sc.name}"?`,
+                              onConfirm: () => {
+                                onDeleteSubcategory(item, sc);
+                                setConfirm(null);
+                              },
+                              onCancel: () => setConfirm(null),
+                            })
+                          }
+                        >
                           <FaTrash />
                         </button>
                       </div>
@@ -335,7 +333,7 @@ export const EnumCRUD = ({
         ))}
 
         {(!data || data.length === 0) && (
-          <div style={{fontSize:'.875rem', color:'#6b7280'}}>No hay datos.</div>
+          <div style={{ fontSize: ".875rem", color: "#6b7280" }}>No hay datos.</div>
         )}
       </div>
 
@@ -346,8 +344,9 @@ export const EnumCRUD = ({
               enumKey={selectedKey}
               item={null}
               onCancel={close}
-              onSubmit={handleCreate}
+              onSubmit={(f) => { onCreate(f); close(); }}
               enumsData={enumsData}
+              modal={modal}
             />
           )}
           {mode === "edit" && (
@@ -356,16 +355,18 @@ export const EnumCRUD = ({
                 enumKey={selectedKey}
                 item={current._sub}
                 onCancel={close}
-                onSubmit={(form) => { onEdit(current, form, { subId: current._sub._id }); close(); }}
+                onSubmit={(f) => { onEdit(current, f, { subId: current._sub._id }); close(); }}
                 enumsData={enumsData}
+                modal={modal}
               />
             ) : (
               <EnumForm
                 enumKey={selectedKey}
                 item={current}
                 onCancel={close}
-                onSubmit={handleEdit}
+                onSubmit={(f) => { onEdit(current, f); close(); }}
                 enumsData={enumsData}
+                modal={modal}
               />
             )
           )}
@@ -374,13 +375,16 @@ export const EnumCRUD = ({
               enumKey={selectedKey}
               parent={current}
               onCancel={close}
-              onSubmit={handleAddSub}
+              onSubmit={(f) => { onAddSubcategory(current, f); close(); }}
+              modal={modal}
             />
           )}
         </div>
       )}
+
+      {confirm && <ModalConfirmation {...confirm} />}
     </div>
   );
-}
+};
 
 export default EnumCRUD;

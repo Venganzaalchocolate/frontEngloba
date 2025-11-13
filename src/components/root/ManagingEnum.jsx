@@ -1,6 +1,7 @@
-// src/pages/ManagingEnum.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {EnumCRUD} from "./EnumCRUD"
+import EnumDocumentationCRUD from "./EnumDocumentationCRUD";
+import { EnumCRUD } from "./EnumCRUD";
+import ModalConfirmation from "../globals/ModalConfirmation";
 import styles from "../styles/enumStyleManaging.module.css";
 
 import {
@@ -9,17 +10,19 @@ import {
   deleteData,
   createSubData,
   deleteSubData,
-} from "../../lib/data"; // <- ajusta la ruta si difiere
+} from "../../lib/data";
 
-// Opciones
+/* ===============================
+   OPCIONES Y CONFIGURACIÓN
+================================= */
 export const ENUM_OPTIONS = [
   { key: "documentation", label: "Documentación" },
-  { key: "studies",       label: "Estudios" },
-  { key: "jobs",          label: "Trabajos" },
-  { key: "provinces",     label: "Provincias" },
+  { key: "studies", label: "Estudios" },
+  { key: "jobs", label: "Trabajos" },
+  { key: "provinces", label: "Provincias" },
   { key: "work_schedule", label: "Horarios" },
-  { key: "finantial",     label: "Financiación" },
-  { key: "leavetype",     label: "Excedencias" },
+  { key: "finantial", label: "Financiación" },
+  { key: "leavetype", label: "Excedencias" },
 ];
 
 export const NO_SUB_ENUMS = [
@@ -34,12 +37,13 @@ export const ENUM_LABEL = ENUM_OPTIONS.reduce((acc, it) => {
   return acc;
 }, {});
 
-/** Convierte índice plano -> árbol { _id, name, public?, subcategories[] } */
+/* ===============================
+   FUNCIONES AUXILIARES
+================================= */
 const indexToTree = (index = {}) => {
   const roots = [];
   const byId = {};
 
-  // Nodos base con "public" si existe
   Object.entries(index).forEach(([id, v]) => {
     byId[id] = {
       _id: id,
@@ -50,7 +54,6 @@ const indexToTree = (index = {}) => {
     };
   });
 
-  // parent -> subs
   Object.entries(index).forEach(([id, v]) => {
     if (v.isSub && v.parent != null) {
       const parentId = String(v.parent);
@@ -60,12 +63,10 @@ const indexToTree = (index = {}) => {
     }
   });
 
-  // raíces
   Object.entries(index).forEach(([id, v]) => {
     if (v.isRoot) roots.push(byId[id]);
   });
 
-  // ordenar
   roots.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
   roots.forEach((r) =>
     r.subcategories.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }))
@@ -74,110 +75,146 @@ const indexToTree = (index = {}) => {
   return roots;
 };
 
-export default function ManagingEnum({ chargeEnums, charge, enumsData }) {
+/* ===============================
+   COMPONENTE PRINCIPAL
+================================= */
+export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) {
   const [selectedKey, setSelectedKey] = useState("studies");
   const [crudData, setCrudData] = useState({});
+  const [confirm, setConfirm] = useState(null);
 
-  // Token desde localStorage (ajústalo si usas contexto)
   const getToken = () => {
     try {
       const raw = localStorage.getItem("token");
       return raw ? raw.replace(/^"|"$/g, "") : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   };
 
-  // Normaliza índices del back a arrays con subcategorías
-  useEffect(() => {
-    const normalized = {
-      ...enumsData,
+  /* Normalización de datos */
+useEffect(() => {
+    // ⛑️ Si aún no ha llegado enumsData, inicializamos vacío y salimos
+    if (!enumsData) {
+      setCrudData({
+        jobs: [],
+        provinces: [],
+        leavetype: [],
+        studies: [],
+        work_schedule: [],
+        finantial: [],
+        documentation: [],
+        categoryFiles: [],
+      });
+      return;
+    }
 
-      jobs:        enumsData.jobsIndex       ? indexToTree(enumsData.jobsIndex)       : (enumsData.jobs || []),
-      provinces:   enumsData.provincesIndex  ? indexToTree(enumsData.provincesIndex)  : (enumsData.provinces || []),
-      leavetype:   enumsData.leavesIndex     ? indexToTree(enumsData.leavesIndex)     : (enumsData.leavetype || []),
-      studies:     enumsData.studiesIndex    ? indexToTree(enumsData.studiesIndex)    : (enumsData.studies || []),
+    const normalized = {
+      // ⛑️ Nunca expandir si pudiera ser undefined
+      jobs: enumsData.jobsIndex ? indexToTree(enumsData.jobsIndex) : (enumsData.jobs || []),
+      provinces: enumsData.provincesIndex ? indexToTree(enumsData.provincesIndex) : (enumsData.provinces || []),
+      leavetype: enumsData.leavesIndex ? indexToTree(enumsData.leavesIndex) : (enumsData.leavetype || []),
+      studies: enumsData.studiesIndex ? indexToTree(enumsData.studiesIndex) : (enumsData.studies || []),
 
       work_schedule: enumsData.work_schedule || [],
-      finantial:     enumsData.finantial || [],
+      finantial: enumsData.finantial || [],
       documentation: enumsData.documentation || [],
-
-      categoryFiles: enumsData.categoryFiles || [],
+      categoryFiles: Array.isArray(enumsData.categoryFiles) ? enumsData.categoryFiles : [],
     };
+
     setCrudData(normalized);
   }, [enumsData]);
 
+
   const selectedData = useMemo(() => crudData[selectedKey] || [], [crudData, selectedKey]);
 
-  /* -----------------------
-     Acciones CRUD (API)
-  ------------------------*/
-  const runWithSpinner = useCallback(async (fn) => {
-    try {
-      charge(true);
+  const groupedDocs = useMemo(() => {
+    const docs = crudData.documentation || [];
+    const grouped = {};
+    docs.forEach((doc) => {
+      const model = doc.model || "Sin modelo";
+      const cat = doc.categoryFiles || "Sin categoría";
+      if (!grouped[model]) grouped[model] = {};
+      if (!grouped[model][cat]) grouped[model][cat] = [];
+      grouped[model][cat].push(doc);
+    });
+    return grouped;
+  }, [crudData.documentation]);
 
-      const res = await fn();
-      await chargeEnums?.(); // recarga del padre si existe
-      return res;
-    } finally {
-      charge(false);
-    }
-  }, [chargeEnums, charge]);
+  /* ===============================
+     FUNCIONES CRUD CON SPINNER
+  ================================ */
+  const runWithSpinner = useCallback(
+    async (fn) => {
+      try {
+        charge(true);
+        const res = await fn();
+        await chargeEnums?.();
+        return res;
+      } catch (err) {
+        modal("Error", "Ha ocurrido un problema con la operación.");
+      } finally {
+        charge(false);
+      }
+    },
+    [chargeEnums, charge, modal]
+  );
 
-  // Crear raíz
+  /* ===============================
+     HANDLERS CRUD
+  ================================ */
   const handleCreate = async (form) => {
     const payload = buildCreatePayload(selectedKey, form);
-
-    if (selectedKey === "documentation" && payload.date === "si") {
-      if (!payload.duration || payload.duration <= 0) {
-        alert("Duración es obligatoria y debe ser mayor que 0 cuando el documento tiene fecha.");
-        return;
-      }
+    if (selectedKey === "documentation" && payload.date === "si" && (!payload.duration || payload.duration <= 0)) {
+      modal("Campo obligatorio", "Duración debe ser mayor que 0 cuando el documento tiene fecha.");
+      return;
     }
     await runWithSpinner(() => createData(getToken(), payload));
   };
 
-  // Editar raíz o sub
   const handleEdit = async (itemOrParent, form, extra) => {
     const payload = buildEditPayload(selectedKey, itemOrParent, form, extra);
-
-    if (selectedKey === "documentation" && payload.date === "si") {
-      if (!payload.duration || payload.duration <= 0) {
-        alert("Duración es obligatoria y debe ser mayor que 0 cuando el documento tiene fecha.");
-        return;
-      }
+    if (selectedKey === "documentation" && payload.date === "si" && (!payload.duration || payload.duration <= 0)) {
+      modal("Campo obligatorio", "Duración debe ser mayor que 0 cuando el documento tiene fecha.");
+      return;
     }
     await runWithSpinner(() => changeData(getToken(), payload));
   };
 
-  // Borrar raíz
-  const handleDelete = async (item) => {
-    if (!window.confirm(`¿Eliminar "${item.name}"?`)) return;
-    await runWithSpinner(() => deleteData(getToken(), { id: item._id, type: selectedKey }));
+  const handleDelete = (item) => {
+    setConfirm({
+      title: "Confirmar eliminación",
+      message: `¿Seguro que deseas eliminar "${item.name}"?`,
+      onConfirm: async () => {
+        await runWithSpinner(() => deleteData(getToken(), { id: item._id, type: selectedKey }));
+        setConfirm(null);
+      },
+      onCancel: () => setConfirm(null),
+    });
   };
 
-  // Crear subcategoría
   const handleAddSubcategory = async (parent, form) => {
-    const payload = {
-      id: parent._id,
-      type: selectedKey,
-      name: form.name?.trim(),
-    };
-    if (selectedKey === "jobs") {
-      payload.public = form.public; // 'si' | 'no'
-    }
+    const payload = { id: parent._id, type: selectedKey, name: form.name?.trim() };
+    if (selectedKey === "jobs") payload.public = form.public;
     await runWithSpinner(() => createSubData(getToken(), payload));
   };
 
-  // Borrar subcategoría
-  const handleDeleteSubcategory = async (parent, sc) => {
-    if (!window.confirm(`¿Eliminar subcategoría "${sc.name}"?`)) return;
-    const payload = {
-      id: parent._id,
-      idCategory: sc._id,
-      type: selectedKey,
-    };
-    await runWithSpinner(() => deleteSubData(getToken(), payload));
+  const handleDeleteSubcategory = (parent, sc) => {
+    setConfirm({
+      title: "Confirmar eliminación",
+      message: `¿Eliminar subcategoría "${sc.name}"?`,
+      onConfirm: async () => {
+        const payload = { id: parent._id, idCategory: sc._id, type: selectedKey };
+        await runWithSpinner(() => deleteSubData(getToken(), payload));
+        setConfirm(null);
+      },
+      onCancel: () => setConfirm(null),
+    });
   };
 
+  /* ===============================
+     RENDER
+  ================================ */
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Gestión de Enums</h1>
@@ -197,34 +234,40 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData }) {
         </select>
       </div>
 
+      {selectedKey === "documentation" ? (
+        <EnumDocumentationCRUD
+          data={groupedDocs}
+          enumsData={crudData}
+          onCreate={handleCreate}
+          onEdit={(item, form) => handleEdit(item, form)}
+          onDelete={handleDelete}
+          modal={modal}
+        />
+      ) : (
+        <EnumCRUD
+          selectedKey={selectedKey}
+          data={selectedData}
+          onCreate={handleCreate}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onAddSubcategory={handleAddSubcategory}
+          onDeleteSubcategory={handleDeleteSubcategory}
+          enumsData={crudData}
+          modal={modal}
+        />
+      )}
 
-      <EnumCRUD
-        selectedKey={selectedKey}
-        data={selectedData}
-        onCreate={handleCreate}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onAddSubcategory={handleAddSubcategory}
-        onDeleteSubcategory={handleDeleteSubcategory}
-        enumsData={crudData}
-      />
+      {confirm && <ModalConfirmation {...confirm} />}
     </div>
   );
 }
 
-/* -------------------
-   Helpers de payload
--------------------- */
+/* ===============================
+   HELPERS DE PAYLOAD
+================================= */
 function buildCreatePayload(enumKey, form) {
-  const payload = {
-    type: enumKey,
-    name: form.name?.trim(),
-  };
-
-  if (enumKey === "jobs") {
-    payload.public = form.public; // 'si' | 'no'
-  }
-
+  const payload = { type: enumKey, name: form.name?.trim() };
+  if (enumKey === "jobs") payload.public = form.public;
   if (enumKey === "documentation") {
     payload.date = form.date;
     payload.model = form.model;
@@ -236,18 +279,9 @@ function buildCreatePayload(enumKey, form) {
 }
 
 function buildEditPayload(enumKey, itemOrParent, form, extra = {}) {
-  const payload = {
-    id: itemOrParent._id,    // si subId, el back ya usa arrayFilters
-    type: enumKey,
-    name: form.name?.trim(),
-  };
-
+  const payload = { id: itemOrParent._id, type: enumKey, name: form.name?.trim() };
   if (extra.subId) payload.subId = extra.subId;
-
-  if (enumKey === "jobs") {
-    payload.public = form.public; // 'si' | 'no'
-  }
-
+  if (enumKey === "jobs") payload.public = form.public;
   if (enumKey === "documentation") {
     payload.date = form.date;
     payload.model = form.model;
@@ -255,6 +289,5 @@ function buildEditPayload(enumKey, itemOrParent, form, extra = {}) {
     payload.requiresSignature = form.requiresSignature === "si";
     if (form.date === "si") payload.duration = Number(form.duration || 0);
   }
-
   return payload;
 }

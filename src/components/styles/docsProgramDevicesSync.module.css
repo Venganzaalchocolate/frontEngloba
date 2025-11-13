@@ -1,0 +1,103 @@
+/******************************
+ * SINCRONIZACIÓN DISPOSITIVOS
+ ******************************/
+.syncContainer {
+  margin-top: 1.5rem;
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid #e0d7f8;
+  box-shadow: 0 3px 8px rgba(138, 63, 252, 0.06);
+  padding: 1.5rem;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.syncHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-morado);
+  padding-bottom: 0.5rem;
+}
+
+.syncHeader h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--color-morado);
+  font-weight: 700;
+}
+
+.desc {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.syncList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.syncItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  border: 1px solid #e6e1f6;
+  border-radius: 0.6rem;
+  padding: 0.7rem 1rem;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.syncItem:hover {
+  background: #f3f0fe;
+  transform: translateY(-1px);
+}
+
+.docName {
+  font-weight: 600;
+  color: var(--color-morado);
+  font-size: 0.95rem;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background 0.2s, transform 0.1s;
+  min-width: 100px;
+  justify-content: center;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+}
+
+.add {
+  background-color: var(--color-morado);
+  color: white;
+}
+
+.add:hover {
+  background-color: #6b46c1;
+}
+
+.remove {
+  background-color: var(--color-naranja);
+  color: white;
+}
+
+.remove:hover {
+  background-color: #ff8e4d;
+}

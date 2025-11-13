@@ -77,16 +77,18 @@
 
 /* Título de categoría (cápsula morada como “Registros”) */
 .categoryTitle {
-  display: block;
-  margin: 0 0 10px 0;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: var(--color-morado);
-  color: #fff;
-  border: none;
+  display: flex;
   font-weight: 700;
   letter-spacing: .02em;
   box-shadow: 0 2px 8px rgba(44,25,102,.15);
+
+  margin: 0 0 5px 0;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background-color: aliceblue;
+  border: solid 1px var(--color-info);
+  color: var(--color-morado);
+
 }
 
 /* ====== DOCUMENTOS OFICIALES ====== */
@@ -97,6 +99,11 @@
   gap: 8px;
 }
 
+.officialDocGroup>div,
+.officialDocGroupUser>div {
+  display: flex;
+  align-content: left;
+}
 /* Nombre del documento (chip claro) */
 .docLabel, .docLabeluploadButton {
   display: inline-flex;
@@ -210,11 +217,49 @@
 }
 
 /* ====== RESPONSIVE ====== */
-@media (min-width: 720px) {
-  .contentDocumentOficial,
-  .contentDocument { grid-template-columns: repeat(2, 1fr); }
-}
 @media (min-width: 1100px) {
   .contentDocumentOficial,
   .contentDocument { grid-template-columns: repeat(2, minmax(280px,1fr)); }
+}
+
+.renewalInfo {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.3rem;
+}
+
+.renewalInfo span.expired {
+  color: #c0392b;
+  font-weight: bold;
+}
+
+.renewalStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 10pt;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.6rem;
+  margin-left: 0.5rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Estado correcto */
+.ok {
+  background-color: #eafaf1;
+  color: #2e7d32;
+}
+
+/* Estado caducado */
+.expired {
+  background-color: #fdecea;
+  color: #c0392b;
+}
+
+.icon {
+  font-size: 1.1rem;
+}
+
+.iconWarning {
+  color: #e67e22;
 }

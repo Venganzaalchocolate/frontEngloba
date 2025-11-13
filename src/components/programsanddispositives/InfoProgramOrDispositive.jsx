@@ -4,8 +4,8 @@ import { getToken } from "../../lib/serviceToken";
 import { coordinators, responsibles } from "../../lib/data";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
-import {  FaTrash } from "react-icons/fa6";
-import { IoArrowUndo, IoPersonAdd } from "react-icons/io5";
+import { FaTrash } from "react-icons/fa6";
+import { IoArrowUndo} from "react-icons/io5";
 import { BsPersonFillAdd } from "react-icons/bs";
 
 const InfoProgramOrDispositive = ({
@@ -16,15 +16,24 @@ const InfoProgramOrDispositive = ({
   info,
   onSelect,
   searchUsers,
+  onManageCronology
 }) => {
   const token = getToken();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: null, personId: null });
-
   // 👇 nuevo estado para el modal de información de persona
   const [personInfo, setPersonInfo] = useState(null);
+
+  //cronologia
+  // === Cronología ===
+  const [showCronologyModal, setShowCronologyModal] = useState(false);
+  const [editCronology, setEditCronology] = useState(null);
+  const [confirmCronology, setConfirmCronology] = useState({ show: false, cronology: null });
+
+
+
 
   const openAddModal = (type) => {
     setAddType(type);
@@ -128,16 +137,17 @@ const InfoProgramOrDispositive = ({
 
   return (
     <div className={styles.contenedor}>
-       {/* ✅ Botón para ir al programa si el info actual es un dispositivo */}
+      
+      {/* ✅ Botón para ir al programa si el info actual es un dispositivo */}
       {!isProgram && info.program && (
         <div className={styles.fieldContainer}>
           <button
             className={styles.btnInfoProgram}
             onClick={() => onSelect({ type: "program", _id: info.program })}
           >
-            <IoArrowUndo/>
+            <IoArrowUndo />
             Info del Programa
-            
+
           </button>
         </div>
       )}
@@ -175,6 +185,53 @@ const InfoProgramOrDispositive = ({
         </div>
       )}
 
+      {/* === CRONOLOGÍA === */}
+<div className={styles.fieldContainer}>
+  <label className={styles.fieldLabel}>
+    Cronología
+    <button
+      className={styles.btnSmallAdd}
+      onClick={() => {
+        setEditCronology(null);
+        setShowCronologyModal(true);
+      }}
+    >
+      + Añadir
+    </button>
+  </label>
+
+  {info.cronology?.length > 0 ? (
+    <ul className={styles.list}>
+      {info.cronology.map((c) => (
+        <li key={c._id} className={styles.listItem}>
+          <div>
+            <strong>Inicio:</strong> {c.open ? new Date(c.open).toLocaleDateString() : "—"}  
+            <strong style={{ marginLeft: "1rem" }}>Fin:</strong> {c.closed ? new Date(c.closed).toLocaleDateString() : "—"}
+          </div>
+          <div className={styles.listItemActions}>
+            <button
+              className={styles.btnTiny}
+              onClick={() => {
+                setEditCronology(c);
+                setShowCronologyModal(true);
+              }}
+            >
+              Editar
+            </button>
+            <FaTrash
+              className={styles.trash}
+              onClick={() => setConfirmCronology({ show: true, cronology: c })}
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p className={styles.fieldTextEmpty}>Sin registros de cronología</p>
+  )}
+</div>
+
+
       {/* Descripción / Objetivos / Perfil */}
       {isProgram && (
         <>
@@ -195,85 +252,85 @@ const InfoProgramOrDispositive = ({
         </>
       )}
 
-{/* Responsables */}
-<div className={styles.fieldContainer}>
-  <label className={styles.fieldLabel}>
-    Responsables
-    <BsPersonFillAdd onClick={() => openAddModal("responsible")}/>
+      {/* Responsables */}
+      <div className={styles.fieldContainer}>
+        <label className={styles.fieldLabel}>
+          Responsables
+          <BsPersonFillAdd onClick={() => openAddModal("responsible")} />
 
-  </label>
+        </label>
 
-  {info.responsible?.length > 0 ? (
-    info.responsible.map((r, i) => (
-      <div className={styles.boxPerson} key={r._id || i}>
-        <p
-          className={styles.fieldText}
-          onClick={() =>
-            modal(
-              `${r.firstName} ${r.lastName}`,
-              [` Email: ${r.email || "—"}`, `Teléfono laboral: ${r.phoneJob?.number || "—"}`]
-            )
-          }
-        >
-          {r.firstName} {r.lastName}
-        </p>
-        <FaTrash
-          className={styles.trash}
-          onClick={() =>
-            setConfirmDelete({
-              show: true,
-              type: "responsible",
-              personId: r._id,
-            })
-          }
-        />
+        {info.responsible?.length > 0 ? (
+          info.responsible.map((r, i) => (
+            <div className={styles.boxPerson} key={r._id || i}>
+              <p
+                className={styles.fieldText}
+                onClick={() =>
+                  modal(
+                    `${r.firstName} ${r.lastName}`,
+                    [` Email: ${r.email || "—"}`, `Teléfono laboral: ${r.phoneJob?.number || "—"}`]
+                  )
+                }
+              >
+                {r.firstName} {r.lastName}
+              </p>
+              <FaTrash
+                className={styles.trash}
+                onClick={() =>
+                  setConfirmDelete({
+                    show: true,
+                    type: "responsible",
+                    personId: r._id,
+                  })
+                }
+              />
+            </div>
+          ))
+        ) : (
+          <p className={styles.fieldTextEmpty}>Sin responsables</p>
+        )}
       </div>
-    ))
-  ) : (
-    <p className={styles.fieldTextEmpty}>Sin responsables</p>
-  )}
-</div>
 
-{/* Coordinadores */}
-{!isProgram && (
-  <div className={styles.fieldContainer}>
-    <label className={styles.fieldLabel}>
-      Coordinadores
-      <BsPersonFillAdd  onClick={() => openAddModal("coordinator")}/>
+      {/* Coordinadores */}
+      {!isProgram && (
+        <div className={styles.fieldContainer}>
+          <label className={styles.fieldLabel}>
+            Coordinadores
+            <BsPersonFillAdd onClick={() => openAddModal("coordinator")} />
 
-    </label>
+          </label>
 
-    {info.coordinators?.length > 0 ? (
-      info.coordinators.map((r, i) => (
-        <div className={styles.boxPerson} key={r._id || i}>
-          <p
-            className={styles.fieldText}
-            onClick={() =>
-              modal(
-                `${r.firstName} ${r.lastName}`,
-                [` Email: ${r.email || "—"}`, `Teléfono laboral: ${r.phoneJob?.number || "—"}`]
-              )
-            }
-          >
-            {r.firstName} {r.lastName}
-          </p>
-          <FaTrash
-            className={styles.trash}
-            onClick={() =>
-              setConfirmDelete({
-                show: true,
-                type: "coordinator",
-                personId: r._id,
-              })
-            }
-          />
+          {info.coordinators?.length > 0 ? (
+            info.coordinators.map((r, i) => (
+              <div className={styles.boxPerson} key={r._id || i}>
+                <p
+                  className={styles.fieldText}
+                  onClick={() =>
+                    modal(
+                      `${r.firstName} ${r.lastName}`,
+                      [` Email: ${r.email || "—"}`, `Teléfono laboral: ${r.phoneJob?.number || "—"}`]
+                    )
+                  }
+                >
+                  {r.firstName} {r.lastName}
+                </p>
+                <FaTrash
+                  className={styles.trash}
+                  onClick={() =>
+                    setConfirmDelete({
+                      show: true,
+                      type: "coordinator",
+                      personId: r._id,
+                    })
+                  }
+                />
+              </div>
+            ))
+          ) : (
+            <p className={styles.fieldTextEmpty}>Sin coordinadores</p>
+          )}
         </div>
-      ))
-    ) : (
-      <p className={styles.fieldTextEmpty}>Sin coordinadores</p>
-    )}
-  </div>
-)}
+      )}
 
 
       {/* Dispositivos asociados */}
@@ -317,6 +374,54 @@ const InfoProgramOrDispositive = ({
           onCancel={() => setConfirmDelete({ show: false, type: null, personId: null })}
         />
       )}
+
+      {/* === Modal añadir/editar cronología === */}
+{/* === Modal añadir/editar cronología === */}
+{showCronologyModal && (
+  <ModalForm
+    title={`${editCronology ? "Editar" : "Añadir"} Cronología`}
+    message="Complete las fechas de inicio y fin."
+    fields={[
+      {
+        name: "open",
+        label: "Fecha de inicio",
+        type: "date",
+        defaultValue: editCronology?.open
+          ? new Date(editCronology.open).toISOString().slice(0, 10)
+          : "",
+      },
+      {
+        name: "closed",
+        label: "Fecha de fin",
+        type: "date",
+        defaultValue: editCronology?.closed
+          ? new Date(editCronology.closed).toISOString().slice(0, 10)
+          : "",
+      },
+    ]}
+    onSubmit={(formData) => {
+      const type = editCronology ? "edit" : "add";
+      onManageCronology(info, { ...formData, _id: editCronology?._id }, type);
+      setShowCronologyModal(false);
+    }}
+    onClose={() => setShowCronologyModal(false)}
+  />
+)}
+
+{/* === Modal eliminar cronología === */}
+{confirmCronology.show && (
+  <ModalConfirmation
+    title="Eliminar registro de cronología"
+    message="¿Seguro que deseas eliminar este registro de cronología?"
+    confirmText="Eliminar"
+    cancelText="Cancelar"
+    onConfirm={() => {
+      onManageCronology(info, { _id: confirmCronology.cronology._id }, "delete");
+      setConfirmCronology({ show: false, cronology: null });
+    }}
+    onCancel={() => setConfirmCronology({ show: false, cronology: null })}
+  />
+)}
 
 
     </div>

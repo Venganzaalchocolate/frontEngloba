@@ -69,28 +69,28 @@ const ManagingProgramsDispositive = ({
   };
 
   // === SELECCIÓN AUTOMÁTICA INICIAL ===
-useEffect(() => {
-  // si ya hay algo seleccionado o aún no se ha cargado enumsData, no hacer nada
-  if (select || !enumsData?.programsIndex) return;
+  useEffect(() => {
+    // si ya hay algo seleccionado o aún no se ha cargado enumsData, no hacer nada
+    if (select || !enumsData?.programsIndex) return;
 
-  // si el usuario tiene responsabilidades
-  if (listResponsability && listResponsability.length > 0) {
-    const first = listResponsability[0];
-    // si tiene dispositivo asignado, selecciona ese
-    if (first.dispositiveId) {
-      onSelect({ type: "dispositive", _id: first.dispositiveId });
-    } else if (first.idProgram) {
-      // si solo tiene programa
-      onSelect({ type: "program", _id: first.idProgram });
+    // si el usuario tiene responsabilidades
+    if (listResponsability && listResponsability.length > 0) {
+      const first = listResponsability[0];
+      // si tiene dispositivo asignado, selecciona ese
+      if (first.dispositiveId) {
+        onSelect({ type: "dispositive", _id: first.dispositiveId });
+      } else if (first.idProgram) {
+        // si solo tiene programa
+        onSelect({ type: "program", _id: first.idProgram });
+      }
+    } else {
+      // si no tiene responsabilidades, seleccionar el primer programa general
+      const firstProgramId = Object.keys(enumsData.programsIndex)[0];
+      if (firstProgramId) {
+        onSelect({ type: "program", _id: firstProgramId });
+      }
     }
-  } else {
-    // si no tiene responsabilidades, seleccionar el primer programa general
-    const firstProgramId = Object.keys(enumsData.programsIndex)[0];
-    if (firstProgramId) {
-      onSelect({ type: "program", _id: firstProgramId });
-    }
-  }
-}, [listResponsability, enumsData]);
+  }, [listResponsability, enumsData]);
 
   // === OPTIONS ===
   const programsOptions = useMemo(() => {
@@ -104,12 +104,15 @@ useEffect(() => {
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [enumsData]);
 
-  const provinceOptions = useMemo(() => {
-    const idx = enumsData?.provincesIndex || {};
-    return Object.entries(idx)
-      .map(([id, p]) => ({ value: id, label: p?.name || id }))
-      .sort((a, b) => a.label.localeCompare(b.label, "es"));
-  }, [enumsData]);
+const provinceOptions = useMemo(() => {
+  const idx = enumsData?.provincesIndex || {};
+  const excludedIds = ["66a7366208bebc63c0f8992d", "66a7369b08bebc63c0f89a05"];
+
+  return Object.entries(idx)
+    .filter(([id]) => !excludedIds.includes(id)) // ❌ excluye las provincias no deseadas
+    .map(([id, p]) => ({ value: id, label: p?.name || id }))
+    .sort((a, b) => a.label.localeCompare(b.label, "es"));
+}, [enumsData]);
 
   // === CAMPOS BASE ===
   const programFields = [
@@ -184,9 +187,8 @@ useEffect(() => {
       options: [
         ...Object.entries(enumsData?.programsIndex || {}).map(([id, p]) => ({
           value: JSON.stringify({ type: "program", _id: id }),
-          label: `📘 Programa · ${p?.name || id}${
-            p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
-          }`,
+          label: `📘 Programa · ${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
+            }`,
         })),
         ...Object.entries(enumsData?.dispositiveIndex || {}).map(([id, d]) => ({
           value: JSON.stringify({ type: "dispositive", _id: id }),
@@ -195,6 +197,81 @@ useEffect(() => {
       ],
     },
   ];
+
+  // === CRONOLOGÍA ===
+ // === CRONOLOGÍA (optimista y sin try/catch) ===
+const handleCronology = async (info, formData, type) => {
+  if (!info?._id) return;
+
+  const prevInfo = structuredClone(infoSelect);
+  let newCronology = [...(infoSelect?.cronology || [])];
+
+  // 🔹 Actualización local optimista
+  if (type === "add") {
+    const tempId = `temp-${Date.now()}`;
+    newCronology.push({
+      _id: tempId,
+      open: formData.open || null,
+      closed: formData.closed || null,
+    });
+  } else if (type === "edit") {
+    newCronology = newCronology.map((c) =>
+      c._id === formData._id
+        ? { ...c, open: formData.open || null, closed: formData.closed || null }
+        : c
+    );
+  } else if (type === "delete") {
+    newCronology = newCronology.filter((c) => c._id !== formData._id);
+  }
+
+  setInfoSelect((prev) => ({
+    ...prev,
+    cronology: newCronology,
+  }));
+
+  // 🔹 Enviar actualización al backend
+  const payload = {
+    type,
+    cronology: {
+      _id: formData._id || undefined,
+      open: formData.open || null,
+      closed: formData.closed || null,
+    },
+  };
+
+  const res =
+    info.type === "program"
+      ? await updateProgram({ id: info._id, ...payload }, token)
+      : await updateDispositive({ dispositiveId: info._id, ...payload }, token);
+
+  // 🔹 Si el backend devuelve error → revertimos
+  if (res?.error) {
+    modal("Error", res.error || "No se pudo actualizar la cronología.");
+    setInfoSelect(prevInfo);
+    return;
+  }
+
+  // 🔹 Si ok → sincronizamos con backend actualizado
+  const fresh =
+    info.type === "program"
+      ? await getProgramId({ programId: info._id }, token)
+      : await getDispositiveId({ dispositiveId: info._id }, token);
+
+  if (fresh?.error) {
+    // opcional: si también puede fallar esta petición, revertimos
+    modal("Aviso", "Guardado pero no se pudo refrescar la información.");
+    return;
+  }
+
+  setInfoSelect({ ...fresh, type: info.type });
+  modal(
+    "Actualizado",
+    type === "delete"
+      ? "Registro eliminado correctamente."
+      : `Cronología ${type === "edit" ? "actualizada" : "añadida"} correctamente.`
+  );
+};
+
 
   // === CREAR ===
   const handleCreateProgram = async (formData) => {
@@ -228,7 +305,13 @@ useEffect(() => {
   const handleCreateDevice = async (formData) => {
     const selected = programsOptions.find((p) => p.value === formData.program);
     const acronym = selected?.acronym || "";
-    const finalName = acronym ? `${acronym} ${formData.name}` : formData.name;
+    const finalName = (() => {
+  if (!acronym) return formData.name;
+  const regex = new RegExp(`^${acronym}\\b`, "i"); // busca si empieza con el acrónimo
+  return regex.test(formData.name.trim())
+    ? formData.name.trim()
+    : `${acronym} ${formData.name.trim()}`;
+})();
 
     const payload = {
       name: finalName.trim(),
@@ -345,31 +428,31 @@ useEffect(() => {
         const fieldsWithValues =
           data.type === "program"
             ? programFields.map((f) => ({
-                ...f,
-                defaultValue:
-                  f.name === "area"
-                    ? data.area
-                    : f.name === "active"
+              ...f,
+              defaultValue:
+                f.name === "area"
+                  ? data.area
+                  : f.name === "active"
                     ? Boolean(data.active)
                     : f.name === "description"
-                    ? data.about?.description || ""
-                    : f.name === "objectives"
-                    ? data.about?.objectives || ""
-                    : f.name === "profile"
-                    ? data.about?.profile || ""
-                    : data[f.name] ?? f.defaultValue ?? "",
-              }))
+                      ? data.about?.description || ""
+                      : f.name === "objectives"
+                        ? data.about?.objectives || ""
+                        : f.name === "profile"
+                          ? data.about?.profile || ""
+                          : data[f.name] ?? f.defaultValue ?? "",
+            }))
             : deviceFields.map((f) => ({
-                ...f,
-                defaultValue:
-                  f.name === "program"
-                    ? data.program?._id || data.program || ""
-                    : f.name === "province"
+              ...f,
+              defaultValue:
+                f.name === "program"
+                  ? data.program?._id || data.program || ""
+                  : f.name === "province"
                     ? data.province?._id || data.province || ""
                     : f.name === "active"
-                    ? Boolean(data.active)
-                    : data[f.name] ?? f.defaultValue ?? "",
-              }));
+                      ? Boolean(data.active)
+                      : data[f.name] ?? f.defaultValue ?? "",
+            }));
 
         setEditTarget({ ...data, fieldsWithValues });
         setShowEditForm(true);
@@ -392,31 +475,31 @@ useEffect(() => {
       const fieldsWithValues =
         data.type === "program"
           ? programFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "area"
-                  ? data.area
-                  : f.name === "active"
+            ...f,
+            defaultValue:
+              f.name === "area"
+                ? data.area
+                : f.name === "active"
                   ? Boolean(data.active)
                   : f.name === "description"
-                  ? data.about?.description || ""
-                  : f.name === "objectives"
-                  ? data.about?.objectives || ""
-                  : f.name === "profile"
-                  ? data.about?.profile || ""
-                  : data[f.name] ?? f.defaultValue ?? "",
-            }))
+                    ? data.about?.description || ""
+                    : f.name === "objectives"
+                      ? data.about?.objectives || ""
+                      : f.name === "profile"
+                        ? data.about?.profile || ""
+                        : data[f.name] ?? f.defaultValue ?? "",
+          }))
           : deviceFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "program"
-                  ? data.program?._id || data.program || ""
-                  : f.name === "province"
+            ...f,
+            defaultValue:
+              f.name === "program"
+                ? data.program?._id || data.program || ""
+                : f.name === "province"
                   ? data.province?._id || data.province || ""
                   : f.name === "active"
-                  ? Boolean(data.active)
-                  : data[f.name] ?? f.defaultValue ?? "",
-            }));
+                    ? Boolean(data.active)
+                    : data[f.name] ?? f.defaultValue ?? "",
+          }));
 
       setEditTarget({ ...data, fieldsWithValues });
       setShowEditForm(true);
@@ -441,18 +524,18 @@ useEffect(() => {
 
 
 
-const searchUsers = async (query) => {
-  const token = getToken();
-  if (!query || query.trim().length < 3) return [];
+  const searchUsers = async (query) => {
+    const token = getToken();
+    if (!query || query.trim().length < 3) return [];
 
-  const res = await searchusername({ query }, token);
-  const users = res?.users || [];
+    const res = await searchusername({ query }, token);
+    const users = res?.users || [];
 
-  return users.map((u) => ({
-    value: u._id,
-    label: `${u.firstName || ""} ${u.lastName || ""} (${u.email || "sin email"})`,
-  }));
-};
+    return users.map((u) => ({
+      value: u._id,
+      label: `${u.firstName || ""} ${u.lastName || ""} (${u.email || "sin email"})`,
+    }));
+  };
 
 
   // === RENDER ===
@@ -463,14 +546,14 @@ const searchUsers = async (query) => {
           <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
           <div className={styles.botones}>
             <button className={styles.btnAdd} onClick={() => setShowProgramForm(true)}>
-              + Añadir Programa <FaFolderOpen/>
+              + Añadir Programa <FaFolderOpen />
             </button>
             <button className={styles.btnAdd} onClick={() => setShowDeviceForm(true)}>
-              + Añadir Dispositivo <RiBuilding2Line/>
+              + Añadir Dispositivo <RiBuilding2Line />
             </button>
-            <button className={styles.btnEdit} onClick={openEdit}>Editar <FaEdit/></button>
+            <button className={styles.btnEdit} onClick={openEdit}>Editar <FaEdit /></button>
             {logged?.user?.role === "root" && (
-              <button className={styles.btnDelete} onClick={openDelete}>Eliminar <FaTrashAlt/></button>
+              <button className={styles.btnDelete} onClick={openDelete}>Eliminar <FaTrashAlt /></button>
             )}
           </div>
         </div>
@@ -485,15 +568,16 @@ const searchUsers = async (query) => {
             onSelect={onSelect}
           />
           <ProgramTabs
-          modal={modal}
+            modal={modal}
             charge={charge}
             listResponsability={listResponsability}
             enumsData={enumsData}
             info={infoSelect}
             onSelect={onSelect}
             searchUsers={searchUsers}
+            onManageCronology={handleCronology}
           />
-          
+
         </div>
       </div>
 
@@ -530,9 +614,8 @@ const searchUsers = async (query) => {
       {showDeleteConfirm && (
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Seguro que deseas eliminar este ${
-            deleteTarget?.type === "program" ? "programa" : "dispositivo"
-          }?`}
+          message={`¿Seguro que deseas eliminar este ${deleteTarget?.type === "program" ? "programa" : "dispositivo"
+            }?`}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteConfirm(false)}
         />
@@ -540,9 +623,8 @@ const searchUsers = async (query) => {
 
       {showSelectModal && (
         <ModalForm
-          title={`Seleccionar elemento para ${
-            actionType === "edit" ? "editar" : "eliminar"
-          }`}
+          title={`Seleccionar elemento para ${actionType === "edit" ? "editar" : "eliminar"
+            }`}
           message="Busca y selecciona el programa o dispositivo que deseas gestionar."
           fields={selectFields}
           onSubmit={handleSelectForAction}

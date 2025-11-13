@@ -86,7 +86,6 @@ export default function HiringPeriodsV2({
       try {
         charge?.(true);
         const res = await hiringList({ userId: user._id, page: 1, limit: 200 }, token);
-        console.log(res)
         if (res?.error) throw new Error(res.message || 'No se pudo cargar periodos');
         setPeriods(res.docs || []);
       } catch (e) {

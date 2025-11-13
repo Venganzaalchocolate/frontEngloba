@@ -1,164 +1,273 @@
-/* src/components/EnumCRUD.module.css */
+/* =======================================================
+   ESTILOS UNIFICADOS PARA TODOS LOS ENUMS (GENERAL + DOCS)
+   ======================================================= */
+
+/* ====== TITULARES Y ENCABEZADOS ====== */
 .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
 }
 
 .h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-morado);
 }
 
+/* ====== BOTONES PRINCIPALES ====== */
 .btnPrimary {
-    background: var(--color-verde-hoja);
-    color: #fff;
-    padding: .5rem .75rem;
-    border-radius: .5rem;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
+  background: var(--color-verde-hoja);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.2s ease;
+}
+.btnPrimary:hover {
+  background: var(--color-verde-claro);
 }
 
+/* ====== LISTAS Y TARJETAS ====== */
 .list {
-    display: flex;
-    flex-direction: column;
-    gap: .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .card {
-    border: 1px solid #e5e7eb;
-    border-radius: .5rem;
-    background: #fff;
-    padding: .75rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-top: 0.4rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .cardHead {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .cardTitle {
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
+  color: var(--color-morado);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
+/* ====== BADGES (INSIGNIAS) ====== */
+.badgeFirma,
+.badgeFecha {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.5rem;
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badgeFirma {
+  background: var(--color-chicle);
+}
+.badgeFecha {
+  background: var(--color-verde-hoja);
+}
+
+/* ====== ICONOS DE ACCIÓN ====== */
 .actions {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .iconBtn {
-    padding: .25rem .5rem;
-    border-radius: .5rem;
-    border: none;
-    cursor: pointer;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.4rem;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.iconBtn:hover {
+  opacity: 0.85;
+  transform: scale(1.05);
 }
 
 .addSub {
-    background: var(--color-info);
+  background: var(--color-info);
+  color: white;
 }
-
 .edit {
-    background: var(--color-malva-oscuro);
+  background: var(--color-malva-oscuro);
+  color: white;
 }
-
 .del {
-    background: tomato;
+  background: tomato;
+  color: white;
 }
 
+/* ====== SUBLISTAS ====== */
 .subList {
-    margin-top: .5rem;
-    padding-left: 1rem;
-    border-left: 1px solid #e5e7eb;
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--color-verde-hoja);
 }
-
 .subItem {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: .25rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0;
 }
 
+/* ====== BLOQUES POR SECCIÓN (DOCUMENTACIÓN) ====== */
+.modelGroup {
+  border: 1px solid var(--color-morado);
+  border-radius: 0.75rem;
+  background: #fafafa;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1rem;
+}
+
+.modelTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-morado);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modelTitle span {
+  background: #f3f0ff;
+  color: var(--color-malva-oscuro);
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.4rem;
+}
+
+.categoryGroup {
+  border-left: 2px solid var(--color-verde-hoja);
+  padding-left: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.categoryTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-verde-hoja);
+}
+
+.count {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: #777;
+  background: #e8f6f0;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+}
+
+.empty,
+.emptyCategory {
+  color: #777;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* ====== FORMULARIOS Y MODALES ====== */
 .modalOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, .3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    z-index: 50;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
 }
 
 .modalCard {
-    width: 100%;
-    max-width: 36rem;
-    background: #fff;
-    border-radius: .75rem;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, .1);
-    padding: 1rem;
+  width: 100%;
+  max-width: 36rem;
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
 }
 
 .formTitle {
-    font-weight: 600;
-    font-size: 1.125rem;
-    margin-bottom: .75rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-morado);
 }
 
 .field {
-    margin-bottom: .75rem;
+  margin-bottom: 0.75rem;
 }
 
 .label {
-    display: block;
-    font-size: .875rem;
-    font-weight: 500;
-    margin-bottom: .25rem;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
 }
 
 .input,
 .select,
 .number {
-    width: 100%;
-    border: 1px solid #ddd;
-    border-radius: .5rem;
-    padding: .5rem .75rem;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
 }
 
 .modalBtns {
-    display: flex;
-    gap: .5rem;
-    margin-top: 1rem;
-    justify-content: space-between;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: space-between;
 }
 
 .btn {
-    padding: .5rem .75rem;
-    border-radius: .5rem;
-    border: none;
-    cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
 }
 
 .btnGhost {
-    background: tomato;
+  background: tomato;
+  color: white;
 }
-
 .btnBlue {
-    background: var(--color-verde-hoja);
-    color: #fff;
+  background: var(--color-verde-hoja);
+  color: #fff;
 }
 
+/* ====== PEQUEÑOS DETALLES ====== */
 .eye {
-    display: inline-block;
-    margin-left: .5rem;
+  display: inline-block;
+  margin-left: 0.5rem;
 }

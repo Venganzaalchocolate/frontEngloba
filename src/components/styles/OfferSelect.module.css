@@ -62,3 +62,56 @@ p.function{
   color: var(--color-morado);
   font-weight: bold;
 }
+
+/* 🔍 Barra de búsqueda */
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-morado);
+  border-radius: 0.4rem;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.2s ease;
+}
+
+.searchBar:hover,
+.searchBar:focus-within {
+  border-color: var(--color-verde-hoja);
+}
+
+.searchBar svg {
+  color: var(--color-morado);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.searchBar input {
+  border: none;
+  outline: none;
+  flex: 1;
+  background: transparent;
+  font-size: 9pt;
+  color: var(--color-morado);
+  font-family: inherit;
+}
+
+.searchBar input::placeholder {
+  color: #aaa;
+  font-style: italic;
+}
+
+/* 🔝 Para que quede pegada arriba al hacer scroll (opcional) */
+.listWrapper {
+  position: relative;
+  max-width: 22rem;
+}
+
+.searchBar {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 5;
+}

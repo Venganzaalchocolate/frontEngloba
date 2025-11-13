@@ -174,6 +174,45 @@
   gap: 1rem;
 }
 
+.btnSmallAdd {
+  background: var(--color-morado);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-left: 0.6rem;
+}
+
+.listItem{
+  display: flex;
+  justify-content: space-between;
+}
+
+.listItem>div{
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.listItemActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.btnTiny {
+  background: var(--color-naranja);
+  color: #fff;
+  border: none;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+
 
 /* Adaptativo */
 @media (min-width: 721px) {

@@ -1,13 +1,307 @@
+/******************************
+ * PANEL PRINCIPAL
+ ******************************/
 .contenedor {
   background: #fff;
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 1rem;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  gap: 1rem;
   box-sizing: border-box;
-  font-family: inherit;
   color: #333;
-  height: fit-content;
+  font-family: inherit;
+}
 
+/******************************
+ * TITULOS
+ ******************************/
+.contenedor h3 {
+  color: var(--color-morado);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  border-bottom: 2px solid var(--color-morado);
+  padding-bottom: 0.5rem;
+}
+
+/******************************
+ * BLOQUES POR CATEGORÍA
+ ******************************/
+.categoryBlock {
+  margin-bottom: 1.5rem;
+}
+
+.categoryTitle {
+  font-size: 1rem;
+  color: var(--color-morado);
+  font-weight: 700;
+  border-bottom: 1px solid var(--color-morado);
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.8rem;
+}
+
+/******************************
+ * LISTADO DE DOCUMENTOS
+ ******************************/
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.listItemLine {
+  background: #fafafa;
+  border: 1px solid #e2e2e2;
+  border-radius: 0.6rem;
+  padding: 0.6rem 1rem;
+  margin-bottom: 0.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s, transform 0.1s;
+  background-color: white;
+}
+
+.listItemLine:hover {
+  background: #f1eefc;
+  transform: translateY(-1px);
+}
+
+.lineLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.docName {
+  font-weight: 600;
+  color: var(--color-morado);
+  font-size: 0.95rem;
+}
+
+/******************************
+ * ETIQUETAS (Duración / Firma)
+ ******************************/
+.metaTag {
+  background: #cff4ff;
+  color: var(--color-morado);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-morado);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.metaTag svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+/******************************
+ * BOTONES
+ ******************************/
+.btnToggle {
+  border: none;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s, transform 0.1s;
+  min-width: 80px;
+  text-align: center;
+}
+
+.btnToggle:hover {
+  transform: scale(1.05);
+}
+
+.btnLinked {
+  background: var(--color-naranja);
+  color: #fff;
+}
+
+.btnUnlinked {
+  background: var(--color-morado);
+  color: #fff;
+}
+
+.btnLinked:hover {
+  background: #ff8e4d;
+}
+
+.btnUnlinked:hover {
+  background: #6b46c1;
+}
+
+/******************************
+ * CATEGORÍAS
+ ******************************/
+.category {
+  font-size: 0.85rem;
+  color: var(--color-naranja);
+  font-weight: 500;
+  margin-left: 0.3rem;
+}
+
+/******************************
+ * TEXTO VACÍO
+ ******************************/
+.textEmpty {
+  color: #777;
+  font-style: italic;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/******************************
+ * BLOQUE DE SUBIDA FUTURA
+ ******************************/
+.uploadBlock {
+  margin-top: 2rem;
+  border-top: 1px dashed #ccc;
+  padding-top: 1rem;
+  color: #aaa;
+  text-align: center;
+  font-style: italic;
+  background: #fafafa;
+  border-radius: 0.5rem;
+}
+
+/******************************
+ * ANIMACIÓN DE ENTRADA
+ ******************************/
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.listItemLine {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/******************************
+ * RESPONSIVE
+ ******************************/
+@media (min-width: 768px) {
+  .contenedor {
+    padding: 2rem;
+  }
+
+  .btnToggle {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .listItemLine {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .lineLeft {
+    flex-wrap: wrap;
+  }
+
+  .btnToggle {
+    align-self: flex-start;
+  }
+}
+
+
+/******************************
+ * PANEL DE GESTIÓN
+ ******************************/
+.panelContainer {
+  margin-top: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #fafafa;
+}
+
+.btnPanelToggle {
+  width: 100%;
+  background: var(--color-morado);
+  color: #fff;
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+ 
+}
+
+button.btnPanelToggle{
+width: fit-content;
+}
+
+.btnPanelToggle:hover {
+  background: #5e35b1;
+}
+
+.panelContent {
+  margin-top: 1rem;
+  animation: fadeIn 0.3s ease-in;
+}
+
+/******************************
+ * ANIMACIÓN
+ ******************************/
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.tabButtons {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.tabBtn {
+  flex: 1;
+  border: 1px solid var(--color-morado, #8a3ffc);
+  background: #fff;
+  color: var(--color-morado, #8a3ffc);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.tabBtn:hover {
+  background: rgba(138, 63, 252, 0.1);
+}
+
+.tabBtn.active {
+  background: var(--color-morado, #8a3ffc);
+  color: #fff;
 }

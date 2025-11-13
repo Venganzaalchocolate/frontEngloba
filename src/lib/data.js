@@ -331,6 +331,9 @@ export const getFileDrive = async (datos, token) => {
 //documentation
 export const infoDocumentation = (datos, token) => fetchData('/documentation', 'POST', token, datos);
 export const infoDocumentationUnifed=(datos, token) => fetchData('/getdocumentationunified', 'POST', token, datos); 
+export const infoListDocumentationProgramDispositive=(datos,token)=>fetchData('/getDocumentationProgramDispositive', 'POST', token, datos)
+export const addProgramOrDispositiveToDocumentation=(datos,token)=>fetchData('/addprogramordispositivetodocumentation', 'POST', token, datos)
+export const syncProgramDocsToDevices =(datos,token)=>fetchData('/syncprogramdocs', 'POST', token, datos)
 
 //signPDF
 export const requestSignature = async (data, token) => fetchData('/pdf/request-sign', 'POST', token, data);

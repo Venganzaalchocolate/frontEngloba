@@ -20,6 +20,7 @@ border-bottom: 1px solid var(--color-morado);
   background: #fff;
   border-top-left-radius: 1rem;
   border-top-right-radius: 1rem;
+  text-align: left;
   
 }
 
@@ -45,6 +46,7 @@ border-bottom: 1px solid var(--color-morado);
   font-size: 20px;
   font-weight: lighter;
   text-transform: uppercase;
+  text-align: left;
 }
 
 /* Estado activo */

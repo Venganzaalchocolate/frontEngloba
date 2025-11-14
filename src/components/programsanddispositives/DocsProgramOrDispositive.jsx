@@ -3,7 +3,9 @@ import {
   infoListDocumentationProgramDispositive,
   addProgramOrDispositiveToDocumentation,
 } from "../../lib/data";
+
 import styles from "../styles/docsProgram.module.css";
+
 import {
   FaClock,
   FaPenFancy,
@@ -12,45 +14,67 @@ import {
   FaFolder,
   FaNetworkWired,
 } from "react-icons/fa6";
+
 import { getToken } from "../../lib/serviceToken";
 import { useLogin } from "../../hooks/useLogin";
+
 import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric";
-import DocsProgramDevicesSync from "./DocsProgramDevicesSync"; // submódulo secundario
+import DocsProgramDevicesSync from "./DocsProgramDevicesSync";
+
+/**
+ * ===========================================================
+ *  COMPONENTE PRINCIPAL — DOCUMENTACIÓN DE PROGRAMAS / DISPOSITIVOS
+ * -----------------------------------------------------------
+ *  - Si es PROGRAM → dos pestañas:
+ *        • Documentación del Programa (solo model === "Program")
+ *        • Documentación de los Dispositivos
+ *
+ *  - Si es DISPOSITIVO → sin pestañas:
+ *        • Muestra únicamente documentación del dispositivo
+ *
+ *  - Incluye gestión: añadir/quitar docs del programa/dispositivo
+ *  - Incluye bloque de subida/carga de archivos oficiales
+ * ===========================================================
+ */
 
 const DocsProgramOrDispositive = ({ info, modal, charge }) => {
+  const { logged } = useLogin();
+
   const [currentInfo, setCurrentInfo] = useState(info || null);
   const [listDocumentation, setListDocumentation] = useState([]);
   const [linkedDocs, setLinkedDocs] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
-  const [activeTab, setActiveTab] = useState("program"); // pestaña activa
-  const { logged } = useLogin();
+  const [activeTab, setActiveTab] = useState("program");
 
-  // 🧩 Evitar render si no hay info
+  // ===========================================================
+  //  Si no hay entidad seleccionada, mostrar placeholder
+  // ===========================================================
   if (!info) {
     return (
       <div className={styles.contenedor}>
         <h3>Documentación</h3>
-        <p className={styles.textEmpty}>
-          Selecciona un programa o dispositivo.
-        </p>
+        <p className={styles.textEmpty}>Selecciona un programa o dispositivo.</p>
       </div>
     );
   }
 
-  // 🔁 Sincronizar info cuando cambia
-  useEffect(() => {
-    setCurrentInfo(info);
-  }, [info]);
+  // ===========================================================
+  //  Sincronizar entidad seleccionada
+  // ===========================================================
+  useEffect(() => setCurrentInfo(info), [info]);
 
-  // === 📦 Cargar lista desde backend ===
+  // ===========================================================
+  //  Cargar documentación desde backend
+  // ===========================================================
   useEffect(() => {
     if (!info?.type || !info?._id) return;
 
-    const fetchData = async () => {
+    const load = async () => {
       charge(true);
-      const token = getToken();
       try {
+        const token = getToken();
         const res = await infoListDocumentationProgramDispositive(
           {
             type: info.type === "program" ? "Program" : "Dispositive",
@@ -60,38 +84,57 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
         );
 
         if (res?.error) {
-          modal("Error", res.error || "No se pudo obtener la documentación.");
+          modal("Error", res.error || "Error al cargar la documentación.");
           setListDocumentation([]);
           setLinkedDocs([]);
-        } else {
-          setListDocumentation(res.list || []);
-          setLinkedDocs(res.linkedDocs?.map((d) => d._id) || []);
+          return;
         }
+
+        setListDocumentation(res.list || []);
+        setLinkedDocs(res.linkedDocs?.map((d) => d._id) || []);
       } catch (e) {
-        modal("Error", e.message || "Error al cargar la documentación.");
+        modal("Error", e.message);
       } finally {
         charge(false);
       }
     };
 
-    fetchData();
+    load();
   }, [info]);
 
-  // === 📂 Agrupar por categoría ===
+  // ===========================================================
+  //  Agrupar documentación por categoría (genérico)
+  // ===========================================================
   const groupedDocs = useMemo(() => {
-    const groups = {};
+    const out = {};
     for (const doc of listDocumentation) {
       const cat = doc.categoryFiles || "Sin categoría";
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(doc);
+      if (!out[cat]) out[cat] = [];
+      out[cat].push(doc);
     }
-    return groups;
+    return out;
   }, [listDocumentation]);
 
-  // === 🔁 Añadir / Quitar vínculo ===
+  // ===========================================================
+  //  Agrupación filtrada SOLO para PROGRAMAS (model === "Program")
+  // ===========================================================
+  const groupedDocsProgramModel = useMemo(() => {
+    const out = {};
+    for (const doc of listDocumentation) {
+      if (doc.model !== "Program") continue;
+      const cat = doc.categoryFiles || "Sin categoría";
+      if (!out[cat]) out[cat] = [];
+      out[cat].push(doc);
+    }
+    return out;
+  }, [listDocumentation]);
+
+  // ===========================================================
+  //  Vincular / Desvincular documento
+  // ===========================================================
   const handleToggleLink = async (doc, isLinked) => {
-    const token = getToken();
     setLoading(true);
+    const token = getToken();
 
     const payload = {
       documentationId: doc._id,
@@ -104,7 +147,7 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
     const res = await addProgramOrDispositiveToDocumentation(payload, token);
 
     if (res?.error) {
-      modal("Error", res.error || "No se pudo actualizar la vinculación.");
+      modal("Error", res.error || "No se pudo actualizar el vínculo.");
     } else {
       setLinkedDocs((prev) =>
         isLinked ? prev.filter((id) => id !== doc._id) : [...prev, doc._id]
@@ -114,23 +157,27 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
     setLoading(false);
   };
 
-  // === 🔐 Permisos ===
+  // ===========================================================
+  //  Permiso de gestión
+  // ===========================================================
   const canManage =
     logged?.user?.role === "global" || logged?.user?.role === "root";
 
+  // ===========================================================
+  //  RENDER: Vista
+  // ===========================================================
   return (
     <div className={styles.contenedor}>
       <h3>
-        Documentación del{" "}
-        {info?.type === "program" ? "Programa" : "Dispositivo"}
+        Documentación del {info.type === "program" ? "Programa" : "Dispositivo"}
       </h3>
 
-      {/* === Panel visible solo para root/global === */}
+      {/* PANEL PARA ROOT/GLOBAL */}
       {canManage && (
         <div className={styles.panelContainer}>
           <button
             className={styles.btnPanelToggle}
-            onClick={() => setShowPanel((prev) => !prev)}
+            onClick={() => setShowPanel((p) => !p)}
           >
             {showPanel ? (
               <>
@@ -139,26 +186,32 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
             ) : (
               <>
                 <FaChevronDown /> Gestionar documentación del{" "}
-                {info?.type === "program" ? "Programa" : "Dispositivo"}
+                {info.type === "program" ? "Programa" : "Dispositivo"}
               </>
             )}
           </button>
 
+          {/* CONTENIDO DEL PANEL */}
           {showPanel && (
             <div className={styles.panelContent}>
-              {/* === Tabs visibles solo para Programas === */}
-              {info?.type === "program" && (
+              {/* ================================
+                  TABS — SOLO SI ES PROGRAMA
+                 ================================ */}
+              {info.type === "program" && (
                 <div className={styles.tabButtons}>
                   <button
-                    className={`${styles.tabBtn} ${activeTab === "program" ? styles.active : ""
-                      }`}
+                    className={`${styles.tabBtn} ${
+                      activeTab === "program" ? styles.active : ""
+                    }`}
                     onClick={() => setActiveTab("program")}
                   >
                     <FaFolder /> Documentación del Programa
                   </button>
+
                   <button
-                    className={`${styles.tabBtn} ${activeTab === "devices" ? styles.active : ""
-                      }`}
+                    className={`${styles.tabBtn} ${
+                      activeTab === "devices" ? styles.active : ""
+                    }`}
                     onClick={() => setActiveTab("devices")}
                   >
                     <FaNetworkWired /> Documentación de los Dispositivos
@@ -166,8 +219,79 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
                 </div>
               )}
 
-              {/* === Contenido según pestaña === */}
-              {activeTab === "program" && (
+              {/* ================================
+                  TAB: DOCUMENTACIÓN DEL PROGRAMA
+                 ================================ */}
+              {info.type === "program" && activeTab === "program" && (
+                <>
+                  {Object.keys(groupedDocsProgramModel).length === 0 ? (
+                    <p className={styles.textEmpty}>
+                      No hay documentación del programa.
+                    </p>
+                  ) : (
+                    Object.entries(groupedDocsProgramModel).map(
+                      ([category, docs]) => (
+                        <div key={category} className={styles.categoryBlock}>
+                          <h4 className={styles.categoryTitle}>{category}</h4>
+                          <ul className={styles.list}>
+                            {docs.map((doc) => {
+                              const isLinked = linkedDocs.includes(doc._id);
+                              return (
+                                <li key={doc._id} className={styles.listItemLine}>
+                                  <div className={styles.lineLeft}>
+                                    <span className={styles.docName}>{doc.name}</span>
+                                    {doc.duration && (
+                                      <span className={styles.metaTag}>
+                                        <FaClock /> {doc.duration} días
+                                      </span>
+                                    )}
+                                    {doc.requiresSignature && (
+                                      <span className={styles.metaTag}>
+                                        <FaPenFancy /> Firma
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <button
+                                    className={`${styles.btnToggle} ${
+                                      isLinked ? styles.btnLinked : styles.btnUnlinked
+                                    }`}
+                                    onClick={() =>
+                                      handleToggleLink(doc, isLinked)
+                                    }
+                                    disabled={loading}
+                                  >
+                                    {isLinked ? "Quitar" : "Añadir"}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )
+                    )
+                  )}
+                </>
+              )}
+
+              {/* ================================
+                  TAB: DOCUMENTACIÓN DE DISPOSITIVOS (SOLO PROGRAMAS)
+                 ================================ */}
+              {info.type === "program" && activeTab === "devices" && (
+                <DocsProgramDevicesSync
+                  program={info}
+                  docs={listDocumentation}
+                  linkedDocs={linkedDocs}
+                  modal={modal}
+                  charge={charge}
+                  onSyncChange={(updated) => setListDocumentation(updated)}
+                />
+              )}
+
+              {/* ================================
+                  VISTA PARA DISPOSITIVOS
+                 ================================ */}
+                            {info.type === "dispositive" && (
                 <>
                   {listDocumentation.length === 0 ? (
                     <p className={styles.textEmpty}>
@@ -177,20 +301,22 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
                     Object.entries(groupedDocs).map(([category, docs]) => (
                       <div key={category} className={styles.categoryBlock}>
                         <h4 className={styles.categoryTitle}>{category}</h4>
+
                         <ul className={styles.list}>
                           {docs.map((doc) => {
                             const isLinked = linkedDocs.includes(doc._id);
+
                             return (
                               <li key={doc._id} className={styles.listItemLine}>
                                 <div className={styles.lineLeft}>
-                                  <span className={styles.docName}>
-                                    {doc.name}
-                                  </span>
+                                  <span className={styles.docName}>{doc.name}</span>
+
                                   {doc.duration && (
                                     <span className={styles.metaTag}>
                                       <FaClock /> {doc.duration} días
                                     </span>
                                   )}
+
                                   {doc.requiresSignature && (
                                     <span className={styles.metaTag}>
                                       <FaPenFancy /> Firma
@@ -199,10 +325,11 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
                                 </div>
 
                                 <button
-                                  className={`${styles.btnToggle} ${isLinked
+                                  className={`${styles.btnToggle} ${
+                                    isLinked
                                       ? styles.btnLinked
                                       : styles.btnUnlinked
-                                    }`}
+                                  }`}
                                   onClick={() =>
                                     handleToggleLink(doc, isLinked)
                                   }
@@ -219,23 +346,14 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
                   )}
                 </>
               )}
-
-              {activeTab === "devices" && info?.type === "program" && (
-               <DocsProgramDevicesSync
-  program={info}
-  docs={listDocumentation}
-  linkedDocs={linkedDocs}
-  modal={modal}
-  charge={charge}
-  onSyncChange={(updatedDocs) => setListDocumentation(updatedDocs)}
-/>
-              )}
             </div>
           )}
         </div>
       )}
 
-      {/* === Subida y gestión de archivos === */}
+      {/* ===========================================================
+          SUBIDA / GESTIÓN DE ARCHIVOS DEL PROGRAMA O DISPOSITIVO
+         =========================================================== */}
       <div className={styles.uploadBlock}>
         <DocumentMiscelaneaGeneric
           data={currentInfo}
@@ -243,12 +361,13 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
           officialDocs={
             info.type === "program"
               ? listDocumentation.filter(
-                (doc) =>
-                  linkedDocs.includes(doc._id) && doc.model === "Program"
-              )
+                  (doc) =>
+                    linkedDocs.includes(doc._id) &&
+                    doc.model === "Program"
+                )
               : listDocumentation.filter((doc) =>
-    linkedDocs.includes(doc._id)
-  ) // En dispositivos no mostramos docs oficiales
+                  linkedDocs.includes(doc._id)
+                )
           }
           modal={modal}
           charge={charge}

@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/managingResumenes.module.css';
 import OfferSelect from './OfferSelect';
 import { getToken } from '../../lib/serviceToken';
-import { getusercvdniorphone, getuserscvs, preferentFilter } from '../../lib/data';
+import { getusercvdniorphone, getuserscvs, offerUpdate, preferentFilter } from '../../lib/data';
 import { BsFillBagDashFill } from "react-icons/bs";
 import { FaBriefcase, FaBuilding } from 'react-icons/fa6';
 import FormOffer from '../offerJobs/FormOffer';
+import CandidateStatusIcons from './CandidateStatusIcons';
 
 const ContainerOffer = ({
   Offer,
@@ -66,7 +67,7 @@ const ContainerOffer = ({
     return dispId ? enumsData?.dispositiveIndex?.[dispId]?.province || null : null;
   };
 
-  
+
   /* --------- Carga preferentes (provincia + jobId) --------- */
   useEffect(() => {
     const fetchPreferents = async () => {
@@ -80,7 +81,7 @@ const ContainerOffer = ({
       try {
         const token = getToken();
         const data = { provinces: [provinceId], jobs: [Offer.jobId], active: true };
-        
+
         const res = await preferentFilter(data, token);
         setPreferentUsers(Array.isArray(res) ? res : []);
       } catch (e) {
@@ -88,7 +89,7 @@ const ContainerOffer = ({
       }
     };
     if (Offer) fetchPreferents();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Offer?._id, Offer?.jobId]); // Offer cambia => recomputa
 
   /* --------- Carga cvs asociados a la oferta --------- */
@@ -96,7 +97,7 @@ const ContainerOffer = ({
     const fetchUsers = async () => {
       const token = getToken();
       try {
-        
+
         const [usersBag, usersSolic] = await Promise.all([
           Array.isArray(Offer?.userCv) && Offer.userCv.length
             ? getuserscvs({ ids: Offer.userCv }, token)
@@ -146,6 +147,27 @@ const ContainerOffer = ({
   const selectedProgramName = selectedProgramId ? (enumsData?.programsIndex?.[selectedProgramId]?.name || '') : '';
   const selectedDispositiveName = selectedDispositiveId ? (enumsData?.dispositiveIndex?.[selectedDispositiveId]?.name || '') : '';
 
+
+  const updateOfferArray = async (field, userId) => {
+    if (!Offer) return viewUserOffer(userId);
+
+    const list = Array.isArray(Offer[field]) ? [...Offer[field]] : [];
+    const exists = list.includes(userId);
+    const newArr = exists ? list.filter(id => id !== userId) : [...list, userId];
+
+    const token = getToken();
+    const data = { offerId: Offer._id, [field]: newArr };
+
+    const upOffer = await offerUpdate(data, token);
+
+    if (!upOffer.error) {
+      changeOffer(upOffer);
+      changeOffers(upOffer);
+    } else {
+      modal("Error", "No se pudo actualizar el estado del candidato");
+    }
+  };
+
   return (
     <div className={styles.containerOffer}>
       <h3>OFERTAS DE EMPLEO</h3>
@@ -183,14 +205,21 @@ const ContainerOffer = ({
                   [u.firstName, u.lastName].filter(Boolean).join(" ") || "—";
                 return (
                   <div key={pref._id} className={styles.candidato}>
+                    <div>
+                     
                     <button
                       type="button"
                       className={styles.nombreCandidato}
                       onClick={() => handleClickPreferent(u)}
-                      title={`${fullName} (${u.dni || "s/dni"})`}
                     >
                       {fullName}
-                    </button>
+                    
+                    </button> 
+                    </div>
+                    
+
+                    
+
                     <div className={styles.cajaInfoCandidatos}>
                       {u.dni && <span className={styles.dniTag}>{u.dni}</span>}
                       <span
@@ -204,6 +233,7 @@ const ContainerOffer = ({
                       </span>
                     </div>
                   </div>
+
                 );
               })}
             </div>
@@ -236,18 +266,27 @@ const ContainerOffer = ({
                     "—";
                   return (
                     <div key={u._id} className={styles.candidatoNoPreferente}>
+                      <CandidateStatusIcons
+                        userId={u._id}
+                        Offer={Offer}
+                        updateOfferArray={updateOfferArray}
+                        onNeedOffer={(idUser) => viewUserOffer(idUser)}
+                      />
                       <button
                         type="button"
                         className={styles.nombreCandidato}
                         onClick={() => viewUserOffer(u)}
-                        title={candidateName}
                       >
                         {candidateName}
                       </button>
+
+                      
+
                       <BsFillBagDashFill
                         onClick={() => deleteUserInOffer(u._id)}
                       />
                     </div>
+
                   );
                 })
               ) : (
@@ -283,15 +322,23 @@ const ContainerOffer = ({
                     "—";
                   return (
                     <div key={u._id} className={styles.candidato}>
+                      <CandidateStatusIcons
+                        userId={u._id}
+                        Offer={Offer}
+                        updateOfferArray={updateOfferArray}
+                        onNeedOffer={(idUser) => viewUserOffer(idUser)}
+                      />
                       <button
                         type="button"
                         className={styles.nombreCandidato}
                         onClick={() => viewUserOffer(u)}
-                        title={name}
                       >
                         {name}
                       </button>
+
+                      
                     </div>
+
                   );
                 })
               ) : (
@@ -317,7 +364,7 @@ const ContainerOffer = ({
           <OfferSelect
             offers={listOffers}
             enumsData={enumsData}
-            closeModal={() => {}}
+            closeModal={() => { }}
             type="select"
             list
             onChosen={changeOffer}

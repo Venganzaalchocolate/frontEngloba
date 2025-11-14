@@ -2,52 +2,62 @@
 const urlApi = import.meta.env.VITE_API_URL;
 
 
-const fetchData = async (endpoint, method, token = null, body = null, isBlob = false) => {
+const fetchData = async (
+  endpoint,
+  method,
+  token = null,
+  body = null,
+  isBlob = false,
+  signal = null
+) => {
   const url = `${urlApi}${endpoint}`;
 
-  // Verificamos si el cuerpo es FormData para no añadir Content-Type
   const isFormData = body instanceof FormData;
 
   const options = {
     method,
+    ...(signal && { signal }),
     headers: {
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-      // Solo añadimos 'Content-Type' si no es FormData
-      ...(body && !isFormData && { 'Content-Type': 'application/json' }),
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(body && !isFormData && { "Content-Type": "application/json" }),
     },
-    // Si es FormData, no lo convertimos a JSON
-    ...(body && { body: isFormData ? body : JSON.stringify(body) })
+    ...(body && { body: isFormData ? body : JSON.stringify(body) }),
   };
 
   try {
-    
     const response = await fetch(url, options);
 
-    // Verificar si la respuesta no fue exitosa
-    if (!response.ok) {
-      const responseBody = await response.json();
-      throw new Error(`Error en la solicitud: ${responseBody.message}`);
-    }
-
-    // Manejo de blob si se espera un archivo
+    // Si esperamos un archivo ZIP/PDF ↓↓↓
     if (isBlob) {
+      if (!response.ok) {
+        const text = await response.text().catch(() => ""); // evitar explosion
+        throw new Error(text || `Error ${response.status}`);
+      }
 
-      return await response.blob(); // Devolver el blob si es un archivo
+      return await response.blob();
     }
 
-    // Manejo de JSON para otro tipo de respuestas
-    const data = await response.json();
-    if (data.error) {
-      return { error: true, message: data.error };
+    // Para JSON ↓↓↓
+    if (!response.ok) {
+      const responseBody = await response.json().catch(() => ({}));
+      throw new Error(responseBody.message || "Error en la solicitud");
     }
 
-    return data.data ? data.data : data; // Devolver el resultado o el objeto completo si no hay `data.data`
+    const data = await response.json().catch(() => ({}));
+
+    if (data.error) return { error: true, message: data.error };
+
+    return data.data ? data.data : data;
 
   } catch (error) {
-    // Capturar errores de fetch o de lógica
+    if (error.name === "AbortError") {
+      return { error: true, abort: true, message: "abort" };
+    }
+
     return { error: true, message: error.message };
   }
 };
+
 
 
 
@@ -86,6 +96,12 @@ export const getFileUser = async (id, idFile, token) => {
   const pdfBlob = await fetchData('/fileuser', 'POST', token, { id, idFile }, true);
   const pdfUrl = URL.createObjectURL(pdfBlob);
   return { url: pdfUrl };
+};
+export const downloadZipFiles = async (fileIds, token, signal) => {
+  return await fetchData('/zip-files', 'POST', token, { fileIds }, true, signal);
+};
+export const downloadPayrollsZip = async (userId, token, signal) => {
+  return await fetchData("/zip-payrolls","POST",token,{ userId },true,signal);
 };
 export const deleteUserCv = (token, datos) => fetchData('/deleteusercv', 'DELETE', token, datos);
 export const modifyUser = (dataUser) => fetchData('/modifyusercv', 'PUT', null, dataUser);

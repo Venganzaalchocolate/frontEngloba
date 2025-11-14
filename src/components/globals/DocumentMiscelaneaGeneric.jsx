@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getToken } from "../../lib/serviceToken";
 import {
   getFileDrive,
@@ -6,6 +6,7 @@ import {
   updateFileDrive,
   deleteFileDrive,
   createChangeRequest,
+  downloadZipFiles,
 } from "../../lib/data";
 
 import ModalForm from "./ModalForm";
@@ -13,7 +14,7 @@ import ModalConfirmation from "./ModalConfirmation";
 
 import { validText } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
-import { compact, formatDate } from "../../lib/utils";
+import { compact, formatDate, sanitize } from "../../lib/utils";
 
 import { FaRegClock, FaTrash } from "react-icons/fa6";
 import { AiOutlineCloudUpload } from "react-icons/ai";
@@ -43,7 +44,7 @@ const DocumentMiscelaneaGeneric = ({
   charge,
   onChange,
   authorized = false,
-  onRequestCreated = () => {},
+  onRequestCreated = () => { },
 }) => {
   // 1) Archivos normalizados del modelo
   const [normalizedFiles, setNormalizedFiles] = useState([]);
@@ -55,6 +56,20 @@ const DocumentMiscelaneaGeneric = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formConfig, setFormConfig] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ open: false, file: null });
+
+  const [isGeneratingZip, setIsGeneratingZip] = useState(false);
+  const abortZipRef = useRef(null);
+
+  const handleDownloadAllZip = async () => {
+    startZipDownload();
+  };
+
+  const cancelZipGeneration = () => {
+    if (abortZipRef.current) {
+      abortZipRef.current.abort();
+    }
+    setIsGeneratingZip(false);
+  };
 
   // 3) Agrupar oficiales con sus archivos
   const officialDocumentsToShow = (officialDocs || []).map((doc) => {
@@ -90,6 +105,8 @@ const DocumentMiscelaneaGeneric = ({
     const clientId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const label = (fileName || file?.name || "Documento").trim();
     const desc = (description || label).trim();
+
+
 
     const optimisticCR = {
       _id: clientId,
@@ -629,40 +646,102 @@ const DocumentMiscelaneaGeneric = ({
 
     setIsModalOpen(true);
   };
-function getRenewalInfo(files, renewalDays = 365) {
-  console.log(files)
-  if (!Array.isArray(files) || files.length === 0) return null;
+  function getRenewalInfo(files, renewalDays = 365) {
+    if (!Array.isArray(files) || files.length === 0) return null;
 
-  // Filtra solo archivos con fecha válida
-  const validFiles = files.filter((f) => {
-    if (!f?.date) return false;
-    const d = new Date(f.date);
-    return !isNaN(d.getTime());
-  });
-  if (validFiles.length === 0) return null;
+    // Filtra solo archivos con fecha válida
+    const validFiles = files.filter((f) => {
+      if (!f?.date) return false;
+      const d = new Date(f.date);
+      return !isNaN(d.getTime());
+    });
+    if (validFiles.length === 0) return null;
 
-  // Ordena de más reciente a más antiguo
-  const sorted = [...validFiles].sort(
-    (a, b) => new Date(b.date) - new Date(a.date)
-  );
+    // Ordena de más reciente a más antiguo
+    const sorted = [...validFiles].sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    );
 
-  const last = sorted[0];
-  const lastDate = new Date(last.date);
-  const today = new Date();
+    const last = sorted[0];
+    const lastDate = new Date(last.date);
+    const today = new Date();
 
-  const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-  const remaining = Math.max(renewalDays - diffDays, 0);
+    const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+    const remaining = Math.max(renewalDays - diffDays, 0);
 
-  return {
-    lastDate: !isNaN(lastDate.getTime()) ? lastDate : null,
-    diffDays,
-    remaining,
-  };
+    return {
+      lastDate: !isNaN(lastDate.getTime()) ? lastDate : null,
+      diffDays,
+      remaining,
+    };
+  }
+
+
+
+  const startZipDownload = async () => {
+    try {
+      setIsGeneratingZip(true);
+
+      const controller = new AbortController();
+      abortZipRef.current = controller;
+
+      const token = getToken();
+      const fileIds = normalizedFiles.map((f) => f._id);
+
+      if (fileIds.length === 0) {
+        modal("Sin archivos", "No hay archivos para descargar.");
+        setIsGeneratingZip(false);
+        return;
+      }
+
+      // 🔥 Petición al backend con posibilidad de cancelar
+      const blob = await downloadZipFiles(fileIds, token, controller.signal);
+
+      if (blob?.error) {
+        modal("Error", blob.message || "No se pudo generar el ZIP.");
+        setIsGeneratingZip(false);
+        return;
+      }
+
+      // 🟩 Forzar descarga
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      let baseName = "documentacion";
+
+if (data?.firstName && data?.lastName && data?.dni) {
+  baseName = `${sanitize(data.firstName)}_${sanitize(data.lastName)}_${sanitize(data.dni)}`;
+} else if (data?.name) {
+  baseName = sanitize(data.name);
 }
+
+const nameZip = `${baseName}_documentacion.zip`;
+      a.download = nameZip;
+      a.click();
+      URL.revokeObjectURL(url);
+
+    } catch (err) {
+      if (err.name === "AbortError") {
+        modal("Cancelado", "La descarga del ZIP ha sido cancelada.");
+      } else {
+        modal("Error", err.message || "No se pudo descargar el ZIP.");
+      }
+    } finally {
+      setIsGeneratingZip(false);
+    }
+  };
+
+
   // ====================== RENDER ======================
   return (
     <div className={styles.contenedorDocument}>
-      <h2>DOCUMENTOS</h2>
+      <h2>DOCUMENTOS       <button
+        className={styles.downloadAll}
+        onClick={handleDownloadAllZip}
+      >
+        Descargar todo en ZIP
+      </button></h2>
+
 
       {/* Documentación Oficial */}
       <h3 className={styles.titulin}>Documentación Oficial</h3>
@@ -674,81 +753,80 @@ function getRenewalInfo(files, renewalDays = 365) {
             <h4 className={styles.categoryTitle}>{category}</h4>
 
             {docsArray.map(({ doc, files }) => {
-  const renewal = getRenewalInfo(files, 365); // ← 365 días por defecto
+              const renewal = getRenewalInfo(files, 365); // ← 365 días por defecto
 
-  return (
-    <div
-      key={doc._id}
-      className={doc.model === "antiguomodelo" ? styles.officialDocGroupUser : styles.officialDocGroup}
-    >
-      <div className={styles.docHeader}>
-        <label
-          className={styles.docLabeluploadButton}
-          onClick={
-            authorized
-              ? () => handleUploadOfficialFromSelect(doc._id)
-              : () => handleRequestOfficialUpload(doc)
-          }
-          title={
-            authorized
-              ? "Subir documento oficial"
-              : "Solicitar subida de este documento oficial"
-          }
-        >
-          {doc.name} <AiOutlineCloudUpload />
-        </label>
+              return (
+                <div
+                  key={doc._id}
+                  className={doc.model === "antiguomodelo" ? styles.officialDocGroupUser : styles.officialDocGroup}
+                >
+                  <div className={styles.docHeader}>
+                    <label
+                      className={styles.docLabeluploadButton}
+                      onClick={
+                        authorized
+                          ? () => handleUploadOfficialFromSelect(doc._id)
+                          : () => handleRequestOfficialUpload(doc)
+                      }
+                      title={
+                        authorized
+                          ? "Subir documento oficial"
+                          : "Solicitar subida de este documento oficial"
+                      }
+                    >
+                      {doc.name} <AiOutlineCloudUpload />
+                    </label>
 
-        {/* Indicador de fecha */}
-        {doc.date && renewal && renewal.lastDate && (
-  <div
-    className={`${styles.renewalStatus} ${
-      renewal.remaining > 0 ? styles.ok : styles.expired
-    }`}
-  >
-    {renewal.remaining > 0 ? (
-      <>
-        <FaRegClock className={styles.icon} />
-        <span>
-          Próxima renovación en{" "}
-          <strong>{renewal.remaining}</strong> días
-        </span>
-      </>
-    ) : (
-      <>
-        <MdWarningAmber className={`${styles.icon} ${styles.iconWarning}`} />
-        <span>¡Documento caducado o pendiente de renovar!</span>
-      </>
-    )}
-  </div>
-)}
-      </div>
+                    {/* Indicador de fecha */}
+                    {doc.date && renewal && renewal.lastDate && (
+                      <div
+                        className={`${styles.renewalStatus} ${renewal.remaining > 0 ? styles.ok : styles.expired
+                          }`}
+                      >
+                        {renewal.remaining > 0 ? (
+                          <>
+                            <FaRegClock className={styles.icon} />
+                            <span>
+                              Próxima renovación en{" "}
+                              <strong>{renewal.remaining}</strong> días
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <MdWarningAmber className={`${styles.icon} ${styles.iconWarning}`} />
+                            <span>¡Documento caducado o pendiente de renovar!</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-      {/* Archivos existentes */}
-      {files.length !== 0 &&
-        files.map((file) => (
-          <div key={file._id} className={styles.fileRow}>
-            {file.date && (
-              <div
-                className={styles.infoFile}
-                onClick={() => handleDownloadFile(doc, file)}
-              >
-                <p>
-                  {`Fecha: ${formatDate(file.date)} `}
-                  <CiFileOn />
-                </p>
-              </div>
-            )}
-            {authorized && (
-              <FaTrash
-                className={styles.trash}
-                onClick={() => handleDeleteFile(file)}
-              />
-            )}
-          </div>
-        ))}
-    </div>
-  );
-})}
+                  {/* Archivos existentes */}
+                  {files.length !== 0 &&
+                    files.map((file) => (
+                      <div key={file._id} className={styles.fileRow}>
+                        {file.date && (
+                          <div
+                            className={styles.infoFile}
+                            onClick={() => handleDownloadFile(doc, file)}
+                          >
+                            <p>
+                              {`Fecha: ${formatDate(file.date)} `}
+                              <CiFileOn />
+                            </p>
+                          </div>
+                        )}
+                        {authorized && (
+                          <FaTrash
+                            className={styles.trash}
+                            onClick={() => handleDeleteFile(file)}
+                          />
+                        )}
+                      </div>
+                    ))}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
@@ -822,12 +900,21 @@ function getRenewalInfo(files, renewalDays = 365) {
 
       {/* Modal confirmación borrado */}
       {deleteModal.open && (
-        
+
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Eliminar "${(!!deleteModal.file.originDocumentation)?deleteModal.file?.description : deleteModal.file?.fileLabel}"?`}
+          message={`¿Eliminar "${(!!deleteModal.file.originDocumentation) ? deleteModal.file?.description : deleteModal.file?.fileLabel}"?`}
           onConfirm={confirmDeleteFile}
           onCancel={cancelDeleteFile}
+        />
+      )}
+      {isGeneratingZip && (
+        <ModalConfirmation
+          title="Generando ZIP..."
+          message="Por favor espera mientras se preparan los documentos. Esto puede tardar unos minutos."
+          textConfirm="Cancelar"
+          onConfirm={cancelZipGeneration}
+          deleteCancel={true}   // solo botón 'Cancelar'
         />
       )}
     </div>

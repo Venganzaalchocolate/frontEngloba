@@ -286,15 +286,21 @@ offers style
         gap: .5rem;
     }
 
+
+
     .nombreCandidato {
         text-transform: uppercase;
+        font-weight: 600;
         color: white;
-        
+        flex: 1 100%;
+    background-color: aliceblue;
+    color: var(--color-morado);
+    border: solid 1px #bde7ff;;
 
     }
 
     .nombreCandidato:hover {
-        color: var(--color-crema);
+        color: white;
     }
 
     .candidato>svg:hover {
@@ -327,7 +333,7 @@ offers style
 .candidato,
 .candidatoNoPreferente {
     display: flex;
-    flex-direction: column;
+    
     align-items: left;
 
     border-radius: 0.5rem;
@@ -350,7 +356,14 @@ offers style
 }
 
 .candidatoNoPreferente>:nth-child(1){
-    flex: 0 90%;
+    flex: 0 4rem;
+    
+}
+
+.candidatoNoPreferente>:nth-child(2){
+    flex: 1;
+    background-color: aliceblue;
+    color: var(--color-morado);
 }
 
 .candidato:last-child {
@@ -371,15 +384,15 @@ offers style
 }
 
 .nombreCandidato:hover {
-    color: var(--color-crema);
+    background-color: cornflowerblue;
 }
 
 /* DNI al lado del nombre */
 .dniTag {
     font-size: 9pt;
     font-weight: 700;
-    color: var(--color-gris-claro);
-    background-color: var(--color-chicle);
+    color: burlywood;
+    background-color: antiquewhite;
     border: 1px solid rgba(0, 0, 0, .06);
     padding: .1rem .35rem;
     border-radius: .35rem;
@@ -454,6 +467,7 @@ offers style
 
 .cajaInfoCandidatos {
     display: flex;
+    flex: 0;
     flex-wrap: wrap;
     gap: 2px;
     justify-content: space-between;

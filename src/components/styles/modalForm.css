@@ -57,13 +57,20 @@
 }
 
 /* BOTONES */
-.modalActions {
+.modalActions, .modalActionsOnly {
   display: flex;
   width: 100%;
   justify-content: space-between;
   gap: 1rem;
 }
 
+.modalActionsOnly{
+  justify-content: center;
+}
+
+.modalActionsOnly>button{
+  background-color: tomato;
+}
 
 /* ARCHIVOS (file input) */
 .modalFileInputWrapper {

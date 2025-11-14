@@ -65,23 +65,39 @@ function DivEmployers({
     return leaves.length;
   }, [enumsEmployer?.provincesIndex]);
 
+  const isFavoriteForRow = (user) => {
+    if (offerSelected && Array.isArray(offerSelected.favoritesCv)) {
+      return offerSelected.favoritesCv.includes(user._id);
+    }
+    // fallback legacy
+    return !!user.favorite;
+  };
+
+  const isRejectedForRow = (user) => {
+    if (offerSelected && Array.isArray(offerSelected.rejectCv)) {
+      return offerSelected.rejectCv.includes(user._id);
+    }
+    // fallback legacy
+    return !!user.reject;
+  };
+
   return (
     <>
       {users.length > 0 &&
         users.map((user) => {
           // Usar NUEVOS campos (fallback a legacy por si acaso)
-          const jobsIds       = Array.isArray(user.jobsId) ? user.jobsId : (Array.isArray(user.jobs) ? user.jobs : []);
-          const studiesIds    = Array.isArray(user.studiesId) ? user.studiesId : (Array.isArray(user.studies) ? user.studies : []);
-          const provincesIds  = Array.isArray(user.provincesId) ? user.provincesId : (Array.isArray(user.provinces) ? user.provinces : []);
+          const jobsIds = Array.isArray(user.jobsId) ? user.jobsId : (Array.isArray(user.jobs) ? user.jobs : []);
+          const studiesIds = Array.isArray(user.studiesId) ? user.studiesId : (Array.isArray(user.studies) ? user.studies : []);
+          const provincesIds = Array.isArray(user.provincesId) ? user.provincesId : (Array.isArray(user.provinces) ? user.provinces : []);
 
-          const jobNames       = idsToNames(jobsIds,      enumsEmployer?.jobsIndex).join(', ')      || '—';
-          const studyNames     = idsToNames(studiesIds,   enumsEmployer?.studiesIndex).join(', ')   || '—';
-          const provinceNames  = idsToNames(provincesIds, enumsEmployer?.provincesIndex);
-          const provincesText  =
+          const jobNames = idsToNames(jobsIds, enumsEmployer?.jobsIndex).join(', ') || '—';
+          const studyNames = idsToNames(studiesIds, enumsEmployer?.studiesIndex).join(', ') || '—';
+          const provinceNames = idsToNames(provincesIds, enumsEmployer?.provincesIndex);
+          const provincesText =
             provincesIds?.length
               ? (totalSelectableProvinces && provincesIds.length === totalSelectableProvinces
-                  ? 'Todas'
-                  : (provinceNames.join(', ') || '—'))
+                ? 'Todas'
+                : (provinceNames.join(', ') || '—'))
               : '—';
 
           // Tooltip de oferta: muestra el job name desde jobsIndex usando offer.jobId
@@ -147,27 +163,37 @@ function DivEmployers({
                 </div>
 
                 <div className={styles.tableCell}>
-                  {user.favorite ? (
+                  {/* ⭐ Favorito según oferta seleccionada (o legacy) */}
+                  {isFavoriteForRow(user) ? (
                     <span className={stylesTooltip.tooltip}>
                       <GoStarFill />
-                      <span className={stylesTooltip.tooltiptext}>Favorito</span>
+                      <span className={stylesTooltip.tooltiptext}>
+                        {offerSelected ? "Favorito en esta oferta" : "Favorito"}
+                      </span>
                     </span>
                   ) : (
                     <span className={stylesTooltip.tooltip}>
                       <GoStar />
-                      <span className={stylesTooltip.tooltiptext}>No Favorito</span>
+                      <span className={stylesTooltip.tooltiptext}>
+                        {offerSelected ? "No favorito en esta oferta" : "No Favorito"}
+                      </span>
                     </span>
                   )}
 
-                  {user.reject ? (
+                  {/* ⛔ Rechazo según oferta seleccionada (o legacy) */}
+                  {isRejectedForRow(user) ? (
                     <span className={stylesTooltip.tooltip}>
                       <BsExclamationOctagonFill />
-                      <span className={stylesTooltip.tooltiptext}>Rechazado</span>
+                      <span className={stylesTooltip.tooltiptext}>
+                        {offerSelected ? "Rechazado en esta oferta" : "Rechazado"}
+                      </span>
                     </span>
                   ) : (
                     <span className={stylesTooltip.tooltip}>
                       <BsExclamationOctagon />
-                      <span className={stylesTooltip.tooltiptext}>No Rechazado</span>
+                      <span className={stylesTooltip.tooltiptext}>
+                        {offerSelected ? "No rechazado en esta oferta" : "No Rechazado"}
+                      </span>
                     </span>
                   )}
 
@@ -180,6 +206,8 @@ function DivEmployers({
                     </span>
                   )}
                 </div>
+
+
                 <div className={styles.tableCell}>{formatDatetime(user.updatedAt)}</div>
               </div>
 

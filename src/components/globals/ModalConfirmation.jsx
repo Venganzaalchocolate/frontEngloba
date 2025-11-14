@@ -6,6 +6,9 @@ const ModalConfirmation = ({
   message = "¿Estás seguro?",
   onConfirm,
   onCancel,
+  textConfirm=false,
+  textCancel=false,
+  deleteCancel=false
 }) => {
   return (
     <div id="modalVentana" className="modalVentana">
@@ -17,9 +20,12 @@ const ModalConfirmation = ({
         {message && <p>{message}</p>}
 
         {/* Botones de acción */}
-        <div id="modalActions" className="modalActions">
-          <button onClick={onConfirm}>Sí</button>
-          <button className="tomato" onClick={onCancel}>No</button>
+        <div id="modalActions" className={(deleteCancel)?'modalActionsOnly':"modalActions"}>
+          {(textConfirm)?<button onClick={onConfirm}>{textConfirm}</button>:<button onClick={onConfirm}>Sí</button>}
+          {(deleteCancel)?'':
+              (textCancel)
+              ?<button className="tomato" onClick={onCancel}>{textCancel}</button>
+              :<button className="tomato" onClick={onCancel}>No</button>}
         </div>
       </div>
     </div>

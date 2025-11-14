@@ -234,3 +234,12 @@ export function compact(s) {
         a.label.localeCompare(b.label, "es", { sensitivity: "base" })
       );
   };
+
+  export const sanitize = (text) =>
+  String(text || "")
+    .normalize("NFD")                          // quitar acentos
+    .replace(/[\u0300-\u036f]/g, "")           // limpiar caracteres combinados
+    .replace(/[^a-zA-Z0-9_\-]/g, "_")          // solo permitir A-Z 0-9 _ -
+    .replace(/_+/g, "_")                       // evitar ___ repetidos
+    .trim()
+    .slice(0, 60);                             // límite razonable

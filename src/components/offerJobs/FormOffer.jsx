@@ -313,11 +313,11 @@ const FormOffer = ({
         patch.expected_incorporation_date = newValues.expected_incorporation_date;
 
       const dispositiveChanged =
-        newValues.dispositive.dispositiveId !== curr.dispositiveId ||
+        newValues.dispositive.newDispositiveId !== curr.newDispositiveId ||
         newValues.programId !== curr.programId;
 
       if (dispositiveChanged) {
-        patch.newDispositiveId = { ...newValues.newDispositiveId };
+        patch.newDispositiveId = newValues.dispositive.newDispositiveId;
         patch.programId = newValues.programId;
         if (newValues.provinceId && newValues.provinceId !== curr.provinceId) {
           patch.provinceId = newValues.provinceId;
@@ -339,7 +339,6 @@ const FormOffer = ({
         closeModal?.();
         return;
       }
-
       const result = await offerUpdate({ ...patch, offerId: offer?._id }, token);
       if (result?.error) {
         modal?.("Error", result.message || "No se pudo actualizar la oferta.");

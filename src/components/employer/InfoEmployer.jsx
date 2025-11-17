@@ -32,6 +32,7 @@ const InfoEmployer = ({
     fostered: user.fostered ? "si" : "no",
     apafa: user.apafa ? "si" : "no",
     consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
+    tracking: user.tracking === true ? "si" : "no", // NUEVO: siempre presente
   };
 
   const [originalData] = useState(() => deepClone(initialState));
@@ -49,13 +50,12 @@ const InfoEmployer = ({
 
   const canDirectEdit = isSupervisor || ["global", "root"].includes(logged.user.role);
 
-  // ---------- NUEVO: normalización de studiesIndex (soporta objeto o array)
+  // ---------- normalización de studiesIndex (soporta objeto o array)
   const studiesOptions = useMemo(() => {
     const idx = enumsData?.studiesIndex;
     if (!idx) return [];
 
-
-    // Nuevo: índice como objeto { [id]: { name, isRoot?, isSub? } }
+    // Índice como objeto { [id]: { name, isRoot?, isSub? } }
     return Object.entries(idx)
       .filter(([, v]) => v?.isSub || !v?.isRoot) // evita raíces
       .map(([id, v]) => ({ value: id, label: v?.name || id }));
@@ -109,7 +109,7 @@ const InfoEmployer = ({
       } else if (name === "socialSecurityNumber") {
         auxErrores[name] = null;
       } else {
-        auxErrores[name] = null; // gender, fostered, apafa, etc.
+        auxErrores[name] = null; // gender, fostered, apafa, tracking, etc.
       }
       auxDatos[name] = value;
     }
@@ -180,6 +180,7 @@ const InfoEmployer = ({
       "role",
       "birthday",
       "phone",
+      "tracking", // NUEVO
     ];
 
     fieldsToCompare.forEach((f) => {
@@ -223,7 +224,7 @@ const InfoEmployer = ({
       const path = map[key] || key;
 
       let to = modified[key];
-      if (["fostered", "apafa", "consetmentDataProtection"].includes(path)) {
+      if (["fostered", "apafa", "consetmentDataProtection", "tracking"].includes(path)) {
         if (to === "si") to = true;
         else if (to === "no") to = false;
       }
@@ -238,59 +239,68 @@ const InfoEmployer = ({
 
   const handleEdit = () => setIsEditing(!isEditing);
 
-  const handleSave = async () => {
-    if (!validateFields()) return;
+  // handleSave modificado (sin stringify)
 
-    const modifiedData = getModifiedFields();
-    if (Object.keys(modifiedData).length === 0) {
-      setIsEditing(false);
-      return;
-    }
+const handleSave = async () => {
+  if (!validateFields()) return;
 
+  const modifiedData = getModifiedFields();
+  if (Object.keys(modifiedData).length === 0) {
     setIsEditing(false);
-    charge(true);
-    const token = getToken();
+    return;
+  }
 
-    try {
-      if (canDirectEdit) {
-        const payload = { ...modifiedData, _id: originalData._id };
-        if (payload.studies) {
-          payload.studies = JSON.stringify(payload.studies);
+  setIsEditing(false);
+  charge(true);
+  const token = getToken();
+
+  try {
+    if (canDirectEdit) {
+      const payload = { ...modifiedData, _id: originalData._id };
+
+      const response = await editUser(payload, token);
+
+      if (!response.error) {
+        changeUser(response);
+        modal("Editar Usuario", "Usuario editado con éxito");
+
+        if (logged.user._id === user._id) {
+          changeLogged(response);
         }
 
-        const response = await editUser(payload, token);
-        if (!response.error) {
-          changeUser(response);
-          modal("Editar Usuario", "Usuario editado con éxito");
-          if (logged.user === user) changeLogged(response);
-          chargeUser();
-        } else {
-          throw new Error(response.message || "Error al editar");
-        }
+        chargeUser();
       } else {
-        const changes = toChangeLines(modifiedData, originalData);
-        const payload = {
-          userId: originalData._id,
-          changes,
-          note: "",
-        };
-        const resp = await createChangeRequest(payload, token);
-        if (!resp?.error) {
-          const created = resp?.data && resp?.data?._id ? resp.data : resp;
-          onRequestCreated?.(created);
-          modal("Solicitud enviada", "Tu supervisor revisará los cambios");
-          setDatos(deepClone(originalData));
-        } else {
-          throw new Error(resp.message || "No se pudo crear la solicitud");
-        }
+        throw new Error(response.message || "Error al editar");
       }
-    } catch (e) {
-      setDatos(deepClone(originalData));
-      modal("Error", e.message || "No se pudo procesar la operación");
-    } finally {
-      charge(false);
+
+    } else {
+      const changes = toChangeLines(modifiedData, originalData);
+
+      const payload = {
+        userId: originalData._id,
+        changes,
+        note: "",
+      };
+
+      const resp = await createChangeRequest(payload, token);
+
+      if (!resp.error) {
+        const created = resp?.data && resp?.data?._id ? resp.data : resp;
+        onRequestCreated?.(created);
+        modal("Solicitud enviada", "Tu supervisor revisará los cambios");
+        setDatos(deepClone(originalData));
+      } else {
+        throw new Error(resp.message || "No se pudo crear la solicitud");
+      }
     }
-  };
+  } catch (e) {
+    setDatos(deepClone(originalData));
+    modal("Error", e.message || "No se pudo procesar la operación");
+  } finally {
+    charge(false);
+  }
+};
+
 
   const reset = () => {
     setErrores({});
@@ -314,7 +324,7 @@ const InfoEmployer = ({
     );
   };
 
-  // ---------- NUEVO: label por id usando índice nuevo si hace falta
+  // ---------- label por id usando índice nuevo si hace falta
   const getStudyLabel = useCallback(
     (id) => {
       const byOption = studiesOptions.find((o) => o.value === id)?.label;
@@ -338,6 +348,7 @@ const InfoEmployer = ({
     ["socialSecurityNumber", "Número de Seguridad Social"],
     ["bankAccountNumber", "Número de Cuenta Bancaria"],
     ["phone", "Teléfono Personal"],
+    ["tracking", "Justificación"], // NUEVO
   ];
 
   // Estudios
@@ -429,8 +440,21 @@ const InfoEmployer = ({
         return (
           <div key={fieldName} className={styles[fieldName + "Container"]}>
             <label className={styles[fieldName + "Label"]}>{label}</label>
-            {fieldName === "employmentStatus" &&
-            (logged.user.role === "global" || logged.user.role === "root") ? (
+
+            {/* 🆕 tracking como select si/no */}
+            {fieldName === "tracking" ? (
+              <select
+                className={styles[fieldName]}
+                name="tracking"
+                value={datos.tracking || "no"}
+                onChange={handleChange}
+                disabled={!isEditing}
+              >
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            ) : fieldName === "employmentStatus" &&
+              (logged.user.role === "global" || logged.user.role === "root") ? (
               <select
                 className={styles[fieldName]}
                 name={fieldName}
@@ -456,6 +480,7 @@ const InfoEmployer = ({
                 }
               />
             )}
+
             {errores[fieldName] && (
               <span className={styles.errorSpan}>{errores[fieldName]}</span>
             )}

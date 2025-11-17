@@ -163,7 +163,7 @@ align-items: baseline;
   .studiesContainer p:first-of-type {
     margin-top: -5px; /* ejemplo */
 }
-select[name="fostered"] {
+select[name="fostered"], select[name='gender'] {
   flex: 0 2rem;
 }
 }

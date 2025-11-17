@@ -9,7 +9,7 @@ const menuItems = [
   { key: "resp-coord", label: "Responsabilidad y Coordinación", icon: <FaUserShield /> },
   { key: "documentacion", label: "Documentación", icon: <FaFileLines /> },
   { key: "nominas", label: "Nóminas", icon: <FaMoneyCheckDollar /> },
-  { key: "vacaciones", label: "Vacaciones", icon: <FaUmbrellaBeach /> },
+  // { key: "vacaciones", label: "Vacaciones", icon: <FaUmbrellaBeach /> },
   { key: "contratos", label: "Periodos de contratación", icon: <FaFileContract /> },
   { key: "preferencias", label: "Traslados Reincorporaciones", icon: <FaPaperPlane /> },
   { key: "solicitudes", label: "Solicitudes", icon: <TbStatusChange /> }

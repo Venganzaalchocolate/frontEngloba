@@ -183,62 +183,7 @@ export const usersName = (datos, token) => fetchData('/usersname', 'POST', token
 export const hirings = (data, token) => fetchData('/hirings', 'POST', token, data);
 export const rehireEmployee = (data, token) => fetchData('/rehireemployee', 'POST', token, data);
 export const currentStatusEmployee = (data, token) => fetchData('/userscurrentstatus', 'POST', token, data);
-export const editUser = async (data, token) => {
-  const formData = new FormData();
-  // Añadir los campos al FormData
-  Object.keys(data).forEach(key => {
-    if (key === 'files') {
-      for (let index = 0; index < data[key].length; index++) {
-        const fileName = data[key][index]['nameFile'];
-        const fileDate = data[key][index]['date']
-        const fileData = data[key][index]['file'];
-
-
-        // Si el campo es un archivo, lo añadimos al FormData
-        if (fileData instanceof File) {
-          // Agregar el archivo al FormData con el nombre adecuado
-          formData.append(fileName, fileData);
-          if (fileDate) {
-            const nameData = fileName + '-date'
-            formData.append(nameData, fileDate)
-
-          }
-        }
-      }
-
-
-    } else if (key === 'hiringPeriods' || key === 'responsibleDevices') {
-      // Serializar arrays y objetos antes de enviarlos
-      formData.append(key, JSON.stringify(data[key]));
-    } else if (key === 'vacationDays' || key === 'personalDays') {
-      // Convertir fechas a cadenas ISO si son arrays de fechas
-      const datesArray = data[key]?.map(date => (date instanceof Date ? date.toISOString() : date));
-      formData.append(key, JSON.stringify(datesArray));
-    } else {
-      // Añadir los demás campos de texto
-      formData.append(key, data[key] !== null ? data[key] : '');  // Manejar valores nulos
-    }
-  });
-
-  // Configuramos el fetch manualmente porque necesitamos modificar los encabezados y no podemos modificar fetchData
-  const endpoint = '/modifyuser';
-  const method = 'PUT';
-  const url = `${urlApi}${endpoint}`;
-
-  const options = {
-    method,
-    headers: {
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    },
-    body: formData // Se envía el FormData directamente
-  };
-
-  const response = await fetch(url, options);
-  const result = await response.json();
-
-  if (result.error) return result;
-  return result.data;
-};
+export const editUser = (data, token) =>fetchData("/modifyuser", 'POST', token, data);
 export const updatePayroll = async (data, token) => {
   const formData = new FormData();
 

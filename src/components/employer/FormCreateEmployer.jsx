@@ -71,9 +71,7 @@ const FormCreateEmployer = ({
       },
       phoneJobNumber: formData.phoneJobNumber,
       phoneJobExtension: formData.phoneJobExtension,
-
-      // 👇 ahora enviamos los IDs directamente
-      studiesId: Array.isArray(formData.studiesId) ? formData.studiesId : [],
+      studies: Array.isArray(formData.studies) ? formData.studies : [],
 
       // Primer periodo de contratación
       hiringPeriods: [
@@ -96,12 +94,15 @@ const FormCreateEmployer = ({
       charge(false);
       modal("Error", res.message || "No se pudo crear el usuario");
     } else {
+      charge(false)
       modal("Usuario", "El usuario se ha creado con éxito");
       closeModal();
       chargeUser();
       changeUser(res);
+      
     }
   };
+//quitar traking
 
   /** Confirmación de desactivar oferta previa (si existe) */
   const handleConfirmOfferChange = async (formData, deactivate) => {

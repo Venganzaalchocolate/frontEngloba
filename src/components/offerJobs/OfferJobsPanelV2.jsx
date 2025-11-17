@@ -5,7 +5,7 @@ import ModalConfirmation from "../globals/ModalConfirmation";
 import ModalForm from "../globals/ModalForm";
 import FormOffer from "./FormOffer";
 import styles from "../styles/offers.module.css";
-import { FaEye, FaEyeSlash, FaSquarePlus } from "react-icons/fa6";
+import { FaEye, FaEyeSlash, FaLock, FaSquarePlus } from "react-icons/fa6";
 import { FaEdit, FaInfoCircle, FaTrashAlt, FaLockOpen, FaUserFriends } from "react-icons/fa";
 import { useLogin } from '../../hooks/useLogin';
 import logoUrl from '/graphic/logotipo.png';
@@ -358,6 +358,28 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
     setHistLimit(next);
   };
 
+  const reactivateOffer = async (offer) => {
+  try {
+    charge?.(true);
+    const id = offer?._id || offer?.id;
+    const res = await offerUpdate({ active: true, offerId: id, id }, token);
+
+    if (res?.error) throw new Error(res.message || "No se pudo reactivar la oferta.");
+
+    modal?.("Oferta", "Oferta reactivada correctamente.");
+
+    // Sacarla del histórico
+    setHistItems((prev) => prev.filter((o) => String(o._id || o.id) !== String(id)));
+
+    // Añadirla a activas
+    setOffers((prev) => [res, ...prev]);
+  } catch (e) {
+    modal?.("Error", e?.message);
+  } finally {
+    charge?.(false);
+  }
+};
+
   // ===== render =====
   return (
     <div className={styles.contenedor}>
@@ -532,9 +554,25 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
                               </span>
                             </td>
                             <td className={`${styles.cell} ${styles.actions}`}>
-                              <FaInfoCircle className={styles.iconAction} title="Ver info" onClick={() => openInfo(o)} />
-                              <FaUserFriends className={styles.iconAction} title="Ver contrataciones vinculadas" onClick={() => openLinkedHirings(o)} />
-                            </td>
+  <FaInfoCircle 
+    className={styles.iconAction} 
+    title="Ver info" 
+    onClick={() => openInfo(o)} 
+  />
+
+  <FaUserFriends 
+    className={styles.iconAction} 
+    title="Ver contrataciones vinculadas" 
+    onClick={() => openLinkedHirings(o)} 
+  />
+
+  {/* 🔥 Botón para reactivar oferta */}
+  <FaLock
+    className={styles.iconAction}
+    title="Reactivar oferta"
+    onClick={() => reactivateOffer(o)}
+  />
+</td>
                           </tr>
                         );
                       })}

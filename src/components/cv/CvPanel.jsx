@@ -63,14 +63,6 @@ const CvPanel = ({
         setDeferredUser(userObj);
     };
 
-    // Cap detector
-    const capsWarnedAtRef = useRef(0);
-    const CAPS_MIN_STREAK = 6;
-    const CAPS_MIN_RATIO = 0.75;
-    const CAPS_MIN_LEN = 12;
-    const CAPS_COOLDOWN_MS = 15000;
-
-
     // -------------------------------------------------------
     // 🔥 REGISTRAR ESTADO FAVORITO / RECHAZO GLOBAL
     // -------------------------------------------------------
@@ -172,23 +164,28 @@ const CvPanel = ({
     const updateOfferArray = async (field, userId) => {
         if (!Offer) return setSelectedOfferAndAddUser(user);
 
+        const prevOffer = deepClone(Offer);
+
         const list = Array.isArray(Offer[field]) ? [...Offer[field]] : [];
         const exists = list.includes(userId);
-
         const newArr = exists ? list.filter(x => x !== userId) : [...list, userId];
 
-        const data = { offerId: Offer._id, [field]: newArr };
-        const token = getToken();
+        // Optimista
+        const optimisticOffer = { ...Offer, [field]: newArr };
+        changeOffer(optimisticOffer);
+        chargeOffers(optimisticOffer);
 
+        const token = getToken();
+        const data = { offerId: Offer._id, [field]: newArr };
         const upOffer = await offerUpdate(data, token);
 
-        if (!upOffer.error) {
-            changeOffer(upOffer);
-            chargeOffers(upOffer);
-        } else {
-            modal("Error", "No se pudo actualizar el estado en la oferta");
+        if (upOffer.error) {
+            modal("Error", "No se pudo actualizar el estado. Revirtiendo…");
+            changeOffer(prevOffer);
+            chargeOffers(prevOffer);
         }
     };
+
 
 
     // -------------------------------------------------------
@@ -298,12 +295,78 @@ const CvPanel = ({
         setTextComment('');
     };
 
+    const toggleUserInOffer = async () => {
+        // 1) Si no hay oferta, abrimos el selector como hasta ahora
+        if (!Offer) {
+            return setSelectedOfferAndAddUser(user);
+        }
+
+        const userId = user._id;
+        const prevOffer = deepClone(Offer);
+        const token = getToken();
+
+        const isCandidate = Array.isArray(Offer.userCv) && Offer.userCv.includes(userId);
+        const isSolicitant = Array.isArray(Offer.solicitants) && Offer.solicitants.includes(userId);
+
+        // 2) Si NO está en la oferta → lo añadimos a userCv
+        if (!isCandidate && !isSolicitant) {
+            const newUserCv = [...(Offer.userCv || []), userId];
+
+            const optimistic = { ...Offer, userCv: newUserCv };
+            changeOffer(optimistic);
+            chargeOffers(optimistic);
+
+            const upOffer = await offerUpdate(
+                { offerId: Offer._id, userCv: newUserCv },
+                token
+            );
+
+            if (upOffer?.error) {
+                modal("Error", "No se pudo añadir el candidato a la oferta. Revirtiendo…");
+                changeOffer(prevOffer);
+                chargeOffers(prevOffer);
+            } else {
+                changeOffer(upOffer);
+                chargeOffers(upOffer);
+            }
+
+            return;
+        }
+
+        // 3) Si SÍ está en la oferta → lo quitamos (de userCv y de solicitants por si acaso)
+        const newUserCv = (Offer.userCv || []).filter(id => id !== userId);
+        const newSolicitants = (Offer.solicitants || []).filter(id => id !== userId);
+
+        const optimistic = { ...Offer, userCv: newUserCv, solicitants: newSolicitants };
+        changeOffer(optimistic);
+        chargeOffers(optimistic);
+
+        const upOffer = await offerUpdate(
+            { offerId: Offer._id, userCv: newUserCv, solicitants: newSolicitants },
+            token
+        );
+
+        if (upOffer?.error) {
+            modal("Error", "No se pudo quitar el candidato de la oferta. Revirtiendo…");
+            changeOffer(prevOffer);
+            chargeOffers(prevOffer);
+        } else {
+            changeOffer(upOffer);
+            chargeOffers(upOffer);
+        }
+    };
+
+
 
     // -------------------------------------------------------
     // 🔥 RENDER FINAL
     // -------------------------------------------------------
 
     if (!user) return null;
+    const isInCurrentOffer = Offer
+        ? (Offer.userCv?.includes(user._id) || Offer.solicitants?.includes(user._id))
+        : false;
+
 
     return (
         <div className={styles.contenedorCV}>
@@ -329,11 +392,18 @@ const CvPanel = ({
                         </>
                     )}
 
-                    {/* Añadir manualmente a oferta (legacy) */}
                     {!Offer ? (
-                        <IoBagAdd onClick={() => setSelectedOfferAndAddUser(user)} />
+                        // Sin oferta: abrir selector
+                        <IoBagAdd onClick={toggleUserInOffer} />
+                    ) : isInCurrentOffer ? (
+                        // Con oferta y usuario DENTRO → bolsa verde, quita al hacer clic
+                        <IoBagCheck
+                            style={{ color: "lightgreen" }}
+                            onClick={toggleUserInOffer}
+                        />
                     ) : (
-                        <IoBagCheck style={{ color: "lightgreen" }} />
+                        // Con oferta y usuario FUERA → bolsa vacía, añade al hacer clic
+                        <IoBagAdd onClick={toggleUserInOffer} />
                     )}
 
                     {/* Estados globales */}
@@ -370,7 +440,7 @@ const CvPanel = ({
 
                 {/* Contratación */}
                 <div className={styles.cajaBotonesContratar}>
-                    <ToHireEmployee 
+                    <ToHireEmployee
                         changeUser={changeUser}
                         chargeOffers={chargeOffers}
                         enumsEmployer={enumsEmployer}

@@ -148,25 +148,40 @@ const ContainerOffer = ({
   const selectedDispositiveName = selectedDispositiveId ? (enumsData?.dispositiveIndex?.[selectedDispositiveId]?.name || '') : '';
 
 
-  const updateOfferArray = async (field, userId) => {
-    if (!Offer) return viewUserOffer(userId);
+const updateOfferArray = async (field, userId) => {
+  if (!Offer) return viewUserOffer(userId);
 
-    const list = Array.isArray(Offer[field]) ? [...Offer[field]] : [];
-    const exists = list.includes(userId);
-    const newArr = exists ? list.filter(id => id !== userId) : [...list, userId];
+  const prevOffer = JSON.parse(JSON.stringify(Offer)); // ← Copia profunda para revertir
 
-    const token = getToken();
-    const data = { offerId: Offer._id, [field]: newArr };
+  // --- 1) ESTADO OPTIMISTA ---
+  const list = Array.isArray(Offer[field]) ? [...Offer[field]] : [];
+  const exists = list.includes(userId);
+  const newArr = exists ? list.filter(id => id !== userId) : [...list, userId];
+
+  const optimisticOffer = {
+    ...Offer,
+    [field]: newArr
+  };
+
+  // Actualizar interfaz SIN esperar al servidor
+  changeOffer(optimisticOffer);
+  changeOffers(optimisticOffer);
+
+  // --- 2) ENVÍO REAL ---
+  const token = getToken();
+  const data = { offerId: Offer._id, [field]: newArr };
+
 
     const upOffer = await offerUpdate(data, token);
 
-    if (!upOffer.error) {
-      changeOffer(upOffer);
-      changeOffers(upOffer);
-    } else {
-      modal("Error", "No se pudo actualizar el estado del candidato");
+    if(upOffer.error){
+    modal("Error", "No se pudo actualizar el estado del candidato. Revirtiendo…");  
+    changeOffer(prevOffer);
+    changeOffers(prevOffer);
     }
-  };
+  
+};
+
 
   return (
     <div className={styles.containerOffer}>

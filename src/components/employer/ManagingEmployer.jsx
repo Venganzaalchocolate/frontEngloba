@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import styles from '../styles/ManagingEmployer.module.css';
-import { FaSquarePlus, FaBell  } from "react-icons/fa6";
+import { FaSquarePlus, FaBell, FaPersonCircleMinus } from "react-icons/fa6";
 import Filters from "./Filters";
 import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
-import { currentStatusEmployee, getusers, getusersnotlimit,getpendingrequest } from '../../lib/data';
+import { currentStatusEmployee, getusers, getusersnotlimit, getpendingrequest } from '../../lib/data';
 
 import { getToken } from '../../lib/serviceToken.js';
 import { capitalizeWords, deepClone } from '../../lib/utils.js';
@@ -17,7 +17,6 @@ import VacationDays from './VacationDays.jsx';
 // import Hiringperiods from './HiringsPeriods.jsx';
 import HiringPeriodsV2 from './HiringPeriodsV2.jsx';
 import { TbFileTypeXml } from "react-icons/tb";
-import { FaPersonCircleMinus, FaBusinessTime } from "react-icons/fa6";
 import CreateDocumentXLS from './CreateDocumentXLS.jsx';
 import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx';
 import FilterStatus from './FilterStatus.jsx';
@@ -25,6 +24,9 @@ import PreferentsEmployee from './PreferentsEmployee.jsx';
 import MenuOptionsEmployee from './MenuOptionsEmployee.jsx';
 import { useMemo } from 'react';
 import SupervisorChangeRequests from './SupervisorChangeRequests.jsx';
+import RelocateHiringsModal from './RelocateHiringsModal.jsx';
+import { RiUserSharedFill } from 'react-icons/ri';
+
 
 
 
@@ -41,6 +43,9 @@ const ManagingEmployer = ({
   const apafaUser = (logged.user.apafa == false || logged.user._id == '67d80ef5f093b4a61894b881' || logged?.user?.role === 'root') ? 'no' : 'si'
   // Usuario seleccionado al hacer click en la lista
   const [userSelected, setUserSelected] = useState(null);
+  const [isRelocateOpen, setIsRelocateOpen] = useState(false);
+
+
 
   // Paginación
   const [limit, setLimit] = useState(50);
@@ -78,41 +83,41 @@ const ManagingEmployer = ({
   // ========== LÓGICA DE PETICIONES PENDIENTES ============
   // ==================================================
 
-const [pendingMap, setPendingMap] = useState({});
+  const [pendingMap, setPendingMap] = useState({});
 
-const loadPendingFlags = async (ids, token) => {
-  if (!ids?.length) { setPendingMap({}); return; }
+  const loadPendingFlags = async (ids, token) => {
+    if (!ids?.length) { setPendingMap({}); return; }
 
-  // pedimos solo las pendientes de estos usuarios
-  const res = await getpendingrequest({ userIds: ids, status: 'pending' }, token);
+    // pedimos solo las pendientes de estos usuarios
+    const res = await getpendingrequest({ userIds: ids, status: 'pending' }, token);
 
-  // normalizamos distintas formas de respuesta
-  const list =
-    Array.isArray(res?.data?.data) ? res.data.data :
-    Array.isArray(res?.data) ? res.data :
-    Array.isArray(res) ? res : [];
+    // normalizamos distintas formas de respuesta
+    const list =
+      Array.isArray(res?.data?.data) ? res.data.data :
+        Array.isArray(res?.data) ? res.data :
+          Array.isArray(res) ? res : [];
 
-  // si ya viene agregado → { items:[{userId,count}] }
-  const items = Array.isArray(res?.items) ? res.items : null;
+    // si ya viene agregado → { items:[{userId,count}] }
+    const items = Array.isArray(res?.items) ? res.items : null;
 
-  const map = {};
-  if (items) {
-    for (const it of items) {
-      const uid = String(it.userId);
-      map[uid] = { count: Number(it.count || 0) };
+    const map = {};
+    if (items) {
+      for (const it of items) {
+        const uid = String(it.userId);
+        map[uid] = { count: Number(it.count || 0) };
+      }
+    } else {
+      // lista de requests → agrupamos por usuario
+      for (const r of list) {
+        const uid = String(
+          r.userId || r.user || r.idUser || r?.idUser?._id || r?.user?._id
+        );
+        if (!uid) continue;
+        map[uid] = { count: (map[uid]?.count || 0) + 1 };
+      }
     }
-  } else {
-    // lista de requests → agrupamos por usuario
-    for (const r of list) {
-      const uid = String(
-        r.userId || r.user || r.idUser || r?.idUser?._id || r?.user?._id
-      );
-      if (!uid) continue;
-      map[uid] = { count: (map[uid]?.count || 0) + 1 };
-    }
-  }
-  setPendingMap(map);
-};
+    setPendingMap(map);
+  };
 
   // ==================================================
   // ========== LÓGICA DE RESPONSABILIDADES ============
@@ -213,12 +218,12 @@ const loadPendingFlags = async (ids, token) => {
       let data = await getusers(page, limit, auxFilters, token);
 
       // ➊ pedir estado actual al backend para los usuarios de la página
-const ids = (data.users || []).map(u => u._id);
+      const ids = (data.users || []).map(u => u._id);
 
-// ➋ flags de peticiones pendientes
-if (ids.length) {
-  await loadPendingFlags(ids, token);
-}
+      // ➋ flags de peticiones pendientes
+      if (ids.length) {
+        await loadPendingFlags(ids, token);
+      }
       let statusMap = {};
       if (ids.length) {
         const resStatus = await currentStatusEmployee({ userIds: ids }, token);
@@ -341,56 +346,56 @@ if (ids.length) {
   const openModal = () => {
     setIsModalOpen(true);
   };
-// Refresca el contador de pendientes solo para 1 usuario y MERGE con el mapa actual
+  // Refresca el contador de pendientes solo para 1 usuario y MERGE con el mapa actual
   const refreshPendingFlagForUser = async (userId) => {
-  try {
-    const token = getToken();
-    const res = await getpendingrequest({ userIds: [userId], status: 'pending' }, token);
+    try {
+      const token = getToken();
+      const res = await getpendingrequest({ userIds: [userId], status: 'pending' }, token);
 
-    const list =
-      Array.isArray(res?.data?.data) ? res.data.data :
-      Array.isArray(res?.data) ? res.data :
-      Array.isArray(res) ? res : [];
+      const list =
+        Array.isArray(res?.data?.data) ? res.data.data :
+          Array.isArray(res?.data) ? res.data :
+            Array.isArray(res) ? res : [];
 
-    const items = Array.isArray(res?.items) ? res.items : null;
+      const items = Array.isArray(res?.items) ? res.items : null;
 
-    let count = 0;
-    if (items) {
-      count = Number(items.find(it => String(it.userId) === String(userId))?.count || 0);
-    } else {
-      for (const r of list) {
-        const uid = String(
-          r.userId || r.user || r.idUser || r?.idUser?._id || r?.user?._id
-        );
-        if (String(uid) === String(userId)) count++;
+      let count = 0;
+      if (items) {
+        count = Number(items.find(it => String(it.userId) === String(userId))?.count || 0);
+      } else {
+        for (const r of list) {
+          const uid = String(
+            r.userId || r.user || r.idUser || r?.idUser?._id || r?.user?._id
+          );
+          if (String(uid) === String(userId)) count++;
+        }
       }
-    }
 
-    setPendingMap(prev => ({ ...prev, [String(userId)]: { count } }));
-  } catch (_) {
-    // silencioso
-  }
-};
+      setPendingMap(prev => ({ ...prev, [String(userId)]: { count } }));
+    } catch (_) {
+      // silencioso
+    }
+  };
 
   // ==================================================
   // ========== ACTUALIZAR USUARIO LOCALMENTE =========
   // ==================================================
-const changeUserLocally = (updatedUser) => {
-  const aux = deepClone(users);
-  let upUs=false
-  aux.forEach((x, i) => {
-    if (x._id === updatedUser._id) {
-      aux[i] = updatedUser;
-      upUs=true
-    }
-  });
-  setUserSelected(updatedUser);
-  if(!upUs && !!updatedUser._id) aux.push(updatedUser)
-  setUsers(aux);
+  const changeUserLocally = (updatedUser) => {
+    const aux = deepClone(users);
+    let upUs = false
+    aux.forEach((x, i) => {
+      if (x._id === updatedUser._id) {
+        aux[i] = updatedUser;
+        upUs = true
+      }
+    });
+    setUserSelected(updatedUser);
+    if (!upUs && !!updatedUser._id) aux.push(updatedUser)
+    setUsers(aux);
 
-  // 🔁 Actualiza el indicador de peticiones pendientes para este usuario
-  refreshPendingFlagForUser(updatedUser._id);
-};
+    // 🔁 Actualiza el indicador de peticiones pendientes para este usuario
+    refreshPendingFlagForUser(updatedUser._id);
+  };
 
   // ==================================================
   // ============= RENDER DE LA INTERFAZ ==============
@@ -479,67 +484,67 @@ const changeUserLocally = (updatedUser) => {
 
   const menuConfig = {
     "mis-datos": [(user) => <InfoEmployer listResponsability={listResponsability} key="info" user={user} modal={modal} charge={charge} enumsData={enumsData} chargeUser={() => loadUsers(true)} changeUser={(x) => changeUserLocally(x)} />],
-    "resp-coord": [(user) => (<ResponsabilityAndCoordination key="resp-coord" user={user} modal={modal} charge={charge} enumsData={enumsData}  />),],
+    "resp-coord": [(user) => (<ResponsabilityAndCoordination key="resp-coord" user={user} modal={modal} charge={charge} enumsData={enumsData} />),],
     "documentacion": [(user) => <DocumentMiscelaneaGeneric key="docs" data={user} modelName="User" modal={modal} charge={charge} authorized={true} enumsData={enumsData} categoryFiles={enumsData.categoryFiles} officialDocs={enumsData.documentation.filter(x => x.model === "User")} onChange={(x) => changeUserLocally(x)} />],
     "nominas": [(user) => <Payrolls key="payrolls" user={user} modal={modal} charge={charge} listResponsability={listResponsability} changeUser={(x) => changeUserLocally(x)} />],
     "vacaciones": [(user) => <VacationDays key="vac" user={user} modal={modal} charge={charge} changeUser={(x) => changeUserLocally(x)} />],
-    "contratos": [(user) => <HiringPeriodsV2  key="hiring" user={user} modal={modal} charge={charge} enumsData={enumsData} chargeUser={() => loadUsers(true)} changeUser={(x) => changeUserLocally(x)} />],
-    "solicitudes": [(user)=> <SupervisorChangeRequests key="scr" changeUserLocally={changeUserLocally} userId={user._id} approverId={logged.user._id} modal={modal} charge={charge} enumsData={enumsData} onUserUpdated={(u) => changeUserLocally(u)}/>], 
-    "preferencias": [(user) => <PreferentsEmployee key="pref" user={user} modal={modal} charge={charge} enumsData={enumsData} authorized={logged.user._id} />] 
-    };
+    "contratos": [(user) => <HiringPeriodsV2 key="hiring" user={user} modal={modal} charge={charge} enumsData={enumsData} chargeUser={() => loadUsers(true)} changeUser={(x) => changeUserLocally(x)} />],
+    "solicitudes": [(user) => <SupervisorChangeRequests key="scr" changeUserLocally={changeUserLocally} userId={user._id} approverId={logged.user._id} modal={modal} charge={charge} enumsData={enumsData} onUserUpdated={(u) => changeUserLocally(u)} />],
+    "preferencias": [(user) => <PreferentsEmployee key="pref" user={user} modal={modal} charge={charge} enumsData={enumsData} authorized={logged.user._id} />]
+  };
 
 
-const renderUserRow = (user) => {
-  const userStatus = userStatusMap[String(user._id)];
-  const rowClass =
-    userStatus?.isOnLeave
-      ? `${styles.tableContainer} ${styles.isOnLeave}`
-      : userStatus?.isSubstituting
-      ? `${styles.tableContainer} ${styles.isSubstituting}`
-      : styles.tableContainer;
+  const renderUserRow = (user) => {
+    const userStatus = userStatusMap[String(user._id)];
+    const rowClass =
+      userStatus?.isOnLeave
+        ? `${styles.tableContainer} ${styles.isOnLeave}`
+        : userStatus?.isSubstituting
+          ? `${styles.tableContainer} ${styles.isSubstituting}`
+          : styles.tableContainer;
 
-  return (
-    <div className={styles.containerEmployer} key={user._id}>
-      <div>
-        <div
-          className={rowClass}
-          onClick={() =>
-            !userSelected || userSelected._id !== user._id
-              ? setUserSelected(user)
-              : setUserSelected(null)
-          }
-        >
-          <div className={styles.tableCell}>{user.firstName}</div>
-          <div className={styles.tableCell}>{user.lastName}</div>
-           <div className={styles.tableCell}>{(pendingMap[String(user._id)]?.count > 0)&& <FaBell color='tomato'/>}</div>
-          <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
+    return (
+      <div className={styles.containerEmployer} key={user._id}>
+        <div>
+          <div
+            className={rowClass}
+            onClick={() =>
+              !userSelected || userSelected._id !== user._id
+                ? setUserSelected(user)
+                : setUserSelected(null)
+            }
+          >
+            <div className={styles.tableCell}>{user.firstName}</div>
+            <div className={styles.tableCell}>{user.lastName}</div>
+            <div className={styles.tableCell}>{(pendingMap[String(user._id)]?.count > 0) && <FaBell color='tomato' />}</div>
+            <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
+          </div>
+
+          {userSelected && userSelected._id === user._id && (
+            <div className={styles.contenedorEmployer}>
+              <MenuOptionsEmployee
+                options={Object.keys(menuConfig)}
+                current={selectOptionMenuEmployee}
+                onSelect={setselectOptionMenuEmployee}
+              />
+              {menuConfig[selectOptionMenuEmployee]?.map((Render) =>
+                Render(userSelected)
+              )}
+            </div>
+          )}
         </div>
 
-        {userSelected && userSelected._id === user._id && (
-          <div className={styles.contenedorEmployer}>
-            <MenuOptionsEmployee
-              options={Object.keys(menuConfig)}
-              current={selectOptionMenuEmployee}
-              onSelect={setselectOptionMenuEmployee}
-            />
-            {menuConfig[selectOptionMenuEmployee]?.map((Render) =>
-              Render(userSelected)
-            )}
-          </div>
+        {logged?.user?.role === 'root' && !userSelected && (
+          <DeleteEmployer
+            user={user}
+            modal={modal}
+            charge={charge}
+            chargeUser={() => loadUsers(true)}
+          />
         )}
       </div>
-
-      {logged?.user?.role === 'root' && !userSelected && (
-        <DeleteEmployer
-          user={user}
-          modal={modal}
-          charge={charge}
-          chargeUser={() => loadUsers(true)}
-        />
-      )}
-    </div>
-  );
-};
+    );
+  };
 
 
 
@@ -553,8 +558,27 @@ const renderUserRow = (user) => {
               <h2>GESTIÓN DE EMPLEADOS</h2>
               {isRootOrGlobal && <FaSquarePlus onClick={openModal} />}
               <TbFileTypeXml onClick={() => openXlsForm()} />
-              {!!userXLS && <CreateDocumentXLS users={userXLS} enumsData={enumsData} closeXls={() => setUsersXls(null)} modal={modal}/>}
-
+              {!!userXLS && <CreateDocumentXLS users={userXLS} enumsData={enumsData} closeXls={() => setUsersXls(null)} modal={modal} />}
+              {/*crear boton para hacer reubicar personal, cuando haga clic me sale un modal para seleccionar un dispositivo de origen y otro de destino con fecha de inicio en el nuevo destino
+              esto hará que llame a la función relocateHirings
+              */}
+              {isRootOrGlobal && (
+                < RiUserSharedFill
+                  onClick={() => setIsRelocateOpen(true)}
+                  style={{ cursor: "pointer", marginLeft: "10px" }}
+                  title="Reubicar personal"
+                />
+              )}
+              {isRelocateOpen && (
+                <RelocateHiringsModal
+                  enumsData={enumsData}
+                  modal={modal}
+                  charge={charge}
+                  close={() => setIsRelocateOpen(false)}
+                  onSuccess={() => loadUsers(true)}
+                  resetFilters={resetFilters}
+                />
+              )}
               {isModalOpen && (
                 <FormCreateEmployer
                   selectedResponsibility={selectedResponsibility}

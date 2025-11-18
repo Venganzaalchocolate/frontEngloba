@@ -1,3 +1,4 @@
+// statistics/cv/ConversionCVChart.jsx
 import { useEffect, useState, useMemo } from 'react';
 import {
   ComposedChart,
@@ -8,7 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
 } from 'recharts';
 
 import { stCvConversion } from '../../../../lib/data';
@@ -16,14 +17,23 @@ import { getToken } from '../../../../lib/serviceToken';
 import styles from '../../../styles/CvStatsDashboard.module.css';
 
 const MONTHS_ES = [
-  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
 ];
 
 export default function ConversionCVChart({ modal, charge }) {
-  const [gran, setGran]   = useState('month');
-  const [year, setYear]   = useState(String(new Date().getFullYear()));
-  const [rows, setRows]   = useState([]);
+  const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [rows, setRows] = useState([]);
   const [years, setYears] = useState([]);
 
   /* ───── carga ───────────────────────────────────────────── */
@@ -31,16 +41,13 @@ export default function ConversionCVChart({ modal, charge }) {
     const load = async () => {
       charge(true);
       try {
-        const params =
-          gran === 'month' ? { year } : { granularity: 'year' };
-
         const { data, years: yList } = await stCvConversion(
-          params,
+          { year },
           getToken()
         );
 
-        setRows(data);
-        if (gran === 'month') setYears(yList);
+        setRows(data || []);
+        if (Array.isArray(yList)) setYears(yList);
       } catch (e) {
         modal('Error', e.message || 'Error conversión');
       } finally {
@@ -48,27 +55,23 @@ export default function ConversionCVChart({ modal, charge }) {
       }
     };
     load();
-  }, [gran, year]);
+  }, [year, modal, charge]);
 
   /* ───── preparar datos para Recharts ───────────────────── */
   const chartData = useMemo(() => {
     if (!rows.length) return [];
-    if (gran === 'month') {
-      return rows.map(r => ({
-        ...r,
-        label: MONTHS_ES[parseInt(r.period.month, 10) - 1]
-      }));
-    }
-    // vista anual (gran === 'year')
-    return rows.map(r => ({ ...r, label: r.period }));
-  }, [rows, gran]);
+    return rows.map(r => ({
+      ...r,
+      label: MONTHS_ES[parseInt(r.period.month, 10) - 1] || r.period.month,
+    }));
+  }, [rows]);
 
   /* ───── resumen global ──────────────────────────────────── */
   const global = useMemo(() => {
     if (!rows.length) return '';
     const hired = rows.reduce((s, r) => s + r.hiredCv, 0);
     const total = rows.reduce((s, r) => s + r.totalCv, 0);
-    return total ? ((hired / total) * 100).toFixed(1) + '%' : '';
+    return total ? `${((hired / total) * 100).toFixed(1)}%` : '';
   }, [rows]);
 
   /* ───── render ──────────────────────────────────────────── */
@@ -79,8 +82,7 @@ export default function ConversionCVChart({ modal, charge }) {
         <h3>Conversión CV → contratado {global && `(${global})`}</h3>
 
         <div className={styles.controls}>
-
-          {gran === 'month' && (
+          {years.length > 0 && (
             <select
               className={styles.select}
               value={year}
@@ -109,22 +111,17 @@ export default function ConversionCVChart({ modal, charge }) {
               </defs>
 
               <CartesianGrid strokeDasharray="3 3" />
-
               <XAxis dataKey="label" />
 
               {/* eje izquierdo: ratio 0-1 */}
               <YAxis
                 yAxisId="left"
                 domain={[0, 1]}
-                tickFormatter={v => (v * 100).toFixed(0) + '%'}
+                tickFormatter={v => `${(v * 100).toFixed(0)}%`}
               />
 
               {/* eje derecho: totales */}
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                tickFormatter={v => v}
-              />
+              <YAxis yAxisId="right" orientation="right" />
 
               <Tooltip
                 formatter={(value, name) => {
@@ -133,9 +130,7 @@ export default function ConversionCVChart({ modal, charge }) {
                   }
                   return value;
                 }}
-                labelFormatter={l =>
-                  gran === 'month' ? `${l} ${year}` : l
-                }
+                labelFormatter={l => `${l} ${year}`}
               />
 
               <Legend />

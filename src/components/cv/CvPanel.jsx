@@ -444,7 +444,6 @@ const CvPanel = ({
                         changeUser={changeUser}
                         chargeOffers={chargeOffers}
                         enumsEmployer={enumsEmployer}
-                        offers={[]}
                         userSelected={user}
                         modal={modal}
                         charge={charge}

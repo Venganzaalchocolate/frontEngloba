@@ -15,8 +15,8 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     { key: 'employer',   label: 'Gestionar empleados',     icon: FaUsers,          accent: '#8b5cf6' },
     { key: 'cv',         label: 'Solicitudes de empleo',   icon: FaClipboardList,  accent: '#10b981' },
     { key: 'offersJobs', label: 'Gestionar ofertas',       icon: FaBriefcase,      accent: '#f59e0b' },
-    // { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
-    // { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
+    { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
+    { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
     { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
     { key: 'lists', label: 'Listín de contacto', icon: FaRegAddressBook, accent: '#64748b' },
   ];

@@ -1,6 +1,7 @@
+// statistics/cv/OverviewCards.jsx
 import { useEffect, useState } from 'react';
 import { stOverview } from '../../../../lib/data';
-import { getToken }   from '../../../../lib/serviceToken';
+import { getToken } from '../../../../lib/serviceToken';
 import styles from '../../../styles/CvStatsDashboard.module.css';
 
 export default function OverviewCards({ modal, charge }) {
@@ -8,33 +9,41 @@ export default function OverviewCards({ modal, charge }) {
 
   useEffect(() => {
     let cancel = false;
+
     (async () => {
       charge(true);
       try {
         const d = await stOverview(getToken());
         if (!cancel) setData(d);
       } catch (e) {
-        modal('Error', e.message || 'Error overview');
-      } finally { charge(false); }
+        if (!cancel) {
+          modal('Error', e.message || 'Error overview');
+        }
+      } finally {
+        if (!cancel) charge(false);
+      }
     })();
-    return () => { cancel = true; };
-  }, []);                                     // ← deps vacías
+
+    return () => {
+      cancel = true;
+    };
+  }, [modal, charge]);
 
   if (!data) return null;
 
   const cards = [
-    ['CV totales',          data.total],
-    ['Este mes',            data.thisMonth],
-    ['CV contratados',      data.hired],
-    ['Discapacidad ≥ 33 %', data.disabilityEqualOrAbove33]
+    ['CV totales', data.total],
+    ['Este mes', data.thisMonth],
+    ['CV contratados', data.hired],
+    ['Discapacidad ≥ 33 %', data.disabilityEqualOrAbove33],
   ];
 
   return (
     <div className={styles.cardsGrid}>
-      {cards.map(([t,v])=>(
+      {cards.map(([t, v]) => (
         <div key={t} className={styles.card}>
           <h4 className={styles.cardTitle}>{t}</h4>
-          <p  className={styles.cardValue}>{v}</p>
+          <p className={styles.cardValue}>{v}</p>
         </div>
       ))}
     </div>

@@ -24,7 +24,7 @@ const OfferJobsPanelV2 = React.lazy(() => import("../offerJobs/OfferJobsPanelV2"
 const ManagingEmployer = React.lazy(() => import("../employer/ManagingEmployer"));
 const PanelRoot = React.lazy(() => import("../root/panelRoot"));
 const ManagingMySelf = React.lazy(() => import("../myself/ManagingMySelf"));
-const ManagingAuditors = React.lazy(() => import("../auditor/ManagingAuditors"));
+const ManagingAuditors = React.lazy(() => import("../audits/ManagingAuditors"));
 const ManagingLists = React.lazy(() => import("../lists/ManagingLists"));
 const ManagingWorkspace = React.lazy(() => import("../woprkspace/Managingworkspace"));
 const FormCreateEmployer = React.lazy(() => import("../employer/FormCreateEmployer"));

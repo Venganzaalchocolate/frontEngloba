@@ -173,6 +173,7 @@ export const sendFormCv = async (dataForm, file, editUser = false) => {
 
 //Employee
 export const createEmployer = (token, datos) => fetchData('/createemployer', 'POST', token, datos);
+export const relocateHirings= (token, datos) => fetchData('/relocatehirings', 'POST', token, datos);
 export const deleteEmployer = (token, datos) => fetchData('/deleteuser', 'POST', token, datos);
 export const getEmployers = (token) => fetchData('/users', 'GET', token);
 export const infoUser = (token, data) => fetchData('/user', 'POST', token, data);
@@ -304,10 +305,8 @@ export const confirmSignature = async (data, token) => fetchData('/pdf/confirm-s
 export const auditInfoUser = (datos, token) => fetchData('/auditinfouser', 'POST', token, datos);
 export const auditInfoProgram = (datos, token) => fetchData('/auditinfoprogram', 'POST', token, datos);
 export const auditInfoDevice = (datos, token) => fetchData('/auditinfodevice', 'POST', token, datos);
-export const auditDocumentUser = (datos, token) => fetchData('/auditdocumentuser', 'POST', token, datos);
-export const auditDocumentProgram = (datos, token) => fetchData('/auditdocumentprogram', 'POST', token, datos);
-export const auditDocumentDevice = (datos, token) => fetchData('/auditdocumentdevice', 'POST', token, datos);
-export const auditUserPeriod = (datos, token) => fetchData('/audituserperiod', 'POST', token, datos);
+export const auditActiveLeaves= (datos, token) => fetchData('/auditactiveleaves', 'POST', token, datos);
+
 
 //estadisticas
 export const stOverview = (token) => fetchData('/overview', 'POST', token);

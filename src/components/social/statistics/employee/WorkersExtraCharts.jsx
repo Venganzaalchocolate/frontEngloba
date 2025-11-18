@@ -1,7 +1,21 @@
+// statistics/employee/WorkersExtraCharts.jsx
 import {
-  ResponsiveContainer, BarChart, Bar,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  PieChart, Pie, Cell, AreaChart, Area, Legend, LabelList
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  Legend,
+  LabelList,
 } from 'recharts';
 import styles from '../../../styles/WorkersCharts.module.css';
 
@@ -10,36 +24,36 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AA46BE'];
 /**
  * Espera `data` en `props` con la forma:
  * {
- *   pyramid,         // array
- *   pieGender,       // array
- *   hiredEnded,      // array
- *   workShift,       // array
- *   tenure           // array
+ *   pyramid,
+ *   pieGender,
+ *   hiredEnded,
+ *   workShift,
+ *   tenure
  * }
  */
 export default function WorkersExtraCharts({ data }) {
   const {
-    pyramid    = null,
-    pieGender  = null,
+    pyramid = null,
+    pieGender = null,
     hiredEnded = null,
-    workShift  = null,
-    tenure     = null
+    workShift = null,
+    tenure = null,
   } = data ?? {};
 
-  // loader básico mientras no hay nada
   if (!pyramid && !pieGender && !hiredEnded && !workShift && !tenure) {
     return <p className={styles.loading}>Cargando…</p>;
   }
 
-  const hasData = d => Array.isArray(d) ? d.length > 0 : !!d;
+  const hasData = d => (Array.isArray(d) ? d.length > 0 : !!d);
 
   const translatedPieGender = (pieGender || []).map(item => ({
     ...item,
-    key: item.key === 'male'
-      ? 'Hombres'
-      : item.key === 'female'
+    key:
+      item.key === 'male'
+        ? 'Hombres'
+        : item.key === 'female'
         ? 'Mujeres'
-        : item.key
+        : item.key,
   }));
 
   return (
@@ -56,7 +70,7 @@ export default function WorkersExtraCharts({ data }) {
                   value: 'Años',
                   position: 'insideBottom',
                   dy: 20,
-                  style: { textAnchor: 'middle' }
+                  style: { textAnchor: 'middle' },
                 }}
               />
               <YAxis
@@ -64,7 +78,7 @@ export default function WorkersExtraCharts({ data }) {
                   value: 'Número de personas',
                   angle: -90,
                   position: 'insideLeft',
-                  style: { textAnchor: 'middle' }
+                  style: { textAnchor: 'middle' },
                 }}
               />
               <Tooltip />
@@ -100,9 +114,12 @@ export default function WorkersExtraCharts({ data }) {
                 data={translatedPieGender}
                 dataKey="value"
                 nameKey="key"
-                cx="50%" cy="50%"
+                cx="50%"
+                cy="50%"
                 outerRadius={90}
-                label={({ key, percent }) => `${key} ${(percent * 100).toFixed(0)}%`}
+                label={({ key, percent }) =>
+                  `${key} ${(percent * 100).toFixed(0)}%`
+                }
               >
                 {translatedPieGender.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -119,12 +136,26 @@ export default function WorkersExtraCharts({ data }) {
           <ResponsiveContainer height={260}>
             <LineChart data={hiredEnded}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={d => `${d.year}-${String(d.month).padStart(2, '0')}`} />
+              <XAxis
+                dataKey={d =>
+                  `${d.year}-${String(d.month).padStart(2, '0')}`
+                }
+              />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="hired" stroke="#00C49F" strokeWidth={2} />
-              <Line type="monotone" dataKey="ended" stroke="#FF8042" strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="hired"
+                stroke="#00C49F"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="ended"
+                stroke="#FF8042"
+                strokeWidth={2}
+              />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -141,9 +172,12 @@ export default function WorkersExtraCharts({ data }) {
                 data={workShift}
                 dataKey="total"
                 nameKey="type"
-                cx="50%" cy="50%"
+                cx="50%"
+                cy="50%"
                 outerRadius={90}
-                label={({ type, percent }) => `${type} ${(percent * 100).toFixed(0)}%`}
+                label={({ type, percent }) =>
+                  `${type} ${(percent * 100).toFixed(0)}%`
+                }
               >
                 {workShift.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -169,7 +203,7 @@ export default function WorkersExtraCharts({ data }) {
                   value: 'Antigüedad en años',
                   position: 'insideBottom',
                   dy: 25,
-                  style: { textAnchor: 'middle' }
+                  style: { textAnchor: 'middle' },
                 }}
               />
               <YAxis
@@ -177,7 +211,7 @@ export default function WorkersExtraCharts({ data }) {
                   value: 'Número de personas',
                   angle: -90,
                   position: 'insideLeft',
-                  style: { textAnchor: 'middle' }
+                  style: { textAnchor: 'middle' },
                 }}
               />
               <Tooltip />

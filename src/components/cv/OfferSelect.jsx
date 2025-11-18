@@ -10,7 +10,6 @@ import { FaBriefcase, FaBuilding, FaLocationDot } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
 
 const OfferSelect = ({
-  offers,
   closeModal,
   userSelected,
   enumsData,
@@ -26,7 +25,9 @@ const OfferSelect = ({
   const [fieldsForm, setFieldsModal] = useState([]);
   const [searchTerm, setSearchTerm] = useState(""); // 🔍 NUEVO ESTADO
 
+  
   useEffect(() => {
+
     const getOfferTitle = (o) => {
       const idJob = o?.jobId || "";
       const idDispositive = o?.dispositive?.newDispositiveId || "";
@@ -36,11 +37,12 @@ const OfferSelect = ({
       return { jobName: job, dispositiveName: disp, jobTitle: jobTitleAux };
     };
 
-    const mapped = offers.map((x) => ({
+    const mapped = enumsData.offers.map((x) => ({
       ...x,
       dataAux: getOfferTitle(x),
     }));
 
+    
     setOffersMod(mapped);
 
     const fieldsAux = [
@@ -56,7 +58,7 @@ const OfferSelect = ({
       },
     ];
     setFieldsModal(fieldsAux);
-  }, [offers, enumsData]);
+  }, []);
 
   /* ---------- Filtro de búsqueda ---------- */
 /* ---------- Filtro de búsqueda ---------- */

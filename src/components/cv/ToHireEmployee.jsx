@@ -11,7 +11,6 @@ import ModalConfirmation from "../globals/ModalConfirmation";
 
 
 const ToHireEmployee = ({
-  offers,
   userSelected,
   enumsEmployer,
   modal,
@@ -34,6 +33,8 @@ const ToHireEmployee = ({
       setStep("select");
       return;
     }
+
+  
 
     const alreadyInOffer = Offer.userCv?.includes(userSelected._id);
 
@@ -136,6 +137,7 @@ const ToHireEmployee = ({
     charge(false);
   };
 
+
   /* ---------- render ---------- */
   return (
     <>
@@ -154,7 +156,6 @@ const ToHireEmployee = ({
 
       {step === "select" && (
         <OfferSelect
-          offers={offers}
           userSelected={userSelected}
           onChosen={handleOfferChosen}
           enumsData={enumsEmployer}

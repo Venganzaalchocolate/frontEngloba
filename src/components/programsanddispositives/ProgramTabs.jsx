@@ -16,7 +16,6 @@ const ProgramTabs = ({
 
   const isProgram = info?.type === "program";
   const typeLabel = isProgram ? "Programa" : "Dispositivo";
-
   return (
     <div className={styles.container}>
       {/* === TABS HEADER === */}

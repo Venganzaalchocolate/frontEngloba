@@ -10,8 +10,8 @@ export const formatDatetime = (date) => {
 
 export const formatDate = (date) => {
   const dateAux = DateTime.fromISO(date)
-    .toFormat('dd-MM-yyyy');
-  return dateAux
+  if(dateAux?.invalid) return 'No disponible'
+  else return dateAux.toFormat('dd-MM-yyyy');
 }
 
 export const deepClone = (obj) => {

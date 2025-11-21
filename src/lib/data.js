@@ -306,6 +306,8 @@ export const auditInfoUser = (datos, token) => fetchData('/auditinfouser', 'POST
 export const auditInfoProgram = (datos, token) => fetchData('/auditinfoprogram', 'POST', token, datos);
 export const auditInfoDevice = (datos, token) => fetchData('/auditinfodevice', 'POST', token, datos);
 export const auditActiveLeaves= (datos, token) => fetchData('/auditactiveleaves', 'POST', token, datos);
+export const auditDocumentProgram= (datos, token) => fetchData('/auditdocsprogram', 'POST', token, datos);
+export const auditDocumentDispo= (datos, token) => fetchData('/auditdocsdispo', 'POST', token, datos);
 
 
 //estadisticas

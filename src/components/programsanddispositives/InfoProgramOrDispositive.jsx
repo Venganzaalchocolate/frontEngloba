@@ -137,13 +137,12 @@ const InfoProgramOrDispositive = ({
 
   return (
     <div className={styles.contenedor}>
-      
       {/* ✅ Botón para ir al programa si el info actual es un dispositivo */}
-      {!isProgram && info.program && (
+      {!isProgram && info?.program && (
         <div className={styles.fieldContainer}>
           <button
             className={styles.btnInfoProgram}
-            onClick={() => onSelect({ type: "program", _id: info.program })}
+            onClick={() => onSelect({ type: "program", _id: info.program._id })}
           >
             <IoArrowUndo />
             Info del Programa

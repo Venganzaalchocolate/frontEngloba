@@ -40,26 +40,42 @@ const ManagingProgramsDispositive = ({
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionType, setActionType] = useState(null); // "edit" o "delete"
-  const [activeTab, setActiveTab] = useState("info"); // "info" | "docs"
+
+  // Helper: desempaqueta { error, data } o devuelve el objeto tal cual
+  const normalizeEntity = (res, type) => {
+    const payload = res && typeof res === "object" && "data" in res ? res.data : res;
+    return { ...(payload || {}), type };
+  };
 
   // === CARGAR INFO DEL SELECCIONADO ===
   const info = async (x) => {
     if (!x) return;
-    charge(true);
+
     try {
-      let data;
+      charge(true);
+
+      let res;
       if (x.type === "program") {
-        data = await getProgramId({ programId: x._id }, token);
-        data.type = "program";
+        res = await getProgramId({ programId: x._id }, token);
       } else {
-        data = await getDispositiveId({ dispositiveId: x._id }, token);
-        data.type = "dispositive";
+        res = await getDispositiveId({ dispositiveId: x._id }, token);
       }
-      setInfoSelect(data);
-    } catch (e) {
-      modal("Error", e.message || "No se pudo cargar la información.");
+
+      if (res?.error) {
+        modal("Error", res.message || "No se pudo cargar la información.");
+        setInfoSelect(null);
+        return;
+      }
+
+      const dataWithType = normalizeEntity(res, x.type);
+      setInfoSelect(dataWithType);
+    } catch (err) {
+      console.error("Error en info():", err);
+      modal("Error", err.message || "No se pudo cargar la información.");
+      setInfoSelect(null);
+    } finally {
+      charge(false);
     }
-    charge(false);
   };
 
   const onSelect = (x) => {
@@ -69,28 +85,27 @@ const ManagingProgramsDispositive = ({
   };
 
   // === SELECCIÓN AUTOMÁTICA INICIAL ===
-  useEffect(() => {
-    // si ya hay algo seleccionado o aún no se ha cargado enumsData, no hacer nada
-    if (select || !enumsData?.programsIndex) return;
+useEffect(() => {
+  // si ya hay algo seleccionado o aún no se ha cargado enumsData, no hacer nada
+  if (select || !enumsData?.programsIndex) return;
 
-    // si el usuario tiene responsabilidades
-    if (listResponsability && listResponsability.length > 0) {
-      const first = listResponsability[0];
-      // si tiene dispositivo asignado, selecciona ese
-      if (first.dispositiveId) {
-        onSelect({ type: "dispositive", _id: first.dispositiveId });
-      } else if (first.idProgram) {
-        // si solo tiene programa
-        onSelect({ type: "program", _id: first.idProgram });
-      }
-    } else {
-      // si no tiene responsabilidades, seleccionar el primer programa general
-      const firstProgramId = Object.keys(enumsData.programsIndex)[0];
-      if (firstProgramId) {
-        onSelect({ type: "program", _id: firstProgramId });
-      }
+  // si el usuario tiene responsabilidades
+  if (listResponsability && listResponsability.length > 0) {
+    const first = listResponsability[0];
+
+    if (first?.dispositiveId) {
+      onSelect({ type: "dispositive", _id: first.dispositiveId });
+    } else if (first?.idProgram) {
+      onSelect({ type: "program", _id: first.idProgram });
     }
-  }, [listResponsability, enumsData]);
+  } else {
+    // si no tiene responsabilidades, seleccionar el primer programa general
+    const firstProgramId = Object.keys(enumsData.programsIndex)[0];
+    if (firstProgramId) {
+      onSelect({ type: "program", _id: firstProgramId });
+    }
+  }
+}, [listResponsability, enumsData, select]);
 
   // === OPTIONS ===
   const programsOptions = useMemo(() => {
@@ -104,15 +119,15 @@ const ManagingProgramsDispositive = ({
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [enumsData]);
 
-const provinceOptions = useMemo(() => {
-  const idx = enumsData?.provincesIndex || {};
-  const excludedIds = ["66a7366208bebc63c0f8992d", "66a7369b08bebc63c0f89a05"];
+  const provinceOptions = useMemo(() => {
+    const idx = enumsData?.provincesIndex || {};
+    const excludedIds = ["66a7366208bebc63c0f8992d", "66a7369b08bebc63c0f89a05"];
 
-  return Object.entries(idx)
-    .filter(([id]) => !excludedIds.includes(id)) // ❌ excluye las provincias no deseadas
-    .map(([id, p]) => ({ value: id, label: p?.name || id }))
-    .sort((a, b) => a.label.localeCompare(b.label, "es"));
-}, [enumsData]);
+    return Object.entries(idx)
+      .filter(([id]) => !excludedIds.includes(id))
+      .map(([id, p]) => ({ value: id, label: p?.name || id }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  }, [enumsData]);
 
   // === CAMPOS BASE ===
   const programFields = [
@@ -198,80 +213,75 @@ const provinceOptions = useMemo(() => {
     },
   ];
 
-  // === CRONOLOGÍA ===
- // === CRONOLOGÍA (optimista y sin try/catch) ===
-const handleCronology = async (info, formData, type) => {
-  if (!info?._id) return;
+  // === CRONOLOGÍA (optimista) ===
+  const handleCronology = async (infoItem, formData, type) => {
+    if (!infoItem?._id) return;
 
-  const prevInfo = structuredClone(infoSelect);
-  let newCronology = [...(infoSelect?.cronology || [])];
+    const prevInfo = structuredClone(infoSelect);
+    let newCronology = [...(infoSelect?.cronology || [])];
 
-  // 🔹 Actualización local optimista
-  if (type === "add") {
-    const tempId = `temp-${Date.now()}`;
-    newCronology.push({
-      _id: tempId,
-      open: formData.open || null,
-      closed: formData.closed || null,
-    });
-  } else if (type === "edit") {
-    newCronology = newCronology.map((c) =>
-      c._id === formData._id
-        ? { ...c, open: formData.open || null, closed: formData.closed || null }
-        : c
+    if (type === "add") {
+      const tempId = `temp-${Date.now()}`;
+      newCronology.push({
+        _id: tempId,
+        open: formData.open || null,
+        closed: formData.closed || null,
+      });
+    } else if (type === "edit") {
+      newCronology = newCronology.map((c) =>
+        c._id === formData._id
+          ? { ...c, open: formData.open || null, closed: formData.closed || null }
+          : c
+      );
+    } else if (type === "delete") {
+      newCronology = newCronology.filter((c) => c._id !== formData._id);
+    }
+
+    setInfoSelect((prev) => ({
+      ...prev,
+      cronology: newCronology,
+    }));
+
+    const payload = {
+      type,
+      cronology: {
+        _id: formData._id || undefined,
+        open: formData.open || null,
+        closed: formData.closed || null,
+      },
+    };
+
+    const res =
+      infoItem.type === "program"
+        ? await updateProgram({ id: infoItem._id, ...payload }, token)
+        : await updateDispositive({ dispositiveId: infoItem._id, ...payload }, token);
+
+    if (res?.error) {
+      modal("Error", res.error || "No se pudo actualizar la cronología.");
+      setInfoSelect(prevInfo);
+      return;
+    }
+
+    const freshRes =
+      infoItem.type === "program"
+        ? await getProgramId({ programId: infoItem._id }, token)
+        : await getDispositiveId({ dispositiveId: infoItem._id }, token);
+
+    if (freshRes?.error) {
+      modal("Aviso", "Guardado pero no se pudo refrescar la información.");
+      return;
+    }
+
+    const fresh = normalizeEntity(freshRes, infoItem.type);
+    setInfoSelect(fresh);
+
+    modal(
+      "Actualizado",
+      type === "delete"
+        ? "Registro eliminado correctamente."
+        : `Cronología ${type === "edit" ? "actualizada" : "añadida"} correctamente.`
     );
-  } else if (type === "delete") {
-    newCronology = newCronology.filter((c) => c._id !== formData._id);
-  }
-
-  setInfoSelect((prev) => ({
-    ...prev,
-    cronology: newCronology,
-  }));
-
-  // 🔹 Enviar actualización al backend
-  const payload = {
-    type,
-    cronology: {
-      _id: formData._id || undefined,
-      open: formData.open || null,
-      closed: formData.closed || null,
-    },
   };
-
-  const res =
-    info.type === "program"
-      ? await updateProgram({ id: info._id, ...payload }, token)
-      : await updateDispositive({ dispositiveId: info._id, ...payload }, token);
-
-  // 🔹 Si el backend devuelve error → revertimos
-  if (res?.error) {
-    modal("Error", res.error || "No se pudo actualizar la cronología.");
-    setInfoSelect(prevInfo);
-    return;
-  }
-
-  // 🔹 Si ok → sincronizamos con backend actualizado
-  const fresh =
-    info.type === "program"
-      ? await getProgramId({ programId: info._id }, token)
-      : await getDispositiveId({ dispositiveId: info._id }, token);
-
-  if (fresh?.error) {
-    // opcional: si también puede fallar esta petición, revertimos
-    modal("Aviso", "Guardado pero no se pudo refrescar la información.");
-    return;
-  }
-
-  setInfoSelect({ ...fresh, type: info.type });
-  modal(
-    "Actualizado",
-    type === "delete"
-      ? "Registro eliminado correctamente."
-      : `Cronología ${type === "edit" ? "actualizada" : "añadida"} correctamente.`
-  );
-};
-
 
   // === CREAR ===
   const handleCreateProgram = async (formData) => {
@@ -306,12 +316,12 @@ const handleCronology = async (info, formData, type) => {
     const selected = programsOptions.find((p) => p.value === formData.program);
     const acronym = selected?.acronym || "";
     const finalName = (() => {
-  if (!acronym) return formData.name;
-  const regex = new RegExp(`^${acronym}\\b`, "i"); // busca si empieza con el acrónimo
-  return regex.test(formData.name.trim())
-    ? formData.name.trim()
-    : `${acronym} ${formData.name.trim()}`;
-})();
+      if (!acronym) return formData.name;
+      const regex = new RegExp(`^${acronym}\\b`, "i");
+      return regex.test(formData.name.trim())
+        ? formData.name.trim()
+        : `${acronym} ${formData.name.trim()}`;
+    })();
 
     const payload = {
       name: finalName.trim(),
@@ -415,44 +425,49 @@ const handleCronology = async (info, formData, type) => {
 
     try {
       charge(true);
-      let data;
+      let res;
       if (parsed.type === "program") {
-        data = await getProgramId({ programId: parsed._id }, token);
-        data.type = "program";
+        res = await getProgramId({ programId: parsed._id }, token);
       } else {
-        data = await getDispositiveId({ dispositiveId: parsed._id }, token);
-        data.type = "dispositive";
+        res = await getDispositiveId({ dispositiveId: parsed._id }, token);
       }
+
+      if (res?.error) {
+        modal("Error", res.message || "No se pudo cargar el elemento.");
+        return;
+      }
+
+      const data = normalizeEntity(res, parsed.type);
 
       if (actionType === "edit") {
         const fieldsWithValues =
           data.type === "program"
             ? programFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "area"
-                  ? data.area
-                  : f.name === "active"
+                ...f,
+                defaultValue:
+                  f.name === "area"
+                    ? data.area
+                    : f.name === "active"
                     ? Boolean(data.active)
                     : f.name === "description"
-                      ? data.about?.description || ""
-                      : f.name === "objectives"
-                        ? data.about?.objectives || ""
-                        : f.name === "profile"
-                          ? data.about?.profile || ""
-                          : data[f.name] ?? f.defaultValue ?? "",
-            }))
+                    ? data.about?.description || ""
+                    : f.name === "objectives"
+                    ? data.about?.objectives || ""
+                    : f.name === "profile"
+                    ? data.about?.profile || ""
+                    : data[f.name] ?? f.defaultValue ?? "",
+              }))
             : deviceFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "program"
-                  ? data.program?._id || data.program || ""
-                  : f.name === "province"
+                ...f,
+                defaultValue:
+                  f.name === "program"
+                    ? data.program?._id || data.program || ""
+                    : f.name === "province"
                     ? data.province?._id || data.province || ""
                     : f.name === "active"
-                      ? Boolean(data.active)
-                      : data[f.name] ?? f.defaultValue ?? "",
-            }));
+                    ? Boolean(data.active)
+                    : data[f.name] ?? f.defaultValue ?? "",
+              }));
 
         setEditTarget({ ...data, fieldsWithValues });
         setShowEditForm(true);
@@ -461,6 +476,7 @@ const handleCronology = async (info, formData, type) => {
         setShowDeleteConfirm(true);
       }
     } catch (e) {
+      console.error("Error en handleSelectForAction:", e);
       modal("Error", e.message || "No se pudo cargar el elemento.");
     } finally {
       charge(false);
@@ -475,31 +491,31 @@ const handleCronology = async (info, formData, type) => {
       const fieldsWithValues =
         data.type === "program"
           ? programFields.map((f) => ({
-            ...f,
-            defaultValue:
-              f.name === "area"
-                ? data.area
-                : f.name === "active"
+              ...f,
+              defaultValue:
+                f.name === "area"
+                  ? data.area
+                  : f.name === "active"
                   ? Boolean(data.active)
                   : f.name === "description"
-                    ? data.about?.description || ""
-                    : f.name === "objectives"
-                      ? data.about?.objectives || ""
-                      : f.name === "profile"
-                        ? data.about?.profile || ""
-                        : data[f.name] ?? f.defaultValue ?? "",
-          }))
+                  ? data.about?.description || ""
+                  : f.name === "objectives"
+                  ? data.about?.objectives || ""
+                  : f.name === "profile"
+                  ? data.about?.profile || ""
+                  : data[f.name] ?? f.defaultValue ?? "",
+            }))
           : deviceFields.map((f) => ({
-            ...f,
-            defaultValue:
-              f.name === "program"
-                ? data.program?._id || data.program || ""
-                : f.name === "province"
+              ...f,
+              defaultValue:
+                f.name === "program"
+                  ? data.program?._id || data.program || ""
+                  : f.name === "province"
                   ? data.province?._id || data.province || ""
                   : f.name === "active"
-                    ? Boolean(data.active)
-                    : data[f.name] ?? f.defaultValue ?? "",
-          }));
+                  ? Boolean(data.active)
+                  : data[f.name] ?? f.defaultValue ?? "",
+            }));
 
       setEditTarget({ ...data, fieldsWithValues });
       setShowEditForm(true);
@@ -522,8 +538,6 @@ const handleCronology = async (info, formData, type) => {
     }
   };
 
-
-
   const searchUsers = async (query) => {
     const token = getToken();
     if (!query || query.trim().length < 3) return [];
@@ -536,7 +550,6 @@ const handleCronology = async (info, formData, type) => {
       label: `${u.firstName || ""} ${u.lastName || ""} (${u.email || "sin email"})`,
     }));
   };
-
 
   // === RENDER ===
   return (
@@ -551,9 +564,13 @@ const handleCronology = async (info, formData, type) => {
             <button className={styles.btnAdd} onClick={() => setShowDeviceForm(true)}>
               + Añadir Dispositivo <RiBuilding2Line />
             </button>
-            <button className={styles.btnEdit} onClick={openEdit}>Editar <FaEdit /></button>
+            <button className={styles.btnEdit} onClick={openEdit}>
+              Editar <FaEdit />
+            </button>
             {logged?.user?.role === "root" && (
-              <button className={styles.btnDelete} onClick={openDelete}>Eliminar <FaTrashAlt /></button>
+              <button className={styles.btnDelete} onClick={openDelete}>
+                Eliminar <FaTrashAlt />
+              </button>
             )}
           </div>
         </div>
@@ -577,7 +594,6 @@ const handleCronology = async (info, formData, type) => {
             searchUsers={searchUsers}
             onManageCronology={handleCronology}
           />
-
         </div>
       </div>
 
@@ -614,8 +630,9 @@ const handleCronology = async (info, formData, type) => {
       {showDeleteConfirm && (
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Seguro que deseas eliminar este ${deleteTarget?.type === "program" ? "programa" : "dispositivo"
-            }?`}
+          message={`¿Seguro que deseas eliminar este ${
+            deleteTarget?.type === "program" ? "programa" : "dispositivo"
+          }?`}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteConfirm(false)}
         />
@@ -623,8 +640,9 @@ const handleCronology = async (info, formData, type) => {
 
       {showSelectModal && (
         <ModalForm
-          title={`Seleccionar elemento para ${actionType === "edit" ? "editar" : "eliminar"
-            }`}
+          title={`Seleccionar elemento para ${
+            actionType === "edit" ? "editar" : "eliminar"
+          }`}
           message="Busca y selecciona el programa o dispositivo que deseas gestionar."
           fields={selectFields}
           onSubmit={handleSelectForAction}

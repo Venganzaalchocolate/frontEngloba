@@ -6,6 +6,7 @@ import UserInfoAuditPanel from "./UserInfoAuditPanel";
 import ProgramInfoAuditPanel from "./ProgramInfoAuditPanel";
 import DeviceInfoAuditPanel from "./DeviceInfoAuditPanel";
 import LeavesAuditPanel from "./LeavesAuditPanel";
+import PayrollsAuditPanel from "./PayrollsAuditPanel";
 
 export default function ManagingAuditors({ modal, charge, enumsData }) {
   const [selected, setSelected] = useState("users-info");
@@ -15,6 +16,7 @@ export default function ManagingAuditors({ modal, charge, enumsData }) {
     { key: "programs-info", label: "Info programas" },
     { key: "devices-info", label: "Info dispositivos" },
     { key: "leaves", label: "Trabajadores de baja" },
+    { key: "payrolls", label: "Nominas"}
   ];
 
 
@@ -31,6 +33,9 @@ export default function ManagingAuditors({ modal, charge, enumsData }) {
 
       case "leaves":
         return <LeavesAuditPanel modal={modal} charge={charge} enumsData={enumsData} />;
+
+      case "payrolls":
+        return <PayrollsAuditPanel modal={modal} charge={charge} enumsData={enumsData} />;
 
       default:
         return null;

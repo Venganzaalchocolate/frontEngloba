@@ -291,7 +291,7 @@ label.checkboxOption{
   padding: 0 0;
 }
 
-.fieldSelector>div{
+.fieldSelector>div, .chipGroup>div{
   display: flex;
   gap: 0.5rem;
   align-items: baseline;
@@ -366,6 +366,21 @@ label.checkboxOption{
 
 .buttonSelection>button{
   width: fit-content;
+}
+
+.timeFilter{
+  display: flex;
+  padding-top: 1rem;
+}
+
+.timeFilter .title{
+  padding: 0.5rem 0;
+}
+
+.chipGroup{
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 /* Versión compacta si lo quieres responsivo */
 @media (max-width: 620px) {

@@ -442,7 +442,8 @@ const handleSave = async () => {
             <label className={styles[fieldName + "Label"]}>{label}</label>
 
             {/* 🆕 tracking como select si/no */}
-            {fieldName === "tracking" ? (
+            {fieldName === "tracking"  &&
+              (logged.user.role === "global" || logged.user.role === "root") && 
               <select
                 className={styles[fieldName]}
                 name="tracking"
@@ -453,7 +454,9 @@ const handleSave = async () => {
                 <option value="si">Sí</option>
                 <option value="no">No</option>
               </select>
-            ) : fieldName === "employmentStatus" &&
+            } 
+            
+            { fieldName === "employmentStatus" &&
               (logged.user.role === "global" || logged.user.role === "root") ? (
               <select
                 className={styles[fieldName]}

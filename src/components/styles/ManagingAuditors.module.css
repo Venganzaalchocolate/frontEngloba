@@ -198,7 +198,7 @@ flex: 1 100%;
 /* --- ANIMACIÓN CORTINA SUAVE SOLO CON CSS (scaleY) --- */
 .expandContent {
   overflow: hidden;
-  max-height: 600px;      /* un valor grande */
+  max-height: 1000px;      /* un valor grande */
   opacity: 1;
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;

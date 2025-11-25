@@ -79,6 +79,10 @@ export default function HiringPeriodsV2({
 
   const [openModalPreferents, setOpenModalPreferents] = useState(false);
 
+  // Por ahora nadie puede editar la fecha real de fin desde el formulario de edición.
+  // Más adelante, si quieres que root sí pueda tocarla, descomenta y úsalo.
+  const canEditLeaveEndDate = logged?.user?.role === 'root' && logged?.user?._id=='6790e50a1c4635cb35cc176f';
+
   /* -------------------- cargar periodos -------------------- */
   useEffect(() => {
     const fetchHiring = async () => {
@@ -156,9 +160,9 @@ export default function HiringPeriodsV2({
     return p?.acronym || p?.name || '';
   };
 
-  const getDeviceName = (id) =>{
+  const getDeviceName = (id) => {
     return enumsData?.dispositiveIndex[id]?.name || 'No  disponible';
-  } 
+  }
   const getDeviceProvince = (id) => enumsData?.dispositiveIndex[id]?.province || '';
 
   const getPositionName = (id) => {
@@ -418,7 +422,7 @@ export default function HiringPeriodsV2({
             { leaveId: l._id, actualEndLeaveDate: effectiveIso, active: false },
             token
           );
-        
+
           if (!closedLeave?.error) {
             setLeavesByPeriod(prev => {
               const pid = String(periodId);
@@ -545,11 +549,10 @@ export default function HiringPeriodsV2({
     { name: 'leaveType', label: 'Tipo de Baja/Excedencia', type: 'select', required: true, options: leaveTypeOptions },
     { name: 'startLeaveDate', label: 'Fecha de Inicio', type: 'date', required: true },
     { name: 'expectedEndLeaveDate', label: 'Fecha Prevista de Fin', type: 'date', required: true },
-    { name: 'actualEndLeaveDate', label: 'Fecha Real de Fin', type: 'date' },
+
   ];
 
   const handleCreateLeave = async (form) => {
-    try {
       setIsBusy(true); charge?.(true);
       const pid = String(createLeaveCtx.periodId);
       const payload = {
@@ -558,11 +561,15 @@ export default function HiringPeriodsV2({
         leaveType: form.leaveType,
         startLeaveDate: form.startLeaveDate,
         expectedEndLeaveDate: form.expectedEndLeaveDate || undefined,
-        actualEndLeaveDate: form.actualEndLeaveDate || undefined,
+        // actualEndLeaveDate: form.actualEndLeaveDate || undefined,
         active: true,
       };
       const created = await leaveCreate(payload, token);
-      if (created?.error) throw new Error(created.message || 'No se pudo crear la baja/excedencia');
+      if (created?.error){
+        modal('Error', 'No se pudo crear la baja/excedencia')
+        charge(false)
+        return
+      }
 
       setLeavesByPeriod(prev => ({
         ...prev,
@@ -571,11 +578,10 @@ export default function HiringPeriodsV2({
       }));
       setCreateLeaveCtx(null);
       modal?.('Baja/Excedencia', 'Baja/Excedencia creada correctamente');
-    } catch (e) {
-      modal?.('Error', e.message);
-    } finally {
+      
+    
       charge?.(false); setIsBusy(false);
-    }
+    
   };
 
   const editLeaveFields = editLeave ? [
@@ -584,13 +590,27 @@ export default function HiringPeriodsV2({
       defaultValue: editLeave.startLeaveDate ? new Date(editLeave.startLeaveDate).toISOString().split('T')[0] : ''
     },
     {
-      name: 'expectedEndLeaveDate', label: 'Fecha Prevista de Fin', type: 'date',  required: true,
+      name: 'expectedEndLeaveDate', label: 'Fecha Prevista de Fin', type: 'date', required: true,
       defaultValue: editLeave.expectedEndLeaveDate ? new Date(editLeave.expectedEndLeaveDate).toISOString().split('T')[0] : ''
     },
-    {
-      name: 'actualEndLeaveDate', label: 'Fecha Real de Fin', type: 'date',
-      defaultValue: editLeave.actualEndLeaveDate ? new Date(editLeave.actualEndLeaveDate).toISOString().split('T')[0] : ''
-    },
+     canEditLeaveEndDate
+    ? {
+        name: 'actualEndLeaveDate',
+        label: 'Fecha Real de Fin',
+        type: 'date',
+        defaultValue: editLeave.actualEndLeaveDate
+          ? new Date(editLeave.actualEndLeaveDate).toISOString().split('T')[0]
+          : ''
+      }
+    : {
+        name: 'actualEndLeaveDate',
+        label: 'Fecha Real de Fin',
+        type: 'date',
+        defaultValue: editLeave.actualEndLeaveDate
+          ? new Date(editLeave.actualEndLeaveDate).toISOString().split('T')[0]
+          : '',
+        disabled: true,
+      },
     {
       name: 'leaveType', label: 'Tipo de Baja/Excedencia', type: 'select', required: true,
       defaultValue: editLeave.leaveType || '', options: leaveTypeOptions
@@ -607,7 +627,48 @@ export default function HiringPeriodsV2({
         const l = (leavesByPeriod[pid] || []).find(x => String(x._id) === String(closeLeaveCtx.leaveId));
         if (l) { found = l; periodId = String(pid); break; }
       }
-      if (!found || !periodId) throw new Error('No se encontró la baja/excedencia a cerrar');
+      if (!found || !periodId){
+        modal('Error','No se encontró la baja/excedencia a cerrar');
+        charge(false)
+        return;
+      } 
+
+      // Validaciones de fecha de cierre:
+      // - No puede ser posterior a hoy
+      // - No puede ser anterior al inicio de la baja
+      const closeDate = new Date(closeDateISO);
+      const startDate = new Date(found.startLeaveDate);
+      const today = new Date();
+
+      // Normalizamos horas a 00:00 para comparar solo por día
+      closeDate.setHours(0, 0, 0, 0);
+      startDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      // Si en el futuro quieres que root pueda saltarse estas restricciones,
+      // podrías hacer algo tipo:
+      // const isRoot = logged?.user?.role === 'root';
+      // if (!isRoot && closeDate > today) { ... }
+
+      if (closeDate > today) {
+        modal?.(
+          'Fecha no válida',
+          'La fecha de fin de la baja/excedencia no puede ser posterior al día de hoy.'
+        );
+        charge?.(false); setIsBusy(false);
+        setCloseLeaveCtx(null);
+        return;
+      }
+
+      if (closeDate < startDate) {
+        modal?.(
+          'Fecha no válida',
+          'La fecha de fin de la baja/excedencia no puede ser anterior a la fecha de inicio.'
+        );
+        charge?.(false); setIsBusy(false);
+        setCloseLeaveCtx(null);
+        return;
+      }
 
       const isVol = isExcedenciaVoluntaria(found.leaveType);
 
@@ -657,12 +718,18 @@ export default function HiringPeriodsV2({
       setIsBusy(true); charge?.(true);
       const pid = String(editLeave.periodId);
       const patch = {
-        leaveId: editLeave._id,
-        startLeaveDate: form.startLeaveDate || undefined,
-        expectedEndLeaveDate: form.expectedEndLeaveDate || undefined,
-        actualEndLeaveDate: form.actualEndLeaveDate || undefined,
-        leaveType: form.leaveType || undefined,
-      };
+  leaveId: editLeave._id,
+  startLeaveDate: form.startLeaveDate || undefined,
+  expectedEndLeaveDate: form.expectedEndLeaveDate || undefined,
+  actualEndLeaveDate: form.actualEndLeaveDate || undefined,
+  leaveType: form.leaveType || undefined,
+};
+
+// Mientras no activemos la edición de fecha de fin,
+// ignoramos cualquier cambio en actualEndLeaveDate.
+if (!canEditLeaveEndDate) {
+  delete patch.actualEndLeaveDate;
+}
       const updated = await leaveUpdate(patch, token);
       if (updated?.error) throw new Error(updated.message || 'No se pudo actualizar la baja/excedencia');
 
@@ -721,7 +788,7 @@ export default function HiringPeriodsV2({
       const { periodId, leave } = rejoinCtx || {};
       const period = periods.find(p => String(p._id) === String(periodId));
       if (!period) throw new Error('No se encontró el periodo');
-      const deviceId=period?.dispositiveId ?? period?.dispositiveId
+      const deviceId = period?.dispositiveId ?? period?.dispositiveId
       const provinceId = getDeviceProvince(deviceId);
       if (!isValidObjectId(provinceId)) throw new Error('No se pudo resolver la provincia (_id).');
       if (!isValidObjectId(String(period.position))) throw new Error('No se pudo resolver el puesto (position).');
@@ -771,9 +838,9 @@ export default function HiringPeriodsV2({
       if (updatedPeriod?.error) throw new Error(updatedPeriod.message || 'No se pudo cerrar el periodo');
 
       setPeriods(prev => prev.map(p => String(p._id) === String(updatedPeriod._id) ? updatedPeriod : p));
-      
-      const clossAll=await closeAllLeavesForPeriod(periodId, endDateForPeriod);
-      
+
+      const clossAll = await closeAllLeavesForPeriod(periodId, endDateForPeriod);
+
       modal?.('Reincorporación', 'Reincorporación registrada. Excedencia y periodo cerrados correctamente.');
       setRejoinCtx(null);
     } catch (e) {
@@ -958,15 +1025,15 @@ export default function HiringPeriodsV2({
               )}
             </header>
 
-              <section className={styles.meta} aria-label="Información del periodo">
-                <dl className={styles.metaGrid}>
-                  <div><dt>Inicio</dt><dd className={styles.mono}>{fmt(hp.startDate)}</dd></div>
-                  <div><dt>Fin</dt><dd className={styles.mono}>{fmt(hp.endDate)}</dd></div>
-                  <div><dt>Dispositivo</dt><dd>{getDeviceName(hp.dispositiveId) }</dd></div>
-                  <div><dt>Jornada</dt><dd>{hp.workShift?.type || '—'}</dd></div>
-                  <div><dt>Puesto</dt><dd>{getPositionName(hp.position)}</dd></div>
-                </dl>
-              </section>
+            <section className={styles.meta} aria-label="Información del periodo">
+              <dl className={styles.metaGrid}>
+                <div><dt>Inicio</dt><dd className={styles.mono}>{fmt(hp.startDate)}</dd></div>
+                <div><dt>Fin</dt><dd className={styles.mono}>{fmt(hp.endDate)}</dd></div>
+                <div><dt>Dispositivo</dt><dd>{getDeviceName(hp.dispositiveId)}</dd></div>
+                <div><dt>Jornada</dt><dd>{hp.workShift?.type || '—'}</dd></div>
+                <div><dt>Puesto</dt><dd>{getPositionName(hp.position)}</dd></div>
+              </dl>
+            </section>
 
             <section className={styles.leaves} aria-label="Bajas o excedencias">
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -1216,7 +1283,7 @@ export default function HiringPeriodsV2({
           message={rejoinConfirm.message}
           onConfirm={doConfirmRejoin}
           onCancel={() => setRejoinConfirm(null)}
-          
+
         />
       )}
 

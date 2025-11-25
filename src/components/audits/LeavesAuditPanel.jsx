@@ -13,12 +13,23 @@ import {
   FaVestPatches,
 } from "react-icons/fa";
 
-
 import { RiBuilding2Line } from "react-icons/ri";
-import { GiHealthNormal } from "react-icons/gi";
-import { MdContactPhone, MdEmail, MdOutlineUpdate, MdUpdateDisabled } from "react-icons/md";
-import { formatDate } from "../../lib/utils";
+import {
+  GiHealthNormal
+} from "react-icons/gi";
+import {
+  MdContactPhone,
+  MdEmail,
+  MdOutlineUpdate,
+  MdUpdateDisabled,
+} from "react-icons/md";
 import { FaUserInjured } from "react-icons/fa6";
+import { TbFileTypeXml } from "react-icons/tb";
+
+// 👇 Ajusta la ruta si tu GenericXLSExport está en otro sitio
+import GenericXLSExport from "../globals/GenericXLSExport.jsx";
+
+import { formatDate } from "../../lib/utils";
 
 export default function LeavesAuditPanel({ enumsData, modal, charge }) {
   const [selectedTypes, setSelectedTypes] = useState([]);
@@ -31,8 +42,12 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const pageSize = 30;
+
+  // 🔹 Config para el modal de exportación
+  const [exportConfig, setExportConfig] = useState(null);
 
   const rawTypes = enumsData.leavesIndex || {};
 
@@ -40,6 +55,7 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
     value: lt._id || id,
     label: lt.name,
   }));
+  
 
   const toggleType = (id) =>
     setSelectedTypes((prev) =>
@@ -71,6 +87,7 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
     setPage(res.page || 1);
     setTotalPages(res.totalPages || 1);
     setTotalResults(res.totalResults || 0);
+    setHasSearched(true);
 
     charge(false);
   };
@@ -84,27 +101,182 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
   const toggleUser = (id) =>
     setSelectedUser((prev) => (prev === id ? null : id));
 
+  /* =========================================================
+     CAMPOS PARA EXPORTAR A EXCEL
+     (una fila por baja activa)
+  ========================================================= */
+// Campos para exportar las bajas activas
+const leaveExportFields = [
+  // Usuario
+  {
+    key: "userFullName",
+    label: "Nombre completo",
+    type: "text",
+    transform: (value, row) =>
+      `${row.user?.firstName || ""} ${row.user?.lastName || ""}`.trim(),
+  },
+  {
+    key: "dni",
+    label: "DNI",
+    type: "text",
+    transform: (value, row) => row.user?.dni || "",
+  },
+  {
+    key: "email",
+    label: "Email",
+    type: "text",
+    transform: (value, row) => row.user?.email || "",
+  },
+  {
+    key: "phone",
+    label: "Teléfono",
+    type: "text",
+    transform: (value, row) => row.user?.phone || "",
+  },
+
+  // Baja
+  {
+    key: "leaveType",
+    label: "Tipo de baja",
+    type: "text",
+    transform: (value, row) =>
+      enumsData?.leavesIndex?.[row.leave?.leaveType]?.name || "",
+  },
+  {
+    key: "startLeaveDate",
+    label: "Inicio baja",
+    type: "date",
+    transform: (value, row) => row.leave?.startLeaveDate || null,
+  },
+  {
+    key: "expectedEndLeaveDate",
+    label: "Fin previsto",
+    type: "date",
+    transform: (value, row) => row.leave?.expectedEndLeaveDate || null,
+  },
+
+  // Dispositivo actual (solo responsable de dispositivo)
+  {
+    key: "deviceName",
+    label: "Dispositivo",
+    type: "text",
+    transform: (value, row) =>
+      row.currentHiring?.[0]?.deviceName || "", // primer hiring activo
+  },
+  {
+    key: "deviceResponsibles",
+    label: "Responsables de dispositivo",
+    type: "text",
+    transform: (value, row) => {
+      const responsibles = row.currentHiring?.[0]?.responsibles || [];
+      if (!responsibles.length) return "";
+      return responsibles
+        .map((r) => r.name || "")
+        .filter(Boolean)
+        .join(" | ");
+    },
+  },
+];
+
+  /* =========================================================
+     HANDLER EXPORTACIÓN
+     - Re-llama a auditActiveLeaves para TODAS las páginas
+  ========================================================= */
+
+  const handleExportClick = async () => {
+    if (!hasSearched || totalResults === 0) {
+      modal(
+        "Sin datos",
+        "Primero ejecuta la auditoría para tener resultados que exportar."
+      );
+      return;
+    }
+
+    try {
+      charge(true);
+      const token = getToken();
+
+      let allResults = [];
+      
+      if (totalPages > 1) {
+        for (let p = 1; p <= totalPages; p++) {
+          const res = await auditActiveLeaves(
+            {
+              leaveTypes: selectedTypes,
+              apafa,
+              employmentStatus: employment,
+              page: p,
+              limit: pageSize,
+            },
+            token
+          );
+
+          if (res?.error) {
+            throw new Error(
+              res.message || "Error al obtener datos para exportar."
+            );
+          }
+
+          allResults = allResults.concat(res.results || []);
+        }
+      } else {
+        allResults = results.slice();
+      }
+
+setExportConfig({
+  data: allResults,
+  fields: leaveExportFields,
+  fileName: "auditoria_bajas_activas.xlsx",
+  modalTitle: "Exportar auditoría de bajas",
+  modalMessage: "Selecciona las columnas que quieres incluir en el Excel:",
+});
+    } catch (err) {
+      console.error(err);
+      modal("Error", err.message || "Error al preparar los datos para Excel.");
+    } finally {
+      charge(false);
+    }
+  };
+
   return (
     <div className={styles.panel}>
       <h3>
         Auditoría de Bajas{" "}
-        <button onClick={() => runAudit(1)} className={styles.runButton}>
-          Ejecutar auditoría
-        </button>
+        <div>
+          <button onClick={() => runAudit(1)} className={styles.runButton}>
+            Ejecutar auditoría
+          </button>
+
+          {hasSearched && totalResults > 0 && (
+            <button
+              type="button"
+              className={styles.runButton}
+              style={{
+                marginLeft: "1rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+              }}
+              onClick={handleExportClick}
+            >
+              <TbFileTypeXml />
+              Exportar a Excel
+            </button>
+          )}
+        </div>
       </h3>
 
       {/* SELECCIÓN DE TIPOS */}
-      {/* CAMPOS */}
       <h4>Selecciona campos a auditar</h4>
       <div className={styles.fieldSelector}>
         {TYPES.map((t) => (
-          <div>
+          <div key={t.value}>
             <input
               type="checkbox"
               checked={selectedTypes.includes(t.value)}
               onChange={() => toggleType(t.value)}
             />
-            <label key={t.value} className={styles.checkboxOption}>{t.label}</label>
+            <label className={styles.checkboxOption}>{t.label}</label>
           </div>
         ))}
       </div>
@@ -151,7 +323,7 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
           </div>
         )}
 
-        {results.length === 0 && <p>No hay resultados.</p>}
+        {hasSearched && results.length === 0 && <p>No hay resultados.</p>}
 
         {results.map((x) => {
           const u = x.user;
@@ -160,7 +332,6 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
 
           return (
             <div key={u._id} className={styles.resultCard}>
-
               <div className={styles.resultH}>
                 <h4>
                   {u.firstName} {u.lastName}
@@ -183,26 +354,44 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
               >
                 {/* INFO DE USUARIO */}
                 <div className={styles.infoUser}>
-                  <p><GiHealthNormal /> DNI: {u.dni || "—"}</p>
-                  <p><MdEmail /> {u.email || "—"}</p>
-                  <p><MdContactPhone /> {u.phone || "—"}</p>
-                  <p><FaBirthdayCake /> Baja desde: {formatDate(leave.startLeaveDate)}</p>
+                  <p>
+                    <GiHealthNormal /> DNI: {u.dni || "—"}
+                  </p>
+                  <p>
+                    <MdEmail /> {u.email || "—"}
+                  </p>
+                  <p>
+                    <MdContactPhone /> {u.phone || "—"}
+                  </p>
+                  <p>
+                    <FaBirthdayCake /> Baja desde:{" "}
+                    {formatDate(leave.startLeaveDate)}
+                  </p>
                 </div>
 
-                {/* BLOQUE 3 – INFORMACIÓN DE LA BAJA */}
+                {/* INFORMACIÓN DE LA BAJA */}
                 <div className={styles.boxLeave}>
-                  <p><FaUserInjured /> {enumsData.leavesIndex[leave.leaveType]?.name || "—"}</p>
-                  <p><MdOutlineUpdate /> Inicio: {formatDate(leave.startLeaveDate)}</p>
-                  <p><MdUpdateDisabled /> Fin previsto: {formatDate(leave.expectedEndLeaveDate)}</p>
-
+                  <p>
+                    <FaUserInjured />{" "}
+                    {enumsData.leavesIndex[leave.leaveType]?.name || "—"}
+                  </p>
+                  <p>
+                    <MdOutlineUpdate /> Inicio:{" "}
+                    {formatDate(leave.startLeaveDate)}
+                  </p>
+                  <p>
+                    <MdUpdateDisabled /> Fin previsto:{" "}
+                    {formatDate(leave.expectedEndLeaveDate)}
+                  </p>
                 </div>
 
-                {/* PERIODOS ACTIVOS (MISMA ESTRUCTURA QUE USERINFO) */}
+                {/* PERIODOS ACTIVOS */}
                 {hiring.length > 0 ? (
                   hiring.map((h) => (
                     <div key={h._id} className={styles.boxDispositive}>
-
-                      <p><FaFolderOpen /> {h.programName || "Sin programa"}</p>
+                      <p>
+                        <FaFolderOpen /> {h.programName || "Sin programa"}
+                      </p>
 
                       {/* RESPONSABLES PROGRAMA */}
                       {h.programResponsibles?.length > 0 ? (
@@ -222,7 +411,10 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
                         <RiBuilding2Line /> {h.deviceName || "Sin dispositivo"}
                       </p>
 
-                      <p><FaVestPatches /> {enumsData.jobsIndex?.[h.position]?.name || ""}</p>
+                      <p>
+                        <FaVestPatches />{" "}
+                        {enumsData.jobsIndex?.[h.position]?.name || ""}
+                      </p>
 
                       {/* RESPONSABLES DISPOSITIVO */}
                       {h.responsibles?.length > 0 ? (
@@ -261,6 +453,18 @@ export default function LeavesAuditPanel({ enumsData, modal, charge }) {
           );
         })}
       </div>
+
+      {/* MODAL DE EXPORTACIÓN GENÉRICO */}
+      {exportConfig && (
+        <GenericXLSExport
+          data={exportConfig.data}
+          fields={exportConfig.fields}
+          fileName={exportConfig.fileName}
+          modalTitle={exportConfig.modalTitle}
+          modalMessage={exportConfig.modalMessage}
+          onClose={() => setExportConfig(null)}
+        />
+      )}
     </div>
   );
 }

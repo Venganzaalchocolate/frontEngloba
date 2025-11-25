@@ -7,19 +7,35 @@ import {
   FaAngleDoubleUp,
   FaTimesCircle,
   FaClock,
+  FaAddressCard,
 } from "react-icons/fa";
 import { getToken } from "../../lib/serviceToken";
 import { auditPayrolls } from "../../lib/data";
+import GenericXLSExport from "../globals/GenericXLSExport.jsx";
+import { MdContactPhone, MdEmail, MdOutlinePhoneAndroid } from "react-icons/md";
+import { TbFileTypeXml } from "react-icons/tb";
 
 export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
-  const [selectedFields, setSelectedFields] = useState(['notSign']);
+  const [selectedFields, setSelectedFields] = useState(["notSign"]);
   const [apafa, setApafa] = useState("no");
   const [traking, setTraking] = useState("no");
   const [employment, setEmployment] = useState("activos");
+
+  // Configuración para el modal genérico de exportación XLS
+  const [exportConfig, setExportConfig] = useState(null);
+
   const [time, setTime] = useState({
-    months:(new Date().getMonth()==0)?[12]: [new Date().getMonth()],
-    years: (new Date().getMonth()==0)?[new Date().getFullYear()-1]:[new Date().getFullYear()],
+    // OJO: getMonth() va de 0 a 11 → si quieres el mes actual humano, suma 1
+    months:
+      new Date().getMonth() === 0
+        ? [12]
+        : [new Date().getMonth() + 1],
+    years:
+      new Date().getMonth() === 0
+        ? [new Date().getFullYear() - 1]
+        : [new Date().getFullYear()],
   });
+
   const [results, setResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
 
@@ -29,8 +45,6 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
   const [hasSearched, setHasSearched] = useState(false);
 
   const pageSize = 30;
-
-
 
   const FIELDS = [
     { value: "notSign", label: "Nóminas sin firmar" },
@@ -64,6 +78,123 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
   const monthLabel = (m) =>
     MONTHS.find((mm) => mm.value === m)?.label || m;
 
+  /* =========================================================
+     CAMPOS PARA EXPORTAR A EXCEL (AUDITORÍA NÓMINAS)
+  ========================================================= */
+
+  const payrollsExportFields = [
+    {
+      key: "fullName",
+      label: "Nombre completo",
+      type: "text",
+      transform: (value, row) =>
+        `${row.firstName || ""} ${row.lastName || ""}`.trim(),
+    },
+    {
+      key: "dni",
+      label: "DNI/NIE",
+      type: "text",
+    },
+    {
+      key: "email",
+      label: "Email",
+      type: "text",
+    },
+    {
+      key: "phone",
+      label: "Teléfono personal",
+      type: "text",
+    },
+    {
+      key: "phoneJob",
+      label: "Teléfono laboral",
+      type: "text",
+      transform: (value, row) => row.phoneJob?.number || "",
+    },
+    {
+      key: "employmentStatus",
+      label: "Estado laboral",
+      type: "text",
+    },
+    {
+      key: "apafa",
+      label: "APAFA",
+      type: "text",
+      transform: (value, row) =>
+        row.apafa === true ? "APAFA" : "Engloba",
+    },
+    {
+      key: "tracking",
+      label: "Seguimiento",
+      type: "text",
+      transform: (value, row) =>
+        row.tracking === true ? "Sí" : "No",
+    },
+    {
+      key: "notSignedPayrolls",
+      label: "Nóminas sin firmar",
+      type: "text",
+      transform: (value, row) =>
+        (row.notSignedPayrolls || [])
+          .map((p) => `${monthLabel(p.month)} ${p.year}`)
+          .join(" | "),
+    },
+    {
+      key: "missingPayrolls",
+      label: "Meses sin nómina subida",
+      type: "text",
+      transform: (value, row) =>
+        (row.missingPayrolls || [])
+          .map((p) => `${monthLabel(p.month)} ${p.year}`)
+          .join(" | "),
+    },
+  ];
+
+  /* =========================================================
+     HANDLER EXPORTACIÓN — usa SOLO los resultados en memoria
+     (nada de re-llamar al back → más rápido)
+  ========================================================= */
+
+  const handleExportClick = () => {
+    if (!hasSearched || results.length === 0) {
+      modal(
+        "Sin datos",
+        "Primero ejecuta la auditoría para tener resultados que exportar."
+      );
+      return;
+    }
+
+    if (selectedFields.length === 0) {
+      modal(
+        "Campos requeridos",
+        "Debes seleccionar al menos un criterio (nóminas sin firmar / sin nóminas)."
+      );
+      return;
+    }
+
+    if (!time.months.length || !time.years.length) {
+      modal(
+        "Tiempo requerido",
+        "Debes seleccionar al menos un mes y un año para la auditoría."
+      );
+      return;
+    }
+
+    // Aquí no hay fetch: usamos todos los resultados ya cargados
+    setExportConfig({
+      data: results, // TODOS los resultados de la auditoría
+      fields: payrollsExportFields,
+      fileName: "auditoria_nominas.xlsx",
+      modalTitle: "Exportar auditoría de nóminas",
+      modalMessage:
+        "Selecciona las columnas que quieres incluir en el Excel:",
+    });
+  };
+
+  /* =========================================================
+     HANDLERS DE FILTROS
+  ========================================================= */
+
   const toggle = (f) => {
     setSelectedFields((prev) =>
       prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
@@ -90,15 +221,19 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
 
   const changePage = (p) => {
     if (p < 1 || p > totalPages) return;
-    setPage(p);
-    runAudit(p);
+    setPage(p); // paginación SOLO en front
   };
 
   const selectUser = (id) => {
     setSelectedUser((prev) => (prev === id ? null : id));
   };
 
-  const runAudit = async (newPage = page) => {
+  /* =========================================================
+     RUN AUDIT — carga TODOS los resultados una sola vez
+     y luego paginamos en front
+  ========================================================= */
+
+  const runAudit = async () => {
     if (selectedFields.length === 0) {
       modal(
         "Campos requeridos",
@@ -124,34 +259,67 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
       traking,
       employment,
       time,
-      page: newPage,
-      limit: pageSize,
+      // Pedimos un límite ALTO para traernos todo de golpe
+      page: 1,
+      limit: 10000,
     };
 
     const res = await auditPayrolls(payload, token);
 
     if (res?.error) {
-      modal("Error", res.message || "No se pudo obtener la auditoría de nóminas");
+      modal(
+        "Error",
+        res.message || "No se pudo obtener la auditoría de nóminas"
+      );
       charge(false);
       return;
     }
 
-    setResults(res.results || []);
-    setTotalPages(res.totalPages || 1);
-    setTotalResults(res.totalResults || 0);
-    setPage(res.page || 1);
+    const allResults = res.results || [];
+    const total = allResults.length;
+    const pages = total > 0 ? Math.ceil(total / pageSize) : 1;
+
+    setResults(allResults);
+    setTotalResults(total);
+    setTotalPages(pages);
+    setPage(1);
     setHasSearched(true);
 
     charge(false);
   };
 
+  // Resultados visibles según la página actual (paginación front)
+  const visibleResults =
+    totalResults > pageSize
+      ? results.slice((page - 1) * pageSize, page * pageSize)
+      : results;
+
   return (
     <div className={styles.panel}>
       <h3>
         Auditoría de nóminas{" "}
-        <button onClick={() => runAudit(1)} className={styles.runButton}>
-          Ejecutar auditoría
-        </button>
+        <div>
+          <button onClick={runAudit} className={styles.runButton}>
+            Ejecutar auditoría
+          </button>
+
+          {hasSearched && results.length > 0 && (
+            <button
+              type="button"
+              className={styles.runButton}
+              onClick={handleExportClick}
+              style={{
+                marginLeft: "1rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+              }}
+            >
+              <TbFileTypeXml />
+              Exportar a Excel
+            </button>
+          )}
+        </div>
       </h3>
 
       <h4>Selecciona campos que deseas auditar</h4>
@@ -183,7 +351,9 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
                       checked={time.months.includes(m.value)}
                       onChange={() => toggleMonth(m.value)}
                     />
-                    <label className={styles.checkboxOption}>{m.label}</label>
+                    <label className={styles.checkboxOption}>
+                      {m.label}
+                    </label>
                   </div>
                 ))}
               </div>
@@ -245,7 +415,10 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
 
       {/* Resultados */}
       <div className={styles.results}>
-        {hasSearched && results.length === 0 && <p>No hay resultados.</p>}
+        {hasSearched && visibleResults.length === 0 && (
+          <p>No hay resultados.</p>
+        )}
+
         {/* PAGINACIÓN */}
         {totalResults > pageSize && (
           <div className={styles.pagination}>
@@ -263,11 +436,11 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
           </div>
         )}
 
-        {results.map((u) => (
+        {visibleResults.map((u) => (
           <div key={u._id} className={styles.resultCard}>
             <div className={styles.resultH}>
               <h4>
-                {u.firstName} {u.lastName} — {u.dni}
+                {u.firstName} {u.lastName}
               </h4>
               {selectedUser === u._id ? (
                 <FaAngleDoubleUp onClick={() => selectUser(u._id)} />
@@ -285,10 +458,26 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
             >
               {/* Info básica */}
               <div className={styles.infoUser}>
-                <p>Email: {u.email || "No disponible"}</p>
-                <p>APAFA: {u.apafa ? "Sí" : "No"}</p>
-                <p>Seguimiento: {u.tracking ? "Sí" : "No"}</p>
-                <p>Estado laboral: {u.employmentStatus || "No disponible"}</p>
+                <p>
+                  <FaAddressCard title="DNI/NIE" />{" "}
+                  {u.dni || "No disponible"}
+                </p>
+                <p>
+                  <MdEmail title="Email" />{" "}
+                  {u.email || "No disponible"}
+                </p>
+                <p>
+                  <MdContactPhone title="Teléfono Personal" />{" "}
+                  {u.phone || "No disponible"}
+                </p>
+                <p>
+                  <MdOutlinePhoneAndroid title="Teléfono Laboral" />{" "}
+                  {u.phoneJob?.number || "No disponible"}
+                </p>
+                <p>
+                  Estado laboral:{" "}
+                  {u.employmentStatus || "No disponible"}
+                </p>
               </div>
 
               {/* Nóminas sin firmar */}
@@ -304,7 +493,10 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
                         </li>
                       ))
                     ) : (
-                      <li>— Ninguna nómina sin firmar en el periodo seleccionado</li>
+                      <li>
+                        — Ninguna nómina sin firmar en el periodo
+                        seleccionado
+                      </li>
                     )}
                   </ul>
                 </div>
@@ -323,7 +515,9 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
                         </li>
                       ))
                     ) : (
-                      <li>— No faltan nóminas en el periodo seleccionado</li>
+                      <li>
+                        — No faltan nóminas en el periodo seleccionado
+                      </li>
                     )}
                   </ul>
                 </div>
@@ -332,6 +526,18 @@ export default function PayrollsAuditPanel({ enumsData, modal, charge }) {
           </div>
         ))}
       </div>
+
+      {/* MODAL DE EXPORTACIÓN GENÉRICO */}
+      {exportConfig && (
+        <GenericXLSExport
+          data={exportConfig.data}
+          fields={exportConfig.fields}
+          fileName={exportConfig.fileName}
+          modalTitle={exportConfig.modalTitle}
+          modalMessage={exportConfig.modalMessage}
+          onClose={() => setExportConfig(null)}
+        />
+      )}
     </div>
   );
 }

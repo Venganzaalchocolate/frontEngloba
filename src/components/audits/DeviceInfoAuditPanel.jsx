@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import styles from "../styles/ManagingAuditors.module.css";
-import { auditInfoDevice, auditDocumentDispo } from "../../lib/data"; // 👈 añade auditDocumentDispo en lib/data
+import { auditInfoDevice, auditDocumentDispo } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 
 import {
@@ -12,15 +12,19 @@ import {
   FaTimesCircle,
   FaClock,
 } from "react-icons/fa";
-
 import { RiBuilding2Line } from "react-icons/ri";
 import { MdEmail, MdOutlinePhoneAndroid, MdLocationPin } from "react-icons/md";
 import { FaNetworkWired } from "react-icons/fa";
 import { AiFillFolderOpen } from "react-icons/ai";
+import { TbFileTypeXml } from "react-icons/tb";
+
+// 👇 Ajusta la ruta si tu GenericXLSExport está en otro sitio
+import GenericXLSExport from "../globals/GenericXLSExport.jsx";
 
 export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
   const [selectedFields, setSelectedFields] = useState([]);
-  const [selectedFieldsDocumentation, setSelectedFieldsDocumentation] = useState([]);
+  const [selectedFieldsDocumentation, setSelectedFieldsDocumentation] =
+    useState([]);
   const [results, setResults] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
 
@@ -31,6 +35,9 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
   const [hasSearched, setHasSearched] = useState(false);
 
   const pageSize = 30;
+
+  // 🔹 Config para el modal de exportación
+  const [exportConfig, setExportConfig] = useState(null);
 
   const FIELDS = [
     { value: "name", label: "Nombre" },
@@ -93,15 +100,21 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
   };
 
   const runAudit = async (newPage = page) => {
-    if (selectedFields.length === 0 && selectedFieldsDocumentation.length === 0) {
-      return modal("Campos requeridos", "Selecciona algún campo o documentación.");
+    if (
+      selectedFields.length === 0 &&
+      selectedFieldsDocumentation.length === 0
+    ) {
+      return modal(
+        "Campos requeridos",
+        "Selecciona algún campo o documentación."
+      );
     }
 
     charge(true);
     const token = getToken();
     let res = null;
 
-    // === MODO INFO: usa paginación ===
+    // === MODO INFO: usa paginación (back) ===
     if (isInfoMode && selectedFields.length > 0) {
       res = await auditInfoDevice(
         { fields: selectedFields, page: newPage, limit: pageSize },
@@ -123,7 +136,7 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
       return;
     }
 
-    // === MODO DOC: auditDocumentDispo devuelve { missing, expired } ===
+    // === MODO DOC: auditDocumentDispo devuelve { missing, expired } (todo sin paginación) ===
     if (isDocMode && selectedFieldsDocumentation.length > 0) {
       res = await auditDocumentDispo(
         { docs: selectedFieldsDocumentation },
@@ -131,7 +144,10 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
       );
 
       if (res?.error) {
-        modal("Error", res.message || "Error en auditoría de documentación de dispositivos");
+        modal(
+          "Error",
+          res.message || "Error en auditoría de documentación de dispositivos"
+        );
         charge(false);
         return;
       }
@@ -182,9 +198,11 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
 
       const devicesArray = Array.from(devicesMap.values());
 
+      // 🔹 PAGINACIÓN EN EL FRONT PARA DOCUMENTACIÓN
+      const total = devicesArray.length;
       setResults(devicesArray);
-      setTotalResults(devicesArray.length);
-      setTotalPages(1);
+      setTotalResults(total);
+      setTotalPages(total > 0 ? Math.ceil(total / pageSize) : 1);
       setPage(1);
       setHasSearched(true);
       charge(false);
@@ -194,11 +212,17 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
     charge(false);
   };
 
+  // 🔹 PAGINACIÓN UNIFICADA (INFO: back / DOC: front)
   const changePage = (p) => {
-    if (!isInfoMode) return; // paginación solo en modo info
     if (p < 1 || p > totalPages) return;
-    setPage(p);
-    runAudit(p);
+
+    if (isInfoMode) {
+      setPage(p);
+      runAudit(p); // vuelve a pedir al back
+    } else {
+      // doc → solo cambiar página, los datos ya están en results
+      setPage(p);
+    }
   };
 
   const selectDevice = (id) =>
@@ -212,21 +236,239 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
     };
   };
 
+  // 🔹 Resultados visibles según página (para doc se hace slice en front)
+  const visibleResults =
+    totalResults > pageSize
+      ? results.slice((page - 1) * pageSize, page * pageSize)
+      : results;
+
+  /* =========================================================
+     CONFIGURACIÓN DE CAMPOS PARA EXPORTAR A EXCEL
+     (distinta para INFO y DOC, pero usando GenericXLSExport)
+  ========================================================= */
+
+  // Campos para export INFO (dispositivos con datos generales)
+  const deviceInfoExportFields = [
+    {
+      key: "name",
+      label: "Nombre dispositivo",
+      type: "text",
+    },
+    {
+      key: "programName",
+      label: "Programa",
+      type: "text",
+      transform: (value, row) => row.program?.name || "",
+    },
+    {
+      key: "email",
+      label: "Correo",
+      type: "text",
+    },
+    {
+      key: "phone",
+      label: "Teléfono",
+      type: "text",
+    },
+    {
+      key: "address",
+      label: "Dirección",
+      type: "text",
+    },
+    {
+      key: "groupWorkspace",
+      label: "Workspace (grupo)",
+      type: "boolean",
+    },
+    {
+      key: "responsible",
+      label: "Responsables",
+      type: "text",
+      transform: (value, row) =>
+        (value || [])
+          .map((r) => `${r.firstName || ""} ${r.lastName || ""}`.trim())
+          .filter(Boolean)
+          .join(" | "),
+    },
+    {
+      key: "coordinators",
+      label: "Coordinadores",
+      type: "text",
+      transform: (value, row) =>
+        (value || [])
+          .map((c) => `${c.firstName || ""} ${c.lastName || ""}`.trim())
+          .filter(Boolean)
+          .join(" | "),
+    },
+  ];
+
+  // Campos para export DOC (dispositivos + resumen de documentación)
+  const deviceDocExportFields = [
+    {
+      key: "name",
+      label: "Nombre dispositivo",
+      type: "text",
+    },
+    {
+      key: "program",
+      label: "Programa",
+      type: "text",
+      transform: (value, row) => row.program?.name || "",
+    },
+    {
+      key: "docs_missing",
+      label: "Documentos faltantes",
+      type: "text",
+      transform: (value, row) => {
+        const status = row.documentationStatus || [];
+        const missing = status.filter((d) => d.state === "missing");
+        if (!missing.length) return "";
+        return missing.map((d) => d.name).join(" | ");
+      },
+    },
+    {
+      key: "docs_expired",
+      label: "Documentos caducados",
+      type: "text",
+      transform: (value, row) => {
+        const status = row.documentationStatus || [];
+        const expired = status.filter((d) => d.state === "expired");
+        if (!expired.length) return "";
+        return expired
+          .map((d) =>
+            typeof d.daysPassed === "number"
+              ? `${d.name} (hace ${d.daysPassed} días)`
+              : d.name
+          )
+          .join(" | ");
+      },
+    },
+  ];
+
+  /* =========================================================
+     HANDLERS DE EXPORTACIÓN
+     - INFO: re-llama al back para todas las páginas
+     - DOC: usa todos los results en memoria
+     El Excel SIEMPRE contiene todos los registros, sin paginar.
+  ========================================================= */
+
+  const handleExportClick = async () => {
+    if (!hasSearched || results.length === 0) {
+      modal(
+        "Sin datos",
+        "Primero ejecuta la auditoría para tener resultados que exportar."
+      );
+      return;
+    }
+
+    // MODO INFO → re-fetch de todas las páginas para tener TODOS los dispositivos con error
+    if (isInfoMode) {
+      if (!selectedFields.length) {
+        modal(
+          "Sin campos",
+          "Selecciona primero los campos a auditar antes de exportar."
+        );
+        return;
+      }
+
+      try {
+        charge(true);
+        const token = getToken();
+
+        let allResults = [];
+        // Si ya sabemos que hay más de una página, iteramos; si no, usamos los actuales.
+        if (totalPages > 1) {
+          for (let p = 1; p <= totalPages; p++) {
+            const res = await auditInfoDevice(
+              { fields: selectedFields, page: p, limit: pageSize },
+              token
+            );
+            if (res?.error) {
+              throw new Error(
+                res.message || "Error al obtener datos para exportar."
+              );
+            }
+            allResults = allResults.concat(res.results || []);
+          }
+        } else {
+          // Solo una página → los results actuales ya son todos
+          allResults = results.slice();
+        }
+
+        setExportConfig({
+          data: allResults,
+          fields: deviceInfoExportFields,
+          fileName: "auditoria_dispositivos_info.xlsx",
+          modalTitle: "Exportar auditoría de dispositivos",
+          modalMessage: "Selecciona las columnas que quieres incluir en el Excel:",
+        });
+      } catch (err) {
+        console.error(err);
+        modal(
+          "Error",
+          err.message || "Error al preparar los datos para Excel."
+        );
+      } finally {
+        charge(false);
+      }
+      return;
+    }
+
+    // MODO DOC → ya tenemos todos los dispositivos con errores en `results`
+    if (isDocMode) {
+      setExportConfig({
+        data: results, // TODOS los dispositivos con errores, sin paginar
+        fields: deviceDocExportFields,
+        fileName: "auditoria_dispositivos_documentacion.xlsx",
+        modalTitle: "Exportar documentación de dispositivos",
+        modalMessage: "Selecciona las columnas que quieres incluir en el Excel:",
+      });
+    }
+  };
+
   return (
     <div className={styles.panel}>
-      <h3>Auditoría de Dispositivos</h3>
+      <h3>
+        Auditoría de Dispositivos{" "}
+        <div>
+                   <button onClick={() => runAudit(1)} className={styles.runButton}>
+                  Ejecutar auditoría
+                </button>
+
+        {hasSearched && results.length > 0 && (
+          <button
+            type="button"
+            className={styles.runButton}
+            style={{ marginLeft: "1rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+            onClick={handleExportClick}
+          >
+            <TbFileTypeXml />
+            Exportar a Excel
+          </button>
+        )}       
+        </div>
+
+      </h3>
 
       <h4>Selecciona campos a auditar</h4>
       <div className={styles.buttonSelection}>
         <button
           onClick={() => resetStateForModeChange("info")}
-          style={isInfoMode ? { opacity: 1, fontWeight: 600 } : { opacity: 0.6, fontWeight: 400 }}
+          style={
+            isInfoMode
+              ? { opacity: 1, fontWeight: 600 }
+              : { opacity: 0.6, fontWeight: 400 }
+          }
         >
           Información
         </button>
         <button
           onClick={() => resetStateForModeChange("doc")}
-          style={isDocMode ? { opacity: 1, fontWeight: 600 } : { opacity: 0.6, fontWeight: 400 }}
+          style={
+            isDocMode
+              ? { opacity: 1, fontWeight: 600 }
+              : { opacity: 0.6, fontWeight: 400 }
+          }
         >
           Documentación
         </button>
@@ -247,9 +489,7 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
               </div>
             ))}
           </div>
-          <button className={styles.runButton} onClick={() => runAudit(1)}>
-            Ejecutar auditoría
-          </button>
+ 
         </div>
       )}
 
@@ -268,15 +508,12 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
               </div>
             ))}
           </div>
-          <button className={styles.runButton} onClick={() => runAudit(1)}>
-            Ejecutar auditoría
-          </button>
         </div>
       )}
 
       <div className={styles.results}>
-        {/* Paginación solo en modo INFO */}
-        {isInfoMode && totalResults > pageSize && (
+        {/* Paginación (INFO: back, DOC: front) */}
+        {totalResults > pageSize && (
           <div className={styles.pagination}>
             <FaRegArrowAltCircleLeft
               className={page === 1 ? styles.disabled : ""}
@@ -292,11 +529,11 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
           </div>
         )}
 
-        {hasSearched && results.length === 0 && (
+        {hasSearched && visibleResults.length === 0 && (
           <p>No se encontraron dispositivos.</p>
         )}
 
-        {results.map((d) => {
+        {visibleResults.map((d) => {
           const expanded = selectedDevice === d._id;
           const { missing, expired } = isDocMode
             ? getDocGroups(d)
@@ -347,7 +584,8 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
                     </div>
 
                     {/* RESPONSABLES */}
-                    {Array.isArray(d.responsible) && d.responsible.length > 0 ? (
+                    {Array.isArray(d.responsible) &&
+                    d.responsible.length > 0 ? (
                       <div className={styles.boxDispositive}>
                         <h4>RESPONSABLES DE DISPOSITIVO</h4>
                         <ul>
@@ -363,7 +601,8 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
                     )}
 
                     {/* COORDINADORES */}
-                    {Array.isArray(d.coordinators) && d.coordinators.length > 0 ? (
+                    {Array.isArray(d.coordinators) &&
+                    d.coordinators.length > 0 ? (
                       <div className={styles.boxDispositive}>
                         <h4>COORDINADORES DE DISPOSITIVO</h4>
                         <ul>
@@ -422,6 +661,18 @@ export default function DeviceInfoAuditPanel({ modal, charge, enumsData }) {
           );
         })}
       </div>
+
+      {/* MODAL DE EXPORTACIÓN GENÉRICO */}
+      {exportConfig && (
+        <GenericXLSExport
+          data={exportConfig.data}
+          fields={exportConfig.fields}
+          fileName={exportConfig.fileName}
+          modalTitle={exportConfig.modalTitle}
+          modalMessage={exportConfig.modalMessage}
+          onClose={() => setExportConfig(null)}
+        />
+      )}
     </div>
   );
 }

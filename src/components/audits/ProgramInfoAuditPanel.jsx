@@ -13,6 +13,10 @@ import {
   FaTimesCircle,
 } from "react-icons/fa";
 import { RiBuilding2Line } from "react-icons/ri";
+import { TbFileTypeXml } from "react-icons/tb";
+
+// 👇 Ajusta la ruta si tu GenericXLSExport está en otro sitio
+import GenericXLSExport from "../globals/GenericXLSExport.jsx";
 
 export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
   const [selectedFields, setSelectedFields] = useState([]);
@@ -26,6 +30,9 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
   const [hasSearched, setHasSearched] = useState(false);
 
   const pageSize = 30;
+
+  // 🔹 Config para el modal de exportación
+  const [exportConfig, setExportConfig] = useState(null);
 
   const FIELDS = [
     { value: "name", label: "Nombre" },
@@ -97,7 +104,7 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
     const token = getToken();
     let res = null;
 
-    // === MODO INFO: usa paginación como antes ===
+    // === MODO INFO: usa paginación (back) ===
     if (isInfoMode && selectedFields.length > 0) {
       res = await auditInfoProgram(
         { fields: selectedFields, page: newPage, limit: pageSize },
@@ -119,7 +126,7 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
       return;
     }
 
-    // === MODO DOC: auditDocumentProgram devuelve { missing, expired } ===
+    // === MODO DOC: auditDocumentProgram devuelve { missing, expired } (todo sin paginación) ===
     if (isDocMode && selectedFieldsDocumentation.length > 0) {
       res = await auditDocumentProgram(
         { docs: selectedFieldsDocumentation },
@@ -127,7 +134,10 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
       );
 
       if (res?.error) {
-        modal("Error", res.message || "Error en auditoría de documentación de programas");
+        modal(
+          "Error",
+          res.message || "Error en auditoría de documentación de programas"
+        );
         charge(false);
         return;
       }
@@ -177,10 +187,12 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
       }
 
       const programsArray = Array.from(programsMap.values());
+      const total = programsArray.length;
 
+      // 🔹 Paginación en front para DOC
       setResults(programsArray);
-      setTotalResults(programsArray.length);
-      setTotalPages(1);
+      setTotalResults(total);
+      setTotalPages(total > 0 ? Math.ceil(total / pageSize) : 1);
       setPage(1);
       setHasSearched(true);
       charge(false);
@@ -190,11 +202,17 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
     charge(false);
   };
 
+  // 🔹 PAGINACIÓN UNIFICADA (INFO: back / DOC: front)
   const changePage = (p) => {
-    if (!isInfoMode) return; // la paginación solo tiene sentido en modo info
     if (p < 1 || p > totalPages) return;
-    setPage(p);
-    runAudit(p);
+
+    if (isInfoMode) {
+      setPage(p);
+      runAudit(p); // vuelve a pedir al back
+    } else {
+      // doc → solo cambiar página, los datos ya están en results
+      setPage(p);
+    }
   };
 
   const selectProgram = (id) =>
@@ -209,21 +227,249 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
     };
   };
 
+  // 🔹 Resultados visibles según página (para doc se hace slice en front)
+  const visibleResults =
+    totalResults > pageSize
+      ? results.slice((page - 1) * pageSize, page * pageSize)
+      : results;
+
+  /* =========================================================
+     CAMPOS PARA EXPORTAR A EXCEL
+  ========================================================= */
+
+  // INFO: programas con datos generales
+  const programInfoExportFields = [
+    {
+      key: "name",
+      label: "Nombre programa",
+      type: "text",
+    },
+    {
+      key: "acronym",
+      label: "Acrónimo",
+      type: "text",
+    },
+    {
+      key: "area",
+      label: "Categoría / Área",
+      type: "text",
+    },
+    {
+      key: "groupWorkspace",
+      label: "Workspace (grupo)",
+      type: "boolean",
+    },
+    {
+      key: "descripcion",
+      label: "Tiene descripción",
+      type: "text",
+      transform: (value, row) =>
+        row.about?.description ? "Sí" : "No",
+    },
+    {
+      key: "objetivos",
+      label: "Tiene objetivos",
+      type: "text",
+      transform: (value, row) =>
+        row.about?.objectives ? "Sí" : "No",
+    },
+    {
+      key: "perfil",
+      label: "Tiene perfil de participantes",
+      type: "text",
+      transform: (value, row) =>
+        row.about?.profile ? "Sí" : "No",
+    },
+    {
+      key: "finantial",
+      label: "Tiene financiación",
+      type: "text",
+      transform: (value, row) =>
+        Array.isArray(row.finantial) && row.finantial.length > 0
+          ? "Sí"
+          : "No",
+    },
+    {
+      key: "responsible",
+      label: "Responsables",
+      type: "text",
+      transform: (value, row) =>
+        (row.responsible || [])
+          .map((r) => `${r.firstName || ""} ${r.lastName || ""}`.trim())
+          .filter(Boolean)
+          .join(" | "),
+    },
+  ];
+
+  // DOC: programas + resumen de documentación
+  const programDocExportFields = [
+    {
+      key: "name",
+      label: "Nombre programa",
+      type: "text",
+    },
+    {
+      key: "acronym",
+      label: "Acrónimo",
+      type: "text",
+    },
+    {
+      key: "docs_missing",
+      label: "Documentos faltantes",
+      type: "text",
+      transform: (value, row) => {
+        const status = row.documentationStatus || [];
+        const missing = status.filter((d) => d.state === "missing");
+        if (!missing.length) return "";
+        return missing.map((d) => d.name).join(" | ");
+      },
+    },
+    {
+      key: "docs_expired",
+      label: "Documentos caducados",
+      type: "text",
+      transform: (value, row) => {
+        const status = row.documentationStatus || [];
+        const expired = status.filter((d) => d.state === "expired");
+        if (!expired.length) return "";
+        return expired
+          .map((d) =>
+            typeof d.daysPassed === "number"
+              ? `${d.name} (hace ${d.daysPassed} días)`
+              : d.name
+          )
+          .join(" | ");
+      },
+    },
+  ];
+
+  /* =========================================================
+     HANDLER DE EXPORTACIÓN
+     - INFO: re-llama al back para todas las páginas
+     - DOC: usa todos los results en memoria
+  ========================================================= */
+
+  const handleExportClick = async () => {
+    if (!hasSearched || results.length === 0) {
+      modal(
+        "Sin datos",
+        "Primero ejecuta la auditoría para tener resultados que exportar."
+      );
+      return;
+    }
+
+    // MODO INFO → re-fetch de todas las páginas para tener TODOS los programas con error
+    if (isInfoMode) {
+      if (!selectedFields.length) {
+        modal(
+          "Sin campos",
+          "Selecciona primero los campos a auditar antes de exportar."
+        );
+        return;
+      }
+
+      try {
+        charge(true);
+        const token = getToken();
+
+        let allResults = [];
+        if (totalPages > 1) {
+          for (let p = 1; p <= totalPages; p++) {
+            const res = await auditInfoProgram(
+              { fields: selectedFields, page: p, limit: pageSize },
+              token
+            );
+            if (res?.error) {
+              throw new Error(
+                res.message || "Error al obtener datos para exportar."
+              );
+            }
+            allResults = allResults.concat(res.results || []);
+          }
+        } else {
+          allResults = results.slice();
+        }
+
+        setExportConfig({
+          data: allResults,
+          fields: programInfoExportFields,
+          fileName: "auditoria_programas_info.xlsx",
+          modalTitle: "Exportar auditoría de programas",
+          modalMessage:
+            "Selecciona las columnas que quieres incluir en el Excel:",
+        });
+      } catch (err) {
+        console.error(err);
+        modal(
+          "Error",
+          err.message || "Error al preparar los datos para Excel."
+        );
+      } finally {
+        charge(false);
+      }
+      return;
+    }
+
+    // MODO DOC → ya tenemos todos los programas con errores en `results`
+    if (isDocMode) {
+      setExportConfig({
+        data: results, // TODOS los programas con errores, sin paginar
+        fields: programDocExportFields,
+        fileName: "auditoria_programas_documentacion.xlsx",
+        modalTitle: "Exportar documentación de programas",
+        modalMessage:
+          "Selecciona las columnas que quieres incluir en el Excel:",
+      });
+    }
+  };
+
   return (
     <div className={styles.panel}>
-      <h3>Auditoría de Programas</h3>
+      <h3>
+        Auditoría de Programas
+        <div>
+          <button onClick={() => runAudit(1)} className={styles.runButton}>
+            Ejecutar auditoría
+          </button>
+
+          {hasSearched && results.length > 0 && (
+            <button
+              type="button"
+              className={styles.runButton}
+              style={{
+                marginLeft: "1rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+              }}
+              onClick={handleExportClick}
+            >
+              <TbFileTypeXml />
+              Exportar a Excel
+            </button>
+          )}
+        </div>
+      </h3>
 
       <h4>Selecciona campos a auditar</h4>
       <div className={styles.buttonSelection}>
         <button
           onClick={() => resetStateForModeChange("info")}
-          style={isInfoMode ? { opacity: 1, fontWeight: 600 } : { opacity: 0.6, fontWeight: 400 }}
+          style={
+            isInfoMode
+              ? { opacity: 1, fontWeight: 600 }
+              : { opacity: 0.6, fontWeight: 400 }
+          }
         >
           Información
         </button>
         <button
           onClick={() => resetStateForModeChange("doc")}
-          style={isDocMode ? { opacity: 1, fontWeight: 600 } : { opacity: 0.6, fontWeight: 400 }}
+          style={
+            isDocMode
+              ? { opacity: 1, fontWeight: 600 }
+              : { opacity: 0.6, fontWeight: 400 }
+          }
         >
           Documentación
         </button>
@@ -244,9 +490,6 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
               </div>
             ))}
           </div>
-          <button className={styles.runButton} onClick={() => runAudit(1)}>
-            Ejecutar auditoría
-          </button>
         </div>
       )}
 
@@ -265,15 +508,12 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
               </div>
             ))}
           </div>
-          <button className={styles.runButton} onClick={() => runAudit(1)}>
-            Ejecutar auditoría
-          </button>
         </div>
       )}
 
       <div className={styles.results}>
-        {/* Paginación solo en modo INFO */}
-        {isInfoMode && totalResults > pageSize && (
+        {/* Paginación (INFO: back, DOC: front) */}
+        {totalResults > pageSize && (
           <div className={styles.pagination}>
             <FaRegArrowAltCircleLeft
               className={page === 1 ? styles.disabled : ""}
@@ -289,13 +529,15 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
           </div>
         )}
 
-        {hasSearched && results.length === 0 && (
+        {hasSearched && visibleResults.length === 0 && (
           <p>No se encontraron programas.</p>
         )}
 
-        {results.map((p) => {
+        {visibleResults.map((p) => {
           const expanded = selectedProgram === p._id;
-          const { missing, expired } = isDocMode ? getDocGroups(p) : { missing: [], expired: [] };
+          const { missing, expired } = isDocMode
+            ? getDocGroups(p)
+            : { missing: [], expired: [] };
 
           return (
             <div key={p._id} className={styles.resultCard}>
@@ -310,7 +552,11 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
                 )}
               </div>
 
-              <div className={expanded ? styles.expandContent : styles.collapseContent}>
+              <div
+                className={
+                  expanded ? styles.expandContent : styles.collapseContent
+                }
+              >
                 {isInfoMode && (
                   <>
                     <div className={styles.infoUser}>
@@ -319,10 +565,19 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
                       </p>
                       <p>{p?.area?.toUpperCase() || "No disponible"}</p>
                       <p>Email de grupo: {!!p.groupWorkspace ? "Sí" : "No"}</p>
-                      <p>Descripción: {!!p.about?.description ? "Sí" : "No"}</p>
-                      <p>Objetivos: {!!p.about?.objectives ? "Sí" : "No"}</p>
-                      <p>Perfil de usuarios: {!!p.about?.profile ? "Sí" : "No"}</p>
-                      <p>Financiación: {p.finantial?.length > 0 ? "Sí" : "No"}</p>
+                      <p>
+                        Descripción: {!!p.about?.description ? "Sí" : "No"}
+                      </p>
+                      <p>
+                        Objetivos: {!!p.about?.objectives ? "Sí" : "No"}
+                      </p>
+                      <p>
+                        Perfil de usuarios: {!!p.about?.profile ? "Sí" : "No"}
+                      </p>
+                      <p>
+                        Financiación:{" "}
+                        {p.finantial?.length > 0 ? "Sí" : "No"}
+                      </p>
                     </div>
 
                     {p.responsible?.length > 0 ? (
@@ -353,7 +608,8 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
                       ) : (
                         missing.map((d, idx) => (
                           <li key={`${d.documentationId}-${idx}`}>
-                            <FaTimesCircle style={{ color: "#d9534f" }} /> {d.name}
+                            <FaTimesCircle style={{ color: "#d9534f" }} />{" "}
+                            {d.name}
                           </li>
                         ))
                       )}
@@ -381,6 +637,18 @@ export default function ProgramInfoAuditPanel({ modal, charge, enumsData }) {
           );
         })}
       </div>
+
+      {/* MODAL DE EXPORTACIÓN GENÉRICO */}
+      {exportConfig && (
+        <GenericXLSExport
+          data={exportConfig.data}
+          fields={exportConfig.fields}
+          fileName={exportConfig.fileName}
+          modalTitle={exportConfig.modalTitle}
+          modalMessage={exportConfig.modalMessage}
+          onClose={() => setExportConfig(null)}
+        />
+      )}
     </div>
   );
 }

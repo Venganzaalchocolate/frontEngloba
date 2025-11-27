@@ -70,7 +70,7 @@ const ManagingProgramsDispositive = ({
       const dataWithType = normalizeEntity(res, x.type);
       setInfoSelect(dataWithType);
     } catch (err) {
-      console.error("Error en info():", err);
+
       modal("Error", err.message || "No se pudo cargar la información.");
       setInfoSelect(null);
     } finally {
@@ -551,6 +551,159 @@ useEffect(() => {
     }));
   };
 
+    // === ACTIVAR / DESACTIVAR PROGRAMA O DISPOSITIVO ===
+// === ACTIVAR / DESACTIVAR PROGRAMA O DISPOSITIVO ===
+const handleToggleActive = async (item) => {
+  if (!item?._id || !item?.type) return;
+
+  const isProgram = item.type === "program";
+  const nextActive = !item.active;
+
+  let error = false;
+  let message = "";
+
+  charge(true);
+
+  if (isProgram) {
+    // ---- PROGRAMA ----
+    const originalActive = Boolean(item.active);
+
+    // 1) Intentar actualizar el programa
+    const programRes = await updateProgram(
+      { id: item._id, active: nextActive },
+      token
+    );
+
+    if (programRes?.error) {
+      error = true;
+      message = programRes.message || "No se pudo actualizar el programa.";
+    } else if (!nextActive) {
+      // 2) Solo si DESACTIVAMOS el programa → desactivar dispositivos asociados
+
+      const allDevices = Object.values(enumsData?.dispositiveIndex || {}).filter(
+        (d) => d.program === item._id
+      );
+
+      const previouslyActiveDevices = allDevices.filter((d) => d.active);
+
+      if (previouslyActiveDevices.length > 0) {
+        const results = await Promise.all(
+          previouslyActiveDevices.map((d) =>
+            updateDispositive(
+              { dispositiveId: d._id, active: false },
+              token
+            )
+          )
+        );
+
+        // Buscar errores en los dispositivos
+        const failing = results
+          .map((r, idx) => ({ r, idx }))
+          .filter((x) => x.r?.error);
+
+        if (failing.length > 0) {
+          error = true;
+          message =
+            failing[0].r?.message ||
+            "Error al desactivar algunos dispositivos asociados.";
+
+          // === ROLLBACK: volver al estado inicial ===
+
+          // 1) Volver a activar el programa (estado original)
+          await updateProgram(
+            { id: item._id, active: originalActive },
+            token
+          );
+
+          // 2) Volver a activar los dispositivos que SÍ se desactivaron bien
+          const succeededDevices = previouslyActiveDevices.filter(
+            (_, idx) => !results[idx]?.error
+          );
+
+          if (succeededDevices.length > 0) {
+            await Promise.all(
+              succeededDevices.map((d) =>
+                updateDispositive(
+                  { dispositiveId: d._id, active: true },
+                  token
+                )
+              )
+            );
+          }
+        }
+      }
+    }
+  } else {
+    // ---- DISPOSITIVO ----
+    // item.program puede ser id o objeto
+    const programId =
+      typeof item.program === "string"
+        ? item.program
+        : item.program?._id;
+
+    const programIsActive =
+      programId && enumsData?.programsIndex?.[programId]?.active;
+
+    if (nextActive) {
+      // Vamos a ACTIVAR el dispositivo
+      if (!programIsActive) {
+        error = true;
+        message =
+          "No se puede activar un dispositivo si el programa asociado está desactivado.";
+      } else {
+        const res = await updateDispositive(
+          { dispositiveId: item._id, active: nextActive },
+          token
+        );
+        if (res?.error) {
+          error = true;
+          message =
+            res.message || "No se pudo actualizar el dispositivo.";
+        }
+      }
+    } else {
+      // DESACTIVAR el dispositivo (no tiene efecto en el programa)
+      const res = await updateDispositive(
+        { dispositiveId: item._id, active: nextActive },
+        token
+      );
+      if (res?.error) {
+        error = true;
+        message =
+          res.message || "No se pudo actualizar el dispositivo.";
+      }
+    }
+  }
+
+  // Recargar índices (programas y dispositivos) SIEMPRE,
+  // para que el menú y las listas se sincronicen con la BD
+  await chargeEnums();
+
+  // Si lo que hemos tocado es justo lo que está abierto en la ficha, lo recargamos
+  const sameCurrent =
+    infoSelect &&
+    infoSelect._id === item._id &&
+    infoSelect.type === item.type;
+
+  if (sameCurrent) {
+    await info({ type: item.type, _id: item._id });
+  }
+
+  charge(false);
+
+  const label = isProgram ? "Programa" : "Dispositivo";
+
+  if (error) {
+    modal("Error", message || "No se pudo actualizar el estado activo.");
+  } else {
+    modal(
+      "Actualizado",
+      `${label} ${nextActive ? "activado" : "desactivado"} correctamente.`
+    );
+  }
+};
+
+
   // === RENDER ===
   return (
     <div className={styles.contenedor}>
@@ -583,6 +736,7 @@ useEffect(() => {
             enumsData={enumsData}
             active={select}
             onSelect={onSelect}
+            changeActive={handleToggleActive}
           />
           <ProgramTabs
             modal={modal}
@@ -593,6 +747,7 @@ useEffect(() => {
             onSelect={onSelect}
             searchUsers={searchUsers}
             onManageCronology={handleCronology}
+            changeActive={handleToggleActive}
           />
         </div>
       </div>

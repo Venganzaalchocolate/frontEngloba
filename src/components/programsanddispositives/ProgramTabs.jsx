@@ -10,7 +10,8 @@ const ProgramTabs = ({
   info,
   onSelect,
   searchUsers,
-  onManageCronology
+  onManageCronology,
+  changeActive
 }) => {
   const [activeTab, setActiveTab] = useState("info"); // "info" | "docs"
 
@@ -24,13 +25,16 @@ const ProgramTabs = ({
           className={`${styles.tab} ${activeTab === "info" ? styles.active : ""}`}
           onClick={() => setActiveTab("info")}
         >
-          Información del {typeLabel} {!!(info) ?info.acronym || info.name: ''}
+          <p>Información del {typeLabel}</p>
+          <p>{!!(info) ?info.acronym || info.name: ''}</p>
         </button>
         <button
           className={`${styles.tab} ${activeTab === "docs" ? styles.active : ""}`}
           onClick={() => setActiveTab("docs")}
         >
-          Documentación del {typeLabel}  {!!(info) ?info.acronym || info.name: ''}
+          <p>Documentación del {typeLabel}</p>
+          <p>{!!(info) ?info.acronym || info.name: ''}</p>
+             
         </button>
       </div>
 
@@ -46,6 +50,7 @@ const ProgramTabs = ({
             onSelect={onSelect}
             searchUsers={searchUsers}
             onManageCronology={onManageCronology}
+            changeActive={changeActive}
           />
         ) : (
           <DocsProgramOrDispositive

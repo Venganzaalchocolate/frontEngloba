@@ -5,7 +5,7 @@ import { coordinators, responsibles } from "../../lib/data";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import { FaTrash } from "react-icons/fa6";
-import { IoArrowUndo} from "react-icons/io5";
+import { IoArrowUndo, IoRadioButtonOn} from "react-icons/io5";
 import { BsPersonFillAdd } from "react-icons/bs";
 
 const InfoProgramOrDispositive = ({
@@ -16,15 +16,15 @@ const InfoProgramOrDispositive = ({
   info,
   onSelect,
   searchUsers,
-  onManageCronology
+  onManageCronology,
+  changeActive
 }) => {
   const token = getToken();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: null, personId: null });
-  // 👇 nuevo estado para el modal de información de persona
-  const [personInfo, setPersonInfo] = useState(null);
+
 
   //cronologia
   // === Cronología ===
@@ -87,11 +87,23 @@ const InfoProgramOrDispositive = ({
     },
   ];
 
-  const dispositivos = useMemo(() => {
-    if (!info || info.type !== "program") return [];
-    const all = Object.values(enumsData?.dispositiveIndex || {});
-    return all.filter((d) => d.program === info._id);
-  }, [info, enumsData]);
+ const dispositivos = useMemo(() => {
+  if (!info || info.type !== "program") return [];
+
+  // `filter` ya devuelve un array nuevo, podemos ordenar directamente
+  return Object.values(enumsData?.dispositiveIndex || {})
+    .filter((d) => d.program === info._id)
+    .sort((a, b) => {
+      const aActive = a.active ? 1 : 0;
+      const bActive = b.active ? 1 : 0;
+
+      // 1) activos primero
+      if (aActive !== bActive) return bActive - aActive;
+
+      // 2) dentro de cada grupo, orden alfabético por nombre (opcional)
+      return (a.name || "").localeCompare(b.name || "");
+    });
+}, [info, enumsData]);
 
   if (!info) {
     return (
@@ -137,9 +149,16 @@ const InfoProgramOrDispositive = ({
 
   return (
     <div className={styles.contenedor}>
+      {!!info && isProgram &&
+      <div className={`${styles.fieldContainer} ${styles.fieldContainerInfo}`}>
+        <h3></h3>
+       <IoRadioButtonOn onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}/> 
+      </div>
+       
+      }
       {/* ✅ Botón para ir al programa si el info actual es un dispositivo */}
       {!isProgram && info?.program && (
-        <div className={styles.fieldContainer}>
+        <div className={`${styles.fieldContainer} ${styles.fieldContainerInfo}`}>
           <button
             className={styles.btnInfoProgram}
             onClick={() => onSelect({ type: "program", _id: info.program._id })}
@@ -148,6 +167,7 @@ const InfoProgramOrDispositive = ({
             Info del Programa
 
           </button>
+          <IoRadioButtonOn onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}/>  
         </div>
       )}
       {/* Nombre */}
@@ -340,7 +360,11 @@ const InfoProgramOrDispositive = ({
             <ul className={styles.list}>
               {dispositivos.map((d) => (
                 <li key={d._id} className={styles.listItem} onClick={() => onSelect(d)}>
+                  
                   <strong>{d.name}</strong>
+                  <span className={styles.iconSmall}>
+                    <IoRadioButtonOn className={(d.active)?styles.activeDis:styles.inactiveDis}/>                                                                                          
+                  </span>
                   {d.address && <span className={styles.subtext}>{d.address}</span>}
                 </li>
               ))}

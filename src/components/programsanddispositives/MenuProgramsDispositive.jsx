@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { RiBuilding2Line } from "react-icons/ri";
 import { FaFolderOpen } from "react-icons/fa";
 import styles from "../styles/menuProgramsDispositive.module.css";
+import { IoRadioButtonOn } from "react-icons/io5";
 
 const MenuProgramsDispositive = ({
     active,
@@ -10,6 +11,7 @@ const MenuProgramsDispositive = ({
     charge,
     listResponsability,
     enumsData,
+    changeActive
 }) => {
     const { programsIndex, dispositiveIndex } = enumsData;
     const [expanded, setExpanded] = useState(null);
@@ -24,35 +26,57 @@ const MenuProgramsDispositive = ({
             .toLowerCase();
 
     // Filtrado
-    const programsWithDevices = useMemo(() => {
-        const q = norm(query);
-        const result = {};
+const programsWithDevices = useMemo(() => {
+  const q = norm(query);
+  const result = {};
 
-        Object.values(programsIndex).forEach((program) => {
-            const progName = program.name || "";
-            const progAcr = program.acronym || "";
-            const progMatch = !q || norm(`${progName} ${progAcr}`).includes(q);
+  // 👇 Ordena programas: primero active:true, luego por nombre
+  const sortedPrograms = Object.values(programsIndex).sort((a, b) => {
+    const aActive = a.active ? 1 : 0;
+    const bActive = b.active ? 1 : 0;
 
-            const allDevices = Object.values(dispositiveIndex).filter(
-                (d) => d.program === program._id
-            );
+    // primero los activos
+    if (aActive !== bActive) return bActive - aActive;
 
-            const filteredDevices = q
-                ? allDevices.filter((d) =>
-                    norm(`${d.name} ${program.name} ${program.acronym}`).includes(q)
-                )
-                : allDevices;
+    // y dentro de cada grupo, por nombre (opcional)
+    return (a.name || "").localeCompare(b.name || "");
+  });
 
-            if (progMatch || filteredDevices.length > 0) {
-                result[program._id] = {
-                    ...program,
-                    dispositives: filteredDevices,
-                };
-            }
-        });
+  sortedPrograms.forEach((program) => {
+    const progName = program.name || "";
+    const progAcr = program.acronym || "";
+    const progMatch = !q || norm(`${progName} ${progAcr}`).includes(q);
 
-        return result;
-    }, [programsIndex, dispositiveIndex, query]);
+    const allDevices = Object.values(dispositiveIndex).filter(
+      (d) => d.program === program._id
+    );
+
+    let filteredDevices = q
+      ? allDevices.filter((d) =>
+          norm(`${d.name} ${program.name} ${program.acronym}`).includes(q)
+        )
+      : allDevices;
+
+    // (opcional) ordenar dispositivos también por active:true
+    filteredDevices = filteredDevices.sort((a, b) => {
+      const aActive = a.active ? 1 : 0;
+      const bActive = b.active ? 1 : 0;
+
+      if (aActive !== bActive) return bActive - aActive;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    if (progMatch || filteredDevices.length > 0) {
+      result[program._id] = {
+        ...program,
+        dispositives: filteredDevices,
+      };
+    }
+  });
+
+  return result;
+}, [programsIndex, dispositiveIndex, query]);
+
 
     // Expandir automáticamente si hay búsqueda
     useEffect(() => {
@@ -92,7 +116,7 @@ const MenuProgramsDispositive = ({
                     const isExpanded =
                         expanded === "ALL" || expanded === program._id || query.length > 0;
                     return (
-                        <li key={program._id} className={`${styles.programItem}`}  >
+                        <li key={program._id} className={(program.active)?`${styles.programItem}`:`${styles.programItem} ${styles.inactive}`}  >
                             <span className={styles.programLabel} onClick={() =>(expanded === program._id && !query ? setExpanded(null) : activeProgramOrDispositive(program))}>
                                 <span className={styles.icon}>
                                     <FaFolderOpen className={`${active?._id === program._id ? styles.activeProgram : ""}`}/>
@@ -115,10 +139,11 @@ const MenuProgramsDispositive = ({
                                             }}
                                         >
                                             <span className={styles.iconSmall}>
-                                                <RiBuilding2Line />
-                                                
+                                                <IoRadioButtonOn className={(d.active)?styles.activeDis:styles.inactiveDis}/>
+                                                                                               
                                             </span>
                                             <span>{d.name}</span>
+                                           
                                         </li>
                                     ))}
                                     {program.dispositives.length === 0 && (

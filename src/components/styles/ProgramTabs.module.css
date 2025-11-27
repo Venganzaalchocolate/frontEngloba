@@ -22,10 +22,12 @@ border-bottom: 1px solid var(--color-morado);
   border-top-right-radius: 1rem;
   text-align: left;
   
+  
 }
 
 /* === BOTONES DE PESTAÑA === */
 .tab {
+
   padding: 0.6rem 1.5rem;
   font-weight: 600;
   font-size: 0.95rem;
@@ -34,19 +36,24 @@ border-bottom: 1px solid var(--color-morado);
   border: 1px solid var(--color-morado);
   cursor: pointer;
   transition: all 0.25s ease;
-  display: flex;
+
   border-radius: 1rem 1rem 0 0;
   box-sizing: border-box;
 
   flex: 1 100%;
   border-radius: 1rem 1rem 0 0;
   text-align: justify;
-  display: flex;
+
   justify-content: flex-start;
   font-size: 20px;
   font-weight: lighter;
   text-transform: uppercase;
   text-align: left;
+  display: flex;
+  flex-direction: column;
+  font-size: 10pt;
+  font-weight: bold;
+  align-items: flex-start;
 }
 
 /* Estado activo */

@@ -29,7 +29,7 @@ import { TbFileTypeXml } from "react-icons/tb";
 // 👇 Ajusta la ruta si tu GenericXLSExport está en otro sitio
 import GenericXLSExport from "../globals/GenericXLSExport.jsx";
 
-import { formatDate } from "../../lib/utils";
+import { formatDate, formatDatetime } from "../../lib/utils";
 
 export default function LeavesAuditPanel({ enumsData, modal, charge }) {
   const [selectedTypes, setSelectedTypes] = useState([]);
@@ -146,13 +146,13 @@ const leaveExportFields = [
     key: "startLeaveDate",
     label: "Inicio baja",
     type: "date",
-    transform: (value, row) => row.leave?.startLeaveDate || null,
+    transform: (value, row) => formatDate(row.leave?.startLeaveDate) || null,
   },
   {
     key: "expectedEndLeaveDate",
     label: "Fin previsto",
     type: "date",
-    transform: (value, row) => row.leave?.expectedEndLeaveDate || null,
+    transform: (value, row) => formatDate(row.leave?.expectedEndLeaveDate) || null,
   },
 
   // Dispositivo actual (solo responsable de dispositivo)

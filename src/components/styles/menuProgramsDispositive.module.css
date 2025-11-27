@@ -133,6 +133,17 @@ gap: 0.5rem;
 .activeProgram{
     color: var(--color-chicle);
 }
+
+.inactive{
+  background-color: var(--color-gris-claro);
+}
+
+.activeDis{
+  color: lightseagreen;
+}
+.inactiveDis{
+  color: lightcoral;
+}
 /* --- responsive --- */
 @media (min-width: 721px) {
   .divContenedor {

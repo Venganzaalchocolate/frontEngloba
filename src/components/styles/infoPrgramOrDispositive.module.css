@@ -212,7 +212,19 @@
   font-size: 0.75rem;
 }
 
+.activeDis{
+  color: lightseagreen;
+}
+.inactiveDis{
+  color: lightcoral;
+}
 
+.fieldContainerInfo{
+  flex-direction: row;
+  
+  justify-content: space-between;
+  
+}
 
 /* Adaptativo */
 @media (min-width: 721px) {

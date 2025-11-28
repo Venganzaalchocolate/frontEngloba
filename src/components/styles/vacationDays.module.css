@@ -435,3 +435,130 @@
 .summary { display:flex; flex-wrap:wrap; gap:8px; }
 .badge    { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:#f6f6fe; color:var(--color-morado); border:1px solid color-mix(in srgb, var(--color-morado) 22%, #fff); font-weight:700; }
 .badgeWarn{ background:#fff7f7; color:#b23b3b; border:1px solid color-mix(in srgb, #d9534f 28%, #fff); }
+
+/* Contenedor general de las píldoras */
+.infoResumenContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin: 1rem 0 1.5rem;
+}
+
+/* Base de cualquier píldora */
+.infoPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  background: #f9fafb;
+  max-width: 100%;
+}
+
+/* Icono circular dentro de la píldora */
+.infoPillIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+/* Contenido textual dentro de la píldora */
+.infoPillContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* Título de cada píldora (Vacaciones / Asuntos propios, etc.) */
+.infoPillTitle {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Línea principal (usadas / restantes) */
+.infoPillMain {
+  font-size: 0.9rem;
+}
+
+/* Línea secundaria (detalle en días, nota…) */
+.infoPillSecondary {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+/* ---- MODIFICADORES POR TIPO ---- */
+
+/* Vacaciones: verdes */
+.infoPillVacation {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.infoPillVacation .infoPillIcon {
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid #4ade80;
+  color: #16a34a;
+}
+
+/* Asuntos propios: azulados/morados suaves */
+.infoPillPersonal {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e3a8a;
+}
+
+.infoPillPersonal .infoPillIcon {
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid #60a5fa;
+  color: #2563eb;
+}
+
+/* Resumen mensual: gris neutro */
+.infoPillMonth {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #111827;
+}
+
+.infoPillMonth .infoPillIcon {
+  background: rgba(55, 65, 81, 0.06);
+  border: 1px solid #9ca3af;
+  color: #4b5563;
+}
+
+/* Excedidos dentro de cualquier píldora */
+.exceededText {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+/* Nota de equivalencia (la puedes meter en la píldora mensual) */
+.notaEquivalencia {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .infoPill {
+    width: 100%;
+    justify-content: flex-start;
+    font-size: 0.85rem;
+  }
+
+  .infoPillContent {
+    gap: 0.05rem;
+  }
+}

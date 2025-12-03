@@ -107,7 +107,7 @@ const ManagingEmployer = ({
         dispositive: '',
       };
     });
-  }, [listResponsability]);
+  }, []);
 
   const debouncedFilters = useDebounce(filters, 300);
 

@@ -304,6 +304,22 @@ filtros
   z-index: 9999; /* por encima de selects */
 }
 
+/* Lista estática con el mismo aspecto que el dropdown de dispositivos */
+.pdStaticList {
+  /* SIN position absolute */
+  max-height: 300px;
+  overflow: auto;
+  margin: 6px 0 0;
+  padding: 6px 0;
+  list-style: none;
+
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+
+
 /* ITEM – resetea estilos para que no parezca tu botón morado */
 .pdSearchItem {
   all: unset;                 /* limpia estilos heredados */

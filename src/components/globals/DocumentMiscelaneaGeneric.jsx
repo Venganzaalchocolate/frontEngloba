@@ -753,7 +753,8 @@ const nameZip = `${baseName}_documentacion.zip`;
             <h4 className={styles.categoryTitle}>{category}</h4>
 
             {docsArray.map(({ doc, files }) => {
-              const renewal = getRenewalInfo(files, 365); // ← 365 días por defecto
+            
+              const renewal = getRenewalInfo(files, doc.duration || null); // ← 365 días por defecto
 
               return (
                 <div

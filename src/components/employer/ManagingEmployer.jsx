@@ -643,6 +643,7 @@ const ManagingEmployer = ({
                 handleFilterChange={handleFilterChange}
                 resetFilters={resetFilters}
                 setFilters={setFilters}
+                listResponsability={listResponsability}
               />
             ) :
               <FilterStatus

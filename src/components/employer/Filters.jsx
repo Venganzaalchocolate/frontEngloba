@@ -1,7 +1,7 @@
 import styles from '../styles/ManagingEmployer.module.css';
 import { useMemo, useState, useRef, useEffect } from 'react';
 
-const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilters }) => {
+const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilters, listResponsability }) => {
   // PROGRAM (pd*) y DEVICE (dd*) typeahead
   const [pdQuery, setPdQuery] = useState('');
   const [pdOpen, setPdOpen] = useState(false);
@@ -20,6 +20,34 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
+
+  // Generar opciones según listResponsability
+  const getResponsibilityOptions = () => {
+    const options = [];
+    listResponsability.forEach((item) => {
+      if (item.isProgramResponsible) {
+        const label = `(Programa) ${item.programName}`;
+        const valueObj = {
+          type: "program",
+          programId: item.idProgram
+        };
+        const value = JSON.stringify(valueObj);
+        options.push({ label, value });
+      }
+      if (item.isDeviceResponsible || item.isDeviceCoordinator) {
+        const label = `(Dispositivo) ${item.dispositiveName} [${item.programName}]`;
+        const valueObj = {
+          type: "device",
+          programId: item.idProgram,
+          deviceId: item.dispositiveId
+        };
+        const value = JSON.stringify(valueObj);
+        options.push({ label, value });
+      }
+    });
+    return options;
+  };
+
 
   // Helpers
   const norm = (s) =>
@@ -98,19 +126,19 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
       .sort((a, b) => a.display.localeCompare(b.display, 'es'));
   }, [dispositivesArray, enumsEmployer?.programsIndex]);
 
-const ddResults = useMemo(() => {
-  const q = norm(ddQuery);
-  const searching = q.length > 0;
+  const ddResults = useMemo(() => {
+    const q = norm(ddQuery);
+    const searching = q.length > 0;
 
-  // 👉 si NO estás buscando por texto y hay programa, filtra por programa;
-  // si estás buscando por texto, ignora programa (búsqueda global)
-  const base = (!searching && filters.programId)
-    ? flatDevices.filter((d) => String(d.programId) === String(filters.programId))
-    : flatDevices;
+    // 👉 si NO estás buscando por texto y hay programa, filtra por programa;
+    // si estás buscando por texto, ignora programa (búsqueda global)
+    const base = (!searching && filters.programId)
+      ? flatDevices.filter((d) => String(d.programId) === String(filters.programId))
+      : flatDevices;
 
-  if (!searching) return base.slice(0, 50);
-  return base.filter((d) => norm(d.searchable).includes(q)).slice(0, 50);
-}, [ddQuery, flatDevices, filters.programId]);
+    if (!searching) return base.slice(0, 50);
+    return base.filter((d) => norm(d.searchable).includes(q)).slice(0, 50);
+  }, [ddQuery, flatDevices, filters.programId]);
 
   const selectDevice = (item) => {
     setDdQuery(item.display);
@@ -145,6 +173,57 @@ const ddResults = useMemo(() => {
         </option>
       );
     });
+
+// Opciones de responsabilidades (programas + dispositivos)
+  const responsibilityOptions = useMemo(() => getResponsibilityOptions(), [listResponsability]);
+
+  const handleResponsibilitySelect = (e) => {
+    const value = e.target.value;
+
+    // Guardamos qué responsabilidad está seleccionada (por si quieres usarlo fuera)
+    handleFilterChange({ target: { name: 'responsibility', value } });
+
+    // Si limpia el select, reseteamos programa + dispositivo
+    if (!value) {
+      handleFilterChange({ target: { name: 'programId', value: '' } });
+      handleFilterChange({ target: { name: 'dispositive', value: '' } });
+      setPdQuery('');
+      setDdQuery('');
+      return;
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return;
+    }
+
+    if (parsed.type === 'program') {
+      // Programa responsable
+      const p = enumsEmployer?.programsIndex?.[parsed.programId];
+      handleFilterChange({ target: { name: 'programId', value: parsed.programId || '' } });
+      handleFilterChange({ target: { name: 'dispositive', value: '' } });
+
+      setPdQuery(programDisplay(p));
+      setDdQuery('');
+    }
+
+    if (parsed.type === 'device') {
+      // Dispositivo responsable
+      const p = enumsEmployer?.programsIndex?.[parsed.programId];
+      const d = enumsEmployer?.dispositiveIndex?.[parsed.deviceId];
+
+      handleFilterChange({ target: { name: 'programId', value: parsed.programId || '' } });
+      handleFilterChange({ target: { name: 'dispositive', value: parsed.deviceId || '' } });
+
+      setPdQuery(programDisplay(p));
+      setDdQuery(d?.name || '');
+    }
+
+    setPdOpen(false);
+    setDdOpen(false);
+  };
 
   return (
     <div className={styles.contenedorfiltro}>
@@ -375,6 +454,26 @@ const ddResults = useMemo(() => {
           </select>
         </div>
       </div>
+
+        {/* 👉 BLOQUE: Responsabilidades */}
+      {/* Responsabilidades (solo programas/dispositivos de los que eres responsable) */}
+      <div>
+        <label htmlFor="responsibility">Responsabilidades:</label>
+        <select
+          id="responsibility"
+          name="responsibility"
+          value={filters.responsibility || ''}
+          onChange={handleResponsibilitySelect}
+        >
+          <option value="">Selecciona programa o dispositivo</option>
+          {responsibilityOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
 
       {/* Reset */}
       <div>

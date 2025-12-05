@@ -3,7 +3,6 @@ import styles from '../styles/ManagingSocial.module.css';
 import WorkersStatsDashboard from "./statistics/employee/WorkersStatsDashboard";
 
 const ManagingSocial = ({ enumsData, modal, charge }) => {
-console.log(enumsData)
     return (
         <div className={styles.contenedor}>
             <div className={styles.contenido}>

@@ -381,7 +381,6 @@ const ManagingEmployer = ({
       }
       return data.users;
     } catch (err) {
-      console.log(err);
       modal("Error", "Error al obtener usuarios o generar Excel");
     } finally {
       charge(false);

@@ -541,7 +541,7 @@ export default function HiringPeriodsV2({
       };
       const created = await leaveCreate(payload, token);
       if (created?.error) {
-        console.log(created)
+  
         modal('Error', created.message);
         return;
       }

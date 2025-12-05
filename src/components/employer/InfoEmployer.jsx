@@ -654,7 +654,6 @@ const handleSave = async () => {
           </div>
         </>
       )}
-{console.log(datos)}
       {/* Estudios */}
       <div className={styles.studiesContainer}>
         <label className={styles.studiesLabel}>Estudios</label>
@@ -673,7 +672,7 @@ const handleSave = async () => {
         ) : (
           <>
             <div className={styles.studiesList}>
-              {console.log(datos)}
+
               {datos.studies?.length ? (
                 datos.studies.map((study, i) => (
                   <div key={i} className={styles.studyItem}>

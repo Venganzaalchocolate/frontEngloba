@@ -16,7 +16,10 @@ export default function MyChangeRequests({
   // ----- Estado -----
   const [serverItems, setServerItems] = useState([]);
   const [optimisticLocal, setOptimisticLocal] = useState([]); // solo optimistas creados aquí
+
   const [showHistory, setShowHistory] = useState(false);
+const [historyTab, setHistoryTab] = useState("changes"); // "changes" | "docs" | "timeOff"
+
 
   // Modales
   const [isReqUploadOpen, setIsReqUploadOpen] = useState(false);
@@ -1017,6 +1020,20 @@ export default function MyChangeRequests({
             ))}
           </ul>
         )}
+                    {(req.decision?.note || (req.status === "failed" && req.error)) && (
+        <div className={styles.decisionBox}>
+          {req.decision?.note && (
+            <p>
+              <strong>Comentarios:</strong> {req.decision.note}
+            </p>
+          )}
+          {req.status === "failed" && req.error && (
+            <p className={styles.error}>
+              <strong>Error técnico:</strong> {req.error}
+            </p>
+          )}
+        </div>
+      )}
       </div>
     );
   };
@@ -1084,49 +1101,81 @@ export default function MyChangeRequests({
 
       {/* Toggle histórico */}
       <button
+        type="button"
         className={styles.historyBtn}
-        onClick={() => setShowHistory((s) => !s)}
+        onClick={() =>{
+          if(historyTab=='changes')setShowHistory((s) => !s);
+          else setShowHistory(true);
+          setHistoryTab("changes");}}
       >
-        {showHistory ? "Ocultar histórico" : "Ver histórico"}
+        Resoluciones de cambios de datos
+      </button>
+      <button
+        type="button"
+        className={styles.historyBtn}
+        onClick={() =>{
+           if(historyTab=='docs')setShowHistory((s) => !s);
+          else setShowHistory(true);
+          setHistoryTab("docs")}}
+      >
+        Resoluciones de Documentos
+      </button>
+      <button
+        type="button"
+        className={styles.historyBtn}
+        onClick={() =>{
+          if(historyTab=='timeOff')setShowHistory((s) => !s);
+          else setShowHistory(true);
+          setHistoryTab("timeOff")}}
+      >
+        Resoluciones de Vacaciones / asuntos propios
       </button>
 
       {/* Histórico */}
       {showHistory && (
-        <div className={styles.historyWrapper}>
-          <h3 className={styles.title}>Histórico de solicitudes</h3>
+  <div className={styles.historyWrapper}>
+    <h3 className={styles.title}>Histórico de solicitudes de {(historyTab=='changes')?'Cambio de datos':(historyTab=='docs')?'Documentos':'Vacaciones / asuntos propios'}</h3>
+    {/* Contenido según pestaña */}
+    {historyTab === "changes" && (
+      <div className={styles.boxChanges}>
+        <h4 className={styles.sectionTitle}>Cambios de datos</h4>
+        {historyChanges.length === 0 && (
+          <p className={styles.empty}>No hay histórico de cambios.</p>
+        )}
+        {historyChanges.map((req) => (
+          <ReqCard key={req._id} req={req} showCancel={false} />
+        ))}
+      </div>
+    )}
 
-          <div className={styles.boxChanges}>
-            <h4 className={styles.sectionTitle}>Cambios de datos</h4>
-            {historyChanges.length === 0 && (
-              <p className={styles.empty}>No hay histórico de cambios.</p>
-            )}
-            {historyChanges.map((req) => (
-              <ReqCard key={req._id} req={req} showCancel={false} />
-            ))}
-          </div>
+    {historyTab === "docs" && (
+      <div className={styles.boxChanges}>
+        <h4 className={styles.sectionTitle}>Documentos</h4>
+        {historyDocs.length === 0 && (
+          <p className={styles.empty}>No hay histórico de documentos.</p>
+        )}
+        {historyDocs.map((req) => (
+          <ReqCard key={req._id} req={req} showCancel={false} />
+        ))}
+      </div>
+    )}
 
-          <div className={styles.boxChanges}>
-            <h4 className={styles.sectionTitle}>Documentos</h4>
-            {historyDocs.length === 0 && (
-              <p className={styles.empty}>No hay histórico de documentos.</p>
-            )}
-            {historyDocs.map((req) => (
-              <ReqCard key={req._id} req={req} showCancel={false} />
-            ))}
-          </div>
+    {historyTab === "timeOff" && (
+      <div className={styles.boxChanges}>
+        <h4 className={styles.sectionTitle}>Vacaciones y asuntos propios</h4>
+        {historyTimeOff.length === 0 && (
+          <p className={styles.empty}>
+            No hay histórico de vacaciones ni asuntos propios.
+          </p>
+        )}
+        {historyTimeOff.map((req) => (
+          <TimeOffCard key={req._id} req={req} showCancel={false} />
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
-          <div className={styles.boxChanges}>
-            <h4 className={styles.sectionTitle}>Vacaciones y asuntos propios</h4>
-            {historyTimeOff.length === 0 && (
-              <p className={styles.empty}>No hay histórico de vacaciones ni asuntos propios.</p>
-            )}
-            {historyTimeOff.map((req) => (
-              <TimeOffCard key={req._id} req={req} showCancel={false} />
-            ))}
-          </div>
-
-        </div>
-      )}
 
       {/* Modal: solicitar subida de documento */}
       {isReqUploadOpen && reqUploadForm && (

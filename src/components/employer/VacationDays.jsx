@@ -74,6 +74,8 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [monthView, setMonthView] = useState(1); // 1 = mes actual, 12 = año entero
 
+  
+
   // ==== MODAL PARA HORAS ====
   const [showHoursModal, setShowHoursModal] = useState(false);
   const [hoursModalData, setHoursModalData] = useState({
@@ -438,6 +440,7 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
       <h2>VACACIONES Y ASUNTOS PROPIOS</h2>
 
       {/* PÍLDORAS DE RESUMEN */}
+      {!soloInfo &&
       <div className={styles.infoResumenContainer}>
         {/* Píldora VACACIONES */}
         <div className={`${styles.infoPill} ${styles.infoPillVacation}`}>
@@ -455,8 +458,7 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
               Te quedan en días naturales:{" "}
               {Math.max(0, naturalVacationDaysRemaining)} días
             </span>
-            {!soloInfo &&
-            <>
+        
             <span className={styles.infoPillMain}>
               Usadas en horas: {totalVacationHours.toFixed(1)} h (
               {totalVacationDaysEquiv.toFixed(2)} días)
@@ -464,7 +466,7 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
             <span className={styles.infoPillSecondary}>
               Te quedan en horas:{" "}
               {Math.max(0, remainingVacationHours).toFixed(1)} h (
-              {Math.max(0, remainingVacationDaysEquiv).toFixed(2)} días)
+              {Math.max(0, remainingVacationDaysEquiv).toFixed(2)} días laborables)
             </span>
             {exceededVacationHours > 0 && (
               <span className={styles.exceededText}>
@@ -472,8 +474,7 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
                 {(exceededVacationHours / DAILY_EQUIV_HOURS).toFixed(2)} días)
               </span>
             )}
-            </>
-            }
+            
             
           </div>
         </div>
@@ -494,8 +495,7 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
               Te quedan en días naturales:{" "}
               {Math.max(0, naturalPersonalDaysRemaining)} días
             </span>
-            {!soloInfo && 
-            <>
+
             <span className={styles.infoPillMain}>
               Usados en horas: {totalPersonalHours.toFixed(1)} h (
               {totalPersonalDaysEquiv.toFixed(2)} días)
@@ -511,12 +511,13 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
                 {(exceededPersonalHours / DAILY_EQUIV_HOURS).toFixed(2)} días)
               </span>
             )}
-            </>
-            }
+            
             
           </div>
         </div>
       </div>
+      }
+      
 
       {/* Selector de vista y tipo */}
       <div className={styles.contenedorSelectorvista}>

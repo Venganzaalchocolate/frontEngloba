@@ -124,6 +124,10 @@
     align-items: center;
 }
 
+.changeRow> input{
+    text-align: center;
+}
+
 .path {
     font-weight: 600;
     color: var(--color-info);

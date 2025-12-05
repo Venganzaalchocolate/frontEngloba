@@ -121,11 +121,12 @@
     align-items: flex-start;
     gap: .5rem;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .path {
     font-weight: 600;
-    color: var(--color-malva);
+    color: var(--color-info);
 }
 
 .values, .valuesDoc {
@@ -159,6 +160,7 @@
 
 .to {
     font-weight: 600;
+    color: var(--color-malva);
 }
 
 .note {
@@ -196,6 +198,7 @@
     border-radius: 8px;
     padding: .4rem .7rem;
     cursor: pointer;
+  text-align: center;
 }
 
 .btnApprove:hover {
@@ -233,6 +236,24 @@
 
 .historyBtn{
     width: fit-content;
+}
+
+.hoursInput {
+  width: 70px;
+  padding: 2px 6px;
+  margin-left: 8px;
+}
+
+.hoursLabel {
+  margin-left: 4px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.info {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 4px;
 }
 
 @media (min-width: 600px) {

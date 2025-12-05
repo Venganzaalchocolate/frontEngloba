@@ -35,6 +35,7 @@ const InfoEmployer = ({
     tracking: user.tracking === true ? "si" : "no", // NUEVO: siempre presente
   };
 
+
   const [originalData] = useState(() => deepClone(initialState));
   const [isEditing, setIsEditing] = useState(false);
   const [datos, setDatos] = useState(initialState);
@@ -256,6 +257,7 @@ const handleSave = async () => {
 
   try {
     if (canDirectEdit) {
+      
       const payload = { ...modifiedData, _id: originalData._id };
 
       const response = await editUser(payload, token);
@@ -368,7 +370,8 @@ const handleSave = async () => {
     }));
   };
 
-  return (
+  
+   return (
     <div className={styles.contenedor}>
       <h2>INFORMACIÓN PERSONAL {boton()}</h2>
 
@@ -437,13 +440,15 @@ const handleSave = async () => {
           );
         }
 
-        return (
-          <div key={fieldName} className={styles[fieldName + "Container"]}>
-            <label className={styles[fieldName + "Label"]}>{label}</label>
+        const isRootOrGlobal =
+          logged.user.role === "global" || logged.user.role === "root";
 
-            {/* 🆕 tracking como select si/no */}
-            {fieldName === "tracking"  &&
-              (logged.user.role === "global" || logged.user.role === "root") && 
+        let control = null;
+
+        // tracking: select si/no para global/root, resto solo lectura
+        if (fieldName === "tracking") {
+          if (isRootOrGlobal) {
+            control = (
               <select
                 className={styles[fieldName]}
                 name="tracking"
@@ -454,36 +459,61 @@ const handleSave = async () => {
                 <option value="si">Sí</option>
                 <option value="no">No</option>
               </select>
-            } 
-            
-            { fieldName === "employmentStatus" &&
-              (logged.user.role === "global" || logged.user.role === "root") ? (
-              <select
-                className={styles[fieldName]}
-                name={fieldName}
-                value={datos[fieldName] || ""}
-                onChange={handleChange}
-                disabled={!isEditing}
-              >
-                {(enumsData?.status || []).map((x) => (
-                  <option value={x} key={x}>
-                    {x}
-                  </option>
-                ))}
-              </select>
-            ) : (
+            );
+          } else {
+            control = (
               <input
                 className={styles[fieldName]}
                 type="text"
-                name={fieldName}
-                value={datos[fieldName] || ""}
-                onChange={handleChange}
-                disabled={
-                  fieldName === "employmentStatus" || fieldName === "email" ? true : !isEditing
-                }
+                value={datos.tracking === "si" ? "Sí" : "No"}
+                disabled
               />
-            )}
+            );
+          }
+        } else if (fieldName === "employmentStatus" && isRootOrGlobal) {
+          // Estado laboral: solo editable para global/root
+          control = (
+            <select
+              className={styles[fieldName]}
+              name={fieldName}
+              value={datos[fieldName] || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+            >
+              {(enumsData?.status || []).map((x) => (
+                <option value={x} key={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+          );
+        } else if (fieldName === "employmentStatus" && !isRootOrGlobal) {
+          control = (
+            <input
+              className={styles[fieldName]}
+              type="text"
+              value={datos[fieldName] || ""}
+              disabled
+            />
+          );
+        } else {
+          // Resto de campos: input normal
+          control = (
+            <input
+              className={styles[fieldName]}
+              type="text"
+              name={fieldName}
+              value={datos[fieldName] || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+            />
+          );
+        }
 
+        return (
+          <div key={fieldName} className={styles[fieldName + "Container"]}>
+            <label className={styles[fieldName + "Label"]}>{label}</label>
+            {control}
             {errores[fieldName] && (
               <span className={styles.errorSpan}>{errores[fieldName]}</span>
             )}
@@ -535,7 +565,9 @@ const handleSave = async () => {
           <option value="others">Otros</option>
           <option value="nonBinary">No binario</option>
         </select>
-        {errores.gender && <span className={styles.errorSpan}>{errores.gender}</span>}
+        {errores.gender && (
+          <span className={styles.errorSpan}>{errores.gender}</span>
+        )}
       </div>
 
       {/* Extutelado */}
@@ -559,7 +591,9 @@ const handleSave = async () => {
       {/* Consentimiento PD (solo si es "no" o en edición) */}
       {(isEditing || (!!datos && datos.consetmentDataProtection === "no")) && (
         <div className={styles.consetmentDataProtectionContainer}>
-          <label className={styles.consetmentDataProtectionLabel}>Consentimiento PD</label>
+          <label className={styles.consetmentDataProtectionLabel}>
+            Consentimiento PD
+          </label>
           <select
             className={styles.consetmentDataProtection}
             name="consetmentDataProtection"
@@ -571,7 +605,9 @@ const handleSave = async () => {
             <option value="no">No</option>
           </select>
           {errores.consetmentDataProtection && (
-            <span className={styles.errorSpan}>{errores.consetmentDataProtection}</span>
+            <span className={styles.errorSpan}>
+              {errores.consetmentDataProtection}
+            </span>
           )}
         </div>
       )}
@@ -580,7 +616,9 @@ const handleSave = async () => {
       {(isEditing || (datos?.disability?.percentage || 0) > 0) && (
         <>
           <div className={styles.disabilityPercentageContainer}>
-            <label className={styles.disabilityPercentageLabel}>Porcentaje de Discapacidad</label>
+            <label className={styles.disabilityPercentageLabel}>
+              Porcentaje de Discapacidad
+            </label>
             <input
               className={styles.disabilityPercentage}
               type="number"
@@ -590,12 +628,16 @@ const handleSave = async () => {
               disabled={!isEditing}
             />
             {errores["disability.percentage"] && (
-              <span className={styles.errorSpan}>{errores["disability.percentage"]}</span>
+              <span className={styles.errorSpan}>
+                {errores["disability.percentage"]}
+              </span>
             )}
           </div>
 
           <div className={styles.disabilityNotesContainer}>
-            <label className={styles.disabilityNotesLabel}>Notas sobre la discapacidad</label>
+            <label className={styles.disabilityNotesLabel}>
+              Notas sobre la discapacidad
+            </label>
             <input
               className={styles.disabilityNotes}
               type="text"
@@ -605,12 +647,14 @@ const handleSave = async () => {
               disabled={!isEditing}
             />
             {errores["disability.notes"] && (
-              <span className={styles.errorSpan}>{errores["disability.notes"]}</span>
+              <span className={styles.errorSpan}>
+                {errores["disability.notes"]}
+              </span>
             )}
           </div>
         </>
       )}
-
+{console.log(datos)}
       {/* Estudios */}
       <div className={styles.studiesContainer}>
         <label className={styles.studiesLabel}>Estudios</label>
@@ -622,11 +666,14 @@ const handleSave = async () => {
               </p>
             ))
           ) : (
-            <p className={styles.noStudies}>No hay información sobre estudios</p>
+            <p className={styles.noStudies}>
+              No hay información sobre estudios
+            </p>
           )
         ) : (
           <>
             <div className={styles.studiesList}>
+              {console.log(datos)}
               {datos.studies?.length ? (
                 datos.studies.map((study, i) => (
                   <div key={i} className={styles.studyItem}>
@@ -654,13 +701,17 @@ const handleSave = async () => {
                   </option>
                 ))}
               </select>
-              <FaSquarePlus onClick={handleAddStudy} className={styles.plusIcon} />
+              <FaSquarePlus
+                onClick={handleAddStudy}
+                className={styles.plusIcon}
+              />
             </div>
           </>
         )}
       </div>
     </div>
   );
+
 };
 
 export default InfoEmployer;

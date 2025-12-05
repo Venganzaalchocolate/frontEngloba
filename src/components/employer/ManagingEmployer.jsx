@@ -10,10 +10,8 @@ import FilterStatus from './FilterStatus.jsx';
 import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
 import {
-  currentStatusEmployee,
   getusers,
   getusersnotlimit,
-  getpendingrequest
 } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
 import { capitalizeWords } from '../../lib/utils.js';
@@ -61,10 +59,6 @@ const ManagingEmployer = ({
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
 
-  // estado actual (bajas/sustituciones)
-  const [userStatusMap, setUserStatusMap] = useState({});
-  const [pendingMap, setPendingMap] = useState({});
-
   const [selectOptionMenuEmployee, setselectOptionMenuEmployee] = useState('mis-datos');
 
   // responsabilidad elegida (SOLO no root/global)
@@ -78,36 +72,6 @@ const ManagingEmployer = ({
     apafa: apafaUser,
     status: 'total',
   });
-
-  // Autoponer el primer programa/dispositivo en filtros SOLO si no hay nada aún
-  useEffect(() => {
-    if (!listResponsability || listResponsability.length === 0) return;
-
-    const first = listResponsability[0];
-    const desiredProgram = first.idProgram || '';
-    const desiredDispositive = first.dispositiveId || '';
-
-    setFilters((prev) => {
-      const alreadyProgram = (prev.programId || '') === desiredProgram;
-      const alreadyDisp = (prev.dispositive || '') === desiredDispositive;
-
-      // si ya coincide, no disparamos nada
-      if (alreadyProgram && alreadyDisp) return prev;
-
-      if (desiredDispositive) {
-        return {
-          ...prev,
-          programId: desiredProgram,
-          dispositive: desiredDispositive,
-        };
-      }
-      return {
-        ...prev,
-        programId: desiredProgram,
-        dispositive: '',
-      };
-    });
-  }, []);
 
   const debouncedFilters = useDebounce(filters, 300);
 
@@ -211,51 +175,6 @@ const ManagingEmployer = ({
       }
 
       const data = await getusers(page, limit, auxFilters, token);
-      const ids = (data.users || []).map((u) => u._id);
-
-      let localPendingMap = {};
-      let statusMap = {};
-
-      if (ids.length) {
-        const [pendingRes, statusRes] = await Promise.all([
-          getpendingrequest({ userIds: ids, status: 'pending' }, token),
-          currentStatusEmployee({ userIds: ids }, token),
-        ]);
-
-        // ---- PENDIENTES ----
-        const list =
-          Array.isArray(pendingRes?.data?.data) ? pendingRes.data.data :
-          Array.isArray(pendingRes?.data) ? pendingRes.data :
-          Array.isArray(pendingRes) ? pendingRes : [];
-
-        const items = Array.isArray(pendingRes?.items) ? pendingRes.items : null;
-
-        if (items) {
-          for (const it of items) {
-            const uid = String(it.userId);
-            localPendingMap[uid] = { count: Number(it.count || 0) };
-          }
-        } else {
-          for (const r of list) {
-            const uid = String(
-              r.userId || r.user || r.idUser || r?.idUser?._id || r?.user?._id
-            );
-            if (!uid) continue;
-            localPendingMap[uid] = {
-              count: (localPendingMap[uid]?.count || 0) + 1,
-            };
-          }
-        }
-
-        // ---- STATUS ACTUAL ----
-        const statusItems = statusRes?.items || [];
-        statusMap = Object.fromEntries(
-          statusItems.map((it) => [String(it.userId), it])
-        );
-      }
-
-      setPendingMap(localPendingMap);
-      setUserStatusMap(statusMap);
 
       const normalizedUsers = (data.users || []).map((user) => ({
         ...user,
@@ -284,32 +203,25 @@ const ManagingEmployer = ({
   }, [debouncedFilters, page, limit, selectedResponsibility]);
 
   // =========================
-  // AGRUPAR ACTIVOS / DE BAJA
+  // AGRUPAR ACTIVOS / DE BAJA (usando user.isOnLeave)
   // =========================
   const { activeUsers, onLeaveUsers } = useMemo(() => {
     const active = [];
     const leave = [];
 
     for (const u of users) {
-      const st = userStatusMap[String(u._id)];
-      (st?.isOnLeave ? leave : active).push(u);
+      (u.isOnLeave ? leave : active).push(u);
     }
 
-    active.sort((a, b) =>
+    const sortByName = (a, b) =>
       (a.lastName || '').localeCompare(b.lastName || '', 'es', { sensitivity: 'base' }) ||
-      (a.firstName || '').localeCompare(b.firstName || '', 'es', { sensitivity: 'base' })
-    );
+      (a.firstName || '').localeCompare(b.firstName || '', 'es', { sensitivity: 'base' });
 
-    leave.sort((a, b) => {
-      const ax = userStatusMap[String(a._id)]?.replacement?.leave?.startLeaveDate;
-      const bx = userStatusMap[String(b._id)]?.replacement?.leave?.startLeaveDate;
-      const t = (bx ? new Date(bx).getTime() : 0) - (ax ? new Date(ax).getTime() : 0);
-      if (t !== 0) return t;
-      return (a.lastName || '').localeCompare(b.lastName || '', 'es', { sensitivity: 'base' });
-    });
+    active.sort(sortByName);
+    leave.sort(sortByName);
 
     return { activeUsers: active, onLeaveUsers: leave };
-  }, [users, userStatusMap]);
+  }, [users]);
 
   // =========================
   // HANDLERS
@@ -362,57 +274,37 @@ const ManagingEmployer = ({
   const closeModal = () => setIsModalOpen(false);
   const openModal = () => setIsModalOpen(true);
 
-  // Refrescar solo un usuario en el mapa de pendientes
-  const refreshPendingFlagForUser = async (userId) => {
-    try {
-      const token = getToken();
-      const res = await getpendingrequest(
-        { userIds: [userId], status: 'pending' },
-        token
-      );
-
-      const list =
-        Array.isArray(res?.data?.data) ? res.data.data :
-        Array.isArray(res?.data) ? res.data :
-        Array.isArray(res) ? res : [];
-
-      const items = Array.isArray(res?.items) ? res.items : null;
-
-      let count = 0;
-      if (items) {
-        count = Number(
-          items.find((it) => String(it.userId) === String(userId))?.count || 0
-        );
-      } else {
-        for (const r of list) {
-          const uid = String(
-            r.userId || r.user || r.idUser || r?.idUser?._id || r?.user?._id
-          );
-          if (String(uid) === String(userId)) count++;
-        }
-      }
-
-      setPendingMap((prev) => ({ ...prev, [String(userId)]: { count } }));
-    } catch {
-      // silencioso
-    }
-  };
-
+  // =========================
+  // changeUserLocally (conservando flags si no vienen del back)
+  // =========================
   const changeUserLocally = (updatedUser) => {
     setUsers((prev) => {
       let found = false;
       const next = prev.map((u) => {
         if (u._id === updatedUser._id) {
           found = true;
-          return updatedUser;
+          return {
+            // mantenemos flags anteriores si el back no los manda
+            ...u,
+            ...updatedUser,
+            hasPendingRequests:
+              typeof updatedUser.hasPendingRequests === "boolean"
+                ? updatedUser.hasPendingRequests
+                : u.hasPendingRequests,
+            isOnLeave:
+              typeof updatedUser.isOnLeave === "boolean"
+                ? updatedUser.isOnLeave
+                : u.isOnLeave,
+          };
         }
         return u;
       });
-      if (!found && updatedUser._id) next.push(updatedUser);
+      if (!found && updatedUser._id) {
+        next.push(updatedUser);
+      }
       return next;
     });
     setUserSelected(updatedUser);
-    refreshPendingFlagForUser(updatedUser._id);
   };
 
   // =========================
@@ -502,6 +394,9 @@ const ManagingEmployer = ({
   };
 
   // =========================
+  // MENÚ LATERAL DE USUARIO (de momento solo "mis-datos")
+  // =========================
+ // =========================
   // MENÚ LATERAL DE USUARIO
   // =========================
   const menuConfig = {
@@ -611,12 +506,9 @@ const ManagingEmployer = ({
   };
 
   const renderUserRow = (user) => {
-    const userStatus = userStatusMap[String(user._id)];
     const rowClass =
-      userStatus?.isOnLeave
+      user.isOnLeave
         ? `${styles.tableContainer} ${styles.isOnLeave}`
-        : userStatus?.isSubstituting
-        ? `${styles.tableContainer} ${styles.isSubstituting}`
         : styles.tableContainer;
 
     return (
@@ -633,7 +525,7 @@ const ManagingEmployer = ({
             <div className={styles.tableCell}>{user.firstName}</div>
             <div className={styles.tableCell}>{user.lastName}</div>
             <div className={styles.tableCell}>
-              {pendingMap[String(user._id)]?.count > 0 && (
+              {user.hasPendingRequests && (
                 <FaBell color="tomato" />
               )}
             </div>

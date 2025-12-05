@@ -7,6 +7,7 @@ import Payrolls from '../payroll/Payrolls.jsx';
 import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx';
 import MyChangeRequests from './MyChangeRequest.jsx';
 import { useState } from 'react';
+import VacationDays from '../employer/VacationDays.jsx';
 
 
 const ManagingMySelf = ({
@@ -93,6 +94,13 @@ const handleRequestCreated = (payload) => {
                         charge={charge}
                         changeUser={changeUser}
                         listResponsability={listResponsability}
+                    />
+
+                    <VacationDays
+                        user={myself}
+                        modal={modal}
+                        charge={charge}
+                        soloInfo={true}
                     />
 
                     <MyChangeRequests

@@ -1,25 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "../styles/vacationDays.module.css";
 import {
-  FaCalendarDay,
-  FaCalendarDays,
   FaRegCalendarDays,
   FaUmbrellaBeach,
   FaUserClock,
 } from "react-icons/fa6";
 import { FaRegCalendarAlt } from "react-icons/fa";
-import { editUser } from "../../lib/data";
+import { editUser, getUserListDays } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import ModalForm from "../globals/ModalForm";
 
 // ==== CONSTANTES DE NEGOCIO ====
-const WEEKLY_HOURS = 38.5;
 const DAILY_EQUIV_HOURS = 7.5; // día laborable equivalente
 const ANNUAL_VACATION_DAYS = 23;
-const ANNUAL_PERSONAL_DAYS = 3;
+const ANNUAL_VACATION_DAYS_NATURAL=30;
+const ANNUAL_PERSONAL_DAYS = 2;
 
-const ANNUAL_VACATION_HOURS = ANNUAL_VACATION_DAYS * DAILY_EQUIV_HOURS; // 172.5
-const ANNUAL_PERSONAL_HOURS = ANNUAL_PERSONAL_DAYS * DAILY_EQUIV_HOURS; // 22.5
+const ANNUAL_VACATION_HOURS = ANNUAL_VACATION_DAYS * DAILY_EQUIV_HOURS;
+const ANNUAL_PERSONAL_HOURS = ANNUAL_PERSONAL_DAYS * DAILY_EQUIV_HOURS;
+
 
 // ==== HELPERS ====
 const sameDay = (a, b) =>
@@ -30,7 +29,7 @@ const sameDay = (a, b) =>
   a.getDate() === b.getDate();
 
 /**
- * Construye la lista inicial de días con horas:
+ * Construye la lista de días con horas:
  * 1) Si hay vacationHours/personalHours → usar esos.
  * 2) Si no, usar vacationDays/personalDays solo como lectura (7,5h por defecto).
  */
@@ -63,14 +62,12 @@ const buildInitialEntries = (hoursEntries = [], legacyDates = []) => {
   return [];
 };
 
-const VacationDays = ({ user, modal, charge, changeUser }) => {
+const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
+  const userId = user?._id;
+
   // ==== ESTADO PRINCIPAL ====
-  const [selectedVacationDays, setSelectedVacationDays] = useState(
-    buildInitialEntries(user.vacationHours, user.vacationDays)
-  );
-  const [selectedPersonalDays, setSelectedPersonalDays] = useState(
-    buildInitialEntries(user.personalHours, user.personalDays)
-  );
+  const [selectedVacationDays, setSelectedVacationDays] = useState([]);
+  const [selectedPersonalDays, setSelectedPersonalDays] = useState([]);
 
   const [selectedType, setSelectedType] = useState("Vacaciones");
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -85,20 +82,57 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
     initialHours: "",
   });
 
+  useEffect(() => {
+    if (!userId) {
+      setSelectedVacationDays([]);
+      setSelectedPersonalDays([]);
+      return;
+    }
+
+    const fetchDays = async () => {
+      const token = getToken();
+      charge(true);
+
+      try {
+        const data = await getUserListDays(token, { idUser: userId });
+
+        const vacEntries = buildInitialEntries(
+          data?.vacationHours,
+          data?.vacationDays
+        );
+        const perEntries = buildInitialEntries(
+          data?.personalHours,
+          data?.personalDays
+        );
+
+        setSelectedVacationDays(vacEntries);
+        setSelectedPersonalDays(perEntries);
+      } catch (err) {
+        modal(
+          "Error",
+          "No se han podido cargar los días de vacaciones/asuntos propios."
+        );
+      } finally {
+        charge(false);
+      }
+    };
+
+    fetchDays();
+  }, [userId]);
+
   // ==== AÑOS DISPONIBLES EN SELECT ====
   const getAvailableYears = () => {
-    const years = new Set();
-    selectedVacationDays.forEach((entry) =>
-      years.add(entry.date.getFullYear())
-    );
-    selectedPersonalDays.forEach((entry) =>
-      years.add(entry.date.getFullYear())
-    );
-    years.add(currentYear - 1);
-    years.add(currentYear);
-    years.add(currentYear + 1);
-    return [...years].sort((a, b) => b - a);
-  };
+  const FIRST_YEAR = 2024;
+  const currentRealYear = new Date().getFullYear();
+  const lastYear = currentRealYear + 1;
+
+  const years = [];
+  for (let y = lastYear; y >= FIRST_YEAR; y--) {
+    years.push(y);   // queda en orden descendente: 2026, 2025, 2024...
+  }
+
+  return years;
+};
 
   // ==== GENERAR CALENDARIO ====
   const generateCalendar = (month, year) => {
@@ -185,8 +219,26 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
     .filter((e) => e.date.getMonth() === currentMonth)
     .reduce((acc, e) => acc + (e.hours || 0), 0);
 
+  // DÍAS NATURALES (cada fecha con horas > 0 cuenta 1 día)
+  const naturalVacationDaysUsed = currentYearVacationEntries.filter(
+    (e) => (e.hours || 0) > 0
+  ).length;
+
+  const naturalPersonalDaysUsed = currentYearPersonalEntries.filter(
+    (e) => (e.hours || 0) > 0
+  ).length;
+
+  const naturalVacationDaysRemaining =
+    ANNUAL_VACATION_DAYS_NATURAL - naturalVacationDaysUsed;
+
+  const naturalPersonalDaysRemaining =
+    ANNUAL_PERSONAL_DAYS - naturalPersonalDaysUsed;
+
   // ==== PERSISTIR EN BACKEND (AUTO-GUARDADO) ====
   const persistHours = async (vacationList, personalList) => {
+    // En modo soloInfo nunca persistimos
+    if (!userId || soloInfo) return;
+
     const vacationHoursPayload = vacationList.map((d) => ({
       date: d.date.toISOString(),
       hours: d.hours,
@@ -198,42 +250,44 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
     }));
 
     const payload = {
-      _id: user._id,
-      vacationHours: vacationHoursPayload,
-      personalHours: personalHoursPayload,
-    };
-
-    const newUserForState = {
-      ...user,
+      _id: userId,
       vacationHours: vacationHoursPayload,
       personalHours: personalHoursPayload,
     };
 
     const token = getToken();
     charge(true);
-    try {
-      const responseApi = await editUser(payload, token);
-      if (!responseApi?.error) {
-        // Silencioso en éxito, solo actualizamos el usuario
-        changeUser(newUserForState);
-      } else {
-        modal(
-          "Error",
-          "No se han podido guardar los días de vacaciones/asuntos propios"
-        );
-      }
-    } catch (e) {
+
+    const responseApi = await editUser(payload, token);
+
+    if (!responseApi || responseApi.error) {
+      charge(false);
       modal(
         "Error",
-        "No se han podido guardar los días de vacaciones/asuntos propios"
+        responseApi?.message ||
+          "No se han podido guardar los días de vacaciones/asuntos propios"
       );
-    } finally {
-      charge(false);
+      return;
     }
+
+    const vacEntries = buildInitialEntries(
+      responseApi?.vacationHours,
+      responseApi?.vacationDays
+    );
+    const perEntries = buildInitialEntries(
+      responseApi?.personalHours,
+      responseApi?.personalDays
+    );
+    setSelectedVacationDays(vacEntries);
+    setSelectedPersonalDays(perEntries);
+
+    charge(false);
   };
 
   // ==== CLICK EN DÍA → ABRIR MODAL HORAS ====
   const handleDayClick = (date) => {
+    // En modo soloInfo el clic NO hace nada
+    if (soloInfo) return;
     if (!date || !selectedType) return;
 
     const isDayInOtherList =
@@ -247,7 +301,6 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
     const list = isVacation ? selectedVacationDays : selectedPersonalDays;
 
     const existing = list.find((d) => sameDay(d.date, date));
-    // Dejamos initialHours vacío para animar a escribir, pero si lo dejan vacío contará 7,5h
     const initialHours =
       typeof existing?.hours === "number" ? existing.hours : "";
 
@@ -261,9 +314,11 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
 
   // ==== SUBMIT DEL MODAL DE HORAS (AUTO-GUARDADO) ====
   const handleSubmitHours = async (values) => {
+    // Salvaguarda extra: si alguien llegara aquí en soloInfo, no hacer nada
+    if (soloInfo) return;
+
     let raw = values.hours;
 
-    // Si está vacío, usamos 7,5h
     if (raw === undefined || raw === null || raw === "") {
       raw = DAILY_EQUIV_HOURS;
     }
@@ -274,7 +329,6 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
     const hours = parseFloat(raw);
 
     if (isNaN(hours) || hours < 0) {
-      // si quieres, aquí podrías usar tu función modal() para avisar de valor inválido
       return;
     }
 
@@ -289,23 +343,18 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
 
     let newList;
     if (hours === 0) {
-      // quitar el día
       newList = list.filter((d) => !sameDay(d.date, date));
     } else if (existing) {
-      // actualizar horas
       newList = list.map((d) =>
         sameDay(d.date, date) ? { ...d, hours } : d
       );
     } else {
-      // añadir nuevo día
       newList = [...list, { date, hours }];
     }
 
-    // Actualizamos el estado local
     setList(newList);
     setShowHoursModal(false);
 
-    // Construimos las listas finales para persistir (evitando depender del setState asíncrono)
     const finalVacationList = isVacation ? newList : selectedVacationDays;
     const finalPersonalList = isVacation ? selectedPersonalDays : newList;
 
@@ -347,13 +396,16 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                 return (
                   <td
                     key={j}
-                    onClick={() => handleDayClick(day)}
+                    onClick={
+                      soloInfo ? undefined : () => handleDayClick(day)
+                    }
                     className={[
                       day ? styles.dayCell : "",
                       !day ? styles.dayDisabled : "",
                       isSelectedVacationDay ? styles.vacationDay : "",
                       isSelectedPersonalDay ? styles.personalDay : "",
                       isToday ? styles.dayToday : "",
+                      soloInfo ? styles.dayReadOnly : "",
                     ]
                       .join(" ")
                       .trim()}
@@ -397,11 +449,21 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
               Vacaciones {currentYear}
             </span>
             <span className={styles.infoPillMain}>
-              Usadas: {totalVacationHours.toFixed(1)} h (
+              Usadas en días naturales: {naturalVacationDaysUsed} días
+            </span>
+            <span className={styles.infoPillSecondary}>
+              Te quedan en días naturales:{" "}
+              {Math.max(0, naturalVacationDaysRemaining)} días
+            </span>
+            {!soloInfo &&
+            <>
+            <span className={styles.infoPillMain}>
+              Usadas en horas: {totalVacationHours.toFixed(1)} h (
               {totalVacationDaysEquiv.toFixed(2)} días)
             </span>
             <span className={styles.infoPillSecondary}>
-              Te quedan: {Math.max(0, remainingVacationHours).toFixed(1)} h (
+              Te quedan en horas:{" "}
+              {Math.max(0, remainingVacationHours).toFixed(1)} h (
               {Math.max(0, remainingVacationDaysEquiv).toFixed(2)} días)
             </span>
             {exceededVacationHours > 0 && (
@@ -410,6 +472,9 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                 {(exceededVacationHours / DAILY_EQUIV_HOURS).toFixed(2)} días)
               </span>
             )}
+            </>
+            }
+            
           </div>
         </div>
 
@@ -423,11 +488,21 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
               Asuntos propios {currentYear}
             </span>
             <span className={styles.infoPillMain}>
-              Usados: {totalPersonalHours.toFixed(1)} h (
+              Usados en días naturales: {naturalPersonalDaysUsed} días
+            </span>
+            <span className={styles.infoPillSecondary}>
+              Te quedan en días naturales:{" "}
+              {Math.max(0, naturalPersonalDaysRemaining)} días
+            </span>
+            {!soloInfo && 
+            <>
+            <span className={styles.infoPillMain}>
+              Usados en horas: {totalPersonalHours.toFixed(1)} h (
               {totalPersonalDaysEquiv.toFixed(2)} días)
             </span>
             <span className={styles.infoPillSecondary}>
-              Te quedan: {Math.max(0, remainingPersonalHours).toFixed(1)} h (
+              Te quedan en horas:{" "}
+              {Math.max(0, remainingPersonalHours).toFixed(1)} h (
               {Math.max(0, remainingPersonalDaysEquiv).toFixed(2)} días)
             </span>
             {exceededPersonalHours > 0 && (
@@ -436,32 +511,9 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
                 {(exceededPersonalHours / DAILY_EQUIV_HOURS).toFixed(2)} días)
               </span>
             )}
-          </div>
-        </div>
-
-        {/* Píldora RESUMEN MENSUAL + NOTA */}
-        <div className={`${styles.infoPill} ${styles.infoPillMonth}`}>
-          <div className={styles.infoPillIcon}>
-            <FaRegCalendarAlt />
-          </div>
-          <div className={styles.infoPillContent}>
-            <span className={styles.infoPillTitle}>
-              Resumen{" "}
-              {new Date(currentYear, currentMonth).toLocaleString("es-ES", {
-                month: "long",
-                year: "numeric",
-              })}
-            </span>
-            <span className={styles.infoPillMain}>
-              Vacaciones: {currentMonthVacationHours.toFixed(1)} h · Asuntos
-              propios: {currentMonthPersonalHours.toFixed(1)} h
-            </span>
-            <span
-              className={`${styles.infoPillSecondary} ${styles.notaEquivalencia}`}
-            >
-              * Día laborable equivalente: 7,5 horas. Si no se indican horas, se
-              contabilizan 7,5 h por día.
-            </span>
+            </>
+            }
+            
           </div>
         </div>
       </div>
@@ -491,28 +543,31 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
           ))}
         </select>
 
-        <div className={styles.selectionTypeBox}>
-          <button
-            className={
-              selectedType !== "Vacaciones"
-                ? styles.NotSelectedTypeButton
-                : styles.SelectedTypeButton
-            }
-            onClick={() => setSelectedType("Vacaciones")}
-          >
-            Vacaciones
-          </button>
-          <button
-            className={
-              selectedType !== "Asuntos Propios"
-                ? styles.NotSelectedTypeButton
-                : styles.SelectedTypeButton
-            }
-            onClick={() => setSelectedType("Asuntos Propios")}
-          >
-            Asuntos Propios
-          </button>
-        </div>
+        {/* En modo soloInfo NO mostramos los botones de tipo */}
+        {!soloInfo && (
+          <div className={styles.selectionTypeBox}>
+            <button
+              className={
+                selectedType !== "Vacaciones"
+                  ? styles.NotSelectedTypeButton
+                  : styles.SelectedTypeButton
+              }
+              onClick={() => setSelectedType("Vacaciones")}
+            >
+              Vacaciones
+            </button>
+            <button
+              className={
+                selectedType !== "Asuntos Propios"
+                  ? styles.NotSelectedTypeButton
+                  : styles.SelectedTypeButton
+              }
+              onClick={() => setSelectedType("Asuntos Propios")}
+            >
+              Asuntos Propios
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Leyenda */}
@@ -587,9 +642,8 @@ const VacationDays = ({ user, modal, charge, changeUser }) => {
       </div>
 
       {/* ==== MODAL PARA EDITAR HORAS ==== */}
-      {showHoursModal && hoursModalData.date && (
+      {!soloInfo && showHoursModal && hoursModalData.date && (
         <ModalForm
-          // Ajusta estos props a tu ModalForm real
           isOpen={showHoursModal}
           title={`Horas - ${hoursModalData.type} (${hoursModalData.date.toLocaleDateString(
             "es-ES"

@@ -22,6 +22,8 @@ export default function SupervisorChangeRequests({
   const [notes, setNotes] = useState({});
   const [showHistory, setShowHistory] = useState(false);
 
+  const [timeOffOverrides, setTimeOffOverrides] = useState({});
+
   // estado de documentos por solicitud
   const [docsByReq, setDocsByReq] = useState({});   // { [reqId]: Doc[] }
   const [docsLoading, setDocsLoading] = useState({});// { [reqId]: boolean }
@@ -41,12 +43,12 @@ export default function SupervisorChangeRequests({
     return map;
   }, [enumsData]);
 
-  // justo debajo de const studiesMap = useMemo(...)
-const officialById = useMemo(() => {
-  const m = new Map();
-  (enumsData?.documentation || []).forEach(d => m.set(String(d._id), d));
-  return m;
-}, [enumsData]);
+  // Documentación oficial por id (para histórico)
+  const officialById = useMemo(() => {
+    const m = new Map();
+    (enumsData?.documentation || []).forEach((d) => m.set(String(d._id), d));
+    return m;
+  }, [enumsData]);
 
   const labelFor = (path) => {
     const dict = {
@@ -85,6 +87,54 @@ const officialById = useMemo(() => {
     if (path === "disability.percentage") return `${v}%`;
     return String(v);
   };
+
+  // Detectar si una solicitud es de vacaciones/asuntos propios
+  const isTimeOffRequest = (r) =>
+    r?.timeOff &&
+    Array.isArray(r.timeOff.entries) &&
+    r.timeOff.entries.length > 0;
+
+  // Construir info de texto y fechas únicas para una solicitud de timeOff
+  const buildTimeOffInfo = (timeOff) => {
+    if (!timeOff || !Array.isArray(timeOff.entries)) {
+      return { label: "", dates: [] };
+    }
+
+    const uniqueDates = Array.from(
+      new Set(
+        timeOff.entries
+          .map((e) => (e?.date ? new Date(e.date) : null))
+          .filter((d) => d && !Number.isNaN(d.getTime()))
+          .map((d) => d.toISOString().slice(0, 10))
+      )
+    ).sort();
+
+    const label =
+      timeOff.kind === "personal"
+        ? "DÍAS DE ASUNTOS PROPIOS SOLICITADOS"
+        : "DÍAS DE VACACIONES SOLICITADOS";
+
+    return { label, dates: uniqueDates };
+  };
+
+const getTimeOffEntries = (req) => {
+  if (!req?.timeOff || !Array.isArray(req.timeOff.entries)) return [];
+  return req.timeOff.entries
+    .filter((e) => e?.date)
+    .map((e) => {
+      const d = new Date(e.date);
+      if (Number.isNaN(d.getTime())) return null;
+      const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+      return {
+        key,               // ← la usaremos para mostrar
+        date: d,
+        rawDate: e.date,
+        hours: typeof e.hours === "number" ? e.hours : 7.5,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date - b.date);
+};
 
   const fetchAll = async () => {
     charge?.(true);
@@ -170,6 +220,7 @@ const officialById = useMemo(() => {
         isTemp: !!d.isTemp,
         idDrive: d.idDrive || null,
         fileId: d._id || null,
+        showDescription: !d.isTemp, // puedes ajustar si quieres
       }));
 
       setDocsByReq((m) => ({ ...m, [reqId]: ui }));
@@ -184,8 +235,8 @@ const officialById = useMemo(() => {
   // Prefetch automático de documentos para todas las solicitudes pendientes con uploads
   useEffect(() => {
     const pendWithUploads = items
-      .filter(r => r.status === "pending" && (r.uploads?.length || 0) > 0)
-      .map(r => String(r._id));
+      .filter((r) => r.status === "pending" && (r.uploads?.length || 0) > 0)
+      .map((r) => String(r._id));
 
     for (const reqId of pendWithUploads) {
       if (!docsByReq[reqId] && !docsLoading[reqId]) {
@@ -194,6 +245,15 @@ const officialById = useMemo(() => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
+
+  const handleRemoveTimeOffDay = (reqId, dateKey) => {
+  setTimeOffOverrides((prev) => {
+    const prevForReq = prev[reqId] || {};
+    // Marcamos ese día con 0 horas
+    const nextForReq = { ...prevForReq, [dateKey]: 0 };
+    return { ...prev, [reqId]: nextForReq };
+  });
+};
 
   // ===== Descarga / Visualización =====
   const handleDownloadDoc = async (doc) => {
@@ -238,10 +298,31 @@ const officialById = useMemo(() => {
     charge?.(true);
     try {
       const token = getToken();
-      const res = await approvechangerequest(
-        { requestId: id, approverId, note: notes[id] || "" },
-        token
-      );
+      const payload = { requestId: id, approverId, note: notes[id] || "" };
+
+      // si la solicitud es de vacaciones/asuntos propios, añadimos override
+      const req = items.find((r) => String(r._id) === String(id));
+      if (req && isTimeOffRequest(req)) {
+        const entries = getTimeOffEntries(req);
+        const overridesForReq = timeOffOverrides[String(id)] || {};
+
+        const overrideEntries = entries.map((e) => {
+          let h = overridesForReq[e.key] !== undefined
+            ? Number(overridesForReq[e.key])
+            : e.hours;
+
+          if (!Number.isFinite(h) || h < 0) h = 0;
+          return { date: e.rawDate, hours: h };
+        });
+
+        payload.timeOffOverride = {
+          kind: req.timeOff.kind,  // "vacation" | "personal"
+          entries: overrideEntries,
+        };
+      }
+
+      const res = await approvechangerequest(payload, token);
+
 
       if (!res?.error) changeUserLocally(res);
       setItems((prev) =>
@@ -260,6 +341,12 @@ const officialById = useMemo(() => {
             : x
         )
       );
+      setTimeOffOverrides((prev) => {
+        const next = { ...prev };
+        delete next[String(id)];
+        return next;
+      });
+
       modal?.("Aprobada", "Los cambios han sido aplicados.");
     } catch (e) {
       modal?.("Error", e?.message || "No se pudo aprobar la solicitud");
@@ -341,228 +428,389 @@ const officialById = useMemo(() => {
     return <span className={`${styles.chip} ${cls}`}>{txt}</span>;
   };
 
-  const nameDocumentation=(id)=>{
-    if(!id) return ''
-    const documentationData=enumsData.documentation.filter((x)=>id==x._id)
-    return documentationData[0]?.name
-  }
-return (
-  <div className={styles.contenedor}>
-    <h2>SOLICITUDES</h2>
+  const nameDocumentation = (id) => {
+    if (!id) return "";
+    const documentationData = enumsData.documentation.filter((x) => id == x._id);
+    return documentationData[0]?.name;
+  };
 
-    {/* Pendientes */}
-    <div className={styles.container}>
-      <div className={styles.headerBar}>
-        <h3 className={styles.title}>Solicitudes de cambio pendientes</h3>
+  return (
+    <div className={styles.contenedor}>
+      <h2>SOLICITUDES</h2>
+
+      {/* Pendientes */}
+      <div className={styles.container}>
+        <div className={styles.headerBar}>
+          <h3 className={styles.title}>Solicitudes de cambio pendientes</h3>
+        </div>
+
+        {pending.length === 0 && (
+          <p className={styles.empty}>
+            No hay solicitudes pendientes para este usuario.
+          </p>
+        )}
+
+        {pending.map((req) => {
+          const reqId = String(req._id);
+          const list = docsByReq[reqId] || [];
+          const isLoadingDocs = !!docsLoading[reqId];
+          const idDocumentation = req.uploads?.[0]?.originDocumentation;
+          const nameDocumentationAux = idDocumentation
+            ? nameDocumentation(idDocumentation)
+            : "";
+
+          const { label: timeOffLabel, dates: timeOffDates } = buildTimeOffInfo(
+            req.timeOff
+          );
+
+          return (
+            <div key={req._id} className={styles.card}>
+              <div className={styles.header}>
+                {statusChip(req.status)}
+                <span className={styles.meta}>
+                  Enviada: {fmtDate(req.submittedAt)}
+                </span>
+              </div>
+
+              {req.note && (
+                <p className={styles.note}>Nota del usuario: {req.note}</p>
+              )}
+
+              {/* Cambios de datos */}
+              {(req.changes?.length || 0) > 0 && (
+                <ul className={styles.changes}>
+                  {req.changes.map((c, i) => (
+                    <li key={i} className={styles.changeRow}>
+                      <span className={styles.path}>{labelFor(c.path)}</span>
+                      <span className={styles.arrow}>→</span>
+                      <div className={styles.values}>
+                        <span className={styles.from}>
+                          {fmtValue(c.path, c.from)}
+                        </span>
+                        <span className={styles.sep}>→</span>
+                        <span className={styles.to}>
+                          {fmtValue(c.path, c.to)}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Bloque de vacaciones / asuntos propios */}
+              {/* Vacaciones / asuntos propios */}
+      {req.timeOff &&
+        Array.isArray(req.timeOff.entries) &&
+        req.timeOff.entries.length > 0 && (() => {
+          const reqId = String(req._id);
+          const allEntries = getTimeOffEntries(req);           // [{ key, date, hours }]
+          const overrides  = timeOffOverrides[reqId] || {};
+
+          // Solo mostramos los días cuya hora actual sea > 0
+          const visibleEntries = allEntries.filter((e) => {
+            const currentHours = overrides[e.key] ?? e.hours;
+            return currentHours > 0;
+          });
+
+          return (
+            <>
+              <h4 className={styles.sectionTitle}>
+                {req.timeOff.kind === "vacation"
+                  ? "DÍAS DE VACACIONES SOLICITADOS"
+                  : "DÍAS DE ASUNTOS PROPIOS SOLICITADOS"}
+              </h4>
+
+              {visibleEntries.length === 0 ? (
+                <p className={styles.empty}>
+                  No hay días seleccionados. Si apruebas así, no se aplicará ningún día.
+                </p>
+              ) : (
+                <ul className={styles.changes}>
+                  {visibleEntries.map((e) => {
+                    const currentHours = overrides[e.key] ?? e.hours;
+                    return (
+                      <li key={e.key} className={styles.changeRow}>
+                        {/* Fecha */}
+                        <span className={styles.path}>{fmtDate(e.key)}</span>
+
+                        {/* Horas editables */}
+                        <input
+                          type="number"
+                          min={0}
+                          max={24}
+                          step={0.5}
+                          className={styles.hourInput}
+                          value={currentHours}
+                          onChange={(ev) =>
+                            handleChangeTimeOffHours(
+                              reqId,
+                              e.key,
+                              parseFloat(ev.target.value)
+                            )
+                          }
+                        />
+                        <span className={styles.to}>horas</span>
+
+                        {/* Botón para quitar el día */}
+                        <button
+                          type="button"
+                          className={styles.btnGhost}
+                          onClick={() => handleRemoveTimeOffDay(reqId, e.key)}
+                        >
+                          Quitar día
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              <p className={styles.note}>
+                Puedes ajustar las horas por día o quitar un día con el botón
+                “Quitar día” antes de aprobar. Los días que queden con 0 horas no se aplicarán.
+              </p>
+            </>
+          );
+        })()}
+
+
+              {/* Documentos */}
+              {(req.uploads || []).length > 0 && (
+                <>
+                  {isLoadingDocs && <p>Cargando documentos…</p>}
+
+                  {!isLoadingDocs && (
+                    <ul className={styles.changes}>
+                      {list.length === 0 && (
+                        <li className={styles.changeRow}>
+                          <span className={styles.to}>Sin enlaces</span>
+                        </li>
+                      )}
+
+                      {list.length > 0 && (
+                        <li key={list[0].key} className={styles.changeRow}>
+                          <div className={styles.valuesDoc}>
+                            <p className={styles.to}>
+                              <span>Tipo:</span>{" "}
+                              {list[0].category === "Oficial"
+                                ? "Oficial"
+                                : "Varios"}
+                            </p>
+                            <p className={styles.to}>
+                              <span>
+                                {list[0].category === "Oficial"
+                                  ? "Subtipo: "
+                                  : "Nombre del documento:"}{" "}
+                              </span>
+                              {list[0].category === "Oficial"
+                                ? nameDocumentationAux
+                                : list[0].fileLabel}
+                            </p>
+                            {list[0].date && (
+                              <p className={styles.to}>
+                                <span>Fecha:</span>{" "}
+                                {fmtDate(list[0].date)}
+                              </p>
+                            )}
+                            {list[0].showDescription && (
+                              <p className={styles.to}>
+                                <span>Descripción:</span>{" "}
+                                {list[0].description}
+                              </p>
+                            )}
+                            {list[0].idDrive ? (
+                              <div className={styles.cajabotones}>
+                                <button
+                                  className={styles.linkBtn}
+                                  onClick={() => handleViewDoc(list[0])}
+                                >
+                                  Ver
+                                </button>
+                                <button
+                                  className={styles.linkBtn}
+                                  onClick={() => handleDownloadDoc(list[0])}
+                                >
+                                  Descargar
+                                </button>
+                              </div>
+                            ) : (
+                              <span className={styles.to}>Sin enlaces</span>
+                            )}
+                          </div>
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </>
+              )}
+
+              <div className={styles.actions}>
+                <textarea
+                  className={styles.noteArea}
+                  placeholder="Añadir nota (opcional)…"
+                  value={notes[req._id] || ""}
+                  onChange={(e) =>
+                    setNotes((m) => ({ ...m, [req._id]: e.target.value }))
+                  }
+                />
+                <div className={styles.btns}>
+                  <button
+                    className={styles.btnApprove}
+                    onClick={() => onApprove(req._id)}
+                  >
+                    Aprobar
+                  </button>
+                  <button
+                    className={styles.btnReject}
+                    onClick={() => onReject(req._id)}
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {pending.length === 0 && (
-        <p className={styles.empty}>No hay solicitudes pendientes para este usuario.</p>
-      )}
+      <button
+        className={styles.historyBtn}
+        onClick={() => setShowHistory((s) => !s)}
+      >
+        {showHistory ? "Ocultar histórico" : "Ver histórico"}
+      </button>
 
-      {pending.map((req) => {
-        const reqId = String(req._id);
-        const list = docsByReq[reqId] || [];
-        const isLoadingDocs = !!docsLoading[reqId];
-        let idDocumentation=req.uploads[0]?.originDocumentation
-        let nameDocumentationAux=(!!idDocumentation)?nameDocumentation(idDocumentation):''
-        
-        return (
-          <div key={req._id} className={styles.card}>
-            <div className={styles.header}>
-              {statusChip(req.status)}
-              <span className={styles.meta}>Enviada: {fmtDate(req.submittedAt)}</span>
-            </div>
+      {showHistory && (
+        <div className={styles.historyWrapper}>
+          <h3 className={styles.title}>Histórico de solicitudes</h3>
+          {history.length === 0 && (
+            <p className={styles.empty}>No hay histórico disponible.</p>
+          )}
 
-            {req.note && <p className={styles.note}>Nota del usuario: {req.note}</p>}
+          {history.map((req) => {
+            const { label: timeOffLabel, dates: timeOffDates } =
+              buildTimeOffInfo(req.timeOff);
 
-            {/* Cambios de datos */}
-            <ul className={styles.changes}>
-              {req.changes?.map((c, i) => (
-                <li key={i} className={styles.changeRow}>
-                  <span className={styles.path}>{labelFor(c.path)}</span>
-                  <span className={styles.arrow}>→</span>
-                  <div className={styles.values}>
-                    <span className={styles.from}>{fmtValue(c.path, c.from)}</span>
-                    <span className={styles.sep}>→</span>
-                    <span className={styles.to}>{fmtValue(c.path, c.to)}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            return (
+              <div key={req._id} className={styles.card}>
+                <div className={styles.header}>
+                  {statusChip(req.status)}
+                  <span className={styles.meta}>
+                    Enviada: {fmtDate(req.submittedAt)}
+                    {req.decision?.decidedAt
+                      ? ` · Decidida: ${fmtDate(req.decision.decidedAt)}`
+                      : req.appliedAt
+                        ? ` · Aplicada: ${fmtDate(req.appliedAt)}`
+                        : ""}
+                  </span>
+                </div>
 
-            {/* Documentos */}
-            {(req.uploads || []).length > 0 && (
-              <>
-                {isLoadingDocs && <p>Cargando documentos…</p>}
+                {req.note && (
+                  <p className={styles.note}>
+                    Nota del usuario: {req.note}
+                  </p>
+                )}
 
-                {!isLoadingDocs && (
+                {(req.changes?.length || 0) > 0 && (
                   <ul className={styles.changes}>
-                    {list.length === 0 && (
-                      <li className={styles.changeRow}>
-                        <span className={styles.to}>Sin enlaces</span>
-                      </li>
-                    )}
-
-                    {list.length > 0 && (
-                      
-                      <li key={list[0].key} className={styles.changeRow}>
-                        <div className={styles.valuesDoc}>
-                          <p className={styles.to}>
-                            <span>Tipo:</span> {list[0].category=='Oficial' ? "Oficial" : "Varios"}
-                          </p>
-                          <p className={styles.to}>
-                            <span>{(list[0].category=='Oficial')?'Subtipo: ':'Nombre del documento:'} </span> {(list[0].category=='Oficial')?nameDocumentationAux:list[0].fileLabel}
-                          </p>
-                          {list[0].date && (
-                            <p className={styles.to}>     
-                              <span>Fecha:</span> {fmtDate(list[0].date)}
-                            </p>
-                          )}
-                          {list[0].showDescription && (
-                            <p className={styles.to}>
-                              <span>Descripción:</span> {list[0].description}
-                            </p>
-                          )}
-                          {list[0].idDrive ? (
-                            <div className={styles.cajabotones}>
-                              <button
-                                className={styles.linkBtn}
-                                onClick={() => handleViewDoc(list[0])}
-                              >
-                                Ver
-                              </button>
-                              <button
-                                className={styles.linkBtn}
-                                onClick={() => handleDownloadDoc(list[0])}
-                              >
-                                Descargar
-                              </button>
-                            </div>
-                          ) : (
-                            <span className={styles.to}>Sin enlaces</span>
-                          )}
+                    {req.changes.map((c, i) => (
+                      <li key={i} className={styles.changeRow}>
+                        <span className={styles.path}>
+                          {labelFor(c.path)}
+                        </span>
+                        <span className={styles.arrow}>→</span>
+                        <div className={styles.values}>
+                          <span className={styles.from}>
+                            {fmtValue(c.path, c.from)}
+                          </span>
+                          <span className={styles.sep}>→</span>
+                          <span className={styles.to}>
+                            {fmtValue(c.path, c.to)}
+                          </span>
                         </div>
                       </li>
-                    )}
+                    ))}
                   </ul>
                 )}
-              </>
-            )}
 
-            <div className={styles.actions}>
-              <textarea
-                className={styles.noteArea}
-                placeholder="Añadir nota (opcional)…"
-                value={notes[req._id] || ""}
-                onChange={(e) => setNotes((m) => ({ ...m, [req._id]: e.target.value }))}
-              />
-              <div className={styles.btns}>
-                <button className={styles.btnApprove} onClick={() => onApprove(req._id)}>
-                  Aprobar
-                </button>
-                <button className={styles.btnReject} onClick={() => onReject(req._id)}>
-                  Rechazar
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-
-    <button className={styles.historyBtn} onClick={() => setShowHistory((s) => !s)}>
-      {showHistory ? "Ocultar histórico" : "Ver histórico"}
-    </button>
-
-    {showHistory && (
-      <div className={styles.historyWrapper}>
-        <h3 className={styles.title}>Histórico de solicitudes</h3>
-        {history.length === 0 && <p className={styles.empty}>No hay histórico disponible.</p>}
-        
-        {history.map((req) => (
-          <div key={req._id} className={styles.card}>
-            <div className={styles.header}>
-              {statusChip(req.status)}
-              <span className={styles.meta}>
-                Enviada: {fmtDate(req.submittedAt)}
-                {req.decision?.decidedAt
-                  ? ` · Decidida: ${fmtDate(req.decision.decidedAt)}`
-                  : req.appliedAt
-                  ? ` · Aplicada: ${fmtDate(req.appliedAt)}`
-                  : ""}
-              </span>
-            </div>
-
-            {req.note && <p className={styles.note}>Nota del usuario: {req.note}</p>}
-
-            <ul className={styles.changes}>
-              {req.changes?.map((c, i) => (
-                <li key={i} className={styles.changeRow}>
-                  <span className={styles.path}>{labelFor(c.path)}</span>
-                  <span className={styles.arrow}>→</span>
-                  <div className={styles.values}>
-                    <span className={styles.from}>{fmtValue(c.path, c.from)}</span>
-                    <span className={styles.sep}>→</span>
-                    <span className={styles.to}>{fmtValue(c.path, c.to)}</span>
+                {/* Histórico de vacaciones / asuntos propios */}
+                {isTimeOffRequest(req) && (
+                  <div className={styles.timeOffBlock}>
+                    <h4 className={styles.sectionTitle}>{timeOffLabel}</h4>
+                    {timeOffDates.length === 0 ? (
+                      <p className={styles.empty}>
+                        No hay días válidos en esta solicitud.
+                      </p>
+                    ) : (
+                      <ul className={styles.changes}>
+                        {timeOffDates.map((d) => (
+                          <li key={d} className={styles.changeRow}>
+                            <span className={styles.to}>{fmtDate(d)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                </li>
-              ))}
-            </ul>
-
-            {(req.uploads || []).length > 0 && (
-              <div className={styles.valuesDoc}>
-                {(() => {
-                  const u = req.uploads[0] || {};
-                  const isOfficial = !!u.originDocumentation;
-                  const off = isOfficial ? officialById.get(String(u.originDocumentation)) : null;
-                  
-                  const name = isOfficial
-                    ? (off?.name || "Documento oficial")
-                    : (u.labelFile || "Documento");
-                  return (
-                    <>
-                      <p className={styles.to}>
-                        <span>Tipo:</span> {isOfficial ? "Oficial" : "Varios"}
-                      </p>
-                      <p className={styles.to}>
-                        <span>Nombre del documento:</span> {name}
-                      </p>
-                      {u.date && (
-                        <p className={styles.to}>
-                          <span>Fecha:</span> {fmtDate(u.date)}
-                        </p>
-                      )}
-                      {!isOfficial && (
-                        <p className={styles.to}>
-                          <span>Descripción:</span> {u.description || ""}
-                        </p>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-
-            {(req.decision?.note || req.error) && (
-              <div className={styles.decisionBox}>
-                {req.decision?.note && (
-                  <p>
-                    <strong>Nota del responsable:</strong> {req.decision.note}
-                  </p>
                 )}
-                {req.error && (
-                  <p className={styles.error}>
-                    <strong>Error técnico:</strong> {req.error}
-                  </p>
+
+                {(req.uploads || []).length > 0 && (
+                  <div className={styles.valuesDoc}>
+                    {(() => {
+                      const u = req.uploads[0] || {};
+                      const isOfficial = !!u.originDocumentation;
+                      const off = isOfficial
+                        ? officialById.get(String(u.originDocumentation))
+                        : null;
+
+                      const name = isOfficial
+                        ? off?.name || "Documento oficial"
+                        : u.labelFile || "Documento";
+                      return (
+                        <>
+                          <p className={styles.to}>
+                            <span>Tipo:</span>{" "}
+                            {isOfficial ? "Oficial" : "Varios"}
+                          </p>
+                          <p className={styles.to}>
+                            <span>Nombre del documento:</span> {name}
+                          </p>
+                          {u.date && (
+                            <p className={styles.to}>
+                              <span>Fecha:</span> {fmtDate(u.date)}
+                            </p>
+                          )}
+                          {!isOfficial && (
+                            <p className={styles.to}>
+                              <span>Descripción:</span>{" "}
+                              {u.description || ""}
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {(req.decision?.note || req.error) && (
+                  <div className={styles.decisionBox}>
+                    {req.decision?.note && (
+                      <p>
+                        <strong>Nota del responsable:</strong>{" "}
+                        {req.decision.note}
+                      </p>
+                    )}
+                    {req.error && (
+                      <p className={styles.error}>
+                        <strong>Error técnico:</strong> {req.error}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
-
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -42,11 +42,12 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
 
   /* ---------------- carga inicial desde API ---------------- */
   const refresh = useCallback(async () => {
-    if (!user?._id) {
-      setResponsabilities([]);
-      setCoordinations([]);
-      return;
-    }
+  if (!user?._id) {
+    setResponsabilities([]);
+    setCoordinations([]);
+    return;
+  }
+  const token = getToken();
     try {
       setLoading(true);
       charge?.(true);
@@ -113,12 +114,16 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
       charge?.(false);
       setLoading(false);
     }
-  }, [user?._id, token, charge, modal, getProgAcr]);
-
-  useEffect(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id]);
+
+useEffect(() => {
+  if (user?._id) {
+    refresh();
+  } else {
+    setResponsabilities([]);
+    setCoordinations([]);
+  }
+}, [user?._id, refresh]);
 
   /* ---------------- opciones “Añadir” usando ACRÓNIMO ---------------- */
   const programOptions = useMemo(() => {

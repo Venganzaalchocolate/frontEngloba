@@ -18,10 +18,11 @@ const PreferentsEmployee = ({ user, enumsData, modal, charge, authorized }) => {
   // Trae solo la primera vez
   useEffect(() => {
     const fetchPreferents = async () => {
+      charge(true)
       const token = getToken();
       const data = await preferentFilter({ userId: user._id }, token);
       setPreferentsInfoUser(data);
-
+      charge(false)
     };
     fetchPreferents();
   }, [user._id]);
@@ -35,15 +36,9 @@ const PreferentsEmployee = ({ user, enumsData, modal, charge, authorized }) => {
     pref = pref || {};
       
         // Estudios (desde studiesIndex, preferimos solo subcategorías si existen)
-
-        const provincesOptions = buildOptionsFromIndex(enumsData?.provincesIndex).filter((x)=>{
-          if(x.label!='Almería' && x.label!='Málaga') return x
-        }) 
-    
+        const provincesOptions = buildOptionsFromIndex(enumsData?.provincesIndex)
         // Puestos (desde jobsIndex, preferimos solo subcategorías si existen)
-        const positionOptions =
-          buildOptionsFromIndex(enumsData?.jobsIndex, { onlySub: true }) ||
-          buildOptionsFromIndex(enumsData?.jobsIndex);
+        const positionOptions =buildOptionsFromIndex(enumsData?.jobsIndex, { onlySub: true })
 
 
 

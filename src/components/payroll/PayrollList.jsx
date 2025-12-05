@@ -1,96 +1,127 @@
-import { useState } from 'react';
-import PayrollItem from './PayrollItem.jsx';
-import styles from '../styles/payrollsEmployer.module.css';
+// PayrollList.jsx
+import { useMemo, useState, useEffect } from "react";
+import styles from "../styles/payrollsEmployer.module.css";
+import PayrollItem from "./PayrollItem.jsx";
 
-const PayrollList = ({ payrolls, deletePayroll, downloadPayroll, listResponsability, signPayroll, userId }) => {
-    const [selectedYear, setSelectedYear] = useState(null);
+const PayrollList = ({
+  userId,
+  payrolls = [],
+  deletePayroll,
+  downloadPayroll,
+  listResponsability,
+  signPayroll,
+}) => {
+  // Ordenamos nóminas por año/mes ascendente una sola vez
+  const sortedPayrolls = useMemo(() => {
+    if (!Array.isArray(payrolls)) return [];
+    return [...payrolls].sort((a, b) => {
+      const ay = a.payrollYear || 0;
+      const by = b.payrollYear || 0;
+      if (ay !== by) return ay - by;
+      const am = a.payrollMonth || 0;
+      const bm = b.payrollMonth || 0;
+      return am - bm;
+    });
+  }, [payrolls]);
 
-    const stringMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const uniqueYears = [...new Set(payrolls.map(payroll => payroll.payrollYear))];
+  // Última nómina (la más reciente)
+  const latestPayroll = useMemo(() => {
+    if (!sortedPayrolls.length) return null;
+    return sortedPayrolls[sortedPayrolls.length - 1];
+  }, [sortedPayrolls]);
 
-    const filteredPayrolls = selectedYear
-        ? payrolls.filter(payroll => payroll.payrollYear === selectedYear)
-        : [];
+  // Años disponibles
+  const years = useMemo(() => {
+    const set = new Set();
+    for (const p of sortedPayrolls) {
+      if (p.payrollYear) set.add(p.payrollYear);
+    }
+    return Array.from(set).sort((a, b) => b - a); // descendente
+  }, [sortedPayrolls]);
 
-    if (payrolls.length === 0) return <p>No hay nóminas disponibles</p>;
+  // Año seleccionado (por defecto, el de la última nómina)
+  const [selectedYear, setSelectedYear] = useState(
+    latestPayroll?.payrollYear || null
+  );
 
-    // Mes anterior al actual (JS meses 0–11)
-    const now = new Date();
-    const currM = now.getMonth();        // 0..11
-    const currY = now.getFullYear();
-    const prevMIdx = (currM + 11) % 12;  // índice del mes anterior
-    const targetYear = currM === 0 ? currY - 1 : currY;
-    const targetMonth = prevMIdx + 1;    // 1..12
+  useEffect(() => {
+    if (latestPayroll?.payrollYear) {
+      setSelectedYear(latestPayroll.payrollYear);
+    }
+  }, [latestPayroll]);
 
-    // Nómina "actual" = la del mes anterior
-    let currentPayroll = payrolls.find(
-        p => p.payrollYear === targetYear && p.payrollMonth === targetMonth
+  // Nóminas del año seleccionado, excluyendo la "última" (para no duplicarla)
+  const payrollsForYear = useMemo(() => {
+    if (!selectedYear) return [];
+    return sortedPayrolls.filter(
+      (p) =>
+        p.payrollYear === selectedYear &&
+        (!latestPayroll || String(p._id) !== String(latestPayroll._id))
     );
+  }, [sortedPayrolls, selectedYear, latestPayroll]);
 
-    // Fallback: si no existe, usa la más reciente disponible
-    const latestPayroll = payrolls.reduce((acc, p) => {
-        if (!acc) return p;
-        if (p.payrollYear > acc.payrollYear) return p;
-        if (p.payrollYear === acc.payrollYear && p.payrollMonth > acc.payrollMonth) return p;
-        return acc;
-    }, null);
+  if (!sortedPayrolls.length) {
+    return <p>No hay nóminas registradas.</p>;
+  }
 
-    if (!currentPayroll) currentPayroll = latestPayroll;
+  return (
+    <div className={styles.lista_nominas}>
+      {/* Bloque de "última nómina" arriba */}
+      {latestPayroll && (
+        <section className={styles.actualWrapper}>
+          <h3 className={styles.actualTitle}>Última nómina</h3>
+          <ul>
+            <PayrollItem
+              key={latestPayroll._id}
+              payroll={latestPayroll}
+              userId={userId}
+              deletePayroll={deletePayroll}
+              downloadPayroll={downloadPayroll}
+              signPayroll={signPayroll}
+              listResponsability={listResponsability}
+              isLatest={true}
+            />
+          </ul>
+        </section>
+      )}
 
-
-    return (
-        <div className={styles.lista_nominas}>
-            {(currentPayroll) ? (
-                <div className={styles.actualWrapper}>
-                    <h3 className={styles.actualTitle}>
-                        Última Nómina · {stringMeses[currentPayroll.payrollMonth - 1]} {currentPayroll.payrollYear}
-                    </h3>
-                    <ul>
-                        <PayrollItem
-                            key={currentPayroll._id}
-                            payroll={currentPayroll}
-                            stringMeses={stringMeses}
-                            deletePayroll={deletePayroll}
-                            downloadPayroll={downloadPayroll}
-                            listResponsability={listResponsability}
-                            signPayroll={signPayroll}
-                            userId={userId}
-                        />
-                    </ul>
-                </div>
-            ) : <p>No hay nómina del mes actual</p>}
-            <h3>Histórico</h3>
-            <div className={styles.lista_botonesAnios}>
-                {uniqueYears.map(year => (
-                    <button
-                        key={year}
-                        onClick={() => (year === selectedYear) ? setSelectedYear(null) : setSelectedYear(year)}
-                        aria-pressed={selectedYear === year}
-                        className={selectedYear === year ? styles.botonesSeleccionado : styles.botonesNoSeleccionado}
-                    >
-                        {year}
-                    </button>
-                ))}
-            </div>
-
-            {selectedYear && (
-                <ul>
-                    {filteredPayrolls.map(payroll => (
-                        <PayrollItem
-                            key={payroll._id}
-                            payroll={payroll}
-                            stringMeses={stringMeses}
-                            deletePayroll={deletePayroll}
-                            downloadPayroll={downloadPayroll}
-                            listResponsability={listResponsability}
-                            signPayroll={signPayroll}
-                            userId={userId}
-                        />
-                    ))}
-                </ul>
-            )}
+      {/* Selector de años */}
+      {years.length > 1 && (
+        <div className={styles.lista_botonesAnios}>
+          {years.map((year) => (
+            <button
+              key={year}
+              type="button"
+              className={
+                year === selectedYear
+                  ? styles.botonesSeleccionado
+                  : styles.botonesNoSeleccionado
+              }
+              onClick={() => setSelectedYear(year)}
+            >
+              {year}
+            </button>
+          ))}
         </div>
-    );
+      )}
+
+      {/* Lista de nóminas del año seleccionado */}
+      <ul>
+        {payrollsForYear.map((p) => (
+          <PayrollItem
+            key={p._id}
+            payroll={p}
+            userId={userId}
+            deletePayroll={deletePayroll}
+            downloadPayroll={downloadPayroll}
+            signPayroll={signPayroll}
+            listResponsability={listResponsability}
+            isLatest={false}
+          />
+        ))}
+      </ul>
+    </div>
+  );
 };
 
 export default PayrollList;

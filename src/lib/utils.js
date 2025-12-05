@@ -222,18 +222,35 @@ export function compact(s) {
     .join('');
 }
 
-  export const buildOptionsFromIndex = (idx, { onlySub = false } = {}) => {
-    if (!idx || typeof idx !== "object") return [];
-    return Object.entries(idx)
-      .filter(([, obj]) => (onlySub ? obj?.isSub : true))
-      .map(([value, obj]) => ({
-        value,
-        label: obj?.name || "(sin nombre)",
-      }))
-      .sort((a, b) =>
-        a.label.localeCompare(b.label, "es", { sensitivity: "base" })
-      );
-  };
+export const buildOptionsFromIndex = (idx, { onlySub = false } = {}) => {
+  if (!idx || typeof idx !== "object") return [];
+
+  // Claves a excluir cuando NO usamos onlySub
+  const EXCLUDED_KEYS = new Set([
+    "66a7366208bebc63c0f8992d", // Almería (root)
+    "66a7369b08bebc63c0f89a05", // Málaga (root)
+  ]);
+
+  return Object.entries(idx)
+    .filter(([key, obj]) => {
+      if (onlySub) {
+        // Solo subcategorías marcadas con isSub
+        return !!obj?.isSub;
+      }
+
+      // Caso general: excluir las raíces por key
+      if (EXCLUDED_KEYS.has(String(key))) return false;
+
+      return true;
+    })
+    .map(([value, obj]) => ({
+      value,
+      label: obj?.name || "(sin nombre)",
+    }))
+    .sort((a, b) =>
+      a.label.localeCompare(b.label, "es", { sensitivity: "base" })
+    );
+};
 
   export const sanitize = (text) =>
   String(text || "")

@@ -1,66 +1,97 @@
-// PayrollModalForm.jsx
-
 import React from 'react';
-
-import { getPayrollFields } from './payrollFields';
+import ModalForm from '../globals/ModalForm.jsx';
+import { getPayrollFields } from './payrollFields.jsx';
 import { getToken } from '../../lib/serviceToken';
 import { updatePayroll } from '../../lib/data';
-import { parseIfInteger, isNotFutureDate } from '../../lib/valid';
-import { textErrors } from '../../lib/textErrors';
-import ModalForm from '../globals/ModalForm';
 
-export default function PayrollModalForm({ user, modal, changeUser, charge, onClose }) {
+const PayrollModalForm = ({
+  userId,
+  modal,
+  charge,
+  onClose,
+  onPayrollsChange,
+}) => {
+  const fields = getPayrollFields();
 
-  // Este callback se llamará cuando el usuario dé clic en "Aceptar" en el ModalForm
-  const handlePayrollSubmit = async (formData) => {
-    // `formData` contiene { payrollMonth, payrollYear, pdf } validados por ModalForm.
-    
-    // Validar si la fecha no es futura
-    const month = parseIfInteger(formData.payrollMonth);
-    const year = parseIfInteger(formData.payrollYear);
-    if (!isNotFutureDate(month, year)) {
-      modal('Error', textErrors('futureDate'));
+  const handleSubmit = async (formValues) => {
+    if (!userId) {
+      modal('Error', 'No se ha encontrado el usuario.');
       return;
     }
 
-    // Mostrar indicador de carga
-    charge(true);
+    const { payrollYear, payrollMonth, file } = formValues;
 
-    try {
-      const token = getToken();
-      // Prepara los datos para el endpoint
-      const payload = {
-        userId: user._id,
-        type: 'create',
-        payrollMonth: month,
-        payrollYear: year,
-        pdf: formData.pdf,
-      };
+    const yearNum = Number(payrollYear);
+    const monthNum = Number(payrollMonth);
 
-      const data = await updatePayroll(payload, token);
-      if (!data.error) {
-        modal('Subir nómina', 'Nómina añadida con éxito');
-        changeUser(data); // Actualiza tu estado global de usuario
-      } else {
-        modal('Error', 'No se pudo subir la nómina.');
-      }
-    } catch (error) {
-      console.log(error)
-      modal('Error', 'Ocurrió un problema en el servidor.');
+    if (
+      !Number.isInteger(yearNum) ||
+      !Number.isInteger(monthNum) ||
+      monthNum < 1 ||
+      monthNum > 12
+    ) {
+      modal('Error', 'Mes o año de nómina no válidos.');
+      return;
     }
 
+    const now = new Date();
+    const payrollDate = new Date(yearNum, monthNum - 1, 1);
+    if (payrollDate > now) {
+      modal('Error', 'No puedes subir nóminas de meses futuros.');
+      return;
+    }
+
+    if (!file) {
+      modal('Error', 'Debes adjuntar un archivo PDF.');
+      return;
+    }
+
+    charge(true);
+
+    const token = getToken();
+    const payload = {
+      userId,
+      type: 'create',
+      payrollYear: yearNum,
+      payrollMonth: monthNum,
+      pdf: file ,
+    };
+
+    const data = await updatePayroll(payload, token);
+
+
+    if (!data || data.error) {
+      charge(false)
+        modal(
+          'Error al subir nómina',
+          data?.message || 'No se ha podido subir la nómina.'
+        );
+      return;
+    }
+
+    if (typeof onPayrollsChange === 'function') {
+      const next = Array.isArray(data.payrolls) ? data.payrolls : [];
+      onPayrollsChange(next);
+    }
+
+
+      charge(false)
+      modal('Nómina subida', 'La nómina se ha subido correctamente.');
     
-    onClose(); // Cierra el modal
-    charge(false);
+
+    if (onClose) onClose();
   };
 
   return (
     <ModalForm
-      title="Subir Nómina"
-      message="Por favor, ingrese Mes, Año y un PDF válido (máx. 5MB)."
-      fields={getPayrollFields()}   // Campos de la nómina
-      onSubmit={handlePayrollSubmit}
+      title="Subir nómina"
+      message="Selecciona el mes, el año y el archivo PDF de la nómina."
+      fields={fields}
+      onSubmit={handleSubmit}
       onClose={onClose}
+      modal={modal}
     />
   );
-}
+};
+
+export default PayrollModalForm;

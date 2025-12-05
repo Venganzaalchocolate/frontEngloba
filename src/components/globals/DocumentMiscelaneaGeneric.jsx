@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getToken } from "../../lib/serviceToken";
 import {
   getFileDrive,
@@ -7,6 +7,7 @@ import {
   deleteFileDrive,
   createChangeRequest,
   downloadZipFiles,
+  listFile
 } from "../../lib/data";
 
 import ModalForm from "./ModalForm";
@@ -42,15 +43,48 @@ const DocumentMiscelaneaGeneric = ({
   officialDocs,
   modal,
   charge,
-  onChange,
   authorized = false,
   onRequestCreated = () => { },
 }) => {
   // 1) Archivos normalizados del modelo
   const [normalizedFiles, setNormalizedFiles] = useState([]);
+
   useEffect(() => {
-    setNormalizedFiles(transformFiles(data, modelName));
-  }, [data, modelName]);
+    if (!data?._id || !modelName) {
+      setNormalizedFiles([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchFiles = async () => {
+
+        charge?.(true);
+        const token = getToken();
+        const res = await listFile(
+          { originModel: modelName, idModel: data._id },
+          token
+        );
+
+        
+
+        if(res.error){
+        charge?.(false);
+        modal?.("Error", "No se pudieron cargar los documentos.");
+        if (isMounted) setNormalizedFiles([]);  
+        } else{
+          const items = res?.items || res || [];
+          if (!isMounted) return;
+          setNormalizedFiles(transformFiles(items));
+          charge?.(false);
+        } 
+    };
+
+    fetchFiles();
+    return () => {
+      isMounted = false;
+    };
+  }, [data?._id, modelName]);
 
   // 2) Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,6 +104,32 @@ const DocumentMiscelaneaGeneric = ({
     }
     setIsGeneratingZip(false);
   };
+
+    // Extrae la lista de Filedrive desde el "padre" devuelto por el back
+  const syncFromParent = useCallback(
+    (parent) => {
+      if (!parent) {
+        setNormalizedFiles([]);
+        return;
+      }
+
+      let filesDocs = [];
+
+      if (modelName === "User") {
+        // User: files = [{ filesId: <Filedrive> }]
+        filesDocs = (parent.files || [])
+          .map((f) => f.filesId)
+          .filter(Boolean);
+      } else {
+        // Program / Dispositive: files = [<Filedrive>]
+        filesDocs = parent.files || [];
+      }
+
+      setNormalizedFiles(transformFiles(filesDocs));
+    },
+    [modelName]
+  );
+
 
   // 3) Agrupar oficiales con sus archivos
   const officialDocumentsToShow = (officialDocs || []).map((doc) => {
@@ -97,7 +157,6 @@ const DocumentMiscelaneaGeneric = ({
     date,
     description,
     note,
-    // oficiales:
     originDocumentation,
     category,
     type = "user-extra-doc",
@@ -188,7 +247,8 @@ const DocumentMiscelaneaGeneric = ({
         modal("Error", updatedData?.message || "No se pudo eliminar el archivo.");
         return;
       }
-      onChange(updatedData);
+      //en vez de hacer el onChange quieor una funcion que setNormalizedFiles(transformFiles(updatedData.files o updateData.files.filesId si es user etc));
+      syncFromParent(updatedData);
       modal("Archivo eliminado", "El archivo se ha eliminado con éxito.");
     } catch (err) {
       modal("Error", "Hubo un problema al eliminar el archivo.");
@@ -267,7 +327,7 @@ const DocumentMiscelaneaGeneric = ({
             return;
           }
 
-          onChange(updatedData);
+          syncFromParent(updatedData);
           modal("Documento oficial", "Documento subido con éxito.");
         } catch (err) {
           modal("Error", "No se pudo subir el archivo.");
@@ -429,7 +489,7 @@ const DocumentMiscelaneaGeneric = ({
             modal("Error", updatedData?.message || "No se pudo subir el archivo.");
             return;
           }
-          onChange(updatedData);
+          syncFromParent(updatedData);
           modal("Documento adicional", `Se subió "${fileName}" con éxito.`);
         } catch (err) {
           modal("Error", "No se pudo subir el archivo.");
@@ -541,7 +601,8 @@ const DocumentMiscelaneaGeneric = ({
           if (!updatedData || updatedData.error) {
             throw new Error(updatedData?.message || "No se pudo actualizar el archivo.");
           }
-          onChange(updatedData);
+          //en vez del onChange quieor una funcion que actualice 
+          syncFromParent(updatedData);
           modal(
             "Documento actualizado",
             `El documento "${fileName || fileObj.fileLabel || fileObj.description || "Documento"}" se actualizó.`
@@ -754,7 +815,7 @@ const nameZip = `${baseName}_documentacion.zip`;
 
             {docsArray.map(({ doc, files }) => {
             
-              const renewal = getRenewalInfo(files, doc.duration || null); // ← 365 días por defecto
+              const renewal = getRenewalInfo(files, doc.duration || 365); // ← 365 días por defecto
 
               return (
                 <div
@@ -921,45 +982,27 @@ const nameZip = `${baseName}_documentacion.zip`;
     </div>
   );
 };
-function transformFiles(data, modelName) {
-  if (!data) return [];
+function transformFiles(files) {
+  if (!files) return [];
 
   const extractOriginId = (od) =>
     typeof od === "object" && od !== null ? od._id : od;
 
-  if (modelName === "User") {
-    return (data.files || [])
-      .map((item) => {
-        if (!item?.filesId) return null;
-        const f = item.filesId;
-        return {
-          _id: f._id,
-          originDocumentation: extractOriginId(f.originDocumentation),
-          date: f.date || null,
-          fileLabel: f.fileLabel || "",
-          description: f.description || "",
-          subDocId: item._id,
-          idDrive: f.idDrive,
-        };
-      })
-      .filter(Boolean);
-  } else {
-    return (data.files || [])
-      .map((f) => {
-        if (!f || !f._id) return null;
-        return {
-          _id: f._id,
-          originDocumentation: extractOriginId(f.originDocumentation),
-          date: f.date || null,
-          fileLabel: f.fileLabel || "",
-          description: f.description || "",
-          subDocId: null,
-          idDrive: f.idDrive,
-        };
-      })
-      .filter(Boolean);
-  }
+  return (files || [])
+    .map((f) => {
+      if (!f || !f._id) return null;
+      return {
+        _id: f._id,
+        originDocumentation: extractOriginId(f.originDocumentation),
+        date: f.date || null,
+        fileLabel: f.fileLabel || f.fileName || "",
+        description: f.description || "",
+        idDrive: f.idDrive,
+      };
+    })
+    .filter(Boolean);
 }
+
 
 
 export default DocumentMiscelaneaGeneric;

@@ -177,6 +177,7 @@ export const relocateHirings= (token, datos) => fetchData('/relocatehirings', 'P
 export const deleteEmployer = (token, datos) => fetchData('/deleteuser', 'POST', token, datos);
 export const getEmployers = (token) => fetchData('/users', 'GET', token);
 export const infoUser = (token, data) => fetchData('/user', 'POST', token, data);
+export const getUserListDays=(token, data) => fetchData('/getuserlistdays', 'POST', token, data);
 export const getusers = (page, limit, filters, token) => fetchData('/users', 'POST', token, { page, limit, ...filters });
 export const getusersnotlimit = (filters, token) => fetchData('/usersfilternotlimit', 'POST', token, { ...filters });
 export const searchusername = (filters, token) => fetchData('/searchusername', 'POST', token, { ...filters });
@@ -188,35 +189,32 @@ export const editUser = (data, token) =>fetchData("/modifyuser", 'POST', token, 
 export const updatePayroll = async (data, token) => {
   const formData = new FormData();
 
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === undefined) return;
 
-  Object.keys(data).forEach(key => {
-    // Si el campo es un archivo y existe, lo añadimos al FormData
-    if (data[key] instanceof File) {
-      formData.append(key, data[key], data[key].name);  // Agregar el archivo al FormData
-    } else {
-      // Añadir los demás campos de texto
-      formData.append(key, data[key] !== null ? data[key] : '');  // Manejar valores nulos
+    // Si es el archivo de nómina, el backend lo espera como 'pdf'
+    if (key === 'pdf' && typeof File !== "undefined" && value instanceof File) {
+      formData.append('pdf', value, value.name);
+      return;
     }
-  });
 
+    formData.append(key, value !== null ? value : '');
+  });
 
   const endpoint = '/payroll';
   const method = 'POST';
 
-  let result = null;
-  // Usamos fetchData sin especificar el 'Content-Type' porque es un FormData
-
-  if (data.type == 'get') {
-    result = await fetchData(endpoint, method, token, formData, true);
+  if (data.type === 'get') {
+    const result = await fetchData(endpoint, method, token, formData, true);
+    if (!result || result.error) return result || { error: true, message: 'Error al obtener la nómina' };
     const pdfUrl = URL.createObjectURL(result);
-    if (result.error) return result;
     return { url: pdfUrl };
-  } else {
-    result = await fetchData(endpoint, method, token, formData);
-
   }
+
+  const result = await fetchData(endpoint, method, token, formData);
   return result;
 };
+
 
 
 //login
@@ -288,6 +286,7 @@ export const getFileDrive = async (datos, token) => {
   const pdfUrl = URL.createObjectURL(pdfBlob);
   return { url: pdfUrl };
 }
+export const listFile=(datos, token) => fetchData('/listfile', 'POST', token, datos);
 
 
 //documentation
@@ -391,6 +390,7 @@ export const getpendingrequest = (datos, token) => fetchData('/getpendingrequest
 export const approvechangerequest = (datos, token) => fetchData('/approvechangerequest', 'POST', token, datos);
 export const rejectchangerequest = (datos, token) => fetchData('/rejectchangerequest', 'POST', token, datos);
 export const cancelchangerequest = (datos, token) => fetchData('/cancelchangerequest', 'POST', token, datos);
+export const createtimeoffrequest=(datos, token) => fetchData('/createtimeoffrequest', 'POST', token, datos);
 
 
 /* ============================

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "../styles/MyChangeRequests.module.css";
 import { getToken } from "../../lib/serviceToken";
-import { getmychangerequest, cancelchangerequest, createChangeRequest } from "../../lib/data";
+import { getmychangerequest, cancelchangerequest, createChangeRequest, createtimeoffrequest } from "../../lib/data";
 import ModalForm from "../globals/ModalForm";
 import { formatDate } from "../../lib/utils";
 import { validEmail, validateDNIorNIE, validateBankAccount, validText } from "../../lib/valid";
@@ -28,14 +28,18 @@ export default function MyChangeRequests({
 
   const [uploadWizard, setUploadWizard] = useState({ step: 1, docId: "" });
 
+  // Nuevo: modal para vacaciones / asuntos propios
+  const [isReqTimeOffOpen, setIsReqTimeOffOpen] = useState(false);
+  const [reqTimeOffForm, setReqTimeOffForm] = useState(null);
+
   const dateNow = new Date();
 
   // ------- Datos auxiliares -------
   const officialDocs = useMemo(
     () =>
-      (Array.isArray(enumsData?.documentation)
+      Array.isArray(enumsData?.documentation)
         ? enumsData.documentation.filter((d) => d.model === "User")
-        : []),
+        : [],
     [enumsData]
   );
 
@@ -65,10 +69,10 @@ export default function MyChangeRequests({
       const list = Array.isArray(res?.data?.data)
         ? res.data.data
         : Array.isArray(res?.data)
-        ? res.data
-        : Array.isArray(res)
-        ? res
-        : [];
+          ? res.data
+          : Array.isArray(res)
+            ? res
+            : [];
       setServerItems(list);
 
       const serverIds = new Set(list.map((x) => String(x._id)));
@@ -93,20 +97,46 @@ export default function MyChangeRequests({
     return bySubmittedDesc(mergeDedupe(optimisticLocal, merged));
   }, [serverItems, initialItems, optimisticLocal]);
 
+  // helper: detectar solicitudes de vacaciones/asuntos propios
+  const isTimeOffRequest = (r) =>
+    r?.timeOff &&
+    Array.isArray(r.timeOff.entries) &&
+    r.timeOff.entries.length > 0;
+
   // split pendientes e histórico
   const pending = all.filter((r) => r.status === "pending");
   const history = all.filter((r) => r.status !== "pending");
 
-  // separar tipos (docs solo cuando no hay cambios)
-  const pendingChanges = pending.filter((r) => (r.changes?.length || 0) > 0);
-  const pendingDocs = pending.filter(
-    (r) => (r.uploads?.length || 0) > 0 && (r.changes?.length || 0) === 0
+  // solicitudes con timeOff (vacaciones / asuntos propios)
+  const pendingTimeOff = pending.filter(
+    (r) => r.timeOff && Array.isArray(r.timeOff.entries) && r.timeOff.entries.length
+  );
+  const historyTimeOff = history.filter(
+    (r) => r.timeOff && Array.isArray(r.timeOff.entries) && r.timeOff.entries.length
   );
 
-  const historyChanges = history.filter((r) => (r.changes?.length || 0) > 0);
-  const historyDocs = history.filter(
-    (r) => (r.uploads?.length || 0) > 0 && (r.changes?.length || 0) === 0
+
+  const pendingChanges = pending.filter(
+    (r) => (r.changes?.length || 0) > 0 && !isTimeOffRequest(r)
   );
+  const pendingDocs = pending.filter(
+    (r) =>
+      (r.uploads?.length || 0) > 0 &&
+      (r.changes?.length || 0) === 0 &&
+      !isTimeOffRequest(r)
+  );
+
+
+  const historyChanges = history.filter(
+    (r) => (r.changes?.length || 0) > 0 && !isTimeOffRequest(r)
+  );
+  const historyDocs = history.filter(
+    (r) =>
+      (r.uploads?.length || 0) > 0 &&
+      (r.changes?.length || 0) === 0 &&
+      !isTimeOffRequest(r)
+  );
+
 
   // cancelar
   const onCancel = async (id) => {
@@ -217,7 +247,8 @@ export default function MyChangeRequests({
 
       case "firstName":
       case "lastName":
-        if (!validText(v, 2, 100, true)) return "El texto no es válido (2-100 caracteres).";
+        if (!validText(v, 2, 100, true))
+          return "El texto no es válido (2-100 caracteres).";
         return null;
 
       case "disability.notes":
@@ -295,6 +326,28 @@ export default function MyChangeRequests({
     return clientId;
   };
 
+  // Nuevo: optimismo para vacaciones/asuntos propios
+  const emitOptimisticTimeOffCR = ({ kind, entries, note }) => {
+    const clientId = `tmp-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 7)}`;
+    const optimisticCR = {
+      _id: clientId,
+      userId,
+      status: "pending",
+      submittedAt: new Date().toISOString(),
+      note: note || "",
+      changes: [],
+      uploads: [],
+      timeOff: {
+        kind,
+        entries,
+      },
+    };
+    setOptimisticLocal((prev) => mergeDedupe(prev, [optimisticCR]));
+    return clientId;
+  };
+
   const openChangeStep1 = () => {
     setChangeWizard({ step: 1, path: "" });
     setReqChangeForm({
@@ -306,7 +359,7 @@ export default function MyChangeRequests({
           name: "path",
           type: "select",
           required: true,
-          searchable:false,
+          searchable: false,
           options: [{ value: "", label: "Selecciona un campo" }].concat(
             ALLOWED_QUICK_FIELDS.map((p) => ({ value: p, label: labelFor(p) }))
           ),
@@ -326,12 +379,22 @@ export default function MyChangeRequests({
 
   const openChangeStep2 = (path) => {
     const base = [
-      { label: "Nota para el responsable (opcional)", name: "note", type: "textarea" },
+      {
+        label: "Nota para el responsable (opcional)",
+        name: "note",
+        type: "textarea",
+      },
     ];
-    let valueField = { label: "Nuevo valor", name: "value", type: "text", required: true };
+    let valueField = {
+      label: "Nuevo valor",
+      name: "value",
+      type: "text",
+      required: true,
+    };
 
     if (path === "birthday") valueField = { ...valueField, type: "date" };
-    if (path === "disability.percentage") valueField = { ...valueField, type: "number" };
+    if (path === "disability.percentage")
+      valueField = { ...valueField, type: "number" };
 
     if (["fostered", "apafa", "consetmentDataProtection"].includes(path)) {
       valueField = {
@@ -394,10 +457,14 @@ export default function MyChangeRequests({
 
           const created = resp?.data && resp?.data?._id ? resp.data : resp;
           if (!created || created.error)
-            throw new Error(created?.message || "No se pudo crear la solicitud");
+            throw new Error(
+              created?.message || "No se pudo crear la solicitud"
+            );
 
           setOptimisticLocal((prev) => {
-            const next = prev.filter((x) => String(x._id) !== String(clientId));
+            const next = prev.filter(
+              (x) => String(x._id) !== String(clientId)
+            );
             return mergeDedupe(next, [created]);
           });
 
@@ -422,14 +489,16 @@ export default function MyChangeRequests({
 
   // ======= Optimismo para SUBIDA =======
   const emitOptimisticUploadCR = (params) => {
-    const { file, fileName, date, description, note, originDocumentation } = params;
+    const { file, fileName, date, description, note, originDocumentation } =
+      params;
     const clientId = `tmp-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 7)}`;
 
     const isOfficial = !!originDocumentation;
     const docName = isOfficial
-      ? officialById.get(String(originDocumentation))?.name || "Documento oficial"
+      ? officialById.get(String(originDocumentation))?.name ||
+      "Documento oficial"
       : fileName || file?.name || "Documento";
 
     const optimisticCR = {
@@ -492,7 +561,9 @@ export default function MyChangeRequests({
     const selDoc = isOfficial ? officialById.get(String(docId)) : null;
     const today = new Date().toISOString().split("T")[0];
 
-    const fields = [{ label: "Archivo (PDF)", name: "file", type: "file", required: true }];
+    const fields = [
+      { label: "Archivo (PDF)", name: "file", type: "file", required: true },
+    ];
 
     if (isOfficial) {
       fields.push({
@@ -502,7 +573,11 @@ export default function MyChangeRequests({
         defaultValue: today,
         required: true,
       });
-      fields.push({ label: "Nota (opcional)", name: "note", type: "textarea" });
+      fields.push({
+        label: "Nota (opcional)",
+        name: "note",
+        type: "textarea",
+      });
     } else {
       fields.push({
         label: "Nombre del documento",
@@ -516,8 +591,16 @@ export default function MyChangeRequests({
         type: "date",
         defaultValue: today,
       });
-      fields.push({ label: "Descripción (opcional)", name: "description", type: "text" });
-      fields.push({ label: "Nota (opcional)", name: "note", type: "textarea" });
+      fields.push({
+        label: "Descripción (opcional)",
+        name: "description",
+        type: "text",
+      });
+      fields.push({
+        label: "Nota (opcional)",
+        name: "note",
+        type: "textarea",
+      });
     }
 
     setReqUploadForm({
@@ -534,7 +617,6 @@ export default function MyChangeRequests({
           return;
         }
 
-        // 1) Optimista
         const clientId = emitOptimisticUploadCR({
           file,
           fileName,
@@ -550,22 +632,22 @@ export default function MyChangeRequests({
 
           const uploads = isOfficial
             ? [
-                {
-                  file,
-                  originDocumentation: docId,
-                  date: date || dateNow,
-                },
-              ]
+              {
+                file,
+                originDocumentation: docId,
+                date: date || dateNow,
+              },
+            ]
             : [
-                {
-                  file,
-                  category: "Varios",
-                  date: date || dateNow,
-                  description:
-                    (description || fileName || file.name || "Documento").trim(),
-                  labelFile: (fileName || file.name || "Documento").trim(),
-                },
-              ];
+              {
+                file,
+                category: "Varios",
+                date: date || dateNow,
+                description:
+                  (description || fileName || file.name || "Documento").trim(),
+                labelFile: (fileName || file.name || "Documento").trim(),
+              },
+            ];
 
           const resp = await createChangeRequest(
             {
@@ -583,22 +665,27 @@ export default function MyChangeRequests({
 
           const created = resp?.data && resp?.data?._id ? resp.data : resp;
           if (!created || created.error)
-            throw new Error(created?.message || "No se pudo crear la solicitud");
+            throw new Error(
+              created?.message || "No se pudo crear la solicitud"
+            );
 
-          // 3) Reemplazar optimista
           setOptimisticLocal((prev) => {
-            const next = prev.filter((x) => String(x._id) !== String(clientId));
+            const next = prev.filter(
+              (x) => String(x._id) !== String(clientId)
+            );
             const m = new Map(next.map((x) => [String(x._id), x]));
             m.set(String(created._id), created);
             return Array.from(m.values());
           });
 
-          modal?.("Solicitud enviada", "Tu petición está pendiente de revisión.");
+          modal?.(
+            "Solicitud enviada",
+            "Tu petición está pendiente de revisión."
+          );
         } catch (e) {
           setOptimisticLocal((prev) =>
             prev.filter((x) => String(x._id) !== String(clientId))
           );
-          modal?.("Error", e?.message || "No se pudo crear la solicitud");
         } finally {
           charge?.(false);
           setIsReqUploadOpen(false);
@@ -607,6 +694,158 @@ export default function MyChangeRequests({
       },
     });
     setIsReqUploadOpen(true);
+  };
+
+  const buildTimeOffInfo = (timeOff) => {
+    if (!timeOff || !Array.isArray(timeOff.entries)) {
+      return { label: "", dates: [] };
+    }
+
+    // nos quedamos con fechas únicas por solicitud
+    const uniqueDates = Array.from(
+      new Set(
+        timeOff.entries
+          .map((e) => (e?.date ? new Date(e.date) : null))
+          .filter((d) => d && !Number.isNaN(d.getTime()))
+          .map((d) => d.toISOString().slice(0, 10))
+      )
+    ).sort();
+
+    const label =
+      timeOff.kind === "personal"
+        ? "DÍAS DE ASUNTOS PROPIOS SOLICITADOS"
+        : "DÍAS DE VACACIONES SOLICITADOS";
+
+    return { label, dates: uniqueDates };
+  };
+
+  // ======= Solicitud de vacaciones / asuntos propios =======
+  // helper: construir entries de días consecutivos con 7.5h
+  const buildTimeOffEntriesFromRange = (fromStr, toStr) => {
+    const start = new Date(fromStr);
+    const end = new Date(toStr);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return { error: "Fechas inválidas." };
+    }
+    if (start > end) {
+      return {
+        error: "La fecha de inicio no puede ser posterior a la fecha de fin.",
+      };
+    }
+    const entries = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      entries.push({ date: new Date(cur), hours: 7.5 }); // 7.5 horas, usuario no lo ve
+      cur.setDate(cur.getDate() + 1);
+    }
+    return { entries };
+  };
+
+  const openTimeOffModal = () => {
+    setReqTimeOffForm({
+      title: "Solicitar días (vacaciones / asuntos propios)",
+      message: "Selecciona el tipo y los días que quieres solicitar.",
+      fields: [
+        {
+          label: "Tipo de días",
+          name: "type",
+          type: "select",
+          required: true,
+          options: [
+            { value: "", label: "Selecciona tipo" },
+            { value: "vacation", label: "Vacaciones" },
+            { value: "personal", label: "Asuntos propios" },
+          ],
+        },
+        {
+          label: "Desde (incluido)",
+          name: "from",
+          type: "date",
+          required: true,
+        },
+        {
+          label: "Hasta (incluido)",
+          name: "to",
+          type: "date",
+          required: true,
+        },
+        {
+          label: "Nota para el responsable (opcional)",
+          name: "note",
+          type: "textarea",
+        },
+      ],
+      onSubmit: async ({ type, from, to, note }) => {
+        if (!type) {
+          modal?.("Error", "Selecciona el tipo de días.");
+          return;
+        }
+        if (!from || !to) {
+          modal?.("Error", "Debes indicar las fechas de inicio y fin.");
+          return;
+        }
+
+        const { entries, error } = buildTimeOffEntriesFromRange(from, to);
+        if (error) {
+          modal?.("Error", error);
+          return;
+        }
+
+        const noteText =
+          note ||
+          (type === "vacation"
+            ? "Solicitud de días de vacaciones"
+            : "Solicitud de días de asuntos propios");
+
+        const clientId = emitOptimisticTimeOffCR({
+          kind: type,
+          entries,
+          note: noteText,
+        });
+
+        try {
+          charge?.(true);
+          const token = getToken();
+          const resp = await createtimeoffrequest(
+            {
+              userId,
+              type,
+              entries,
+              note: noteText,
+            },
+            token
+          );
+
+          const created = resp?.data && resp?.data?._id ? resp.data : resp;
+          if (!created || created.error)
+            throw new Error(
+              created?.message || "No se pudo crear la solicitud de días"
+            );
+
+          setOptimisticLocal((prev) => {
+            const next = prev.filter(
+              (x) => String(x._id) !== String(clientId)
+            );
+            return mergeDedupe(next, [created]);
+          });
+
+          modal?.(
+            "Solicitud enviada",
+            "Tu solicitud de días está pendiente de revisión."
+          );
+        } catch (e) {
+          setOptimisticLocal((prev) =>
+            prev.filter((x) => String(x._id) !== String(clientId))
+          );
+          modal?.("Error", e?.message || "No se pudo crear la solicitud");
+        } finally {
+          charge?.(false);
+          setIsReqTimeOffOpen(false);
+          setReqTimeOffForm(null);
+        }
+      },
+    });
+    setIsReqTimeOffOpen(true);
   };
 
   // =================== Card de solicitud ===================
@@ -623,26 +862,26 @@ export default function MyChangeRequests({
       s === "approved"
         ? styles.approved
         : s === "pending"
-        ? styles.pending
-        : s === "rejected"
-        ? styles.rejected
-        : s === "stale"
-        ? styles.stale
-        : s === "failed"
-        ? styles.failed
-        : styles.cancelled;
+          ? styles.pending
+          : s === "rejected"
+            ? styles.rejected
+            : s === "stale"
+              ? styles.stale
+              : s === "failed"
+                ? styles.failed
+                : styles.cancelled;
     const txt =
       s === "approved"
         ? "Aprobada"
         : s === "pending"
-        ? "Pendiente"
-        : s === "rejected"
-        ? "Rechazada"
-        : s === "stale"
-        ? "Caducada"
-        : s === "failed"
-        ? "Fallida"
-        : "Cancelada";
+          ? "Pendiente"
+          : s === "rejected"
+            ? "Rechazada"
+            : s === "stale"
+              ? "Caducada"
+              : s === "failed"
+                ? "Fallida"
+                : "Cancelada";
     return <span className={`${styles.chip} ${cls}`}>{txt}</span>;
   };
 
@@ -661,7 +900,10 @@ export default function MyChangeRequests({
         </div>
         <div className={styles.right}>
           {showCancel && (
-            <button className={styles.btnGhost} onClick={() => onCancel(req._id)}>
+            <button
+              className={styles.btnGhost}
+              onClick={() => onCancel(req._id)}
+            >
               Cancelar
             </button>
           )}
@@ -679,7 +921,9 @@ export default function MyChangeRequests({
                 <span className={styles.path}>{labelFor(c.path)}</span>
                 <span className={styles.arrow}>→</span>
                 <div className={styles.values}>
-                  <span className={styles.from}>{fmtValue(c.path, c.from)}</span>
+                  <span className={styles.from}>
+                    {fmtValue(c.path, c.from)}
+                  </span>
                   <span className={styles.sep}>→</span>
                   <span className={styles.to}>{fmtValue(c.path, c.to)}</span>
                 </div>
@@ -705,7 +949,9 @@ export default function MyChangeRequests({
                     {!u.originDocumentation && (
                       <>
                         <span className={styles.path}>DESCRIPCIÓN: </span>
-                        <span className={styles.from}>{u.description || "—"}</span>
+                        <span className={styles.from}>
+                          {u.description || "—"}
+                        </span>
                       </>
                     )}
                   </span>
@@ -716,7 +962,7 @@ export default function MyChangeRequests({
         </>
       )}
 
-      {(req.decision?.note || (req.status === "failed" && req.error)) && (
+            {(req.decision?.note || (req.status === "failed" && req.error)) && (
         <div className={styles.decisionBox}>
           {req.decision?.note && (
             <p>
@@ -733,6 +979,48 @@ export default function MyChangeRequests({
     </div>
   );
 
+  const TimeOffCard = ({ req, showCancel }) => {
+    const { label, dates } = buildTimeOffInfo(req.timeOff);
+
+    return (
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <div className={styles.left}>
+            {statusChip(req.status)}
+            <span className={styles.meta}>
+              Enviada: {fmtDate(req.submittedAt)}
+              {req.decision?.decidedAt
+                ? ` · Decidida: ${fmtDate(req.decision.decidedAt)}`
+                : ""}
+            </span>
+          </div>
+          <div className={styles.right}>
+            {showCancel && (
+              <button className={styles.btnGhost} onClick={() => onCancel(req._id)}>
+                Cancelar
+              </button>
+            )}
+          </div>
+        </div>
+
+        {req.note && <p className={styles.note}>Nota: {req.note}</p>}
+
+        <h4 className={styles.sectionTitle}>{label}</h4>
+        {dates.length === 0 ? (
+          <p className={styles.empty}>No hay días válidos en esta solicitud.</p>
+        ) : (
+          <ul className={styles.changes}>
+            {dates.map((d) => (
+              <li key={d} className={styles.changeRow}>
+                <span className={styles.to}>{fmtDate(d)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
   // =================== Render ===================
   return (
     <div className={styles.contenedor}>
@@ -743,6 +1031,9 @@ export default function MyChangeRequests({
         </button>
         <button className={"btn-secondary"} onClick={openUploadStep1}>
           Solicitar subida de documento
+        </button>
+        <button className={"btn-secondary"} onClick={openTimeOffModal}>
+          Solicitar días (vacaciones/asuntos propios)
         </button>
       </h2>
 
@@ -756,7 +1047,9 @@ export default function MyChangeRequests({
         <div className={styles.boxChanges}>
           <h4 className={styles.sectionTitle}>Cambios de datos</h4>
           {pendingChanges.length === 0 && (
-            <p className={styles.empty}>No hay solicitudes de cambio pendientes.</p>
+            <p className={styles.empty}>
+              No hay solicitudes de cambio pendientes.
+            </p>
           )}
           {pendingChanges.map((req) => (
             <ReqCard key={req._id} req={req} showCancel />
@@ -766,12 +1059,27 @@ export default function MyChangeRequests({
         <div className={styles.boxChanges}>
           <h4 className={styles.sectionTitle}>Documentos</h4>
           {pendingDocs.length === 0 && (
-            <p className={styles.empty}>No hay solicitudes de documentos pendientes.</p>
+            <p className={styles.empty}>
+              No hay solicitudes de documentos pendientes.
+            </p>
           )}
           {pendingDocs.map((req) => (
             <ReqCard key={req._id} req={req} showCancel />
           ))}
         </div>
+
+        <div className={styles.boxChanges}>
+          <h4 className={styles.sectionTitle}>Vacaciones y asuntos propios</h4>
+          {pendingTimeOff.length === 0 && (
+            <p className={styles.empty}>
+              No hay solicitudes de vacaciones ni asuntos propios pendientes.
+            </p>
+          )}
+          {pendingTimeOff.map((req) => (
+            <TimeOffCard key={req._id} req={req} showCancel />
+          ))}
+        </div>
+
       </div>
 
       {/* Toggle histórico */}
@@ -796,6 +1104,7 @@ export default function MyChangeRequests({
               <ReqCard key={req._id} req={req} showCancel={false} />
             ))}
           </div>
+
           <div className={styles.boxChanges}>
             <h4 className={styles.sectionTitle}>Documentos</h4>
             {historyDocs.length === 0 && (
@@ -805,6 +1114,17 @@ export default function MyChangeRequests({
               <ReqCard key={req._id} req={req} showCancel={false} />
             ))}
           </div>
+
+          <div className={styles.boxChanges}>
+            <h4 className={styles.sectionTitle}>Vacaciones y asuntos propios</h4>
+            {historyTimeOff.length === 0 && (
+              <p className={styles.empty}>No hay histórico de vacaciones ni asuntos propios.</p>
+            )}
+            {historyTimeOff.map((req) => (
+              <TimeOffCard key={req._id} req={req} showCancel={false} />
+            ))}
+          </div>
+
         </div>
       )}
 
@@ -830,6 +1150,21 @@ export default function MyChangeRequests({
           onClose={() => {
             setIsReqChangeOpen(false);
             setChangeWizard({ step: 1, path: "" });
+          }}
+          modal={modal}
+        />
+      )}
+
+      {/* Modal: solicitar vacaciones / asuntos propios */}
+      {isReqTimeOffOpen && reqTimeOffForm && (
+        <ModalForm
+          title={reqTimeOffForm.title}
+          message={reqTimeOffForm.message}
+          fields={reqTimeOffForm.fields}
+          onSubmit={reqTimeOffForm.onSubmit}
+          onClose={() => {
+            setIsReqTimeOffOpen(false);
+            setReqTimeOffForm(null);
           }}
           modal={modal}
         />

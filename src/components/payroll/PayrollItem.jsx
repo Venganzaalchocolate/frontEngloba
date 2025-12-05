@@ -1,83 +1,129 @@
-import { useState } from 'react';
+// PayrollItem.jsx
+import { useState } from "react";
 import { FaTrashAlt, FaFileDownload } from "react-icons/fa";
-import styles from '../styles/payrollsEmployer.module.css';
 import { AiOutlineSignature, AiFillSignature } from "react-icons/ai";
-import stylesTooltip from '../styles/tooltip.module.css';
 import { FaCloudUploadAlt } from "react-icons/fa";
-import { useLogin } from '../../hooks/useLogin.jsx';
-import { obtenerNombreMes } from '../../lib/utils.js';
-import ModalConfirmation from '../globals/ModalConfirmation.jsx';
+import styles from "../styles/payrollsEmployer.module.css";
+import stylesTooltip from "../styles/tooltip.module.css";
+import { useLogin } from "../../hooks/useLogin.jsx";
+import { obtenerNombreMes } from "../../lib/utils.js";
+import ModalConfirmation from "../globals/ModalConfirmation.jsx";
 
-const PayrollItem = ({ payroll, stringMeses, deletePayroll, downloadPayroll, signPayroll, userId }) => {
-    const { logged } = useLogin();
-    const [wDelete, setWDelete] = useState(false);
-    const name = `${payroll.payrollMonth}_${payroll.payrollYear}`
+const PayrollItem = ({
+  payroll,
+  deletePayroll,
+  downloadPayroll,
+  signPayroll,
+  userId,
+  listResponsability,
+  isLatest = false,
+}) => {
+  const { logged } = useLogin();
+  const [wDelete, setWDelete] = useState(false);
 
+  if (!payroll) return null;
 
-    const onConfirm = () => {
-        deletePayroll(payroll._id)
-        setWDelete(false);
-    };
+  const monthName = obtenerNombreMes(payroll.payrollMonth);
+  const labelBase = `${monthName || payroll.payrollMonth}_${payroll.payrollYear}`;
+  const canManage =
+    logged?.user?.role === "global" ||
+    logged?.user?.role === "root" ||
+    !!listResponsability?.payrolls;
 
-    const onCancel = () => {
-        setWDelete(false);
-    };
+  const handleDownloadPdf = () => {
+    if (!payroll.pdf) return;
+    downloadPayroll(payroll.pdf, labelBase);
+  };
 
-    const modalConfirmation = () => {
-        const title = `Eliminar nómina`;
-        const messageAux = `¿Estás seguro de que deseas eliminar la nómina del mes ${obtenerNombreMes(payroll.payrollMonth)} y año ${payroll.payrollYear}?`;
-        return (
-            <ModalConfirmation
-                title={title}
-                message={messageAux}
-                onConfirm={onConfirm}
-                onCancel={onCancel}
-            />
-        );
-    };
+  const handleDownloadSigned = () => {
+    if (!payroll.sign) return;
+    downloadPayroll(payroll.sign, `${labelBase}_firmada`);
+  };
 
-    return (
-        <li className={styles.payrollItem}>
-            <div className={styles.payrollmonth} onClick={() => downloadPayroll(payroll.pdf, name)}>
-                <div>{stringMeses[payroll.payrollMonth - 1]}</div>
-                <div>
-                    <FaFileDownload className={styles.botonNomina} />
-                </div>
-            </div>
+  const handleSign = () => {
+    if (!canManage) return;
+    signPayroll(payroll);
+  };
 
+  const openDeleteConfirm = () => {
+    if (!canManage) return;
+    setWDelete(true);
+  };
 
+  const handleConfirmDelete = () => {
+    setWDelete(false);
+    deletePayroll(payroll._id);
+  };
 
+  const handleCancelDelete = () => setWDelete(false);
 
-            {userId == logged.user._id && !payroll.sign &&
-                <button className={styles.botonSubir} onClick={() => signPayroll(payroll)}>
-                    Firmar Nómina
-                    <FaCloudUploadAlt
-                        className={styles.botonNomina}
-                    />
-                </button>
-            }
+  return (
+    <li className={styles.payrollItem}>
+      {/* Celda principal: clic completo = descargar nómina */}
+      <button
+        type="button"
+        className={styles.payrollmonth}
+        onClick={handleDownloadPdf}
+        title={`Descargar nómina de ${monthName} ${payroll.payrollYear}`}
+      >
+        <span>
+          {monthName || "Mes"} {payroll.payrollYear}
+          {isLatest && " · (última)"}
+        </span>
+        <FaFileDownload className={styles.botonNomina} />
+      </button>
 
-            <div className={styles.firma}>
-                {!!payroll.sign && payroll.sign.length > 0
-                    ? <span className={stylesTooltip.tooltip}><AiFillSignature className={styles.dowSig} onClick={() => downloadPayroll(payroll.sign, name)} /><span className={stylesTooltip.tooltiptext}>Firmada</span></span>
-                    : <span className={stylesTooltip.tooltip}><AiOutlineSignature /><span className={stylesTooltip.tooltiptext}>No firmada</span></span>
-                }
+      {/* Columna: firma / subir firma */}
+      <div className={styles.firma}>
+        {payroll.sign ? (
+          <span
+            className={stylesTooltip.tooltip}
+            onClick={handleDownloadSigned}
+          >
+            <AiFillSignature className={styles.botonNomina} />
+            <span className={stylesTooltip.tooltiptext}>Descargar firmada</span>
+          </span>
+        ) : canManage ? (
+          <button
+            type="button"
+            className={styles.botonSubir}
+            onClick={handleSign}
+            title="Subir nómina firmada"
+          >
+            <FaCloudUploadAlt className={styles.botonNomina} />
+            Firmar
+          </button>
+        ) : (
+          <span className={stylesTooltip.tooltip}>
+            <AiOutlineSignature className={styles.botonNomina} />
+            <span className={stylesTooltip.tooltiptext}>
+              Nómina pendiente de firma
+            </span>
+          </span>
+        )}
+      </div>
 
-            </div>
+      {/* Borrar nómina */}
+      {canManage && (
+        <div
+          className={styles.botonBorrar}
+          onClick={openDeleteConfirm}
+          title="Eliminar nómina"
+        >
+          <FaTrashAlt className={styles.botonNomina} />
+        </div>
+      )}
 
-            {(logged.user.role == 'root' || logged.user.role == 'global') &&
-                <div className={styles.botonBorrar} onClick={() => setWDelete(true)}>
-                    <FaTrashAlt
-                        className={styles.botonNomina}
-                    />
-                </div>}
-
-            {wDelete && (
-                modalConfirmation()
-            )}
-
-        </li>
-    );
+      {wDelete && (
+        <ModalConfirmation
+          title="Eliminar nómina"
+          message={`¿Seguro que quieres eliminar la nómina de ${monthName} ${payroll.payrollYear}?`}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
+      )}
+    </li>
+  );
 };
-//
+
 export default PayrollItem;

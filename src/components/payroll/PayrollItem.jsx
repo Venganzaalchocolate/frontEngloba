@@ -41,7 +41,6 @@ const PayrollItem = ({
   };
 
   const handleSign = () => {
-    if (!canManage) return;
     signPayroll(payroll);
   };
 

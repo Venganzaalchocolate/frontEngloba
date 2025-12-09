@@ -56,7 +56,7 @@ const PayrollItem = ({
   };
 
   const handleCancelDelete = () => setWDelete(false);
-
+const isUserPayroll= logged.user._id ===userId
   return (
     <li className={styles.payrollItem}>
       {/* Celda principal: clic completo = descargar nómina */}
@@ -83,7 +83,7 @@ const PayrollItem = ({
             <AiFillSignature className={styles.botonNomina} />
             <span className={stylesTooltip.tooltiptext}>Descargar firmada</span>
           </span>
-        ) : canManage ? (
+        ) : isUserPayroll ? (
           <button
             type="button"
             className={styles.botonSubir}

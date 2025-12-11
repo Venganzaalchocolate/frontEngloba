@@ -202,10 +202,11 @@ export function formatESPhone(value) {
 }
 
 export function titleCaseES(s) {
+  return ''
   return s.replace(/\p{L}[\p{L}\p{M}\p{N}'’\-]*/gu, (word) =>
     word
       .toLocaleLowerCase('es-ES')
-      .replace(/(^|[-’'])\p{L}/gu, (m) => m.toLocaleUpperCase('es-ES'))
+      .replace(/(^|[-’'])\p{L}/gu, (m) => m.toLocaleUpperCase('es-ES')) || ''
   );
 }
 

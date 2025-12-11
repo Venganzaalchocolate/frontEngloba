@@ -1,0 +1,407 @@
+/* src/components/styles/StatsHeadcount.module.css */
+
+.wrapper {
+  background: var(--color-blanco);
+  border-radius: 18px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 10px 25px rgba(17, 17, 17, 0.08);
+  border: 1px solid rgba(79, 82, 159, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ================= TITULOS ================= */
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-morado);
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--color-gris-oscuro);
+  max-width: 52rem;
+}
+
+/* ================= FILTROS ================= */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(
+    120deg,
+    rgba(190, 195, 244, 0.3),
+    rgba(237, 220, 242, 0.55)
+  );
+  border: 1px solid rgba(79, 82, 159, 0.18);
+  align-items: flex-end;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.filterLabel {
+  /* hereda estilos base de label global, solo ajusto margen */
+  margin-bottom: 0.3rem;
+}
+
+.filterSelect {
+  width: 100%;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(79, 82, 159, 0.25);
+  background-color: var(--color-blanco);
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.filterSelect:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 82, 159, 0.35);
+}
+
+.filterButton {
+  margin-left: auto;
+  margin-right: 0.1rem;
+  margin-top: 0.4rem;
+  padding-inline: 1.4rem;
+  height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+
+/* ================= ESTADOS ================= */
+
+.loading,
+.error,
+.loadingInline {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.loading {
+  background-color: rgba(52, 152, 219, 0.08);
+  color: var(--color-info);
+  border: 1px solid rgba(52, 152, 219, 0.35);
+}
+
+.error {
+  background-color: rgba(231, 76, 60, 0.06);
+  color: var(--color-error);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+}
+
+.loadingInline {
+  background-color: rgba(190, 195, 244, 0.1);
+  color: var(--color-morado);
+  border: 1px dashed rgba(79, 82, 159, 0.45);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* ================= CARDS RESUMEN ================= */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+@media (max-width: 1024px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--gradiente-principal);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  color: var(--color-blanco);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: 0 6px 16px rgba(79, 82, 159, 0.4);
+}
+
+.cardLabel {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+
+.cardValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* ================= BLOQUES CHART / TABLAS ================= */
+
+.chartBlock,
+.tableBlock {
+  background-color: var(--color-blanco);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 1rem;
+  border: 1px solid rgba(190, 195, 244, 0.7);
+}
+
+.blockTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-morado);
+  margin-bottom: 0.6rem;
+  border-left: 4px solid var(--color-morado);
+  padding-left: 0.5rem;
+}
+
+.chartWrapper {
+  width: 100%;
+}
+
+/* ================= TABLAS ================= */
+
+.tableWrapper,
+.tableWrapperSmall {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.table thead {
+  background: linear-gradient(
+    135deg,
+    rgba(190, 195, 244, 0.9),
+    rgba(143, 150, 208, 0.9)
+  );
+  color: var(--color-blanco);
+}
+
+.table thead th {
+  text-align: left;
+  padding: 0.55rem 0.6rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: rgba(237, 237, 237, 0.5);
+}
+
+.table tbody tr:nth-child(odd) {
+  background-color: var(--color-blanco);
+}
+
+.table tbody td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid rgba(191, 191, 191, 0.45);
+}
+
+.empty {
+  font-size: 0.85rem;
+  color: var(--color-gris-oscuro);
+  padding: 0.4rem 0.2rem 0.2rem;
+}
+
+/* ================= FILAS CLICABLES (PROGRAMAS) ================= */
+
+.rowClickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.rowClickable:hover {
+  background-color: rgba(190, 195, 244, 0.7) !important;
+}
+
+.rowClickable[data-selected="true"] {
+  background-color: rgba(79, 82, 159, 0.12) !important;
+  border-left: 3px solid var(--color-morado);
+}
+
+/* ================= TEXTOS AUXILIARES ================= */
+
+.helperText {
+  font-size: 0.78rem;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 0.4rem;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
+}
+
+/* Bloques genéricos */
+.chartBlock,
+.tableBlock,
+.dualBlock {
+  background: var(--color-blanco);
+  border-radius: 12px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 2px 6px rgba(17, 17, 17, 0.06);
+  border: 1px solid var(--color-gris-claro);
+}
+
+.blockTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-morado);
+  margin-bottom: 0.75rem;
+}
+
+/* Layout gráfico + tabla en dos columnas */
+.dualBlockInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .dualBlockInner {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartWrapper {
+  width: 100%;
+  min-height: 220px;
+}
+
+/* Tablas */
+.tableWrapper,
+.tableWrapperSmall {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.table th,
+.table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--color-gris-claro);
+  text-align: left;
+}
+
+.table thead {
+  background: var(--color-malva);
+  color: var(--color-morado);
+}
+
+.table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.table tbody tr:hover {
+  background: var(--color-malva-oscuro);
+  color: var(--color-blanco);
+}
+
+/* pequeños textos de ayuda / vacíos */
+.helperText {
+  font-size: 0.8rem;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 0.5rem;
+}
+
+.empty {
+  font-size: 0.85rem;
+  color: var(--color-gris-oscuro);
+  font-style: italic;
+}
+
+/* tarjetas resumen */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+
+.card {
+  background: var(--gradiente-principal);
+  color: var(--color-blanco);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cardLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+.cardValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* filtros */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  color: var(--color-morado);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.filterSelect {
+  border-radius: 8px;
+  border: 1px solid var(--color-gris-claro);
+}
+
+.filterButton {
+  margin-top: 1.4rem;
+  background: var(--color-morado);
+  color: var(--color-blanco);
+}

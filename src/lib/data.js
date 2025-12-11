@@ -319,6 +319,8 @@ export const stCvConversion = (datos, token) => fetchData('/cvconversion', 'POST
 export const stAuditWorkersStats = (datos, token) => fetchData('/auditworkersstats', 'POST', token, datos);
 
 export const stgetWorkersStats = (datos, token) => fetchData('/workersstats', 'POST', token, datos);
+export const currentHeadcountStats = (datos, token) => fetchData('/currentheadcountstats', 'POST', token, datos);
+export const getUserCvStats=(datos, token)=>fetchData('/getusercvstats','POST', token, datos);
 
 //workspace
 export const wsInfoGroup = (datos, token) => fetchData('/infogroupws', 'POST', token, datos);

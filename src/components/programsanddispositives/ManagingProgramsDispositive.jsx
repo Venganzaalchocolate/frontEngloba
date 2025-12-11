@@ -51,31 +51,25 @@ const ManagingProgramsDispositive = ({
   const info = async (x) => {
     if (!x) return;
 
-    try {
-      charge(true);
+    charge(true);
 
-      let res;
-      if (x.type === "program") {
-        res = await getProgramId({ programId: x._id }, token);
-      } else {
-        res = await getDispositiveId({ dispositiveId: x._id }, token);
-      }
-
-      if (res?.error) {
-        modal("Error", res.message || "No se pudo cargar la información.");
-        setInfoSelect(null);
-        return;
-      }
-
-      const dataWithType = normalizeEntity(res, x.type);
-      setInfoSelect(dataWithType);
-    } catch (err) {
-
-      modal("Error", err.message || "No se pudo cargar la información.");
-      setInfoSelect(null);
-    } finally {
-      charge(false);
+    let res;
+    if (x.type === "program") {
+      res = await getProgramId({ programId: x._id }, token);
+    } else {
+      res = await getDispositiveId({ dispositiveId: x._id }, token);
     }
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo cargar la información.");
+      setInfoSelect(null);
+      charge(false);
+      return;
+    }
+
+    const dataWithType = normalizeEntity(res, x.type);
+    setInfoSelect(dataWithType);
+    charge(false);
   };
 
   const onSelect = (x) => {
@@ -85,27 +79,24 @@ const ManagingProgramsDispositive = ({
   };
 
   // === SELECCIÓN AUTOMÁTICA INICIAL ===
-useEffect(() => {
-  // si ya hay algo seleccionado o aún no se ha cargado enumsData, no hacer nada
-  if (select || !enumsData?.programsIndex) return;
+  useEffect(() => {
+    if (select || !enumsData?.programsIndex) return;
 
-  // si el usuario tiene responsabilidades
-  if (listResponsability && listResponsability.length > 0) {
-    const first = listResponsability[0];
+    if (listResponsability && listResponsability.length > 0) {
+      const first = listResponsability[0];
 
-    if (first?.dispositiveId) {
-      onSelect({ type: "dispositive", _id: first.dispositiveId });
-    } else if (first?.idProgram) {
-      onSelect({ type: "program", _id: first.idProgram });
+      if (first?.dispositiveId) {
+        onSelect({ type: "dispositive", _id: first.dispositiveId });
+      } else if (first?.idProgram) {
+        onSelect({ type: "program", _id: first.idProgram });
+      }
+    } else {
+      const firstProgramId = Object.keys(enumsData.programsIndex)[0];
+      if (firstProgramId) {
+        onSelect({ type: "program", _id: firstProgramId });
+      }
     }
-  } else {
-    // si no tiene responsabilidades, seleccionar el primer programa general
-    const firstProgramId = Object.keys(enumsData.programsIndex)[0];
-    if (firstProgramId) {
-      onSelect({ type: "program", _id: firstProgramId });
-    }
-  }
-}, [listResponsability, enumsData, select]);
+  }, [listResponsability, enumsData, select]);
 
   // === OPTIONS ===
   const programsOptions = useMemo(() => {
@@ -113,7 +104,9 @@ useEffect(() => {
     return Object.entries(idx)
       .map(([id, p]) => ({
         value: id,
-        label: `${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""}`,
+        label: `${p?.name || id}${
+          p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
+        }`,
         acronym: (p?.acronym || "").toUpperCase(),
       }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
@@ -202,8 +195,9 @@ useEffect(() => {
       options: [
         ...Object.entries(enumsData?.programsIndex || {}).map(([id, p]) => ({
           value: JSON.stringify({ type: "program", _id: id }),
-          label: `📘 Programa · ${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
-            }`,
+          label: `📘 Programa · ${p?.name || id}${
+            p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
+          }`,
         })),
         ...Object.entries(enumsData?.dispositiveIndex || {}).map(([id, d]) => ({
           value: JSON.stringify({ type: "dispositive", _id: id }),
@@ -257,7 +251,7 @@ useEffect(() => {
         : await updateDispositive({ dispositiveId: infoItem._id, ...payload }, token);
 
     if (res?.error) {
-      modal("Error", res.error || "No se pudo actualizar la cronología.");
+      modal("Error", res.message || "No se pudo actualizar la cronología.");
       setInfoSelect(prevInfo);
       return;
     }
@@ -267,7 +261,7 @@ useEffect(() => {
         ? await getProgramId({ programId: infoItem._id }, token)
         : await getDispositiveId({ dispositiveId: infoItem._id }, token);
 
-    if (freshRes?.error) {
+    if (!freshRes || freshRes.error) {
       modal("Aviso", "Guardado pero no se pudo refrescar la información.");
       return;
     }
@@ -279,11 +273,13 @@ useEffect(() => {
       "Actualizado",
       type === "delete"
         ? "Registro eliminado correctamente."
-        : `Cronología ${type === "edit" ? "actualizada" : "añadida"} correctamente.`
+        : `Cronología ${
+            type === "edit" ? "actualizada" : "añadida"
+          } correctamente.`
     );
   };
 
-  // === CREAR ===
+  // === CREAR PROGRAMA ===
   const handleCreateProgram = async (formData) => {
     const payload = {
       name: formData.name,
@@ -299,19 +295,23 @@ useEffect(() => {
       },
       userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
     };
-    try {
-      charge(true);
-      await createProgram(payload, token);
-      await chargeEnums();
-      modal("Programa creado", `${payload.name} creado correctamente`);
-      setShowProgramForm(false);
-    } catch (e) {
-      modal("Error", e.message || "No se pudo crear el programa.");
-    } finally {
+
+    charge(true);
+    const res = await createProgram(payload, token);
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo crear el programa.");
       charge(false);
+      return;
     }
+
+    await chargeEnums();
+    modal("Programa creado", `${payload.name} creado correctamente`);
+    setShowProgramForm(false);
+    charge(false);
   };
 
+  // === CREAR DISPOSITIVO ===
   const handleCreateDevice = async (formData) => {
     const selected = programsOptions.find((p) => p.value === formData.program);
     const acronym = selected?.acronym || "";
@@ -333,79 +333,160 @@ useEffect(() => {
       program: formData.program || null,
       userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
     };
-    try {
-      charge(true);
-      await createDispositive(payload, token);
-      await chargeEnums();
-      modal("Dispositivo creado", `${payload.name} creado correctamente`);
-      setShowDeviceForm(false);
-    } catch (e) {
-      modal("Error", e.message || "No se pudo crear el dispositivo.");
-    } finally {
+
+    charge(true);
+    const res = await createDispositive(payload, token);
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo crear el dispositivo.");
       charge(false);
+      return;
     }
+
+    await chargeEnums();
+    modal("Dispositivo creado", `${payload.name} creado correctamente`);
+    setShowDeviceForm(false);
+    charge(false);
   };
 
-  // === EDITAR ===
+  // === EDITAR (solo envía campos modificados) ===
   const handleEdit = async (formData) => {
-    try {
-      charge(true);
-      if (editTarget?.type === "program") {
-        const payload = {
-          id: editTarget._id,
-          name: formData.name,
-          acronym: formData.acronym?.toUpperCase(),
-          area: formData.area,
-          active: formData.active === true || formData.active === "true",
-          about: {
-            description: formData.description || "",
-            objectives: formData.objectives || "",
-            profile: formData.profile || "",
-          },
-        };
-        await updateProgram(payload, token);
-      } else {
-        const payload = {
-          dispositiveId: editTarget._id,
-          name: formData.name,
-          active: formData.active === true || formData.active === "true",
-          address: formData.address || "",
-          email: formData.email || "",
-          phone: formData.phone || "",
-          province: formData.province || null,
-          program: formData.program || null,
-        };
-        await updateDispositive(payload, token);
+    if (!editTarget?._id || !editTarget.type) return;
+
+    charge(true);
+
+    let res;
+    if (editTarget.type === "program") {
+      const original = editTarget;
+      const update = {};
+
+      const newName = formData.name?.trim() || "";
+      const oldName = original.name || "";
+
+      const newAcronym = (formData.acronym || "").toUpperCase();
+      const oldAcronym = (original.acronym || "").toUpperCase();
+
+      const newArea = formData.area || "no identificado";
+      const oldArea = original.area || "no identificado";
+
+      const newActive = formData.active === true || formData.active === "true";
+      const oldActive = Boolean(original.active);
+
+      const newDesc = formData.description || "";
+      const oldDesc = original.about?.description || "";
+
+      const newObj = formData.objectives || "";
+      const oldObj = original.about?.objectives || "";
+
+      const newProfile = formData.profile || "";
+      const oldProfile = original.about?.profile || "";
+
+      if (newName !== oldName) update.name = newName;
+      if (newAcronym !== oldAcronym) update.acronym = newAcronym;
+      if (newArea !== oldArea) update.area = newArea;
+      if (newActive !== oldActive) update.active = newActive;
+
+      const about = {};
+      if (newDesc !== oldDesc) about.description = newDesc;
+      if (newObj !== oldObj) about.objectives = newObj;
+      if (newProfile !== oldProfile) about.profile = newProfile;
+      if (Object.keys(about).length > 0) update.about = about;
+
+      if (Object.keys(update).length === 0) {
+        modal("Sin cambios", "No has modificado ningún campo del programa.");
+        charge(false);
+        return;
       }
-      await chargeEnums();
-      modal("Actualización correcta", "Se ha actualizado el elemento.");
-      setShowEditForm(false);
-      info(editTarget);
-    } catch (e) {
-      modal("Error", e.message || "No se pudo actualizar.");
-    } finally {
-      charge(false);
+
+      res = await updateProgram({ id: original._id, ...update }, token);
+    } else {
+      const original = editTarget;
+      const update = {};
+
+      const newName = formData.name?.trim() || "";
+      const oldName = original.name || "";
+
+      const newActive = formData.active === true || formData.active === "true";
+      const oldActive = Boolean(original.active);
+
+      const newAddress = formData.address || "";
+      const oldAddress = original.address || "";
+
+      const newEmail = formData.email || "";
+      const oldEmail = original.email || "";
+
+      const newPhone = formData.phone || "";
+      const oldPhone = original.phone || "";
+
+      const newProvince = formData.province || null;
+      const oldProvince =
+        typeof original.province === "string"
+          ? original.province
+          : original.province?._id || null;
+
+      const newProgram = formData.program || null;
+      const oldProgram =
+        typeof original.program === "string"
+          ? original.program
+          : original.program?._id || null;
+
+      if (newName !== oldName) update.name = newName;
+      if (newActive !== oldActive) update.active = newActive;
+      if (newAddress !== oldAddress) update.address = newAddress;
+      if (newEmail !== oldEmail) update.email = newEmail;
+      if (newPhone !== oldPhone) update.phone = newPhone;
+      if (newProvince !== oldProvince) update.province = newProvince;
+      if (newProgram !== oldProgram) update.program = newProgram;
+
+      if (Object.keys(update).length === 0) {
+        modal("Sin cambios", "No has modificado ningún campo del dispositivo.");
+        charge(false);
+        return;
+      }
+
+      res = await updateDispositive(
+        { dispositiveId: original._id, ...update },
+        token
+      );
     }
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo actualizar.");
+      charge(false);
+      return;
+    }
+
+    await chargeEnums();
+    await info({ type: editTarget.type, _id: editTarget._id });
+    setShowEditForm(false);
+    modal("Actualización correcta", "Se ha actualizado el elemento.");
+    charge(false);
   };
 
   // === ELIMINAR ===
   const handleDelete = async () => {
-    try {
-      charge(true);
-      if (deleteTarget?.type === "program")
-        await deleteProgram({ id: deleteTarget._id }, token);
-      else
-        await deleteDispositive({ dispositiveId: deleteTarget._id }, token);
+    if (!deleteTarget?._id || !deleteTarget.type) return;
 
-      await chargeEnums();
-      modal("Eliminado", "El registro se ha eliminado correctamente.");
-      setShowDeleteConfirm(false);
-      setInfoSelect(null);
-    } catch (e) {
-      modal("Error", e.message || "No se pudo eliminar.");
-    } finally {
-      charge(false);
+    charge(true);
+
+    let res;
+    if (deleteTarget.type === "program") {
+      res = await deleteProgram({ id: deleteTarget._id }, token);
+    } else {
+      res = await deleteDispositive({ dispositiveId: deleteTarget._id }, token);
     }
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo eliminar.");
+      charge(false);
+      return;
+    }
+
+    await chargeEnums();
+    modal("Eliminado", "El registro se ha eliminado correctamente.");
+    setShowDeleteConfirm(false);
+    setInfoSelect(null);
+    charge(false);
   };
 
   // === SELECCIONAR ELEMENTO PARA EDITAR/ELIMINAR ===
@@ -423,65 +504,62 @@ useEffect(() => {
       return;
     }
 
-    try {
-      charge(true);
-      let res;
-      if (parsed.type === "program") {
-        res = await getProgramId({ programId: parsed._id }, token);
-      } else {
-        res = await getDispositiveId({ dispositiveId: parsed._id }, token);
-      }
+    charge(true);
 
-      if (res?.error) {
-        modal("Error", res.message || "No se pudo cargar el elemento.");
-        return;
-      }
-
-      const data = normalizeEntity(res, parsed.type);
-
-      if (actionType === "edit") {
-        const fieldsWithValues =
-          data.type === "program"
-            ? programFields.map((f) => ({
-                ...f,
-                defaultValue:
-                  f.name === "area"
-                    ? data.area
-                    : f.name === "active"
-                    ? Boolean(data.active)
-                    : f.name === "description"
-                    ? data.about?.description || ""
-                    : f.name === "objectives"
-                    ? data.about?.objectives || ""
-                    : f.name === "profile"
-                    ? data.about?.profile || ""
-                    : data[f.name] ?? f.defaultValue ?? "",
-              }))
-            : deviceFields.map((f) => ({
-                ...f,
-                defaultValue:
-                  f.name === "program"
-                    ? data.program?._id || data.program || ""
-                    : f.name === "province"
-                    ? data.province?._id || data.province || ""
-                    : f.name === "active"
-                    ? Boolean(data.active)
-                    : data[f.name] ?? f.defaultValue ?? "",
-              }));
-
-        setEditTarget({ ...data, fieldsWithValues });
-        setShowEditForm(true);
-      } else if (actionType === "delete") {
-        setDeleteTarget(data);
-        setShowDeleteConfirm(true);
-      }
-    } catch (e) {
-      console.error("Error en handleSelectForAction:", e);
-      modal("Error", e.message || "No se pudo cargar el elemento.");
-    } finally {
-      charge(false);
-      setShowSelectModal(false);
+    let res;
+    if (parsed.type === "program") {
+      res = await getProgramId({ programId: parsed._id }, token);
+    } else {
+      res = await getDispositiveId({ dispositiveId: parsed._id }, token);
     }
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo cargar el elemento.");
+      charge(false);
+      return;
+    }
+
+    const data = normalizeEntity(res, parsed.type);
+
+    if (actionType === "edit") {
+      const fieldsWithValues =
+        data.type === "program"
+          ? programFields.map((f) => ({
+              ...f,
+              defaultValue:
+                f.name === "area"
+                  ? data.area
+                  : f.name === "active"
+                  ? Boolean(data.active)
+                  : f.name === "description"
+                  ? data.about?.description || ""
+                  : f.name === "objectives"
+                  ? data.about?.objectives || ""
+                  : f.name === "profile"
+                  ? data.about?.profile || ""
+                  : data[f.name] ?? f.defaultValue ?? "",
+            }))
+          : deviceFields.map((f) => ({
+              ...f,
+              defaultValue:
+                f.name === "program"
+                  ? data.program?._id || data.program || ""
+                  : f.name === "province"
+                  ? data.province?._id || data.province || ""
+                  : f.name === "active"
+                  ? Boolean(data.active)
+                  : data[f.name] ?? f.defaultValue ?? "",
+            }));
+
+      setEditTarget({ ...data, fieldsWithValues });
+      setShowEditForm(true);
+    } else if (actionType === "delete") {
+      setDeleteTarget(data);
+      setShowDeleteConfirm(true);
+    }
+
+    charge(false);
+    setShowSelectModal(false);
   };
 
   // === ABRIR FORMULARIOS ===
@@ -551,158 +629,128 @@ useEffect(() => {
     }));
   };
 
-    // === ACTIVAR / DESACTIVAR PROGRAMA O DISPOSITIVO ===
-// === ACTIVAR / DESACTIVAR PROGRAMA O DISPOSITIVO ===
-const handleToggleActive = async (item) => {
-  if (!item?._id || !item?.type) return;
+  // === ACTIVAR / DESACTIVAR PROGRAMA O DISPOSITIVO ===
+  const handleToggleActive = async (item) => {
+    if (!item?._id || !item?.type) return;
 
-  const isProgram = item.type === "program";
-  const nextActive = !item.active;
+    const isProgram = item.type === "program";
+    const nextActive = !item.active;
 
-  let error = false;
-  let message = "";
+    let error = false;
+    let message = "";
 
-  charge(true);
+    charge(true);
 
-  if (isProgram) {
-    // ---- PROGRAMA ----
-    const originalActive = Boolean(item.active);
+    if (isProgram) {
+      const originalActive = Boolean(item.active);
 
-    // 1) Intentar actualizar el programa
-    const programRes = await updateProgram(
-      { id: item._id, active: nextActive },
-      token
-    );
-
-    if (programRes?.error) {
-      error = true;
-      message = programRes.message || "No se pudo actualizar el programa.";
-    } else if (!nextActive) {
-      // 2) Solo si DESACTIVAMOS el programa → desactivar dispositivos asociados
-
-      const allDevices = Object.values(enumsData?.dispositiveIndex || {}).filter(
-        (d) => d.program === item._id
+      const programRes = await updateProgram(
+        { id: item._id, active: nextActive },
+        token
       );
 
-      const previouslyActiveDevices = allDevices.filter((d) => d.active);
-
-      if (previouslyActiveDevices.length > 0) {
-        const results = await Promise.all(
-          previouslyActiveDevices.map((d) =>
-            updateDispositive(
-              { dispositiveId: d._id, active: false },
-              token
-            )
-          )
+      if (!programRes || programRes.error) {
+        error = true;
+        message = programRes?.message || "No se pudo actualizar el programa.";
+      } else if (!nextActive) {
+        const allDevices = Object.values(enumsData?.dispositiveIndex || {}).filter(
+          (d) => d.program === item._id
         );
 
-        // Buscar errores en los dispositivos
-        const failing = results
-          .map((r, idx) => ({ r, idx }))
-          .filter((x) => x.r?.error);
+        const previouslyActiveDevices = allDevices.filter((d) => d.active);
 
-        if (failing.length > 0) {
-          error = true;
-          message =
-            failing[0].r?.message ||
-            "Error al desactivar algunos dispositivos asociados.";
-
-          // === ROLLBACK: volver al estado inicial ===
-
-          // 1) Volver a activar el programa (estado original)
-          await updateProgram(
-            { id: item._id, active: originalActive },
-            token
+        if (previouslyActiveDevices.length > 0) {
+          const results = await Promise.all(
+            previouslyActiveDevices.map((d) =>
+              updateDispositive({ dispositiveId: d._id, active: false }, token)
+            )
           );
 
-          // 2) Volver a activar los dispositivos que SÍ se desactivaron bien
-          const succeededDevices = previouslyActiveDevices.filter(
-            (_, idx) => !results[idx]?.error
-          );
+          const failing = results
+            .map((r, idx) => ({ r, idx }))
+            .filter((x) => x.r?.error);
 
-          if (succeededDevices.length > 0) {
-            await Promise.all(
-              succeededDevices.map((d) =>
-                updateDispositive(
-                  { dispositiveId: d._id, active: true },
-                  token
-                )
-              )
+          if (failing.length > 0) {
+            error = true;
+            message =
+              failing[0].r?.message ||
+              "Error al desactivar algunos dispositivos asociados.";
+
+            await updateProgram(
+              { id: item._id, active: originalActive },
+              token
             );
+
+            const succeededDevices = previouslyActiveDevices.filter(
+              (_, idx) => !results[idx]?.error
+            );
+
+            if (succeededDevices.length > 0) {
+              await Promise.all(
+                succeededDevices.map((d) =>
+                  updateDispositive({ dispositiveId: d._id, active: true }, token)
+                )
+              );
+            }
           }
         }
       }
-    }
-  } else {
-    // ---- DISPOSITIVO ----
-    // item.program puede ser id o objeto
-    const programId =
-      typeof item.program === "string"
-        ? item.program
-        : item.program?._id;
+    } else {
+      const programId =
+        typeof item.program === "string" ? item.program : item.program?._id;
 
-    const programIsActive =
-      programId && enumsData?.programsIndex?.[programId]?.active;
+      const programIsActive =
+        programId && enumsData?.programsIndex?.[programId]?.active;
 
-    if (nextActive) {
-      // Vamos a ACTIVAR el dispositivo
-      if (!programIsActive) {
-        error = true;
-        message =
-          "No se puede activar un dispositivo si el programa asociado está desactivado.";
+      if (nextActive) {
+        if (!programIsActive) {
+          error = true;
+          message =
+            "No se puede activar un dispositivo si el programa asociado está desactivado.";
+        } else {
+          const res = await updateDispositive(
+            { dispositiveId: item._id, active: nextActive },
+            token
+          );
+          if (!res || res.error) {
+            error = true;
+            message = res?.message || "No se pudo actualizar el dispositivo.";
+          }
+        }
       } else {
         const res = await updateDispositive(
           { dispositiveId: item._id, active: nextActive },
           token
         );
-        if (res?.error) {
+        if (!res || res.error) {
           error = true;
-          message =
-            res.message || "No se pudo actualizar el dispositivo.";
+          message = res?.message || "No se pudo actualizar el dispositivo.";
         }
       }
-    } else {
-      // DESACTIVAR el dispositivo (no tiene efecto en el programa)
-      const res = await updateDispositive(
-        { dispositiveId: item._id, active: nextActive },
-        token
-      );
-      if (res?.error) {
-        error = true;
-        message =
-          res.message || "No se pudo actualizar el dispositivo.";
-      }
     }
-  }
 
-  // Recargar índices (programas y dispositivos) SIEMPRE,
-  // para que el menú y las listas se sincronicen con la BD
-  await chargeEnums();
+    await chargeEnums();
 
-  // Si lo que hemos tocado es justo lo que está abierto en la ficha, lo recargamos
-  const sameCurrent =
-    infoSelect &&
-    infoSelect._id === item._id &&
-    infoSelect.type === item.type;
+    const sameCurrent =
+      infoSelect && infoSelect._id === item._id && infoSelect.type === item.type;
 
-  if (sameCurrent) {
-    await info({ type: item.type, _id: item._id });
-  }
+    if (sameCurrent) {
+      await info({ type: item.type, _id: item._id });
+    }
 
-  charge(false);
+    charge(false);
 
-  const label = isProgram ? "Programa" : "Dispositivo";
+    const label = isProgram ? "Programa" : "Dispositivo";
 
-  if (error) {
-    modal("Error", message || "No se pudo actualizar el estado activo.");
-  } else {
-    modal(
-      "Actualizado",
-      `${label} ${nextActive ? "activado" : "desactivado"} correctamente.`
-    );
-  }
-};
-
+    if (error) {
+      modal("Error", message || "No se pudo actualizar el estado activo.");
+    } else {
+      modal(
+        "Actualizado",
+        `${label} ${nextActive ? "activado" : "desactivado"} correctamente.`
+      );
+    }
+  };
 
   // === RENDER ===
   return (

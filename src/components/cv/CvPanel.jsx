@@ -479,7 +479,7 @@ const CvPanel = ({
 
                     {user.notes?.map(x => (
                         <div key={x._id} className={styles.commentBox}>
-                            <p><PiPersonFill /> {titleCaseES(x.userCv?.firstName)} {titleCaseES(x.userCv?.lastName)}</p>
+                            <p><PiPersonFill /> {x.userCv?.firstName} {x.userCv?.lastName}</p>
                             <p><FaCalendarAlt /> {formatDatetime(x.date)}</p>
                             <p>{x.message}</p>
                         </div>
@@ -516,8 +516,8 @@ const CvPanel = ({
 
                                 {user[type].map(x => (
                                     <div key={x._id} className={styles.commentBox}>
-                                        <p><PiPersonFill /> {titleCaseES(x.userCv.firstName)} {titleCaseES(x.userCv.lastName)}</p>
-                                        <p><FaCalendarAlt /> {formatDatetime(x.date)}</p>
+                                        <p><PiPersonFill /> {x?.userCv?.firstName} {x?.userCv?.lastName}</p>
+                                        <p><FaCalendarAlt /> {formatDatetime(x?.date)}</p>
                                         <p>{x.message}</p>
                                     </div>
                                 ))}

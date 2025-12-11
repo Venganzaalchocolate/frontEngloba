@@ -32,3 +32,12 @@
     display: flex;
     flex: 1;
 }
+
+.seleccionado{
+    background-color: var(--color-info);
+}
+
+.cajaBotones{
+    display: flex;
+    gap: 1rem;
+}

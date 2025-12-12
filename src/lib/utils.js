@@ -201,14 +201,6 @@ export function formatESPhone(value) {
   return parts.join(" ");
 }
 
-export function titleCaseES(s) {
-  return ''
-  return s.replace(/\p{L}[\p{L}\p{M}\p{N}'’\-]*/gu, (word) =>
-    word
-      .toLocaleLowerCase('es-ES')
-      .replace(/(^|[-’'])\p{L}/gu, (m) => m.toLocaleUpperCase('es-ES')) || ''
-  );
-}
 
 export function compact(s) {
   if (typeof s !== 'string' && !(s instanceof String)) return '';

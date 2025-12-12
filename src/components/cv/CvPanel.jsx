@@ -22,7 +22,7 @@ import InfoUser from './infoUser.jsx';
 
 // Utils
 import { infoUser, lastHiringForUser, modifyUser, offerUpdate } from "../../lib/data";
-import { deepClone, formatDatetime, titleCaseES } from "../../lib/utils";
+import { deepClone, formatDatetime} from "../../lib/utils";
 import { useLogin } from '../../hooks/useLogin';
 import { getToken } from "../../lib/serviceToken";
 import { useOffer } from '../../hooks/useOffer.jsx';
@@ -516,6 +516,7 @@ const CvPanel = ({
 
                                 {user[type].map(x => (
                                     <div key={x._id} className={styles.commentBox}>
+                                        
                                         <p><PiPersonFill /> {x?.userCv?.firstName} {x?.userCv?.lastName}</p>
                                         <p><FaCalendarAlt /> {formatDatetime(x?.date)}</p>
                                         <p>{x.message}</p>

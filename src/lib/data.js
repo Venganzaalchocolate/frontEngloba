@@ -312,13 +312,6 @@ export const auditPayrolls= (datos, token) => fetchData('/auditpayrolls', 'POST'
 
 
 //estadisticas
-export const stOverview = (token) => fetchData('/overview', 'POST', token);
-export const stCvMonthly = (datos, token) => fetchData('/cvmonthly', 'POST', token, datos);
-export const stCvDistribution = (datos, token) => fetchData('/cvdistribution', 'POST', token, datos);
-export const stCvConversion = (datos, token) => fetchData('/cvconversion', 'POST', token, datos);
-export const stAuditWorkersStats = (datos, token) => fetchData('/auditworkersstats', 'POST', token, datos);
-
-export const stgetWorkersStats = (datos, token) => fetchData('/workersstats', 'POST', token, datos);
 export const currentHeadcountStats = (datos, token) => fetchData('/currentheadcountstats', 'POST', token, datos);
 export const getUserCvStats=(datos, token)=>fetchData('/getusercvstats','POST', token, datos);
 

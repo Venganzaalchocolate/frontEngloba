@@ -61,7 +61,7 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
     const data = await getUserCvStats(datos, token);
 
     if (data?.error) {
-      modal('Error', data.message || 'Error al cargar estadísticas de CV');
+      modal('Error', data.message || 'Error al cargar estadísticas de Solicitudes de Empleo');
       setStats(null);
       charge(false);
       return;
@@ -132,12 +132,13 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
   // ---------- DATA PROVINCIAS ----------
   const provinceChartData = useMemo(
     () =>
-      (byProvince || []).map((p) => {
+      (byProvince || []).map((p, idx) => {
         const info = provincesIndex[p.provinceId] || null;
         return {
           provinceId: p.provinceId,
           name: info?.name || 'Sin provincia',
           count: p.count || 0,
+          fill:[JOB_COLORS[idx % JOB_COLORS.length]]
         };
       }),
     [byProvince, provincesIndex]
@@ -214,7 +215,7 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
 
   return (
     <div className={styles.wrapper}>
-      <h2 className={styles.title}>Estadísticas de CV recibidos</h2>
+      <h2 className={styles.title}>Estadísticas de Solicitudes de Empleo recibidas</h2>
 
       {/* Filtros internos */}
       <form className={styles.filters} onSubmit={handleApplyFilters}>
@@ -265,26 +266,26 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
       {/* Tarjetas resumen */}
       <div className={styles.cards}>
         <div className={styles.card}>
-          <span className={styles.cardLabel}>Total de CV registrados</span>
+          <span className={styles.cardLabel}>Total de Solicitudes de Empleo registrados</span>
           <span className={styles.cardValue}>{totals.totalCvs ?? 0}</span>
         </div>
         <div className={styles.card}>
-          <span className={styles.cardLabel}>CV que han acabado en contratación</span>
+          <span className={styles.cardLabel}>Solicitudes de Empleo que han acabado en contratación</span>
           <span className={styles.cardValue}>{totals.hiredCvs ?? 0}</span>
         </div>
         <div className={styles.card}>
-          <span className={styles.cardLabel}>CV con discapacidad</span>
+          <span className={styles.cardLabel}>Solicitudes de Empleo con discapacidad</span>
           <span className={styles.cardValue}>{totals.withDisability ?? 0}</span>
         </div>
         <div className={styles.card}>
-          <span className={styles.cardLabel}>CV de personas extuteladas</span>
+          <span className={styles.cardLabel}>Solicitudes de Empleo de personas extuteladas</span>
           <span className={styles.cardValue}>{totals.fostered ?? 0}</span>
         </div>
       </div>
 
       {/* PROFESIONES */}
       <div className={styles.chartBlock}>
-        <h3 className={styles.blockTitle}>Distribución por profesión (CV)</h3>
+        <h3 className={styles.blockTitle}>Distribución por profesión</h3>
 
         {jobsBarData && jobsBarData.length > 0 ? (
           <div className={styles.provinceLayout}>
@@ -322,7 +323,7 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
                 <thead>
                   <tr>
                     <th>Profesión</th>
-                    <th>Nº de CV</th>
+                    <th>Nº de Solicitudes de Empleo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -337,13 +338,13 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
             </div>
           </div>
         ) : (
-          <p className={styles.empty}>No hay datos de profesión en los CV.</p>
+          <p className={styles.empty}>No hay datos de profesión en los Solicitudes de Empleo.</p>
         )}
       </div>
 
       {/* PROVINCIAS */}
       <div className={styles.tableBlock}>
-        <h3 className={styles.blockTitle}>Distribución por provincia (CV)</h3>
+        <h3 className={styles.blockTitle}>Distribución por provincia</h3>
         {provinceChartData && provinceChartData.length > 0 ? (
           <div className={styles.provinceLayout}>
             <div className={styles.chartWrapper}>
@@ -367,7 +368,7 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
                 <thead>
                   <tr>
                     <th>Provincia</th>
-                    <th>Nº de CV</th>
+                    <th>Nº de Solicitudes de Empleo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -382,13 +383,13 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
             </div>
           </div>
         ) : (
-          <p className={styles.empty}>No hay datos de provincia en los CV.</p>
+          <p className={styles.empty}>No hay datos de provincia en las Solicitudes de Empleo.</p>
         )}
       </div>
 
       {/* GÉNERO */}
       <div className={styles.dualBlock}>
-        <h3 className={styles.blockTitle}>Distribución por género (CV)</h3>
+        <h3 className={styles.blockTitle}>Distribución por género</h3>
 
         {genderChartData && genderChartData.length > 0 ? (
           <div className={styles.dualBlockInner}>
@@ -431,7 +432,7 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
                 <thead>
                   <tr>
                     <th>Género</th>
-                    <th>Nº de CV</th>
+                    <th>Nº de Solicitudes de Empleo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -446,107 +447,166 @@ export default function StatsUserCv({ charge, modal, enumsData }) {
             </div>
           </div>
         ) : (
-          <p className={styles.empty}>No hay datos de género en los CV.</p>
+          <p className={styles.empty}>No hay datos de género en los Solicitudes de Empleo.</p>
         )}
       </div>
 
       {/* ESTUDIOS */}
+            {/* ESTUDIOS */}
       <div className={styles.chartBlock}>
         <h3 className={styles.blockTitle}>Distribución por estudios</h3>
         {studiesBarData && studiesBarData.length > 0 ? (
-          <div className={styles.chartWrapper}>
-            <ResponsiveContainer width="100%" height={500}>
-              <BarChart
-                data={studiesBarData}
-                layout="vertical"
-                margin={{ top: 8, right: 8, bottom: 8, left: 16 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                <XAxis type="number" />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={400}
-                  interval={0}
-                  tick={{ fontSize: 11 }}
-                />
-                <Tooltip />
-                <Bar dataKey="count">
-                  {studiesBarData.map((entry) => (
-                    <Cell key={entry.studyId} fill={entry.fill} />
+          <>
+            <div className={styles.chartWrapper}>
+              <ResponsiveContainer width="100%" height={500}>
+                <BarChart
+                  data={studiesBarData}
+                  layout="vertical"
+                  margin={{ top: 8, right: 8, bottom: 8, left: 16 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
+                  <XAxis type="number" />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={400}
+                    interval={0}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip />
+                  <Bar dataKey="count">
+                    {studiesBarData.map((entry) => (
+                      <Cell key={entry.studyId} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Tabla de estudios */}
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Estudios</th>
+                    <th>Nº de Solicitudes de Empleo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studiesBarData.map((st) => (
+                    <tr key={st.studyId || st.name}>
+                      <td>{st.name}</td>
+                      <td>{st.count}</td>
+                    </tr>
                   ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
-          <p className={styles.empty}>No hay datos de estudios en los CV.</p>
+          <p className={styles.empty}>No hay datos de estudios en las Solicitudes de Empleo.</p>
         )}
       </div>
+
 
       {/* DISPONIBILIDAD HORARIA */}
       <div className={styles.chartBlock}>
         <h3 className={styles.blockTitle}>Disponibilidad horaria declarada</h3>
         {workScheduleData && workScheduleData.length > 0 ? (
-          <div className={styles.chartWrapper}>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={workScheduleData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="workSchedule" interval={0} tick={{ fontSize: 11 }} />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            {/* Tabla de disponibilidad horaria */}
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Disponibilidad horaria</th>
+                    <th>Nº de Solicitudes de Empleo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workScheduleData.map((w) => (
+                    <tr key={w.workSchedule}>
+                      <td>{w.workSchedule}</td>
+                      <td>{w.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <p className={styles.empty}>No hay datos de disponibilidad horaria.</p>
         )}
       </div>
 
-      {/* CV POR AÑO DE CREACIÓN */}
+
+            {/* CV POR AÑO DE CREACIÓN */}
       <div className={styles.chartBlock}>
-        <h3 className={styles.blockTitle}>CV recibidos por año</h3>
+        <h3 className={styles.blockTitle}>Solicitudes de Empleo recibidas por año</h3>
         {createdYearData && createdYearData.length > 0 ? (
-          <div className={styles.chartWrapper}>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={createdYearData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            {/* Tabla de CV por año */}
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Año</th>
+                    <th>Nº de Solicitudes de Empleo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {createdYearData.map((y) => (
+                    <tr key={y.year}>
+                      <td>{y.year}</td>
+                      <td>{y.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
-          <p className={styles.empty}>No hay datos de años de recepción de CV.</p>
+          <p className={styles.empty}>No hay datos de años de recepción de Solicitudes de Empleo.</p>
         )}
       </div>
 
-      {/* CONTRATACIONES POR AÑO Y APAFA */}
+
+            {/* CONTRATACIONES POR AÑO Y APAFA */}
       <div className={styles.chartBlock}>
         <h3 className={styles.blockTitle}>
-          CV que han acabado en contratación por año y entidad
+          Solicitudes de Empleo que han acabado en contratación por año y entidad
         </h3>
         {hiresByYearApafaData && hiresByYearApafaData.length > 0 ? (
-          <div className={styles.chartWrapper}>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={hiresByYearApafaData} margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="apafaTrue" name="Contrataciones APAFA" stackId="a" fill="#81C784" />
-                <Bar dataKey="apafaFalse" name="Contrataciones Engloba" stackId="a" fill="#64B5F6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            {/* Tabla de contrataciones por año y entidad */}
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Año</th>
+                    <th>Contrataciones APAFA</th>
+                    <th>Contrataciones Engloba</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hiresByYearApafaData.map((row) => (
+                    <tr key={row.year}>
+                      <td>{row.year}</td>
+                      <td>{row.apafaTrue}</td>
+                      <td>{row.apafaFalse}</td>
+                      <td>{(row.apafaTrue || 0) + (row.apafaFalse || 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
-          <p className={styles.empty}>No hay datos de contrataciones vinculadas a CV.</p>
+          <p className={styles.empty}>No hay datos de contrataciones vinculadas a Solicitudes de Empleo.</p>
         )}
       </div>
+
     </div>
   );
 }

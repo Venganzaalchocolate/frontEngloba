@@ -44,6 +44,7 @@ export default function StatsHeadcount({ charge, modal, enumsData }) {
   // Filtros internos
   const [yearInput, setYearInput] = useState(new Date().getFullYear().toString());
   const [apafaInput, setApafaInput] = useState('false'); // '', 'true', 'false'
+  const [bajaInput, setBajaInput]=useState('false')//true con excedencia activa, false sin excedencia, bacio todos
 
   const { provincesIndex = {}, jobsIndex = {} } = enumsData || {};
 
@@ -95,6 +96,10 @@ export default function StatsHeadcount({ charge, modal, enumsData }) {
 
     if (apafaInput === 'true' || apafaInput === 'false') {
       filters.apafa = apafaInput;
+    }
+
+    if(bajaInput==='false' || bajaInput==='true'){
+      filters.baja=bajaInput
     }
 
     loadStats(filters);
@@ -160,13 +165,14 @@ const jobsBarData = useMemo(() => {
   };
 
   // ---------- DATA PARA GRÁFICO DE PROVINCIA ----------
-  const provinceChartData = (byProvince || []).map((prov) => {
+  const provinceChartData = (byProvince || []).map((prov, idx) => {
     const pInfo = provincesIndex[prov.provinceId] || null;
     const label = pInfo?.name || 'Sin provincia';
     return {
       provinceId: prov.provinceId,
       name: label,
       headcount: prov.headcount || 0,
+      fill: JOB_COLORS[idx % JOB_COLORS.length]
     };
   });
 
@@ -253,16 +259,32 @@ const jobsBarData = useMemo(() => {
           </label>
         </div>
 
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>
+            Excedencia
+            <select
+              className={styles.filterSelect}
+              value={bajaInput}
+              onChange={(e) => setBajaInput(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="false">Sin Excedencias</option>
+              <option value="true">Solo Excedencias</option>
+            </select>
+          </label>
+        </div>
+
         <button type="submit" className={styles.filterButton}>
           Aplicar filtros
         </button>
       </form>
 
-      <p className={styles.subtitle}>
-        Foto de la plantilla activa (periodos vigentes). Puedes filtrar por año y por
-        pertenencia a APAFA.
-      </p>
+           <p className={styles.helperText}>
+  Headcount = número de personas (independientemente de su jornada). FTE = equivalente a jornadas completas 
+  (por ejemplo, 1 persona a jornada completa + 2 a media jornada ≈ 2 FTE).
+</p>
 
+      
       {!hasStats && (
         <p className={styles.warning}>
           No se han podido cargar los datos de forma completa. Se muestran valores vacíos.
@@ -276,18 +298,10 @@ const jobsBarData = useMemo(() => {
           <span className={styles.cardValue}>{totals?.headcount ?? 0}</span>
         </div>
         <div className={styles.card}>
-          <span className={styles.cardLabel}>FTE estimado</span>
+          <span className={styles.cardLabel} title="Full-Time Equivalent (equivalente a jornada completa)">FTE estimado</span>
           <span className={styles.cardValue}>
             {Number(totals?.fte ?? 0).toFixed(1)}
           </span>
-        </div>
-        <div className={styles.card}>
-          <span className={styles.cardLabel}>Áreas con personal</span>
-          <span className={styles.cardValue}>{byArea?.length ?? 0}</span>
-        </div>
-        <div className={styles.card}>
-          <span className={styles.cardLabel}>Programas con personal</span>
-          <span className={styles.cardValue}>{byProgram?.length ?? 0}</span>
         </div>
       </div>
 
@@ -399,7 +413,7 @@ const jobsBarData = useMemo(() => {
                   <tr>
                     <th>Provincia</th>
                     <th>Headcount</th>
-                    <th>FTE</th>
+                    <th title="Full-Time Equivalent (equivalente a jornada completa)">FTE</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,7 +486,7 @@ const jobsBarData = useMemo(() => {
                   <tr>
                     <th>Género</th>
                     <th>Headcount</th>
-                    <th>FTE</th>
+                    <th title="Full-Time Equivalent (equivalente a jornada completa)">FTE</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -492,25 +506,38 @@ const jobsBarData = useMemo(() => {
         )}
       </div>
 
-      {/* Gráfico por área */}
+            {/* Gráfico por área */}
       <div className={styles.chartBlock}>
         <h3 className={styles.blockTitle}>Distribución por área de programa</h3>
         {byArea && byArea.length > 0 ? (
-          <div className={styles.chartWrapper}>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={byArea}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="area" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="headcount" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            {/* Tabla por área */}
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Área</th>
+                    <th>Headcount</th>
+                    <th title="Full-Time Equivalent (equivalente a jornada completa)">FTE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byArea.map((a) => (
+                    <tr key={a.area || 'sin-area'}>
+                      <td>{a.area || 'Sin área'}</td>
+                      <td>{a.headcount}</td>
+                      <td>{Number(a.fte ?? 0).toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <p className={styles.empty}>No hay datos de área disponibles.</p>
         )}
       </div>
+
 
       {/* Tabla por programa (clicable para ver dispositivos) */}
       <div className={styles.tableBlock}>
@@ -591,7 +618,7 @@ const jobsBarData = useMemo(() => {
                   <th>Dispositivo</th>
                   <th>Provincia</th>
                   <th>Headcount</th>
-                  <th>FTE</th>
+                  <th title="Full-Time Equivalent (equivalente a jornada completa)">FTE</th>
                 </tr>
               </thead>
               <tbody>
@@ -639,7 +666,7 @@ const jobsBarData = useMemo(() => {
                 <tr>
                   <th>Género</th>
                   <th>Headcount</th>
-                  <th>FTE</th>
+                  <th title="Full-Time Equivalent (equivalente a jornada completa)">FTE</th>
                 </tr>
               </thead>
               <tbody>

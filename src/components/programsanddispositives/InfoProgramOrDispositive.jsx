@@ -17,10 +17,10 @@ const InfoProgramOrDispositive = ({
   onSelect,
   searchUsers,
   onManageCronology,
-  changeActive
+  changeActive,
+  deviceWorkers
 }) => {
   const token = getToken();
-
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ show: false, type: null, personId: null });
@@ -167,7 +167,7 @@ const InfoProgramOrDispositive = ({
             Info del Programa
 
           </button>
-          <IoRadioButtonOn onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}/>  
+          <button onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}>{(info?.active)?'Activar':'Desactivar'}</button>
         </div>
       )}
       {/* Nombre */}
@@ -203,6 +203,11 @@ const InfoProgramOrDispositive = ({
           </p>
         </div>
       )}
+
+      <div className={styles.fieldContainer}>
+          <label className={styles.fieldLabel}>Email de grupo</label>
+          <p className={styles.fieldTextStatic}>{info.email || "—"}</p>
+        </div>
 
       {/* === CRONOLOGÍA === */}
 <div className={styles.fieldContainer}>
@@ -351,6 +356,35 @@ const InfoProgramOrDispositive = ({
         </div>
       )}
 
+      {
+        !isProgram && (deviceWorkers && deviceWorkers.length>0)
+        ? <div className={styles.fieldContainer}>
+            <label className={styles.fieldLabel}>Lista de Trabajadores</label>
+            {deviceWorkers.map((p)=>(
+              <div className={styles.boxPerson} key={p._id+p.dni}>
+              <p
+                  className={styles.fieldText}
+                  onClick={() =>
+                    modal(
+                      `${p.firstName} ${p.lastName}`,
+                      [` Email: ${p.email || "—"}`, `Teléfono laboral: ${p.phoneJob?.number || "—"}`, `Teléfono personal: ${p.phone || "—"}`]
+                    )
+                  }
+                >
+                  {p.firstName} {p.lastName}
+                </p>
+                </div>
+            ))}
+            
+            
+        </div>
+        : (!isProgram) && <div className={styles.fieldContainer}>
+            <label className={styles.fieldLabel}>Lista de Trabajadores</label>
+            <div className={styles.boxPerson}>
+              <p>Este dispositivo no tiene trabajadores</p>
+            </div>
+        </div>
+      }
 
       {/* Dispositivos asociados */}
       {isProgram && (

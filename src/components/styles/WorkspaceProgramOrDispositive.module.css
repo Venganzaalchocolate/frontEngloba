@@ -1,0 +1,313 @@
+/* src/styles/WorkspaceProgramOrDispositive.module.css */
+
+.container {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+/* Mensajes vacíos / loading */
+.empty,
+.loading {
+  padding: 1.5rem 1.25rem;
+  border-radius: 0.9rem;
+  border: 1px dashed rgba(0, 0, 0, 0.08);
+  background: #faf7ff;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.loading {
+  font-style: italic;
+}
+
+/* Tarjeta de grupo */
+.groupCard {
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid rgba(90, 49, 138, 0.25); /* var(--color-morado) suavizado */
+  box-shadow: 0 4px 12px rgba(20, 0, 40, 0.06);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Cabecera del grupo */
+.groupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.groupHeader h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-morado);
+}
+
+.groupEmail {
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+  color: #6a46a5;
+  word-break: break-all;
+}
+
+.groupDescription {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.groupMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: rgba(141, 115, 190, 0.12);
+  color: #4d2c86;
+  border: 1px solid rgba(141, 115, 190, 0.35);
+}
+
+/* Contenedor de botones de acción del grupo */
+.groupActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Botón añadir miembro */
+.btnAddMember, .btnRemoveSubCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-morado);
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+}
+
+.btnAddMember svg {
+  font-size: 0.9rem;
+}
+
+.btnAddMember:hover,  .btnRemoveSubCard:hover{
+  background: #5b2ba6;
+  box-shadow: 0 3px 8px rgba(40, 0, 90, 0.3);
+  transform: translateY(-1px);
+}
+
+.btnAddMember:active, .btnRemoveSubCard:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Botón añadir subgrupo (outline) */
+.btnAddSubgroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px dashed rgba(141, 115, 190, 0.7);
+  background: #fff;
+  color: #4d2c86;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.btnAddSubgroup svg {
+  font-size: 0.95rem;
+}
+
+.btnAddSubgroup:hover {
+  background: rgba(141, 115, 190, 0.08);
+  border-color: var(--color-morado);
+  color: var(--color-morado);
+  transform: translateY(-1px);
+}
+
+.btnAddSubgroup:active {
+  transform: translateY(0);
+}
+
+/* Bloques de miembros */
+.membersBlock {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.06);
+}
+
+.membersTitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7a639f;
+}
+
+/* Píldoras de subgrupos */
+.pillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.memberPillGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(141, 115, 190, 0.08);
+  border: 1px solid rgba(141, 115, 190, 0.4);
+  font-size: 0.8rem;
+}
+
+.memberPillGroup .memberEmail {
+  font-weight: 500;
+  color: #4c2f80;
+}
+
+.memberPillGroup .memberRole {
+  font-size: 0.75rem;
+  color: #6d5a90;
+}
+
+/* Lista de personas */
+.membersList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.75rem;
+  background: #faf7ff;
+  border: 1px solid rgba(141, 115, 190, 0.25);
+}
+
+.memberInfo {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.memberEmail {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #41296f;
+  word-break: break-all;
+}
+
+.memberRole {
+  font-size: 0.75rem;
+  color: #6d5a90;
+}
+
+/* Estado del miembro (activo / inactivo) */
+.memberStatus {
+  align-self: flex-start;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  border: 1px solid transparent;
+}
+
+.active {
+  background: #e6f7ec;
+  color: #16794f;
+  border-color: #a5e1c1;
+}
+
+.inactive {
+  background: #fdeeee;
+  color: #b3261e;
+  border-color: #f5b0aa;
+}
+
+/* Botón eliminar */
+.btnRemove {
+  border: none;
+  background: transparent;
+  color: #b3261e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btnRemove:hover {
+  background: rgba(179, 38, 30, 0.08);
+  transform: translateY(-1px);
+}
+
+.btnRemove:active {
+  transform: translateY(0);
+}
+
+/* Texto sin miembros */
+.noMembers {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: #777;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .groupHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .groupMeta {
+    align-items: flex-start;
+  }
+
+  .groupActions {
+    justify-content: flex-start;
+  }
+
+  .container {
+    padding: 0.75rem;
+  }
+
+  .groupCard {
+    padding: 0.8rem 0.9rem;
+  }
+}
+
+.btnRemoveSubCard {
+    background-color: tomato;
+}
+
+
+

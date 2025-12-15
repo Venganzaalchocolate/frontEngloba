@@ -16,6 +16,7 @@ import {
   deleteProgram,
   deleteDispositive,
   searchusername,
+  getusers,
 } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import ProgramTabs from "./ProgramTabs";
@@ -40,6 +41,7 @@ const ManagingProgramsDispositive = ({
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionType, setActionType] = useState(null); // "edit" o "delete"
+    const [deviceWorkers, setDeviceWorkers] = useState([]);
 
   // Helper: desempaqueta { error, data } o devuelve el objeto tal cual
   const normalizeEntity = (res, type) => {
@@ -75,6 +77,12 @@ const ManagingProgramsDispositive = ({
   const onSelect = (x) => {
     setSelect(x);
     info(x);
+    
+    if (x.type === "dispositive") {
+      fetchDeviceWorkers(x._id);      // 👈 NUEVO
+    } else {
+      setDeviceWorkers([]);           // 👈 NUEVO: limpiar si se selecciona programa
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -165,12 +173,12 @@ const ManagingProgramsDispositive = ({
     },
     { name: "name", label: "Nombre del Dispositivo", type: "text", required: true },
     { name: "address", label: "Dirección", type: "text" },
-    { name: "email", label: "Correo electrónico", type: "text" },
     { name: "phone", label: "Teléfono", type: "text" },
     {
       name: "province",
       label: "Provincia",
       type: "select",
+      required: true,
       options: [{ value: "", label: "Seleccione provincia" }, ...provinceOptions],
     },
     {
@@ -206,6 +214,32 @@ const ManagingProgramsDispositive = ({
       ],
     },
   ];
+
+  // Función para cargar trabajadores del dispositivo 
+  const fetchDeviceWorkers = async (dispositiveId) => {
+    if (!dispositiveId) return;
+
+    charge(true);
+    try {
+      const res = await getusers(1, 200, { dispositive: dispositiveId }, token);
+
+      const payload =
+        res && typeof res === "object" && "data" in res ? res.data : res;
+
+      const users = payload?.users || payload?.docs || [];
+
+      setDeviceWorkers(users);
+    } catch (err) {
+      console.error("Error cargando trabajadores del dispositivo:", err);
+      modal(
+        "Error",
+        "No se pudieron cargar los trabajadores del dispositivo seleccionado."
+      );
+      setDeviceWorkers([]);
+    } finally {
+      charge(false);
+    }
+  };
 
   // === CRONOLOGÍA (optimista) ===
   const handleCronology = async (infoItem, formData, type) => {
@@ -758,6 +792,7 @@ const ManagingProgramsDispositive = ({
       <div className={styles.contenido}>
         <div className={styles.titulo}>
           <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
+          {logged?.user?.role === "root" && (
           <div className={styles.botones}>
             <button className={styles.btnAdd} onClick={() => setShowProgramForm(true)}>
               + Añadir Programa <FaFolderOpen />
@@ -768,12 +803,13 @@ const ManagingProgramsDispositive = ({
             <button className={styles.btnEdit} onClick={openEdit}>
               Editar <FaEdit />
             </button>
-            {logged?.user?.role === "root" && (
+            
               <button className={styles.btnDelete} onClick={openDelete}>
                 Eliminar <FaTrashAlt />
               </button>
-            )}
+            
           </div>
+          )}
         </div>
 
         <div className={styles.contenidoData}>
@@ -796,6 +832,7 @@ const ManagingProgramsDispositive = ({
             searchUsers={searchUsers}
             onManageCronology={handleCronology}
             changeActive={handleToggleActive}
+            deviceWorkers={deviceWorkers}
           />
         </div>
       </div>

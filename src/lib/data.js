@@ -244,6 +244,7 @@ export const coordinators = (datos, token) => fetchData('/coordinators', 'POST',
 export const responsibles = (datos, token) => fetchData('/responsibles', 'POST', token, datos);
 export const listsResponsiblesAndCoordinators = (datos, token) => fetchData('/listsresponsiblesprogram', 'POST', datos, token)
 
+
 // filesDrive
 export const createFileDrive = async (data, token) => {
   const formData = new FormData();
@@ -321,6 +322,7 @@ export const wsCreateGroup = (datos, token) => fetchData('/creategroupws', 'POST
 export const wsAddMember = (datos, token) => fetchData('/addgroupws', 'POST', token, datos);
 export const wsRemoveMember = (datos, token) => fetchData('/deletememberws', 'POST', token, datos);
 export const wsDeleteGroup = (datos, token) => fetchData('/deletegroupws', 'POST', token, datos);
+export const wsgetModelWorkspaceGroups=(datos, token)=>fetchData('/getmodelworkspacegroups', 'POST', token, datos)
 
 //preferents
 export const preferentGet = (datos, token) => fetchData('/preferents', 'POST', token, datos);

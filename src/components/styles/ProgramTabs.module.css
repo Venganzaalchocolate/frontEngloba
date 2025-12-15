@@ -1,9 +1,22 @@
-.container{
+.container {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
+
+/* Caja de pestañas + contenido encajado */
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  background: #fff;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+
+/* Contenedor de contenido */
 .content {
-border-right: 1px solid var(--color-morado);
-border-bottom: 1px solid var(--color-morado);
+  border-right: 1px solid var(--color-morado);
+  border-bottom: 1px solid var(--color-morado);
   border-left: 1px solid var(--color-morado);
   border-radius: 0 0 1rem 1rem;
   background: #fff;
@@ -13,62 +26,48 @@ border-bottom: 1px solid var(--color-morado);
   flex: 1;
 }
 
-/* === CABECERA DE PESTAÑAS === */
-.tabs {
-  display: flex;
-  align-items: flex-end;
-  background: #fff;
-  border-top-left-radius: 1rem;
-  border-top-right-radius: 1rem;
-  text-align: left;
-  
-  
-}
-
 /* === BOTONES DE PESTAÑA === */
 .tab {
-
-  padding: 0.6rem 1.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--color-morado);
+  flex: 1 1 0;
+  padding: 0.6rem 1.2rem;
   background: #f3f3f3;
   border: 1px solid var(--color-morado);
+  border-bottom: none;
+  border-radius: 1rem 1rem 0 0;
+  box-sizing: border-box;
   cursor: pointer;
   transition: all 0.25s ease;
 
-  border-radius: 1rem 1rem 0 0;
-  box-sizing: border-box;
-
-  flex: 1 100%;
-  border-radius: 1rem 1rem 0 0;
-  text-align: justify;
-
-  justify-content: flex-start;
-  font-size: 20px;
-  font-weight: lighter;
-  text-transform: uppercase;
-  text-align: left;
   display: flex;
   flex-direction: column;
-  font-size: 10pt;
-  font-weight: bold;
   align-items: flex-start;
+  gap: 0.15rem;
+  color: var(--color-morado);
+  text-align: left;
+}
+
+/* Primera línea: texto “Información del Programa/Dispositivo” */
+.tab p:first-child {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Segunda línea: nombre/acrónimo */
+.tab p:last-child {
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 /* Estado activo */
 .active {
   background: #fff;
   color: var(--color-morado);
-  font-weight: 700;
-  border-bottom: 2px solid #fff;
   z-index: 2;
-  border-bottom: 0px solid #fff;
+  border-bottom: 1px solid #fff;
 }
 
 /* Hover suave */
 .tab:hover:not(.active) {
   background: #eee;
 }
-
-/* === CONTENIDO === */

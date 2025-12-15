@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import styles from "../styles/ProgramTabs.module.css";
 import InfoProgramOrDispositive from "./InfoProgramOrDispositive";
 import DocsProgramOrDispositive from "./DocsProgramOrDispositive";
+import WorkspaceProgramOrDispositive from "./WorkspaceProgramOrDispositive";
+
 const ProgramTabs = ({
   modal,
   charge,
@@ -11,12 +13,14 @@ const ProgramTabs = ({
   onSelect,
   searchUsers,
   onManageCronology,
-  changeActive
+  changeActive,
+  deviceWorkers
 }) => {
-  const [activeTab, setActiveTab] = useState("info"); // "info" | "docs"
+  const [activeTab, setActiveTab] = useState("info"); // "info" | "docs" | "workspace"
 
   const isProgram = info?.type === "program";
   const typeLabel = isProgram ? "Programa" : "Dispositivo";
+
   return (
     <div className={styles.container}>
       {/* === TABS HEADER === */}
@@ -26,21 +30,29 @@ const ProgramTabs = ({
           onClick={() => setActiveTab("info")}
         >
           <p>Información del {typeLabel}</p>
-          <p>{!!(info) ?info.acronym || info.name: ''}</p>
+          <p>{info ? info.acronym || info.name : ""}</p>
         </button>
+
         <button
           className={`${styles.tab} ${activeTab === "docs" ? styles.active : ""}`}
           onClick={() => setActiveTab("docs")}
         >
           <p>Documentación del {typeLabel}</p>
-          <p>{!!(info) ?info.acronym || info.name: ''}</p>
-             
+          <p>{info ? info.acronym || info.name : ""}</p>
+        </button>
+
+        <button
+          className={`${styles.tab} ${activeTab === "workspace" ? styles.active : ""}`}
+          onClick={() => setActiveTab("workspace")}
+        >
+          <p>Workspace del {typeLabel}</p>
+          <p>{info ? info.acronym || info.name : ""}</p>
         </button>
       </div>
 
       {/* === TAB CONTENT === */}
       <div className={styles.content}>
-        {activeTab === "info" ? (
+        {activeTab === "info" && (
           <InfoProgramOrDispositive
             modal={modal}
             charge={charge}
@@ -51,12 +63,24 @@ const ProgramTabs = ({
             searchUsers={searchUsers}
             onManageCronology={onManageCronology}
             changeActive={changeActive}
+            deviceWorkers={deviceWorkers}
           />
-        ) : (
+        )}
+
+        {activeTab === "docs" && (
           <DocsProgramOrDispositive
             modal={modal}
             charge={charge}
             info={info}
+          />
+        )}
+
+        {activeTab === "workspace" && (
+          <WorkspaceProgramOrDispositive
+            modal={modal}
+            charge={charge}
+            info={info}
+            deviceWorkers={deviceWorkers}
           />
         )}
       </div>

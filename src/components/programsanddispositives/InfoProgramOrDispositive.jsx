@@ -152,7 +152,7 @@ const InfoProgramOrDispositive = ({
       {!!info && isProgram &&
       <div className={`${styles.fieldContainer} ${styles.fieldContainerInfo}`}>
         <h3></h3>
-       <IoRadioButtonOn onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}/> 
+        <button onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}>{(info?.active)?'Desactivar':'Activar'}</button>
       </div>
        
       }
@@ -167,7 +167,7 @@ const InfoProgramOrDispositive = ({
             Info del Programa
 
           </button>
-          <button onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}>{(info?.active)?'Activar':'Desactivar'}</button>
+          <button onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}>{(info?.active)?'Desactivar':'Activar'}</button>
         </div>
       )}
       {/* Nombre */}

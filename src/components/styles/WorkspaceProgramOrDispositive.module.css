@@ -64,9 +64,9 @@
 }
 
 .groupMeta {
+  margin: 0 0 0.35rem;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-wrap: wrap;
   gap: 0.4rem;
 }
 
@@ -153,13 +153,14 @@
 
 /* Bloques de miembros */
 .membersBlock {
-  margin-top: 0.4rem;
-  padding-top: 0.6rem;
+  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.6rem 0;
   border-top: 1px dashed rgba(0, 0, 0, 0.06);
 }
 
 .membersTitle {
-  margin: 0 0 0.35rem;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -170,6 +171,8 @@
 .pillsRow {
   display: flex;
   flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
   gap: 0.35rem;
 }
 
@@ -178,10 +181,11 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.25rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 0.75rem;
   background: rgba(141, 115, 190, 0.08);
   border: 1px solid rgba(141, 115, 190, 0.4);
   font-size: 0.8rem;
+  justify-content: space-between;
 }
 
 .memberPillGroup .memberEmail {
@@ -281,6 +285,11 @@
   color: #777;
 }
 
+.cabecera{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 /* Responsive */
 @media (max-width: 900px) {
   .groupHeader {

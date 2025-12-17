@@ -1,5 +1,5 @@
 // src/components/employer/WorkspaceProgramOrDispositive.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import styles from "../styles/WorkspaceProgramOrDispositive.module.css";
 import { getToken } from "../../lib/serviceToken";
 import {
@@ -12,11 +12,10 @@ import {
 } from "../../lib/data";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
+import WorkspaceGroupAliases from "./WorkspaceGroupAliases";
 import { BsPersonFillAdd } from "react-icons/bs";
 import { FaTrash } from "react-icons/fa6";
 import { MdGroups } from "react-icons/md";
-import { useCallback } from "react";
-import { useMemo } from "react";
 
 const DOMAIN = "engloba.org.es";
 
@@ -29,17 +28,6 @@ const suffixMap = {
   tecnicos: "tec",
   blank: "",
 };
-
-const typeGroupLabels = {
-  coordination: "Coordinación",
-  direction: "Dirección",
-  social: "Trabajo social",
-  psychology: "Psicología",
-  education: "Educación",
-  tecnicos: "Equipo técnico",
-  blank: "Subgrupo",
-};
-
 
 const typeGroupNamePrefixes = {
   direction: "Dirección de",
@@ -72,104 +60,91 @@ const WorkspaceProgramOrDispositive = ({ info, modal, charge, deviceWorkers }) =
     subgroup: null,
   });
 
-
   const [confirmDelete, setConfirmDelete] = useState({
     show: false,
     groupId: null,
     member: null,
   });
 
-  // modal y estado para subgrupos
   const [showSubgroupModal, setShowSubgroupModal] = useState(false);
   const [targetGroupSub, setTargetGroupSub] = useState(null);
 
   const token = getToken();
 
-  // Buscador específico para Workspace (value = email)
-const searchUsersWorkspace = useCallback(
-  async (query) => {
-    if (!query || query.trim().length < 3) return [];
+  const searchUsersWorkspace = useCallback(
+    async (query) => {
+      if (!query || query.trim().length < 3) return [];
 
-    const res = await searchusername({ query }, token);
-    if (!res || res.error) return [];
+      const res = await searchusername({ query }, token);
+      if (!res || res.error) return [];
 
-    const users = res.users || [];
+      const users = res.users || [];
+      return users.map((u) => ({
+        value: u.email,
+        label: `${u.firstName || ""} ${u.lastName || ""} (${u.email || "sin email"})`,
+      }));
+    },
+    [token]
+  );
 
-    return users.map((u) => ({
-      value: u.email,
-      label: `${u.firstName || ""} ${u.lastName || ""} (${u.email || "sin email"})`,
-    }));
-  },
-  [token]
-);
+ const infoId = info?._id || null;
+const infoType = info?.type || null;
 
+useEffect(() => {
+  if (!infoId || !infoType) { setGroups([]); return; }
 
-  // Solo se dispara cuando cambia `info`
-  useEffect(() => {
-    if (!info?._id || !info?.type) {
+  let cancelled = false;
+
+  const fetchWorkspace = async () => {
+    setLoadingLocal(true);
+    charge(true);
+
+    const body = { type: infoType === "program" ? "program" : "device", id: infoId };
+    const res = await wsgetModelWorkspaceGroups(body, token);
+
+    if (cancelled) return;
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se ha podido cargar la información de Workspace de este elemento.");
       setGroups([]);
-      return;
+    } else {
+      const payload = (res && typeof res === "object" && "data" in res) ? res.data : res;
+      setGroups(Array.isArray(payload) ? payload : []);
     }
 
-    const fetchWorkspace = async () => {
-      setLoadingLocal(true);
-      charge(true);
+    charge(false);
+    setLoadingLocal(false);
+  };
 
-      const body = {
-        type: info.type === "program" ? "program" : "device",
-        id: info._id,
-      };
+  fetchWorkspace();
 
-      const res = await wsgetModelWorkspaceGroups(body, token);
-
-      if (!res || res.error) {
-        modal(
-          "Error",
-          res?.message ||
-          "No se ha podido cargar la información de Workspace de este elemento."
-        );
-        setGroups([]);
-      } else {
-        const payload =
-          res && typeof res === "object" && "data" in res ? res.data : res;
-        setGroups(Array.isArray(payload) ? payload : []);
-      }
-
-      charge(false);
-      setLoadingLocal(false);
-    };
-
-    fetchWorkspace();
-  }, [info]); // 👈 solo info
+  return () => { cancelled = true; };
+}, [infoId, infoType]);
 
   const openAddMemberModal = (group) => {
     setTargetGroup(group);
     setShowAddModal(true);
   };
 
+  const fieldsAddMember = useMemo(() => {
+    const existingEmails = (targetGroup?.miembros || [])
+      .map((m) => m.email)
+      .filter(Boolean);
 
- const fieldsAddMember = useMemo(() => {
-  // Correos ya miembros del grupo destino
-  const existingEmails = (targetGroup?.miembros || [])
-    .map((m) => m.email)
-    .filter(Boolean);
+    const filteredDeviceWorkers = Array.isArray(deviceWorkers)
+      ? deviceWorkers.filter((u) => u && u.email && !existingEmails.includes(u.email))
+      : [];
 
-  const filteredDeviceWorkers = Array.isArray(deviceWorkers)
-    ? deviceWorkers.filter(
-        (u) => u && u.email && !existingEmails.includes(u.email)
-      )
-    : [];
-
-  const deviceWorkerOptions =
-    filteredDeviceWorkers.length > 0
-      ? [
+    const deviceWorkerOptions =
+      filteredDeviceWorkers.length > 0
+        ? [
           { value: "", label: "— Seleccione —" },
           ...filteredDeviceWorkers.map((u) => ({
             value: u.email,
             label: `${u.firstName || ""} ${u.lastName || ""} (${u.email})`,
           })),
         ]
-      : [
+        : [
           {
             value: "",
             label:
@@ -179,37 +154,36 @@ const searchUsersWorkspace = useCallback(
           },
         ];
 
-  return [
-    {
-      name: "memberSearch",
-      label: "Busca un trabajador (por nombre o email)",
-      type: "async-search-select",
-      placeholder: "Escriba al menos 3 letras...",
-      required: false,
-      loadOptions: searchUsersWorkspace,
-    },
-    {
-      name: "memberDevice",
-      label: "Selecciona un trabajador del dispositivo",
-      type: "select",
-      required: false,
-      options: deviceWorkerOptions,
-    },
-    {
-      name: "role",
-      label: "Rol en el grupo",
-      type: "select",
-      required: true,
-      defaultValue: "MEMBER",
-      options: [
-        { value: "MEMBER", label: "Miembro" },
-        { value: "MANAGER", label: "Manager" },
-        { value: "OWNER", label: "Owner" },
-      ],
-    },
-  ];
-}, [targetGroup, deviceWorkers]);
-
+    return [
+      {
+        name: "memberSearch",
+        label: "Busca un trabajador (por nombre o email)",
+        type: "async-search-select",
+        placeholder: "Escriba al menos 3 letras...",
+        required: false,
+        loadOptions: searchUsersWorkspace,
+      },
+      {
+        name: "memberDevice",
+        label: "Selecciona un trabajador del dispositivo",
+        type: "select",
+        required: false,
+        options: deviceWorkerOptions,
+      },
+      {
+        name: "role",
+        label: "Rol en el grupo",
+        type: "select",
+        required: true,
+        defaultValue: "MEMBER",
+        options: [
+          { value: "MEMBER", label: "Miembro" },
+          { value: "MANAGER", label: "Manager" },
+          { value: "OWNER", label: "Owner" },
+        ],
+      },
+    ];
+  }, [targetGroup, deviceWorkers, searchUsersWorkspace]);
 
   const handleConfirmRemoveSubgroup = async () => {
     const { parentGroup, subgroup } = confirmSubDelete;
@@ -224,19 +198,14 @@ const searchUsersWorkspace = useCallback(
       type: info.type === "program" ? "program" : "device",
     };
 
-    // ✅ Actualización optimista:
-    //  - quitamos la tarjeta del subgrupo
-    //  - lo sacamos de miembros del padre
     setGroups((prev) =>
       prev
-        .filter((g) => g.id !== subgroup.id) // fuera la card del subgrupo
+        .filter((g) => g.id !== subgroup.id)
         .map((g) =>
           g.id === parentGroup.id
             ? {
               ...g,
-              miembros: (g.miembros || []).filter(
-                (m) => m.id !== subgroup.id
-              ),
+              miembros: (g.miembros || []).filter((m) => m.id !== subgroup.id),
               totalMiembros:
                 typeof g.totalMiembros === "number"
                   ? Math.max(0, g.totalMiembros - 1)
@@ -249,12 +218,10 @@ const searchUsersWorkspace = useCallback(
     charge(true);
     const res = await wsDeleteGroup(payload, token);
     charge(false);
+
     if (!res || res.error) {
-      modal(
-        "Error",
-        res?.message || "No se pudo eliminar el subgrupo en Workspace."
-      );
-      setGroups(prevGroups); // 🔙 rollback si falla
+      modal("Error", res?.message || "No se pudo eliminar el subgrupo en Workspace.");
+      setGroups(prevGroups);
       setConfirmSubDelete({ show: false, parentGroup: null, subgroup: null });
       return;
     }
@@ -263,11 +230,9 @@ const searchUsersWorkspace = useCallback(
     setConfirmSubDelete({ show: false, parentGroup: null, subgroup: null });
   };
 
-
   const handleAddMember = async (formData) => {
     if (!targetGroup?.id) return;
 
-    // Prioriza el selector del dispositivo; si está vacío, usa la búsqueda
     const memberEmail = formData.memberDevice || formData.memberSearch;
     const role = formData.role || "MEMBER";
 
@@ -281,7 +246,6 @@ const searchUsersWorkspace = useCallback(
 
     const prevGroups = groups;
 
-    // ✅ Actualización optimista
     const tempMember = {
       id: `temp-${Date.now()}`,
       email: memberEmail,
@@ -307,18 +271,14 @@ const searchUsersWorkspace = useCallback(
 
     charge(true);
     const res = await wsAddMember(
-      {
-        groupId: targetGroup.id,
-        memberEmail,
-        role,
-      },
+      { groupId: targetGroup.id, memberEmail, role },
       token
     );
     charge(false);
 
     if (!res || res.error) {
       modal("Error", res?.message || "No se pudo añadir el miembro al grupo.");
-      setGroups(prevGroups); // 🔙 rollback
+      setGroups(prevGroups);
       return;
     }
 
@@ -333,15 +293,12 @@ const searchUsersWorkspace = useCallback(
     const { groupId, member } = confirmDelete;
     const prevGroups = groups;
 
-    // ✅ Actualización optimista
     setGroups((prev) =>
       prev.map((g) =>
         g.id === groupId
           ? {
             ...g,
-            miembros: (g.miembros || []).filter(
-              (m) => m.email !== member.email
-            ),
+            miembros: (g.miembros || []).filter((m) => m.email !== member.email),
             totalMiembros:
               typeof g.totalMiembros === "number"
                 ? Math.max(0, g.totalMiembros - 1)
@@ -353,20 +310,14 @@ const searchUsersWorkspace = useCallback(
 
     charge(true);
     const res = await wsRemoveMember(
-      {
-        groupId,
-        memberEmail: member.email,
-      },
+      { groupId, memberEmail: member.email },
       token
     );
     charge(false);
 
     if (!res || res.error) {
-      modal(
-        "Error",
-        res?.message || "No se pudo eliminar el miembro del grupo."
-      );
-      setGroups(prevGroups); // 🔙 rollback
+      modal("Error", res?.message || "No se pudo eliminar el miembro del grupo.");
+      setGroups(prevGroups);
       return;
     }
 
@@ -374,14 +325,11 @@ const searchUsersWorkspace = useCallback(
     setConfirmDelete({ show: false, groupId: null, member: null });
   };
 
-  // ===== SUBGRUPOS =====
-
   const openSubgroupModal = (group) => {
     setTargetGroupSub(group);
     setShowSubgroupModal(true);
   };
 
-  // Opciones base posibles para subgrupos (sin "blank")
   const baseSubgroupTypeOptions = [
     { value: "coordination", label: "Coordinación" },
     { value: "direction", label: "Dirección" },
@@ -406,9 +354,7 @@ const searchUsersWorkspace = useCallback(
     }
 
     const baseName =
-      info.type === "program"
-        ? info.acronym || info.name || ""
-        : info.name || "";
+      info.type === "program" ? info.acronym || info.name || "" : info.name || "";
     const normalizedBase = normalizeString(baseName);
 
     const usedTypes = new Set();
@@ -416,21 +362,14 @@ const searchUsersWorkspace = useCallback(
     groups.forEach((g) => {
       const email = g.email || "";
       const local = email.split("@")[0] || "";
-
-      // Debe corresponderse con este programa/dispositivo
       if (!local.startsWith(normalizedBase)) return;
 
-      const rest = local.slice(normalizedBase.length); // "", ".dir", ".trab"...
-      if (!rest.startsWith(".")) return; // el grupo principal (sin sufijo) lo ignoramos
+      const rest = local.slice(normalizedBase.length);
+      if (!rest.startsWith(".")) return;
 
-      const suffix = rest.slice(1); // "dir", "trab", ...
-      const found = Object.entries(suffixMap).find(
-        ([, suf]) => suf === suffix
-      );
-      if (found) {
-        const [typeKey] = found;
-        usedTypes.add(typeKey);
-      }
+      const suffix = rest.slice(1);
+      const found = Object.entries(suffixMap).find(([, suf]) => suf === suffix);
+      if (found) usedTypes.add(found[0]);
     });
 
     const availableOptions = baseSubgroupTypeOptions.filter(
@@ -443,9 +382,7 @@ const searchUsersWorkspace = useCallback(
         label: "Tipo de subgrupo",
         type: "select",
         required: true,
-        // si ya está usado "coordination" elegimos el primero disponible
-        defaultValue:
-          availableOptions[0]?.value || baseSubgroupTypeOptions[0].value,
+        defaultValue: availableOptions[0]?.value || baseSubgroupTypeOptions[0].value,
         options: availableOptions,
       },
     ];
@@ -454,20 +391,16 @@ const searchUsersWorkspace = useCallback(
   const handleCreateSubgroup = async (formData) => {
     if (!targetGroupSub?.id || !info?._id || !info?.type) return;
 
-    const typeGroup = formData.typeGroup; // ya no hay "blank" aquí
+    const typeGroup = formData.typeGroup;
     const prevGroups = groups;
 
-    // Base para el email: acrónimo del programa o nombre del dispositivo
     const baseName =
-      info.type === "program"
-        ? info.acronym || info.name || ""
-        : info.name || "";
+      info.type === "program" ? info.acronym || info.name || "" : info.name || "";
     const normalized = normalizeString(baseName);
     const suffix = suffixMap[typeGroup] ? `.${suffixMap[typeGroup]}` : "";
     const predictedEmail = `${normalized}${suffix}@${DOMAIN}`;
 
-    const prefix =
-      typeGroupNamePrefixes[typeGroup] || typeGroupNamePrefixes.blank;
+    const prefix = typeGroupNamePrefixes[typeGroup] || typeGroupNamePrefixes.blank;
     const predictedName = `${prefix}: ${baseName}`;
 
     const tempId = `temp-sub-${Date.now()}`;
@@ -479,6 +412,8 @@ const searchUsersWorkspace = useCallback(
       descripcion: "",
       miembros: [],
       totalMiembros: 0,
+      aliases: [],
+      totalAliases: 0,
     };
 
     const tempMemberRef = {
@@ -489,7 +424,6 @@ const searchUsersWorkspace = useCallback(
       status: "ACTIVE",
     };
 
-    // ✅ Actualización optimista:
     setGroups((prev) =>
       [
         ...prev.map((g) =>
@@ -520,16 +454,12 @@ const searchUsersWorkspace = useCallback(
     charge(false);
 
     if (!res || res.error) {
-      modal(
-        "Error",
-        res?.message || "No se pudo crear el subgrupo en Workspace."
-      );
-      setGroups(prevGroups); // 🔙 rollback
+      modal("Error", res?.message || "No se pudo crear el subgrupo en Workspace.");
+      setGroups(prevGroups);
       return;
     }
 
-    const created =
-      res.group || (res.data && res.data.group) || null;
+    const created = res.group || (res.data && res.data.group) || null;
 
     if (created && created.id && created.email) {
       setGroups((prev) =>
@@ -541,15 +471,18 @@ const searchUsersWorkspace = useCallback(
               email: created.email,
               nombre: created.nombre || predictedName,
               descripcion: created.descripcion || "",
+              aliases: created.aliases || g.aliases || [],
+              totalAliases:
+                typeof created.totalAliases === "number"
+                  ? created.totalAliases
+                  : (created.aliases?.length || g.aliases?.length || 0),
             };
           }
           if (g.id === targetGroupSub.id) {
             return {
               ...g,
               miembros: (g.miembros || []).map((m) =>
-                m.id === tempId
-                  ? { ...m, id: created.id, email: created.email }
-                  : m
+                m.id === tempId ? { ...m, id: created.id, email: created.email } : m
               ),
             };
           }
@@ -563,74 +496,53 @@ const searchUsersWorkspace = useCallback(
     setTargetGroupSub(null);
   };
 
-// ===== VISTAS =====
+  const mainGroupId = info?.groupWorkspace || null;
 
-// ID del grupo principal del modelo (programa/dispositivo)
-const mainGroupId = info?.groupWorkspace || null;
+  const orderedGroups = useMemo(() => {
+    return [...groups].sort((a, b) => {
+      const aIsMain = mainGroupId && a.id === mainGroupId;
+      const bIsMain = mainGroupId && b.id === mainGroupId;
+      if (aIsMain && !bIsMain) return -1;
+      if (bIsMain && !aIsMain) return 1;
+      return (a.nombre || "").localeCompare(b.nombre || "");
+    });
+  }, [groups, mainGroupId]);
 
-// Ordenamos: primero el grupo principal, luego el resto por nombre
-const orderedGroups = useMemo(() => {
-  return [...groups].sort((a, b) => {
-    const aIsMain = mainGroupId && a.id === mainGroupId;
-    const bIsMain = mainGroupId && b.id === mainGroupId;
+  if (!info?._id) {
+    return (
+      <div className={styles.empty}>
+        Selecciona primero un programa o dispositivo para ver su Workspace.
+      </div>
+    );
+  }
 
-    if (aIsMain && !bIsMain) return -1;
-    if (bIsMain && !aIsMain) return 1;
+  if (loadingLocal) {
+    return <div className={styles.loading}>Cargando información de Workspace…</div>;
+  }
 
-    return (a.nombre || "").localeCompare(b.nombre || "");
-  });
-}, [groups, mainGroupId]);
+  if (!groups.length) {
+    return (
+      <div className={styles.empty}>
+        Este {info.type === "program" ? "programa" : "dispositivo"} no tiene grupos
+        configurados en Workspace.
+      </div>
+    );
+  }
 
-if (!info?._id) {
   return (
-    <div className={styles.empty}>
-      Selecciona primero un programa o dispositivo para ver su Workspace.
-    </div>
-  );
-}
-
-if (loadingLocal) {
-  return (
-    <div className={styles.loading}>
-      Cargando información de Workspace…
-    </div>
-  );
-}
-
-if (!groups.length) {
-  return (
-    <div className={styles.empty}>
-      Este {info.type === "program" ? "programa" : "dispositivo"} no tiene
-      grupos configurados en Workspace.
-    </div>
-  );
-}
-
-return (
-  <div className={styles.container}>
-    {orderedGroups.map((g) => {
+    <div className={styles.container}>
+      {orderedGroups.map((g) => {
         const userMembers = (g.miembros || []).filter((m) => m.type === "USER");
-const groupMembers = (g.miembros || []).filter((m) => m.type === "GROUP");
+        const groupMembers = (g.miembros || []).filter((m) => m.type === "GROUP");
 
-// 🔎 Buscar si este grupo aparece como miembro GROUP de otro -> entonces es subgrupo
-const parentGroup = orderedGroups.find((gg) =>
-  (gg.miembros || []).some((m) => m.type === "GROUP" && m.id === g.id)
-);
+        const parentGroup = orderedGroups.find((gg) =>
+          (gg.miembros || []).some((m) => m.type === "GROUP" && m.id === g.id)
+        );
 
-// ¿Es el grupo principal del programa/dispositivo?
-const isMainGroup = mainGroupId && g.id === mainGroupId;
-
-// Consideramos subgrupo del modelo si:
-//  - tiene padre en esta lista
-//  - y NO es el principal
-const isSubgroupOfModel = !!parentGroup && !isMainGroup;
-
-// Solo el grupo principal puede crear subgrupos
-const canAddSubgroup = !!isMainGroup;
-
-// Solo los subgrupos del modelo muestran botón "Borrar subgrupo"
-const canDeleteSubgroup = !!isSubgroupOfModel;
-
+        const isMainGroup = mainGroupId && g.id === mainGroupId;
+        const isSubgroupOfModel = !!parentGroup && !isMainGroup;
+        const canAddSubgroup = !!isMainGroup;
+        const canDeleteSubgroup = !!isSubgroupOfModel;
 
         return (
           <div key={g.id} className={styles.groupCard}>
@@ -644,31 +556,7 @@ const canDeleteSubgroup = !!isSubgroupOfModel;
               </div>
 
               <div className={styles.groupMeta}>
-                <span className={styles.badge}>
-                  Total miembros: {g.totalMiembros ?? g.miembros?.length ?? 0}
-                </span>
-
                 <div className={styles.groupActions}>
-                  <button
-                    className={styles.btnAddMember}
-                    onClick={() => openAddMemberModal(g)}
-                  >
-                    <BsPersonFillAdd />
-                    Añadir miembro
-                  </button>
-
-                  {/* Botón para crear subgrupo solo en el grupo principal */}
-{canAddSubgroup && (
-  <button
-    className={styles.btnAddSubgroup}
-    onClick={() => openSubgroupModal(g)}
-  >
-    <MdGroups />
-    Añadir subgrupo
-  </button>
-)}
-
-                  {/* 🗑️ Botón para eliminar cuando esta card ES un subgrupo */}
                   {canDeleteSubgroup && (
                     <button
                       type="button"
@@ -689,46 +577,86 @@ const canDeleteSubgroup = !!isSubgroupOfModel;
               </div>
             </div>
 
-            {/* Subgrupos */}
             {groupMembers.length > 0 && (
               <div className={styles.membersBlock}>
-                <h4 className={styles.membersTitle}>Subgrupos</h4>
+                <div className={styles.cabecera}>
+                  <h4 className={styles.membersTitle}>Subgrupos</h4>
+                  {canAddSubgroup && (
+                    <button
+                      className={styles.btnAddSubgroup}
+                      onClick={() => openSubgroupModal(g)}
+                      type="button"
+                    >
+                      <MdGroups />
+                      Añadir subgrupo
+                    </button>
+                  )}
+                </div>
+
                 <div className={styles.pillsRow}>
                   {groupMembers.map((m) => (
                     <div key={m.id} className={styles.memberPillGroup}>
                       <span className={styles.memberEmail}>{m.email}</span>
-                      <span className={styles.memberRole}>{m.role}</span>
-                                {/* 🗑️ botón eliminar subgrupo desde la píldora */}
-          {(Array.isArray(info?.subGroupWorkspace) &&
-            info.subGroupWorkspace.includes(m.id)) ||
-          // o bien es un subgrupo recién creado del grupo principal
-          (isMainGroup &&
-            orderedGroups.some((gg) => gg.id === m.id)) ? (
-            <button
-              type="button"
-              className={styles.btnRemoveSub}
-              title="Eliminar este subgrupo"
-              onClick={() =>
-                setConfirmSubDelete({
-                  show: true,
-                  parentGroup: g,
-                  subgroup: { id: m.id, email: m.email },
-                })
-              }
-            >
-              <FaTrash />
-            </button>
-          ) : null}
+                      
 
+                      {(Array.isArray(info?.subGroupWorkspace) &&
+                        info.subGroupWorkspace.includes(m.id)) ||
+                        (isMainGroup && orderedGroups.some((gg) => gg.id === m.id)) ? (
+                        <button
+                          type="button"
+                          className={styles.btnRemove}
+                          title="Eliminar este subgrupo"
+                          onClick={() =>
+                            setConfirmSubDelete({
+                              show: true,
+                              parentGroup: g,
+                              subgroup: { id: m.id, email: m.email },
+                            })
+                          }
+                        >
+                          <FaTrash />
+                        </button>
+                      ) : null}
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Personas */}
+            {/* Aliases (componente aparte) */}
+            <WorkspaceGroupAliases
+              group={g}
+              groups={groups}
+              setGroups={setGroups}
+              token={token}
+              modal={modal}
+              charge={charge}
+              styles={styles}
+            />
+
             <div className={styles.membersBlock}>
-              <h4 className={styles.membersTitle}>Miembros (personas)</h4>
+              <div className={styles.cabecera}>
+                <h4 className={styles.membersTitle}>Miembros (personas)</h4>
+
+
+
+                <div className={styles.groupActions}>
+                  <span className={styles.badge}>
+                    Total miembros: {g.totalMiembros ?? g.miembros?.length ?? 0}
+                  </span>
+                  <button
+                    className={styles.btnAddMember}
+                    onClick={() => openAddMemberModal(g)}
+                    type="button"
+                  >
+                    <BsPersonFillAdd />
+                    Añadir miembro
+                  </button>
+
+                </div>
+
+
+              </div>
               {userMembers.length > 0 ? (
                 <div className={styles.membersList}>
                   {userMembers.map((m) => (
@@ -740,9 +668,7 @@ const canDeleteSubgroup = !!isSubgroupOfModel;
                         </span>
                         {m.status && (
                           <span
-                            className={`${styles.memberStatus} ${m.status === "ACTIVE"
-                                ? styles.active
-                                : styles.inactive
+                            className={`${styles.memberStatus} ${m.status === "ACTIVE" ? styles.active : styles.inactive
                               }`}
                           >
                             {m.status}
@@ -758,6 +684,7 @@ const canDeleteSubgroup = !!isSubgroupOfModel;
                             member: m,
                           })
                         }
+                        type="button"
                       >
                         <FaTrash />
                       </button>
@@ -774,7 +701,6 @@ const canDeleteSubgroup = !!isSubgroupOfModel;
         );
       })}
 
-      {/* Modal añadir miembro */}
       {showAddModal && targetGroup && (
         <ModalForm
           title={`Añadir miembro a ${targetGroup.nombre || targetGroup.email}`}
@@ -788,12 +714,10 @@ const canDeleteSubgroup = !!isSubgroupOfModel;
         />
       )}
 
-      {/* Modal eliminar miembro */}
       {confirmDelete.show && (
         <ModalConfirmation
           title="Eliminar miembro"
-          message={`¿Seguro que deseas eliminar a ${confirmDelete.member?.email
-            } de este grupo?`}
+          message={`¿Seguro que deseas eliminar a ${confirmDelete.member?.email} de este grupo?`}
           confirmText="Eliminar"
           cancelText="Cancelar"
           onConfirm={handleConfirmRemove}
@@ -803,7 +727,6 @@ const canDeleteSubgroup = !!isSubgroupOfModel;
         />
       )}
 
-      {/* Modal crear subgrupo */}
       {showSubgroupModal && targetGroupSub && (
         <ModalForm
           title={`Crear subgrupo dentro de ${targetGroupSub.nombre || targetGroupSub.email
@@ -818,26 +741,20 @@ const canDeleteSubgroup = !!isSubgroupOfModel;
         />
       )}
 
-      {/* Modal confirmar eliminación de subgrupo */}
       {confirmSubDelete.show && (
         <ModalConfirmation
           title="Eliminar subgrupo"
           message={`¿Seguro que deseas eliminar el subgrupo ${confirmSubDelete.subgroup?.email}?`}
           confirmText="Eliminar"
           cancelText="Cancelar"
-          onConfirm={() => handleConfirmRemoveSubgroup()}
+          onConfirm={handleConfirmRemoveSubgroup}
           onCancel={() =>
-            setConfirmSubDelete({
-              show: false,
-              parentGroup: null,
-              subgroup: null,
-            })
+            setConfirmSubDelete({ show: false, parentGroup: null, subgroup: null })
           }
         />
       )}
     </div>
   );
-
 };
 
 export default WorkspaceProgramOrDispositive;

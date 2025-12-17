@@ -323,7 +323,8 @@ export const wsAddMember = (datos, token) => fetchData('/addgroupws', 'POST', to
 export const wsRemoveMember = (datos, token) => fetchData('/deletememberws', 'POST', token, datos);
 export const wsDeleteGroup = (datos, token) => fetchData('/deletegroupws', 'POST', token, datos);
 export const wsgetModelWorkspaceGroups=(datos, token)=>fetchData('/getmodelworkspacegroups', 'POST', token, datos)
-
+export const addGroupAliasWS=(datos, token)=>fetchData('/addgroupaliasws', 'POST', token, datos)
+export const deleteGroupAliasWS=(datos, token)=>fetchData('/deletegroupaliasws', 'POST', token, datos)
 //preferents
 export const preferentGet = (datos, token) => fetchData('/preferents', 'POST', token, datos);
 export const preferentCreate = (datos, token) => fetchData('/preferentscreate', 'POST', token, datos);

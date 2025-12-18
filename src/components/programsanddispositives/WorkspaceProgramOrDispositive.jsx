@@ -573,6 +573,16 @@ useEffect(() => {
                       Borrar Subgrupo
                     </button>
                   )}
+                  {canAddSubgroup &&  groupMembers.length ==0 && (
+                    <button
+                      className={styles.btnAddSubgroup}
+                      onClick={() => openSubgroupModal(g)}
+                      type="button"
+                    >
+                      <MdGroups />
+                      Añadir subgrupo
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

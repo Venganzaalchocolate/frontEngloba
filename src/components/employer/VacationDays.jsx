@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from "react";
 import styles from "../styles/vacationDays.module.css";
 import {
+  FaCalendarDays,
   FaRegCalendarDays,
   FaUmbrellaBeach,
   FaUserClock,
 } from "react-icons/fa6";
-import { FaRegCalendarAlt } from "react-icons/fa";
+import { FaCalendarDay, FaRegCalendarAlt } from "react-icons/fa";
 import { editUser, getUserListDays } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import ModalForm from "../globals/ModalForm";
+import Holidays from "date-holidays";
+import { useMemo } from "react";
+import { LuPartyPopper } from "react-icons/lu";
 
 // ==== CONSTANTES DE NEGOCIO ====
 const DAILY_EQUIV_HOURS = 7.5; // día laborable equivalente
 const ANNUAL_VACATION_DAYS = 23;
-const ANNUAL_VACATION_DAYS_NATURAL=30;
+const ANNUAL_VACATION_DAYS_NATURAL = 30;
 const ANNUAL_PERSONAL_DAYS = 2;
 
 const ANNUAL_VACATION_HOURS = ANNUAL_VACATION_DAYS * DAILY_EQUIV_HOURS;
@@ -27,6 +31,11 @@ const sameDay = (a, b) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
+
+const pad2 = (n) => String(n).padStart(2, "0");
+const toYMDLocal = (d) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
 
 /**
  * Construye la lista de días con horas:
@@ -74,7 +83,7 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [monthView, setMonthView] = useState(1); // 1 = mes actual, 12 = año entero
 
-  
+
 
   // ==== MODAL PARA HORAS ====
   const [showHoursModal, setShowHoursModal] = useState(false);
@@ -83,6 +92,14 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
     type: "Vacaciones",
     initialHours: "",
   });
+
+  // Instancia ES (solo nacionales)
+  const hdES = useMemo(() => new Holidays("ES"), []);
+
+  // Mapa de festivos nacionales por YYYY-MM-DD -> nombre
+  const [nationalHolidayMap, setNationalHolidayMap] = useState({});
+  // nationalHolidayMap["YYYY-MM-DD"] = { name, substitute, note }
+
 
   useEffect(() => {
     if (!userId) {
@@ -122,19 +139,67 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
     fetchDays();
   }, [userId]);
 
+useEffect(() => {
+  try {
+    const holidays = hdES
+      .getHolidays(currentYear)
+      .filter((h) => h?.type === "public");
+
+    const map = {};
+
+    for (const h of holidays) {
+      const ymd = typeof h?.date === "string" ? h.date.slice(0, 10) : null;
+      if (!ymd) continue;
+
+      map[ymd] = {
+        name: h.name,
+        substitute: !!h.substitute,
+        note: h.note || "",
+      };
+
+      // 👇 Regla interna: si cae en domingo, marcar el lunes siguiente como "observado"
+      const d = new Date(ymd + "T00:00:00");
+      if (d.getDay() === 0) { // 0 = domingo
+        const monday = new Date(d);
+        monday.setDate(d.getDate() + 1);
+        const mondayYMD = toYMDLocal(monday);
+
+        // no pisar si ya existe otro festivo ese lunes
+        if (!map[mondayYMD]) {
+          map[mondayYMD] = {
+            name: h.name,
+            substitute: true,
+            note: "Observado (traslado interno)",
+          };
+        }
+      }
+    }
+
+    setNationalHolidayMap(map);
+  } catch {
+    setNationalHolidayMap({});
+  }
+}, [hdES, currentYear]);
+
+
+
+
+
+
+
   // ==== AÑOS DISPONIBLES EN SELECT ====
   const getAvailableYears = () => {
-  const FIRST_YEAR = 2024;
-  const currentRealYear = new Date().getFullYear();
-  const lastYear = currentRealYear + 1;
+    const FIRST_YEAR = 2024;
+    const currentRealYear = new Date().getFullYear();
+    const lastYear = currentRealYear + 1;
 
-  const years = [];
-  for (let y = lastYear; y >= FIRST_YEAR; y--) {
-    years.push(y);   // queda en orden descendente: 2026, 2025, 2024...
-  }
+    const years = [];
+    for (let y = lastYear; y >= FIRST_YEAR; y--) {
+      years.push(y);   // queda en orden descendente: 2026, 2025, 2024...
+    }
 
-  return years;
-};
+    return years;
+  };
 
   // ==== GENERAR CALENDARIO ====
   const generateCalendar = (month, year) => {
@@ -267,7 +332,7 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
       modal(
         "Error",
         responseApi?.message ||
-          "No se han podido guardar los días de vacaciones/asuntos propios"
+        "No se han podido guardar los días de vacaciones/asuntos propios"
       );
       return;
     }
@@ -390,10 +455,15 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
                   day ? sameDay(d.date, day) : false
                 );
 
+                const holiday = day ? nationalHolidayMap[toYMDLocal(day)] : null;
+                const isNationalHoliday = !!holiday;
+
                 const isSelectedVacationDay = !!vacationEntry;
                 const isSelectedPersonalDay = !!personalEntry;
                 const isToday =
                   day && new Date().toDateString() === day.toDateString();
+                const isWeekend = !!day && (j === 5 || j === 6); // sáb/dom por columna
+
 
                 return (
                   <td
@@ -404,26 +474,48 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
                     className={[
                       day ? styles.dayCell : "",
                       !day ? styles.dayDisabled : "",
+                      isWeekend ? styles.weekendDay : "",
                       isSelectedVacationDay ? styles.vacationDay : "",
                       isSelectedPersonalDay ? styles.personalDay : "",
                       isToday ? styles.dayToday : "",
                       soloInfo ? styles.dayReadOnly : "",
+                      isNationalHoliday 
+                      ? (holiday.substitute)
+                        ?styles.nationalHolidayDaySubs
+                        : styles.nationalHolidayDay
+                      : "",
                     ]
                       .join(" ")
                       .trim()}
-                    title={
-                      vacationEntry
-                        ? `${vacationEntry.hours.toFixed(
-                            1
-                          )} h de vacaciones`
-                        : personalEntry
-                        ? `${personalEntry.hours.toFixed(
-                            1
-                          )} h de asuntos propios`
-                        : ""
-                    }
+                    title={[
+                      vacationEntry ? `${vacationEntry.hours.toFixed(1)} h de vacaciones` : "",
+                      personalEntry ? `${personalEntry.hours.toFixed(1)} h de asuntos propios` : "",
+                      holiday
+                        ? `Festivo nacional: ${holiday.name}${holiday.substitute ? " (sustitutivo)" : ""}${holiday.note ? ` — ${holiday.note}` : ""
+                        }`
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" | ")}
+
                   >
-                    {day ? day.getDate() : ""}
+                    {day ? (
+                      <div className={styles.dayCellInner}>
+                        <span>{day.getDate()}</span>
+
+                        {isNationalHoliday && (
+                          <span
+                            className={styles.holidayIcon}
+                            title={`Festivo nacional: ${holiday.name}${holiday.substitute ? " (sustitutivo)" : ""}`}
+                          >
+                            <LuPartyPopper />
+                          </span>
+                        )}
+
+                      </div>
+                    ) : (
+                      ""
+                    )}
                   </td>
                 );
               })}
@@ -441,93 +533,93 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
 
       {/* PÍLDORAS DE RESUMEN */}
       {!soloInfo &&
-      <div className={styles.infoResumenContainer}>
-        {/* Píldora VACACIONES */}
-        <div className={`${styles.infoPill} ${styles.infoPillVacation}`}>
-          <div className={styles.infoPillIcon}>
-            <FaUmbrellaBeach />
-          </div>
-          <div className={styles.infoPillContent}>
-            <span className={styles.infoPillTitle}>
-              Vacaciones {currentYear}
-            </span>
-            <span className={styles.infoPillMain}>
-              Usadas en días naturales: {naturalVacationDaysUsed} días
-            </span>
-            <span className={styles.infoPillSecondary}>
-              Te quedan en días naturales:{" "}
-              {Math.max(0, naturalVacationDaysRemaining)} días
-            </span>
-        
-            <span className={styles.infoPillMain}>
-              Usadas en horas: {totalVacationHours.toFixed(1)} h (
-              {totalVacationDaysEquiv.toFixed(2)} días)
-            </span>
-            <span className={styles.infoPillSecondary}>
-              Te quedan en horas:{" "}
-              {Math.max(0, remainingVacationHours).toFixed(1)} h (
-              {Math.max(0, remainingVacationDaysEquiv).toFixed(2)} días laborables)
-            </span>
-            {exceededVacationHours > 0 && (
-              <span className={styles.exceededText}>
-                Exceso: {exceededVacationHours.toFixed(1)} h (
-                {(exceededVacationHours / DAILY_EQUIV_HOURS).toFixed(2)} días)
+        <div className={styles.infoResumenContainer}>
+          {/* Píldora VACACIONES */}
+          <div className={`${styles.infoPill} ${styles.infoPillVacation}`}>
+            <div className={styles.infoPillIcon}>
+              <FaUmbrellaBeach />
+            </div>
+            <div className={styles.infoPillContent}>
+              <span className={styles.infoPillTitle}>
+                Vacaciones {currentYear}
               </span>
-            )}
-            
-            
+              <span className={styles.infoPillMain}>
+                Usadas en días naturales: {naturalVacationDaysUsed} días
+              </span>
+              <span className={styles.infoPillSecondary}>
+                Te quedan en días naturales:{" "}
+                {Math.max(0, naturalVacationDaysRemaining)} días
+              </span>
+
+              <span className={styles.infoPillMain}>
+                Usadas en horas: {totalVacationHours.toFixed(1)} h (
+                {totalVacationDaysEquiv.toFixed(2)} días)
+              </span>
+              <span className={styles.infoPillSecondary}>
+                Te quedan en horas:{" "}
+                {Math.max(0, remainingVacationHours).toFixed(1)} h (
+                {Math.max(0, remainingVacationDaysEquiv).toFixed(2)} días laborables)
+              </span>
+              {exceededVacationHours > 0 && (
+                <span className={styles.exceededText}>
+                  Exceso: {exceededVacationHours.toFixed(1)} h (
+                  {(exceededVacationHours / DAILY_EQUIV_HOURS).toFixed(2)} días)
+                </span>
+              )}
+
+
+            </div>
+          </div>
+
+          {/* Píldora ASUNTOS PROPIOS */}
+          <div className={`${styles.infoPill} ${styles.infoPillPersonal}`}>
+            <div className={styles.infoPillIcon}>
+              <FaUserClock />
+            </div>
+            <div className={styles.infoPillContent}>
+              <span className={styles.infoPillTitle}>
+                Asuntos propios {currentYear}
+              </span>
+              <span className={styles.infoPillMain}>
+                Usados en días naturales: {naturalPersonalDaysUsed} días
+              </span>
+              <span className={styles.infoPillSecondary}>
+                Te quedan en días naturales:{" "}
+                {Math.max(0, naturalPersonalDaysRemaining)} días
+              </span>
+
+              <span className={styles.infoPillMain}>
+                Usados en horas: {totalPersonalHours.toFixed(1)} h (
+                {totalPersonalDaysEquiv.toFixed(2)} días)
+              </span>
+              <span className={styles.infoPillSecondary}>
+                Te quedan en horas:{" "}
+                {Math.max(0, remainingPersonalHours).toFixed(1)} h (
+                {Math.max(0, remainingPersonalDaysEquiv).toFixed(2)} días)
+              </span>
+              {exceededPersonalHours > 0 && (
+                <span className={styles.exceededText}>
+                  Exceso: {exceededPersonalHours.toFixed(1)} h (
+                  {(exceededPersonalHours / DAILY_EQUIV_HOURS).toFixed(2)} días)
+                </span>
+              )}
+
+
+            </div>
           </div>
         </div>
-
-        {/* Píldora ASUNTOS PROPIOS */}
-        <div className={`${styles.infoPill} ${styles.infoPillPersonal}`}>
-          <div className={styles.infoPillIcon}>
-            <FaUserClock />
-          </div>
-          <div className={styles.infoPillContent}>
-            <span className={styles.infoPillTitle}>
-              Asuntos propios {currentYear}
-            </span>
-            <span className={styles.infoPillMain}>
-              Usados en días naturales: {naturalPersonalDaysUsed} días
-            </span>
-            <span className={styles.infoPillSecondary}>
-              Te quedan en días naturales:{" "}
-              {Math.max(0, naturalPersonalDaysRemaining)} días
-            </span>
-
-            <span className={styles.infoPillMain}>
-              Usados en horas: {totalPersonalHours.toFixed(1)} h (
-              {totalPersonalDaysEquiv.toFixed(2)} días)
-            </span>
-            <span className={styles.infoPillSecondary}>
-              Te quedan en horas:{" "}
-              {Math.max(0, remainingPersonalHours).toFixed(1)} h (
-              {Math.max(0, remainingPersonalDaysEquiv).toFixed(2)} días)
-            </span>
-            {exceededPersonalHours > 0 && (
-              <span className={styles.exceededText}>
-                Exceso: {exceededPersonalHours.toFixed(1)} h (
-                {(exceededPersonalHours / DAILY_EQUIV_HOURS).toFixed(2)} días)
-              </span>
-            )}
-            
-            
-          </div>
-        </div>
-      </div>
       }
-      
+
 
       {/* Selector de vista y tipo */}
       <div className={styles.contenedorSelectorvista}>
-        <FaRegCalendarDays
+        <FaCalendarDay
           onClick={() => setMonthView(1)}
           className={
             monthView === 1 ? styles.contenedorSelectorVistaMes : ""
           }
         />
-        <FaRegCalendarDays
+        <FaCalendarDays
           onClick={() => setMonthView(12)}
           className={
             monthView === 12 ? styles.contenedorSelectorVistaMes : ""
@@ -584,6 +676,18 @@ const VacationDays = ({ user, modal, charge, soloInfo = false }) => {
             className={`${styles.legendSwatch} ${styles.swatchPersonal}`}
           />
           Asuntos propios
+        </span>
+        <span className={styles.legendItem}>
+          <span
+            className={`${styles.legendSwatch} ${styles.swatchParty}`}
+          />
+          Festivos Nacionales
+        </span>
+        <span className={styles.legendItem}>
+          <span
+            className={`${styles.legendSwatch} ${styles.swatchPartySub}`}
+          />
+          Festivos Nacionales trasladados
         </span>
       </div>
 

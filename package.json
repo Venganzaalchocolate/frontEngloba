@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "date-fns": "^4.1.0",
+    "date-holidays": "^3.26.5",
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "file-saver": "^2.0.5",

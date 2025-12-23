@@ -142,7 +142,7 @@ const ToHireEmployee = ({
   return (
     <>
       <button className="tomato" onClick={handleClick}>
-        Contratar
+        {!Offer?'Selecciona Oferta':'Contratar'}
       </button>
 
       {showConfirmation && (

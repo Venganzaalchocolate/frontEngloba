@@ -287,6 +287,8 @@
 }
 .swatchVacation { background: var(--color-verde-hoja); border-color: color-mix(in srgb, #2e7d32 26%, #fff); }
 .swatchPersonal  { background: #5186c3; border-color: color-mix(in srgb, #0d47a1 22%, #fff); }
+.swatchParty  { background: #b70000; border-color: color-mix(in srgb, #6a0808 22%, #fff); }
+.swatchPartySub  { background: #b77100; border-color: color-mix(in srgb, #6a5008 22%, #fff); }
 
 /* === Rejilla de calendarios (12M) === */
 .calendarBox {
@@ -565,4 +567,42 @@ padding: 1rem 2rem;
   .infoPillContent {
     gap: 0.05rem;
   }
+}
+
+.dayCellInner {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.nationalHolidayDay {
+  /* lo que quieras: borde, fondo suave, etc. */
+  box-shadow: inset 0 0 0 2px rgba(255, 0, 0, 0.35);
+  border-radius: 6px;
+}
+
+.nationalHolidayDaySubs{
+  box-shadow: inset 0 0 0 2px rgba(255, 111, 0, 0.35);
+  border-radius: 6px;
+}
+
+.holidayIcon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.8rem;
+  opacity: 0.9;
+  pointer-events: none; /* para que no moleste al click del día */
+}
+
+/* Finde en gris SOLO si no es vacaciones/asuntos propios */
+.calendarMonth tbody td.weekendDay:not(.vacationDay):not(.personalDay) {
+  background: #f3f4f6;
+}
+
+/* Hover de finde, también solo si no está marcado */
+.calendarMonth tbody td.weekendDay:not(.vacationDay):not(.personalDay):hover {
+  background: #e9eaee;
 }

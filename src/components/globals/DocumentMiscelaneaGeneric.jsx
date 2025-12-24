@@ -194,7 +194,7 @@ const DocumentMiscelaneaGeneric = ({
   // ==================================================
   // ============== DESCARGA DE ARCHIVO ===============
   // ==================================================
-  const handleDownloadFile = async (docOrFalse, fileObj) => {
+  const handleDownloadFile = async (docOrFalse, fileObj, model=false) => {
     if (!fileObj?.idDrive) {
       modal("Error", "No se ha encontrado el ID del archivo.");
       return;
@@ -209,12 +209,17 @@ const DocumentMiscelaneaGeneric = ({
       }
       const link = document.createElement("a");
       link.href = response.url;
-
       // Nombre: <DocLabel>-<Nombre_Apellidos>.pdf
+      let finalName = ''
+      if(!model){
       const nameFileAux = !docOrFalse ? compact(fileObj.fileLabel) : compact(docOrFalse.name);
       const nameUserAux = compact(data.firstName);
       const lastUserAux = compact(data.lastName);
-      const finalName = `${nameFileAux}-${nameUserAux}_${lastUserAux}`;
+      finalName = `${nameFileAux}-${nameUserAux}_${lastUserAux}`;
+      } else if(model){
+        finalName=`modelo_${docOrFalse}`
+      }
+      
 
       link.download = `${finalName}.pdf`;
       link.click();
@@ -838,7 +843,9 @@ const nameZip = `${baseName}_documentacion.zip`;
                     >
                       {doc.name} <AiOutlineCloudUpload />
                     </label>
-
+                      {
+                        doc.modeloPDF && <button onClick={()=>{handleDownloadFile(doc.name, {idDrive:doc.modeloPDF}, true)}}>Descargar Modelo</button>
+                      }
                     {/* Indicador de fecha */}
                     {doc.date && renewal && renewal.lastDate && (
                       <div

@@ -1,6 +1,34 @@
 
 const urlApi = import.meta.env.VITE_API_URL;
 
+// helper: convierte payload a FormData (mantiene tu backend legacy)
+const toFormData = (payload = {}) => {
+  const fd = new FormData();
+
+  Object.entries(payload).forEach(([k, v]) => {
+    if (v === undefined || v === null) return;
+
+    // el archivo va como File
+    if (k === "file") {
+      if (v instanceof File) fd.append("file", v);
+      return;
+    }
+
+    // 👇 normaliza boolean para backend
+    if (typeof v === "boolean") {
+      fd.append(k, v ? "true" : "false");
+      return;
+    }
+
+    // números / strings
+    fd.append(k, String(v));
+  });
+
+  return fd;
+};
+
+const shouldUseFormData = (datos) =>
+  datos?.type === "documentation" && datos?.file instanceof File;
 
 const fetchData = async (
   endpoint,
@@ -69,9 +97,17 @@ export const tokenUser = async (token) => {
 // enums
 export const getData = () => fetchData('/infodata', 'GET');
 export const getDataEmployer = () => fetchData('/infodataemployer', 'GET');
-export const changeData = (token, datos) => fetchData('/changedata', 'PUT', token, datos);
+
 export const deleteData = (token, datos) => fetchData('/deletedata', 'DELETE', token, datos);
-export const createData = (token, datos) => fetchData('/createdata', 'POST', token, datos);
+export const changeData = (token, datos) => {
+  const body = shouldUseFormData(datos) ? toFormData(datos) : datos;
+  return fetchData('/changedata', 'PUT', token, body);
+};
+
+export const createData = (token, datos) => {
+  const body = shouldUseFormData(datos) ? toFormData(datos) : datos;
+  return fetchData('/createdata', 'POST', token, body);
+};
 export const createSubData = (token, datos) => fetchData('/createsubcategory', 'POST', token, datos);
 export const deleteSubData = (token, datos) => fetchData('/deletesubdata', 'DELETE', token, datos);
 

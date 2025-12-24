@@ -267,27 +267,42 @@ useEffect(() => {
 ================================= */
 function buildCreatePayload(enumKey, form) {
   const payload = { type: enumKey, name: form.name?.trim() };
+
   if (enumKey === "jobs") payload.public = form.public;
+
   if (enumKey === "documentation") {
     payload.date = form.date;
     payload.model = form.model;
     payload.categoryFiles = form.categoryFiles || "";
-    payload.requiresSignature = form.requiresSignature === "si";
+payload.requiresSignature = form.requiresSignature; // "si" | "no"
+
     if (form.date === "si") payload.duration = Number(form.duration || 0);
+
+    // ✅ NUEVO
+    if (form.file) payload.file = form.file;
   }
+
   return payload;
 }
 
 function buildEditPayload(enumKey, itemOrParent, form, extra = {}) {
   const payload = { id: itemOrParent._id, type: enumKey, name: form.name?.trim() };
   if (extra.subId) payload.subId = extra.subId;
+
   if (enumKey === "jobs") payload.public = form.public;
+
   if (enumKey === "documentation") {
     payload.date = form.date;
     payload.model = form.model;
     payload.categoryFiles = form.categoryFiles || "";
-    payload.requiresSignature = form.requiresSignature === "si";
+payload.requiresSignature = form.requiresSignature; // "si" | "no"
+
     if (form.date === "si") payload.duration = Number(form.duration || 0);
+
+    // ✅ NUEVO
+    if (form.file) payload.file = form.file;
   }
+
   return payload;
 }
+

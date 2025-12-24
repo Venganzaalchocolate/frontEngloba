@@ -1,8 +1,10 @@
-import React, { useState } from "react";
-import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import { FaEdit, FaTrash, FaPlus, FaEye } from "react-icons/fa";
+import { getFileDrive } from "../../lib/data";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import EnumFormDocumentation from "./EnumFormDocumentation";
 import styles from "../styles/EnumCRUD.module.css";
+import { getToken } from "../../lib/serviceToken.js";
 
 export default function EnumDocumentationCRUD({
   data,
@@ -15,6 +17,57 @@ export default function EnumDocumentationCRUD({
   const [mode, setMode] = useState(null); // 'edit' | 'create'
   const [current, setCurrent] = useState(null);
   const [confirm, setConfirm] = useState(null);
+
+  const [preview, setPreview] = useState(null); // { url, title }
+  const [loadingId, setLoadingId] = useState(null);
+
+  const revokePreviewUrl = (url) => {
+    if (url && typeof url === "string" && url.startsWith("blob:")) {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const closePreview = () => {
+    revokePreviewUrl(preview?.url);
+    setPreview(null);
+  };
+
+  // ✅ cleanup si el componente se desmonta
+  useEffect(() => {
+    return () => revokePreviewUrl(preview?.url);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePreview = async (item) => {
+    if (!item?.modeloPDF) return;
+    if (loadingId === item._id) return;
+
+    const token = getToken();
+    if (!token) {
+      modal("Sesión caducada", "Vuelve a iniciar sesión para ver el archivo.");
+      return;
+    }
+
+    try {
+      setLoadingId(item._id);
+
+      const res = await getFileDrive({ idFile: item.modeloPDF }, token);
+
+      if (res?.error || !res?.url) {
+        modal("Error", res?.message || "No se pudo cargar el archivo.");
+        return;
+      }
+
+      // ✅ revocar preview anterior antes de mostrar uno nuevo
+      revokePreviewUrl(preview?.url);
+
+      setPreview({ url: res.url, title: item.name || "Modelo PDF" });
+    } catch (e) {
+      modal("Error", "No se pudo cargar el archivo.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
   const close = () => {
     setMode(null);
@@ -84,15 +137,29 @@ export default function EnumDocumentationCRUD({
                     <div className={styles.cardHead}>
                       <div className={styles.cardTitle}>
                         {item.name}
+
                         {item.requiresSignature && (
                           <span className={styles.badgeFirma}>Firma</span>
                         )}
+
                         {item.date && (
                           <span className={styles.badgeFecha}>
                             {item.duration ? `${item.duration} días` : "Con fecha"}
                           </span>
                         )}
+
+                        {item.modeloPDF && (
+                          <button
+                            className={`${styles.iconBtn} ${styles.view}`}
+                            title="Ver modelo PDF"
+                            onClick={() => handlePreview(item)}
+                            disabled={loadingId === item._id}
+                          >
+                            <FaEye />
+                          </button>
+                        )}
                       </div>
+
                       <div className={styles.actions}>
                         <button
                           className={`${styles.iconBtn} ${styles.edit}`}
@@ -129,6 +196,44 @@ export default function EnumDocumentationCRUD({
             enumsData={enumsData}
             modal={modal}
           />
+        </div>
+      )}
+
+      {preview && (
+        <div className={styles.modalOverlay} onClick={closePreview}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <h3 className={styles.formTitle} style={{ margin: 0 }}>
+                {preview.title}
+              </h3>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => window.open(preview.url, "_blank", "noopener,noreferrer")}
+                >
+                  Abrir
+                </button>
+                <button className={`${styles.btn} ${styles.btnGhost}`} onClick={closePreview}>
+                  Cerrar
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 12, height: "70vh" }}>
+              <iframe
+                title="modeloPDF"
+                src={preview.url}
+                style={{ width: "100%", height: "100%", border: 0, borderRadius: 12 }}
+              />
+            </div>
+          </div>
         </div>
       )}
 

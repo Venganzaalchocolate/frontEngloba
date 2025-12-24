@@ -1,18 +1,14 @@
+// EnumFormDocumentation.jsx
 import React, { useMemo, useState } from "react";
 import styles from "../styles/EnumCRUD.module.css";
 
 export default function EnumFormDocumentation({ item, onCancel, onSubmit, enumsData, modal }) {
-  // ⛑️ Si aún no llegó, no renderizar
   if (!enumsData) return null;
 
-  // Lista segura de categorías disponibles
   const categories = useMemo(() => {
     const base = Array.isArray(enumsData?.categoryFiles) ? enumsData.categoryFiles : [];
-    // si venimos de "crear dentro de una categoría", aseguramos que esa categoría aparezca en el combo
-    const pre = item?.categoryFiles && !base.includes(item.categoryFiles)
-      ? [...base, item.categoryFiles]
-      : base;
-    // deduplicación simple
+    const pre =
+      item?.categoryFiles && !base.includes(item.categoryFiles) ? [...base, item.categoryFiles] : base;
     return Array.from(new Set(pre));
   }, [enumsData, item?.categoryFiles]);
 
@@ -20,14 +16,20 @@ export default function EnumFormDocumentation({ item, onCancel, onSubmit, enumsD
     name: item?.name ?? "",
     date: item?.date ? "si" : "no",
     requiresSignature: item?.requiresSignature ? "si" : "no",
-    model: item?.model || "",                 // ← si vienes de “crear en categoría/modelo”, llega pre-relleno
+    model: item?.model || "",
     duration: item?.duration || 0,
-    categoryFiles: item?.categoryFiles || "", // ← idem
+    categoryFiles: item?.categoryFiles || "",
+    file: null, // ✅ NUEVO
   }));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((s) => ({ ...s, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0] || null;
+    setForm((s) => ({ ...s, file: f }));
   };
 
   const handleSubmit = () => {
@@ -46,7 +48,8 @@ export default function EnumFormDocumentation({ item, onCancel, onSubmit, enumsD
         return;
       }
     }
-    onSubmit(form);
+    // categoryFiles opcional (si quieres hacerlo obligatorio, valida aquí)
+    onSubmit(form); // ✅ incluye form.file
   };
 
   return (
@@ -55,13 +58,7 @@ export default function EnumFormDocumentation({ item, onCancel, onSubmit, enumsD
 
       <div className={styles.field}>
         <label className={styles.label}>Nombre</label>
-        <input
-          className={styles.input}
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          placeholder="Nombre del documento"
-        />
+        <input className={styles.input} name="name" value={form.name} onChange={handleChange} />
       </div>
 
       <div className={styles.field}>
@@ -97,12 +94,7 @@ export default function EnumFormDocumentation({ item, onCancel, onSubmit, enumsD
 
       <div className={styles.field}>
         <label className={styles.label}>Categoría del archivo</label>
-        <select
-          className={styles.select}
-          name="categoryFiles"
-          value={form.categoryFiles}
-          onChange={handleChange}
-        >
+        <select className={styles.select} name="categoryFiles" value={form.categoryFiles} onChange={handleChange}>
           <option value="">Seleccione una opción</option>
           {categories.map((c) => (
             <option key={c} value={c}>{c}</option>
@@ -119,16 +111,31 @@ export default function EnumFormDocumentation({ item, onCancel, onSubmit, enumsD
             name="duration"
             value={form.duration}
             onChange={handleChange}
-            placeholder="0"
             min="0"
           />
         </div>
       )}
 
+      {/* ✅ NUEVO: subir modelo PDF */}
+      <div className={styles.field}>
+        <label className={styles.label}>
+          Modelo (PDF) {item?.modeloPDF ? "(ya hay uno, puedes reemplazarlo)" : "(opcional)"}
+        </label>
+        <input
+          className={styles.input}
+          type="file"
+          accept="application/pdf"
+          onChange={handleFileChange}
+        />
+        {form.file && (
+          <div style={{ fontSize: ".85rem", color: "#6b7280", marginTop: 6 }}>
+            Archivo: {form.file.name}
+          </div>
+        )}
+      </div>
+
       <div className={styles.modalBtns}>
-        <button className={`${styles.btn} ${styles.btnGhost}`} onClick={onCancel}>
-          Cancelar
-        </button>
+        <button className={`${styles.btn} ${styles.btnGhost}`} onClick={onCancel}>Cancelar</button>
         <button className={`${styles.btn} ${styles.btnBlue}`} onClick={handleSubmit}>
           {item?.name ? "Guardar" : "Crear"}
         </button>

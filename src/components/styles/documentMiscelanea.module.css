@@ -103,6 +103,7 @@
 .officialDocGroupUser>div {
   display: flex;
   align-content: left;
+  gap: 0.5rem;
 }
 /* Nombre del documento (chip claro) */
 .docLabel, .docLabeluploadButton {
@@ -240,7 +241,6 @@
   font-size: 10pt;
   padding: 0.4rem 0.8rem;
   border-radius: 0.6rem;
-  margin-left: 0.5rem;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

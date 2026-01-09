@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { FaEdit, FaTrash, FaPlus, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaEye, } from "react-icons/fa";
+import { FaFileCircleMinus } from "react-icons/fa6";
 import { getFileDrive } from "../../lib/data";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import EnumFormDocumentation from "./EnumFormDocumentation";
@@ -87,7 +88,7 @@ export default function EnumDocumentationCRUD({
   const handleDelete = (item) => {
     setConfirm({
       title: "Confirmar eliminación",
-      message: `¿Eliminar el documento "${item.name}"?`,
+      message: (item.name) ?`¿Eliminar el documento "${item.name}"?`:`¿Eliminar el archivo asociado?`,
       onConfirm: () => {
         onDelete(item);
         setConfirm(null);
@@ -149,6 +150,7 @@ export default function EnumDocumentationCRUD({
                         )}
 
                         {item.modeloPDF && (
+                          <>
                           <button
                             className={`${styles.iconBtn} ${styles.view}`}
                             title="Ver modelo PDF"
@@ -157,6 +159,11 @@ export default function EnumDocumentationCRUD({
                           >
                             <FaEye />
                           </button>
+                          <button className={`${styles.btnEliminar}`} onClick={()=>handleDelete({id:item._id,modeloPDF:item.modeloPDF})}>
+                          <FaFileCircleMinus/>
+                </button>
+                          </>
+                          
                         )}
                       </div>
 
@@ -173,6 +180,7 @@ export default function EnumDocumentationCRUD({
                         >
                           <FaTrash />
                         </button>
+                        
                       </div>
                     </div>
                   </div>
@@ -223,6 +231,7 @@ export default function EnumDocumentationCRUD({
                 <button className={`${styles.btn} ${styles.btnGhost}`} onClick={closePreview}>
                   Cerrar
                 </button>
+                
               </div>
             </div>
 

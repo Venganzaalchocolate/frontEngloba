@@ -10,7 +10,9 @@ import {
   deleteData,
   createSubData,
   deleteSubData,
+  deleteFileEnums,
 } from "../../lib/data";
+import { getToken } from "../../lib/serviceToken";
 
 /* ===============================
    OPCIONES Y CONFIGURACIÓN
@@ -83,14 +85,6 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
   const [crudData, setCrudData] = useState({});
   const [confirm, setConfirm] = useState(null);
 
-  const getToken = () => {
-    try {
-      const raw = localStorage.getItem("token");
-      return raw ? raw.replace(/^"|"$/g, "") : null;
-    } catch {
-      return null;
-    }
-  };
 
   /* Normalización de datos */
 useEffect(() => {
@@ -184,9 +178,9 @@ useEffect(() => {
   const handleDelete = (item) => {
     setConfirm({
       title: "Confirmar eliminación",
-      message: `¿Seguro que deseas eliminar "${item.name}"?`,
+      message: (item.name) ?`¿Seguro que deseas eliminar "${item.name}"?`:`¿Seguro que deseas eliminar el archivo asociado?`,
       onConfirm: async () => {
-        await runWithSpinner(() => deleteData(getToken(), { id: item._id, type: selectedKey }));
+        await runWithSpinner(() => (item.name)?deleteData(getToken(), { id: item._id, type: selectedKey }):deleteFileEnums(getToken(), item));
         setConfirm(null);
       },
       onCancel: () => setConfirm(null),

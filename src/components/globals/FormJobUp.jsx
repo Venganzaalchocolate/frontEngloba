@@ -440,7 +440,6 @@ export default function FormJobUp({
         required: true,
         defaultValue: user.gender,
         options: [
-          { value: '', label: 'Selecciona…' },
           { value: 'female', label: 'Mujer' },
           { value: 'male', label: 'Hombre' },
           { value: 'nonBinary', label: 'No binario' },
@@ -502,7 +501,6 @@ export default function FormJobUp({
         required: true,
         defaultValue: user?.jobsId || [],
         options: [
-          { value: '', label: 'Seleccione una o varias opciones' },
           ...positionOptions,
         ],
         placeholder:
@@ -515,7 +513,6 @@ export default function FormJobUp({
         required: true,
         defaultValue: user?.studiesId || [],
         options: [
-          { value: '', label: 'Seleccione una o varias opciones' },
           ...studiesOptions,
         ],
         placeholder:
@@ -528,7 +525,6 @@ export default function FormJobUp({
         required: true,
         defaultValue: user?.provincesId || [],
         options: [
-          { value: '', label: 'Seleccione una o varias opciones' },
           ...provincesOptions,
         ],
         placeholder:

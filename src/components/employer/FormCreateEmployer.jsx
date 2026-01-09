@@ -14,7 +14,7 @@ import {
 import { textErrors } from "../../lib/textErrors";
 import { useLogin } from "../../hooks/useLogin";
 import { useOffer } from "../../hooks/useOffer";
-import { buildOptionsFromIndex } from "../../lib/utils";
+import { buildModalFormOptionsFromIndex, buildOptionsFromIndex } from "../../lib/utils";
 
 const FormCreateEmployer = ({
   modal,
@@ -72,7 +72,7 @@ const FormCreateEmployer = ({
       phoneJobNumber: formData.phoneJobNumber,
       phoneJobExtension: formData.phoneJobExtension,
       studies: Array.isArray(formData.studies) ? formData.studies : [],
-
+//
       // Primer periodo de contratación
       hiringPeriods: [
         {
@@ -146,26 +146,6 @@ const FormCreateEmployer = ({
       }
     }
 
-    // Dispositivos (desde dispositiveIndex)
-    const deviceOptions =
-      selectedDeviceId && enums?.dispositiveIndex?.[selectedDeviceId]
-        ? [
-            {
-              value: selectedDeviceId,
-              label: enums.dispositiveIndex[selectedDeviceId].name,
-            },
-          ]
-        : buildOptionsFromIndex(enums?.dispositiveIndex);
-
-    // Estudios (desde studiesIndex, preferimos solo subcategorías si existen)
-    const studiesOptions =
-      buildOptionsFromIndex(enums?.studiesIndex, { onlySub: true }) ||
-      buildOptionsFromIndex(enums?.studiesIndex);
-
-    // Puestos (desde jobsIndex, preferimos solo subcategorías si existen)
-    const positionOptions =
-      buildOptionsFromIndex(enums?.jobsIndex, { onlySub: true }) ||
-      buildOptionsFromIndex(enums?.jobsIndex);
    
     return [
       // Datos personales
@@ -203,7 +183,7 @@ const FormCreateEmployer = ({
         type: "multiChips",
         required: true,
         defaultValue: user?.studiesId || [],
-        options: [{ value: "", label: "Seleccione una o varias opciones" }, ...studiesOptions],
+        options:  buildModalFormOptionsFromIndex(enumsData.studiesIndex),
         placeholder:
           "Busca y añade 1 o varias opciones (puedes pulsar enter o hacer click)",
       },
@@ -218,7 +198,6 @@ const FormCreateEmployer = ({
               defaultValue: user?.role || "employee",
               disabled: lockedFields.includes("role"),
               options: [
-                { value: "", label: "Seleccione un rol" },
                 { value: "root", label: "Root" },
                 { value: "global", label: "Global" },
                 { value: "auditor", label: "Auditor" },
@@ -238,7 +217,6 @@ const FormCreateEmployer = ({
               defaultValue: user?.apafa ? "si" : "no",
               disabled: lockedFields.includes("apafa"),
               options: [
-                { value: "", label: "Seleccione una opción" },
                 { value: "si", label: "Sí" },
                 { value: "no", label: "No" },
               ],
@@ -293,7 +271,6 @@ const FormCreateEmployer = ({
         defaultValue: user?.gender || "",
         disabled: lockedFields.includes("gender"),
         options: [
-          { value: "", label: "Seleccione" },
           { value: "male", label: "Masculino" },
           { value: "female", label: "Femenino" },
           { value: "nonBinary", label: "No binario" },
@@ -347,7 +324,9 @@ const FormCreateEmployer = ({
         required: true,
         defaultValue: hPeriod.dispositiveId || selectedDeviceId || "",
         disabled: lockedFields.includes("dispositiveId"),
-        options: [{ value: "", label: "Seleccione" }, ...deviceOptions],
+         options: buildModalFormOptionsFromIndex(enumsData.dispositiveIndex, {
+        onlyActive: true,
+    }),
       },
       {
         name: "workShift",
@@ -357,7 +336,6 @@ const FormCreateEmployer = ({
         defaultValue: hPeriod.workShift?.type || "",
         disabled: lockedFields.includes("workShift"),
         options: [
-          { value: "", label: "Seleccione" },
           { value: "completa", label: "Completa" },
           { value: "parcial", label: "Parcial" },
         ],
@@ -369,7 +347,7 @@ const FormCreateEmployer = ({
         required: true,
         defaultValue: hPeriod.position || "",
         disabled: lockedFields.includes("position"),
-        options: [{ value: "", label: "Seleccione" }, ...positionOptions],
+         options: buildModalFormOptionsFromIndex(enumsData.jobsIndex),
       },
       {
         name: "reason",

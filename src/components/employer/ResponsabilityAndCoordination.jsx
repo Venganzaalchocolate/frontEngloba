@@ -154,7 +154,6 @@ useEffect(() => {
   }, [dispositiveIdx, programsIdx]);
 
   const buildFields = (type) => {
-    const base = [{ value: "", label: "Seleccione una opción" }];
     if (type === "resp") {
       return [
         {
@@ -162,7 +161,7 @@ useEffect(() => {
           label: "Responsabilidad",
           type: "select",
           required: true,
-          options: [...base, ...programOptions, ...deviceOptions],
+          options: [...programOptions, ...deviceOptions],
         },
       ];
     }
@@ -177,7 +176,7 @@ useEffect(() => {
         label: "Dispositivo",
         type: "select",
         required: true,
-        options: [...base, ...coordDeviceOpts],
+        options: [...coordDeviceOpts],
       },
     ];
   };

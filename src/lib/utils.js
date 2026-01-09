@@ -215,6 +215,95 @@ export function compact(s) {
     .join('');
 }
 
+
+export const buildModalFormOptionsFromIndex = (
+  idx,
+  { onlyPublic = false, onlyActive = false } = {}
+) => {
+  const entries = Object.entries(idx || {});
+  if (!entries.length) return [];
+
+  const metaById = new Map(entries);
+
+  const getPublic = (m) => (m?.public ?? m?.isPublic ?? true) === true; // por defecto true si no existe
+  const getActive = (m) => (m?.active ?? m?.isActive ?? true) === true; // por defecto true si no existe
+
+  const pass = (meta) => {
+    if (onlyPublic && !getPublic(meta)) return false;
+    if (onlyActive && !getActive(meta)) return false;
+    return true;
+  };
+
+  // parentId -> subcategories
+  const byParent = new Map();
+
+  for (const [id, meta] of entries) {
+    if (!meta?.isSub) continue;
+    if (!pass(meta)) continue;
+
+    const parentId = meta?.parent;
+    if (!parentId) continue;
+
+    if (!byParent.has(parentId)) byParent.set(parentId, []);
+    byParent.get(parentId).push({
+      value: id,
+      label: meta?.name ?? "",
+      public: meta?.public ?? meta?.isPublic,
+      active: meta?.active ?? meta?.isActive,
+    });
+  }
+
+  // Optgroups: si hay hijos visibles, SIEMPRE saco cabecera
+  const groups = [...byParent.entries()]
+    .map(([parentId, subs]) => {
+      const parentMeta = metaById.get(parentId);
+      return {
+        label: parentMeta?.name ?? "Sin categoría",
+        value: parentId, // solo para keys estables (no se usa para seleccionar)
+        subcategories: subs.sort((a, b) => a.label.localeCompare(b.label)),
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  // Singles: raíces sin hijos visibles + huérfanos
+  const singles = [];
+
+  for (const [id, meta] of entries) {
+    if (meta?.isRoot && pass(meta)) {
+      const hasVisibleChildren = (byParent.get(id) || []).length > 0;
+      if (!hasVisibleChildren) {
+        singles.push({
+          value: id,
+          label: meta?.name ?? "",
+          public: meta?.public ?? meta?.isPublic,
+          active: meta?.active ?? meta?.isActive,
+        });
+      }
+    }
+  }
+
+  for (const [id, meta] of entries) {
+    if (!meta?.isRoot && !meta?.isSub && pass(meta)) {
+      singles.push({
+        value: id,
+        label: meta?.name ?? "",
+        public: meta?.public ?? meta?.isPublic,
+        active: meta?.active ?? meta?.isActive,
+      });
+    }
+  }
+
+  // dedupe singles
+  const seen = new Set();
+  const singlesDedup = singles
+    .filter((o) => (seen.has(o.value) ? false : (seen.add(o.value), true)))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+    const data=[...groups, ...singlesDedup];
+
+  return data
+};
+
 export const buildOptionsFromIndex = (idx, { onlySub = false } = {}) => {
   if (!idx || typeof idx !== "object") return [];
 

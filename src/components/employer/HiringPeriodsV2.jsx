@@ -22,7 +22,7 @@ import {
   leaveHardDelete,
   preferentCreate,
 } from '../../lib/data';
-import { buildOptionsFromIndex, formatDate } from '../../lib/utils.js';
+import { buildModalFormOptionsFromIndex, buildOptionsFromIndex, formatDate } from '../../lib/utils.js';
 
 /* -------------------- helpers -------------------- */
 const todayYMD = () => {
@@ -136,33 +136,28 @@ export default function HiringPeriodsV2({
 
   /* -------------------- opciones selects -------------------- */
 
-  const jobsOptions = useMemo(
-    () => buildOptionsFromIndex(enumsData?.jobsIndex, { onlySub: true }),
-    [enumsData?.jobsIndex]
-  );
-
-  const provincesOptions = useMemo(
-    () => buildOptionsFromIndex(enumsData?.provincesIndex),
+    const provincesOptions = useMemo(
+    () => buildModalFormOptionsFromIndex(enumsData?.provincesIndex),
     [enumsData?.provincesIndex]
   );
 
   const positionOptions = useMemo(
-    () => [{ value: '', label: 'Seleccione un puesto' }, ...(jobsOptions || [])],
-    [jobsOptions]
+    () => buildModalFormOptionsFromIndex(enumsData.jobsIndex),
+    [enumsData?.jobsIndex]
   );
 
   const scheduleOptions = useMemo(() => {
     const list = Array.isArray(enumsData?.work_schedule) ? enumsData.work_schedule : [];
-    return [{ value: '', label: 'Seleccione un horario' }, ...list.map(s => ({ value: String(s._id), label: s.name }))];
+    return [...list.map(s => ({ value: String(s._id), label: s.name }))];
   }, [enumsData?.work_schedule]);
 
   const deviceOptions = useMemo(
-    () => [{ value: '', label: 'Seleccione un dispositivo' }, ...(buildOptionsFromIndex(enumsData?.dispositiveIndex) || [])],
+    () => [ ...(buildOptionsFromIndex(enumsData?.dispositiveIndex) || [])],
     [enumsData?.dispositiveIndex]
   );
 
   const leaveTypeOptions = useMemo(
-    () => [{ value: '', label: 'Seleccione una baja/excedencia' }, ...(buildOptionsFromIndex(enumsData?.leavesIndex) || [])],
+    () => [ ...(buildOptionsFromIndex(enumsData?.leavesIndex) || [])],
     [enumsData?.leavesIndex]
   );
 
@@ -194,7 +189,6 @@ export default function HiringPeriodsV2({
       type: 'select',
       required: true,
       options: [
-        { value: '', label: 'Seleccione un tipo de jornada' },
         { value: 'completa', label: 'Completa' },
         { value: 'parcial', label: 'Parcial' }
       ]
@@ -308,7 +302,6 @@ export default function HiringPeriodsV2({
       required: true,
       defaultValue: editHiring.workShift?.type || '',
       options: [
-        { value: '', label: 'Seleccione un tipo de jornada' },
         { value: 'completa', label: 'Completa' },
         { value: 'parcial', label: 'Parcial' }
       ]
@@ -864,7 +857,6 @@ export default function HiringPeriodsV2({
     return `${ini} — ${dev}${progTag} — ${pos}`;
   };
 
-  const toIds = (arr) => (Array.isArray(arr) ? arr.map(String) : []);
 
   const handleSubmitPref = async (formData) => {
     const token = getToken();
@@ -915,7 +907,7 @@ export default function HiringPeriodsV2({
         type: 'multiChips',
         required: true,
         defaultValue: [],
-        options: [{ value: '', label: 'Seleccione' }, ...(jobsOptions || [])],
+        options: positionOptions,
         placeholder: 'Busca y añade uno o varios',
       },
       {
@@ -924,7 +916,7 @@ export default function HiringPeriodsV2({
         type: 'multiChips',
         required: true,
         defaultValue: [],
-        options: [{ value: '', label: 'Seleccione' }, ...(provincesOptions || [])],
+        options: [...(provincesOptions || [])],
         placeholder: 'Busca y añade una o varias',
       },
     ];
@@ -940,13 +932,12 @@ export default function HiringPeriodsV2({
         required: true,
         defaultValue: 'ALL',
         options: [
-          { value: '', label: 'Seleccione una opción' },
           ...periodOptions,
           { value: 'ALL', label: 'Todos los periodos abiertos' },
         ],
       },
     ];
-  }, [user, currentPeriods, jobsOptions, provincesOptions]);
+  }, [user, currentPeriods, positionOptions, provincesOptions]);
 
   const handleAdd = () => {
     if (currentPeriods.length === 0) {
@@ -974,7 +965,6 @@ export default function HiringPeriodsV2({
 
       {currentPeriods.map(hp => {
         const pid = String(hp._id);
-        const programDisplay = getProgramDisplay(getProgramOfDevice(hp.dispositiveId)); // por si lo necesitas en el futuro
 
         return (
           <article

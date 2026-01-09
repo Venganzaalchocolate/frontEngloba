@@ -217,22 +217,6 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
     });
   };
 
-  const commitFirstMatch = (field) => {
-    const visibles = applySearchFilter(
-      filterOptions(field.options),
-      searchTerm[field.name] || ""
-    );
-
-    if (!visibles.length) return;                 // nada que seleccionar
-
-    // Si hay optgroups, toma la primera sub-opción
-    const first = visibles[0].subcategories?.length
-      ? visibles[0].subcategories[0]
-      : visibles[0];
-
-    setFormData((prev) => ({ ...prev, [field.name]: first.value }));
-    setErrors((prev) => ({ ...prev, [field.name]: "" }));
-  };
 
   useEffect(() => {
     setFormData((prev) => {
@@ -365,10 +349,14 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
                     {/* ——— 3.2 Select con las opciones filtradas ——— */}
                     <select
                       name={field.name}
-                      value={formData[field.name] || ""}
+                      value={formData[field.name] ?? ""}
                       onChange={handleChange}
                       disabled={field.disabled}
                     >
+                        {/* Placeholder fijo */}
+                    <option value="" disabled>
+                      Seleccione una opción
+                    </option>
                       {applySearchFilter(
                         filterOptions(field.options),
                         searchTerm[field.name] || ""
@@ -574,11 +562,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
                 {field.type === "multiChips" && (
                   <>
                     <MultiSelectChips
-                      options={(field.options || []).flatMap(opt =>
-                        Array.isArray(opt.subcategories)
-                          ? opt.subcategories.map(s => ({ value: s.value, label: s.label }))
-                          : (opt.value !== "" ? [{ value: opt.value, label: opt.label }] : [])
-                      )}
+                      options={field.options || []} 
                       value={Array.isArray(formData[field.name]) ? formData[field.name] : []}
                       onChange={(next) => {
                         setFormData(prev => ({ ...prev, [field.name]: next }));

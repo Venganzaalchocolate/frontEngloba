@@ -8,6 +8,7 @@ import { useLogin } from "../../hooks/useLogin";
 
 // DATA LAYER (sin fetch manual)
 import { offerCreate, offerUpdate } from "../../lib/data";
+import { buildModalFormOptionsFromIndex} from "../../lib/utils";
 
 const FormOffer = ({
   enumsData,
@@ -32,56 +33,12 @@ const FormOffer = ({
     return true;
   };
 
-  // ===== Opciones desde NUEVOS enums =====
-  // Puestos: de jobsIndex (solo subcategorías, excluye "Director/a")
-  const positionOptions = useMemo(() => {
-    const idx = enumsData?.jobsIndex || {};
-    const entries = Object.entries(idx)
-      .filter(([, v]) => v?.isSub) // solo sub
-      .filter(([, v]) => asStr(v?.public) !== false)
-      .map(([id, v]) => ({ value: id, label: v.name }));
-    return entries.sort((a, b) => a.label.localeCompare(b.label, "es"));
-  }, [enumsData]);
-
   // Horarios: de work_schedule (array con { _id, name })
   const workScheduleOptions = useMemo(() => {
     const arr = Array.isArray(enumsData?.work_schedule) ? enumsData.work_schedule : [];
     return arr.map((x) => ({ value: x.name, label: x.name }));
   }, [enumsData]);
-
-  // Dispositivos: de dispositiveIndex (objeto)
-  const deviceOptions = useMemo(() => {
-    const idx = enumsData?.dispositiveIndex || {};
-    const entries = Object.entries(idx).map(([id, v]) => ({
-      value: id,
-      label: v?.name || id,
-    }));
-    return entries.sort((a, b) => a.label.localeCompare(b.label, "es"));
-  }, [enumsData]);
-
-  // Estudios: admite tanto array anidada (categorías/subcategorías) como índice plano
-  const studiesOptions = useMemo(() => {
-    const base = [];
-    const src = enumsData?.studiesIndex;
-
-    if (Array.isArray(src)) {
-      // forma: [{ _id,name, subcategories?:[{_id,name}]}...]
-      src.forEach((x) => {
-        if (Array.isArray(x.subcategories) && x.subcategories.length) {
-          x.subcategories.forEach((s) => base.push({ value: s._id, label: s.name }));
-        } else if (x?._id && x?.name) {
-          base.push({ value: x._id, label: x.name });
-        }
-      });
-    } else if (src && typeof src === "object") {
-      // forma: { id: {name, ...}, ... }
-      Object.entries(src).forEach(([id, v]) => {
-        if (v?.name) base.push({ value: id, label: v.name });
-      });
-    }
-
-    return base.sort((a, b) => a.label.localeCompare(b.label, "es"));
-  }, [enumsData]);
+  
 
   // Valor por defecto del dispositivo (acepta varias variantes en offer)
   const dispositiveDefault = useMemo(
@@ -91,6 +48,7 @@ const FormOffer = ({
     [offer]
   );
 
+
   // ===== Definición de campos (ModalForm) =====
   const buildFields = () => [
     {
@@ -99,7 +57,9 @@ const FormOffer = ({
       type: "select",
       required: true,
       defaultValue: offer?.jobId || "",
-      options: [{ value: "", label: "Seleccione una función" }, ...positionOptions],
+      options: buildModalFormOptionsFromIndex(enumsData.jobsIndex, {
+      onlyPublic: true,
+      }),
     },
     {
       name: "work_schedule",
@@ -107,7 +67,7 @@ const FormOffer = ({
       type: "select",
       required: true,
       defaultValue: offer?.work_schedule || "",
-      options: [{ value: "", label: "Seleccione un horario" }, ...workScheduleOptions],
+      options: workScheduleOptions,
     },
     {
       name: "location",
@@ -132,7 +92,9 @@ const FormOffer = ({
       type: "select",
       required: true,
       defaultValue: dispositiveDefault,
-      options: [{ value: "", label: "Seleccione un dispositivo" }, ...deviceOptions],
+       options: buildModalFormOptionsFromIndex(enumsData.dispositiveIndex, {
+        onlyActive: true,
+    }),
     },
     {
       name: "studiesId",
@@ -140,7 +102,7 @@ const FormOffer = ({
       type: "multiChips",
       required: true,
       defaultValue: Array.isArray(offer?.studiesId) ? offer.studiesId : [],
-      options: studiesOptions,
+      options: buildModalFormOptionsFromIndex(enumsData.studiesIndex),
       placeholder: "Busca y añade 1 o varias opciones (puedes pulsar enter o hacer click)",
     },
     {
@@ -177,7 +139,6 @@ const FormOffer = ({
       required: true,
       defaultValue: offer?.sepe ? "si" : "no",
       options: [
-        { value: "", label: "Seleccione una opción" },
         { value: "si", label: "Sí" },
         { value: "no", label: "No" },
       ],
@@ -189,7 +150,6 @@ const FormOffer = ({
       required: true,
       defaultValue: offer?.type || "",
       options: [
-        { value: "", label: "Seleccione una opción" },
         { value: "internal", label: "Oferta Interna" },
         { value: "external", label: "Oferta Pública" },
       ],

@@ -110,6 +110,7 @@ export const createData = (token, datos) => {
 };
 export const createSubData = (token, datos) => fetchData('/createsubcategory', 'POST', token, datos);
 export const deleteSubData = (token, datos) => fetchData('/deletesubdata', 'DELETE', token, datos);
+export const deleteFileEnums=(token,datos)=>fetchData('/deletefileenums', 'DELETE', token, datos)
 
 //userCv
 export const getusercvdniorphone = (datos) => fetchData('/filterusercv', 'POST', null, datos)
@@ -361,6 +362,7 @@ export const wsDeleteGroup = (datos, token) => fetchData('/deletegroupws', 'POST
 export const wsgetModelWorkspaceGroups=(datos, token)=>fetchData('/getmodelworkspacegroups', 'POST', token, datos)
 export const addGroupAliasWS=(datos, token)=>fetchData('/addgroupaliasws', 'POST', token, datos)
 export const deleteGroupAliasWS=(datos, token)=>fetchData('/deletegroupaliasws', 'POST', token, datos)
+
 //preferents
 export const preferentGet = (datos, token) => fetchData('/preferents', 'POST', token, datos);
 export const preferentCreate = (datos, token) => fetchData('/preferentscreate', 'POST', token, datos);

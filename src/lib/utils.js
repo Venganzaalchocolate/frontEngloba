@@ -308,10 +308,6 @@ export const buildOptionsFromIndex = (idx, { onlySub = false } = {}) => {
   if (!idx || typeof idx !== "object") return [];
 
   // Claves a excluir cuando NO usamos onlySub
-  const EXCLUDED_KEYS = new Set([
-    "66a7366208bebc63c0f8992d", // Almería (root)
-    "66a7369b08bebc63c0f89a05", // Málaga (root)
-  ]);
 
   return Object.entries(idx)
     .filter(([key, obj]) => {

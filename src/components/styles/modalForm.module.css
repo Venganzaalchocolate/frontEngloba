@@ -115,13 +115,21 @@
 }
 
 .modalVentana .modalContenedor input{
+  appearance: none;
+  background-color: white;
   border-radius: 0;
   padding: 0.25rem;
   border-bottom: solid 1px var(--color-malva);
 }
 
 .modalVentana .modalContenedor select{
+  appearance: none;
+  background-color: white;
   padding: 0.25rem;
+  border: solid 1px var(--color-malva);
+}
+
+.modalVentana .modalContenedor textarea {
   border: solid 1px var(--color-malva);
 }
 

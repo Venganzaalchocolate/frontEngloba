@@ -512,6 +512,7 @@ const DocumentMiscelaneaGeneric = ({
   //   * Empleado => CR con optimismo
   //   * Supervisor => updateFileDrive directo
   // ==================================================
+  //
   const handleUpdateFileExtra = (fileObj) => {
     setFormConfig({
       title: `Actualizar documento: ${fileObj.fileLabel || fileObj.description || "Documento"}`,

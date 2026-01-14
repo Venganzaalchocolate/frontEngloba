@@ -89,6 +89,7 @@ export default function EnumFormDocumentation({ item, onCancel, onSubmit, enumsD
           <option value="Program">Programas</option>
           <option value="Dispositive">Dispositivos</option>
           <option value="User">Trabajadores</option>
+          <option value="VolunteerApplication">Voluntariado</option>
         </select>
       </div>
 

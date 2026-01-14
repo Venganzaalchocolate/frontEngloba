@@ -341,6 +341,11 @@
   align-items: center;
 }
 
+.columnChoices{
+  display: flex;
+  flex-direction: column;
+}
+
 .choice {
   display: inline-flex;
   gap: .4rem;

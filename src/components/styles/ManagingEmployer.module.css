@@ -444,3 +444,12 @@ filtros
 
     }
 }
+
+.contenedorEmployerButtonVolun{
+    display: flex;
+    justify-content: space-between;
+}
+
+.filtroBuscar{
+    flex:1;
+}

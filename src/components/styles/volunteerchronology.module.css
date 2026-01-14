@@ -120,65 +120,82 @@
   background: color-mix(in srgb, var(--color-morado) 15%, white);
 }
 
-/* ====== ESPECÍFICOS ====== */
-.roleContainer { display: flex; align-items: center; flex: 1 1 100%; }
-.roleLabel { color: var(--color-malva); font-size: 9pt; }
-.role { min-width: 160px; }
+/* ====== LISTA CRONOLOGÍA ====== */
+.ulCronologia {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1 1 100%;
+  width: 100%;
+}
 
-.phoneJobContainer, .phoneJobExtensionContainer { flex: 1 1 100%; }
+.empty {
+  margin-top: 8px;
+  flex: 1 1 100%;
+  opacity: 0.85;
+}
 
-.genderContainer, .fosteredContainer, .apafaContainer, .consetmentDataProtectionContainer { flex: 1 1 100%; }
+/* ====== ITEM ====== */
+.item {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #fff;
+  box-sizing: border-box;
+}
 
-/* ====== ESTUDIOS ====== */
-.studiesContainer { display: flex; flex-direction: column; font-size: 10pt; font-weight: 500;}
-.studiesList { display: flex; flex-direction: column; padding-right: 1rem; }
-.studyItem { display: flex; align-items: center; justify-content: space-between; display: flex;
-  align-items: center;
+.row {
+  display: flex;
   justify-content: space-between;
-  padding: 0.3rem 0.8rem 0.2rem 0.8rem;
-  background-color: var(--color-crema);
-  margin: 2px;
-  border-radius: 1rem;
-  width: fit-content;
-  gap: 1rem;
-align-items: baseline;
->svg{
-  margin-top: 1px;
-}
-}
-.addStudy { display: flex; align-items: center; gap: 12px; padding-right: 1rem; }
-.studySelect { flex: 1 1 auto; background: var(--color-gris-claro); margin-top: 0.5rem;}
-.plusIcon { width: 2rem; height: 2rem; cursor: pointer; }
-.noStudies { font-weight: 500; opacity: 0.7; }
-
-.studiesContainer p:first-of-type {
-  margin-top: -5px; /* ejemplo */
+  gap: 12px;
+  align-items: flex-start;
 }
 
-.multiChipsWrap{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  min-height:38px;
-  align-items:center;
+.main {
+  flex: 1;
+  min-width: 220px;
 }
-.chip{
-  padding:4px 10px;
-  border-radius:999px;
-  border:1px solid rgba(10, 119, 131);
-  background: rgba(142, 212, 220, 0.41);
-  color: rgb(10, 119, 131);
-  font-size: 0.9rem;
+
+.deviceTitle {
+  font-weight: 600;
 }
-.muted{ opacity:.6; }
-/* ====== LAYOUT RESPONSIVE ====== */
-@media (min-width: 1000px) {
-  .contenedor { border-radius: 1rem; }
-  .contenedor > div { flex: 0 0 30%; }
-  .studiesContainer p:first-of-type {
-    margin-top: -5px; /* ejemplo */
+
+.metaLine {
+  margin-top: 6px;
+  opacity: 0.9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
-select[name="fostered"], select[name='gender'] {
-  flex: 0 2rem;
+
+.notes {
+  margin-top: 8px;
+  white-space: pre-wrap;
 }
+
+/* ====== ICONOS / ACCIONES ====== */
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.icon {
+  cursor: pointer;
+  opacity: 0.95;
+  transition: transform 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.icon:hover {
+  color: var(--color-chicle);
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
 }

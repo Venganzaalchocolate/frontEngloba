@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../styles/menuStart.module.css";
 import { LuLogIn, LuBriefcase, LuListChecks, LuMail, LuLoader, } from "react-icons/lu";
+import { MdOutlineVolunteerActivism } from "react-icons/md";
 
 // hooks y librerías que ya usas en Login
 import { useLogin } from "../../hooks/useLogin";
@@ -268,6 +269,12 @@ const login = async () => {
               <Link to="/ofertas" className={styles.menuItem}>
                 <span className={styles.menuText}>
                   <LuListChecks className={styles.icon} /> Ofertas de empleo
+                </span>
+              </Link>
+
+              <Link to="/formulariovoluntariado" className={styles.menuItem}>
+                <span className={styles.menuText}>
+                  <MdOutlineVolunteerActivism className={styles.icon} /> Formulario Voluntariado
                 </span>
               </Link>
 

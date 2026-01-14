@@ -14,6 +14,7 @@ import Spinnning from './components/globals/Spinning.jsx';
 import { MenuWorkerProvider } from './context/MenuWorkerProvider.jsx'
 import { OfferProvider } from './context/OfferProvider.jsx';
 import FormJobUp from './components/globals/FormJobUp.jsx';
+import FormVolunteerUp from './components/volunteer/FormVolunteerUp.jsx';
 
 
 
@@ -72,6 +73,7 @@ function App() {
           <Route path="/ofertas/:id" element={<JobsPanel modal={changeModal} charge={setCharge} />} />
           <Route path="/trabajaconnosotros" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
           <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
+          <Route path="/formulariovoluntariado" element={<FormVolunteerUp modal={changeModal} charge={setCharge} />} />
           <Route path="/*" element={<NotFound />} />
         </Routes>
         {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}
@@ -95,6 +97,7 @@ function App() {
             <Route path="/ofertas/:id" element={<JobsPanel modal={changeModal} charge={setCharge} />} />
             <Route path="/trabajaconnosotros" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
             <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
+            <Route path="/formulariovoluntariado" element={<FormVolunteerUp modal={changeModal} charge={setCharge} />} />
           </Routes>
           {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}
           {charge && <Spinnning status={charge} />}

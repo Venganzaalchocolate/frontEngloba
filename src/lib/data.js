@@ -53,6 +53,7 @@ const fetchData = async (
   };
 
   try {
+ 
     const response = await fetch(url, options);
 
     // Si esperamos un archivo ZIP/PDF ↓↓↓
@@ -97,7 +98,6 @@ export const tokenUser = async (token) => {
 // enums
 export const getData = () => fetchData('/infodata', 'GET');
 export const getDataEmployer = () => fetchData('/infodataemployer', 'GET');
-
 export const deleteData = (token, datos) => fetchData('/deletedata', 'DELETE', token, datos);
 export const changeData = (token, datos) => {
   const body = shouldUseFormData(datos) ? toFormData(datos) : datos;
@@ -498,3 +498,16 @@ export const leaveList = (filters, token) =>
 // Obtener una leave por ID
 export const leaveGetById = (data, token) =>
   fetchData('/leaveget', 'POST', token, data);
+
+// formulario voluntariado
+export const volunteerCreate=(data)=>fetchData('/volunteercreate','POST',null, data);
+export const volunteerUpdate=(data,token)=>fetchData('/volunteerupdate','POST',token,data);
+export const volunteerDisable=(data,token)=>fetchData('/volunteerdisable','POST',token,data);
+export const volunteerDelete=(data,token)=>fetchData('/volunteerdelete','POST',token,data);
+export const volunteerList=(filters,token)=>fetchData('/volunteerlist','POST',token,filters);
+export const volunteerGetById=(data,token)=>fetchData('/volunteerget','POST',token,data);
+export const volunteerAddNote=(data,token)=>fetchData('/volunteeraddnote','POST',token,data);
+export const volunteerChronologyAdd = (data, token) =>fetchData("/volunteeraddchronology", "POST", token, data);
+export const volunteerChronologyUpdate = (data, token) =>fetchData("/volunteerchronologyupdate", "POST", token, data);
+export const volunteerChronologyDelete = (data, token) =>fetchData("/volunteerchronologydelete", "POST", token, data);
+

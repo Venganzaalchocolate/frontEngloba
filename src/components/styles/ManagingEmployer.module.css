@@ -422,7 +422,7 @@ filtros
 
     .tableCell {
         display: flex;
-        flex: 0 20rem;
+        flex: 0 15rem;
         align-self: center;
     }
 
@@ -452,4 +452,43 @@ filtros
 
 .filtroBuscar{
     flex:1;
+}
+
+/* --- State select inline (Volunteer) --- */
+.stateSelect {
+  width: 100%;
+  max-width: 220px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  font-size: 0.95rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* sin color: como está ahora */
+.state_no_asignado {
+  background: #fff;
+  color: inherit;
+}
+
+/* verde */
+.state_activo {
+  background: rgba(46, 204, 113, 0.18);
+  border-color: rgba(46, 204, 113, 0.45);
+  color: #1f7a43;
+}
+
+/* rojo */
+.state_descartado {
+  background: rgba(231, 76, 60, 0.18);
+  border-color: rgba(231, 76, 60, 0.45);
+  color: #8f2d23;
+}
+
+/* amarillo */
+.state_pendiente {
+  background: rgba(241, 196, 15, 0.22);
+  border-color: rgba(241, 196, 15, 0.55);
+  color: #7a5a00;
 }

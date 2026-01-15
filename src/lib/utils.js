@@ -316,8 +316,6 @@ export const buildOptionsFromIndex = (idx, { onlySub = false } = {}) => {
         return !!obj?.isSub;
       }
 
-      // Caso general: excluir las raíces por key
-      if (EXCLUDED_KEYS.has(String(key))) return false;
 
       return true;
     })

@@ -29,6 +29,12 @@ const AREA_OPTIONS = [
   { value: "no identificado", label: "No identificado" },
 ];
 
+const GENDER_OPTIONS=[
+  {value:'male', label:'Masculino'}, 
+  {value:'female', label:'Femenino'}, 
+  {value:'others', label:'Otros'}, 
+  {value:'nonBinary', label:'No Binario'}]
+
 export default function FormVolunteerUp({ modal, charge }) {
   const idForm = useId();
   const navigate = useNavigate();
@@ -51,11 +57,11 @@ export default function FormVolunteerUp({ modal, charge }) {
     studies: [],
     studiesOtherText: "",
     availability: "",
-    programInterest: [],
     areaInterest: [],
     referralSource: "",
     userNote: "",
     terms: false,
+    gender:''
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -72,26 +78,6 @@ export default function FormVolunteerUp({ modal, charge }) {
 
   const provincesFlat = useMemo(() => flattenCats(enums.provinces), [enums.provinces, flattenCats]);
 
-const programsOptions = useMemo(() => {
-  const list = Array.isArray(enums?.programs) ? enums.programs : [];
-  return list
-    .filter((p) => {
-      const name = String(p?.name || "").trim();
-      const acronym = String(p?.acronym || "").trim();
-      const hayPrueba = `${name} ${acronym}`.toLowerCase().includes("prueba");
-      const esPepe = name.toLowerCase() === "pepe" || acronym.toLowerCase() === "pepe";
-      const hayVG = `${name} ${acronym}`.toLowerCase().includes("violencia de genero") || `${name} ${acronym}`.toLowerCase().includes("violencia de género");
-      const hayEV = `${name} ${acronym}`.toLowerCase().includes("engloba voluntariado");
-      const hayEA = `${name} ${acronym}`.toLowerCase().includes("engloba gestión");
-      return !hayPrueba && !esPepe && !hayVG && !hayEV && !hayEA;
-    })
-    .map((p) => {
-      const name = String(p?.name || "").trim();
-      const acronym = String(p?.acronym || "").trim();
-      const label = acronym && name && acronym.toLowerCase() === name.toLowerCase() ? acronym : (acronym ? `${acronym} · ${name}` : name);
-      return { _id: p._id, name: label };
-    });
-}, [enums?.programs]);
 
 
 
@@ -120,6 +106,7 @@ const programsOptions = useMemo(() => {
         "availability",
         "referralSource",
         "terms",
+        "gender"
       ]),
     []
   );
@@ -140,10 +127,10 @@ const programsOptions = useMemo(() => {
       referralSource: (v) => validText(v, 2, 500),
       terms: (v) => !!v,
       programOrArea: () =>
-        (Array.isArray(formData.programInterest) && formData.programInterest.length > 0) ||
         (Array.isArray(formData.areaInterest) && formData.areaInterest.length > 0),
+      gender: (v) => !!String(v || "").trim()
     }),
-    [formData.programInterest, formData.areaInterest]
+    [formData.areaInterest]
   );
 
   const isEmpty = (name, value) => {
@@ -207,11 +194,10 @@ const toggleInArray = useCallback((key, v) => {
     const has = cur.includes(v);
     const next = has ? cur.filter((x) => x !== v) : [...cur, v];
     setFormErrors((fe) => ({ ...fe, [key]: checks[key] ? validateField(key, next) : fe[key] }));
-    if (key === "programInterest" || key === "areaInterest") {
-      const nextPrograms = key === "programInterest" ? next : (Array.isArray(fd.programInterest) ? fd.programInterest : []);
+    if (key === "areaInterest") {
       const nextAreas = key === "areaInterest" ? next : (Array.isArray(fd.areaInterest) ? fd.areaInterest : []);
-      const ok = (nextPrograms.length > 0) || (nextAreas.length > 0);
-      setFormErrors((fe) => ({ ...fe, programOrArea: ok ? null : "Indica programas o áreas de interés" }));
+      const ok = nextAreas.length > 0;
+      setFormErrors((fe) => ({ ...fe, programOrArea: ok ? null : "Indica áreas de interés" }));
     }
     return { ...fd, [key]: next };
   });
@@ -221,7 +207,7 @@ const toggleInArray = useCallback((key, v) => {
     (key, nextArr) => {
       setFormData((fd) => ({ ...fd, [key]: nextArr }));
       if (checks[key]) setFormErrors((fe) => ({ ...fe, [key]: validateField(key, nextArr) }));
-      if (key === "programInterest" || key === "areaInterest") {
+      if (key === "areaInterest") {
         setFormErrors((fe) => ({ ...fe, programOrArea: validateField("programOrArea", null) }));
       }
     },
@@ -237,14 +223,6 @@ const toggleInArray = useCallback((key, v) => {
     [formData.studies, handleArrayChange]
   );
 
-  const addProgram = useCallback(
-    (v) => handleArrayChange("programInterest", [...new Set([...(formData.programInterest || []), v])]),
-    [formData.programInterest, handleArrayChange]
-  );
-  const removeProgram = useCallback(
-    (v) => handleArrayChange("programInterest", (formData.programInterest || []).filter((x) => x !== v)),
-    [formData.programInterest, handleArrayChange]
-  );
 
   const initialSubmit = { ok: false, serverError: null };
 
@@ -263,11 +241,11 @@ const toggleInArray = useCallback((key, v) => {
       studies: fd.getAll("studies"),
       studiesOtherText: fd.get("studiesOtherText") ?? "",
       availability: fd.get("availability") ?? "",
-      programInterest: fd.getAll("programInterest"),
       areaInterest: fd.getAll("areaInterest"),
       referralSource: fd.get("referralSource") ?? "",
       userNote: fd.get("userNote") ?? "",
       terms: fd.get("terms") === "true" || fd.get("terms") === "on" || fd.get("terms") === "ON",
+      gender: fd.get("gender") ?? "",
     };
 
     const errs = validateAll(values);
@@ -290,10 +268,10 @@ const toggleInArray = useCallback((key, v) => {
       studies: values.studies,
       studiesOtherText: values.studiesOtherText,
       availability: values.availability,
-      programInterest: values.programInterest,
       areaInterest: values.areaInterest,
       referralSource: values.referralSource,
       userNote: values.userNote,
+      gender: values.gender,
     };
 
     charge(true);
@@ -365,6 +343,24 @@ const toggleInArray = useCallback((key, v) => {
           {formErrors.documentId && <small className={styles.errorMsg}>{formErrors.documentId}</small>}
         </div>
 
+<div className={styles.field}>
+  <label htmlFor={`${idForm}-gender`}>Género</label>
+  <select
+    id={`${idForm}-gender`}
+    name="gender"
+    value={formData.gender}
+    onChange={handleChange}
+  >
+    <option value="">Selecciona…</option>
+    {GENDER_OPTIONS.map((g) => (
+      <option key={g.value} value={g.value}>
+        {g.label}
+      </option>
+    ))}
+  </select>
+
+  {formErrors.gender && <small className={styles.errorMsg}>{formErrors.gender}</small>}
+</div>
         <div className={styles.field}>
           <label htmlFor={`${idForm}-email`}>Email</label>
           <input id={`${idForm}-email`} name="email" type="email" value={formData.email} onChange={handleChange} placeholder="correo@ejemplo.com" />
@@ -412,13 +408,9 @@ const toggleInArray = useCallback((key, v) => {
 }
 
 
-        <MultiSelectFlat label="Programas que te interesan (si los conoces)" enums={programsOptions} selected={formData.programInterest} onAdd={addProgram} onRemove={removeProgram} disabled={isLoadingEnums} />
-        {formData.programInterest.map((v) => (
-          <input key={`programInterest-${v}`} type="hidden" name="programInterest" value={v} />
-        ))}
 
         <div className={`${styles.field} ${styles.full}`}>
-          <span className={styles.label}>Áreas que te interesan (si no conoces programas)</span>
+          <span className={styles.label}>Áreas que te interesan (puedes marcar varias)</span>
           <div className={styles.columnChoices}>
             {AREA_OPTIONS.map((a) => (
               <label key={a.value} className={styles.choice}>

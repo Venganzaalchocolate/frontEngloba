@@ -182,3 +182,35 @@ select[name="fostered"], select[name='gender'] {
   flex: 0 2rem;
 }
 }
+
+.volunteerInterview__iconAdd {
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.volunteerInterview__body {
+  flex: 1 1 100%;
+}
+
+.volunteerInterview__row {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.volunteerInterview__row--last {
+  border-bottom: 0;
+}
+
+.volunteerInterview__label {
+  font-size: 9pt;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.volunteerInterview__value {
+  line-height: 1.35;
+}
+
+.volunteerInterview__value--pre {
+  white-space: pre-wrap;
+}

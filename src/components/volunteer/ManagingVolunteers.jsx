@@ -18,15 +18,16 @@ import {
   volunteerGetById,
   volunteerDisable,
   volunteerDelete,
+  volunteerUpdate
 } from "../../lib/data";
 import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric.jsx";
 import ModalConfirmation from "../globals/ModalConfirmation.jsx";
+import VolunteerInterviewPanel from "./VolunteerInterviewPanel.jsx";
 
 const ManagingVolunteers = ({ modal, charge, enumsData }) => {
   
   const { logged } = useLogin();
-  const isRootOrGlobal =
-    logged?.user?.role === "root" || logged?.user?.role === "global";
+  const isRootOrGlobal = true
 
   const [selected, setSelected] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -52,6 +53,53 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
   });
 
   const debouncedFilters = useDebounce(filters, 300);
+
+  const getProvinceLabel = (v) => {
+  const p = v?.province;
+  if (!p) return "—";
+  // si viene populate
+  if (typeof p === "object") return (p.name || "—").trim();
+  // si viene como id, intenta enumsData
+  const name = enumsData?.provincesIndex?.[p]?.name;
+  return (name || "—").trim();
+};
+
+const getAreasLabel = (v) => {
+  const arr = Array.isArray(v?.areaInterest) ? v.areaInterest : [];
+  if (!arr.length) return "—";
+  return arr.join(", ");
+};
+
+const stateKey = (s) =>
+  String(s || "no asignado").toLowerCase().trim().replace(/\s+/g, "_");
+
+const getState = (v) => (v?.state || "no asignado");
+const onChangeStateInline = async (id, nextState) => {
+  try {
+    charge?.(true);
+    const token = getToken();
+
+    const updated = await volunteerUpdate(
+      { volunteerApplicationId: id, state: nextState },
+      token
+    );
+    console.log(updated)
+
+    if (updated?.error) {
+      modal?.("Error", updated.message || "No se pudo cambiar el estado");
+      return;
+    }
+
+    // Normaliza por si tu fetchData envuelve en data
+    const doc = updated?.data || updated;
+
+    updateSelectedLocally({ _id: id, state: doc?.state || nextState });
+  } catch (e) {
+    modal?.("Error", e?.message || "No se pudo cambiar el estado");
+  } finally {
+    charge?.(false);
+  }
+};
 
   // -------------------------
   // LIST
@@ -228,23 +276,13 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
   // -------------------------
   // Agrupar activos/inactivos
   // -------------------------
-  const { activeItems, inactiveItems } = useMemo(() => {
-    const a = [];
-    const b = [];
-    for (const it of items) (it.active ? a : b).push(it);
+const { activeItems, inactiveItems } = useMemo(() => {
+  const a = [];
+  const b = [];
+  for (const it of items) (it.active ? a : b).push(it);
+  return { activeItems: a, inactiveItems: b };
+}, [items]);
 
-    const sortByName = (x, y) =>
-      (x.lastName || "").localeCompare(y.lastName || "", "es", {
-        sensitivity: "base",
-      }) ||
-      (x.firstName || "").localeCompare(y.firstName || "", "es", {
-        sensitivity: "base",
-      });
-
-    a.sort(sortByName);
-    b.sort(sortByName);
-    return { activeItems: a, inactiveItems: b };
-  }, [items]);
 
   // -------------------------
   // Handlers filtros/paginación
@@ -323,6 +361,17 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
         }}
       />
 
+      <VolunteerInterviewPanel
+        doc={doc}
+        modal={modal}
+        charge={charge}
+        canEdit={isRootOrGlobal}
+
+        onInterviewsUpdated={(interviews) => {
+    updateSelectedLocally({ _id: doc._id, interview: interviews });
+  }}
+      />
+
       <DocumentMiscelaneaGeneric
           key="docs"
           data={doc}
@@ -368,28 +417,50 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
     </div>
   );
 
-  const renderRow = (v) => {
-    const rowClass = !v.active
-      ? `${styles.tableContainer} ${styles.isOnLeave}`
-      : styles.tableContainer;
+const renderRow = (v) => {
+  const rowClass = !v.active
+    ? `${styles.tableContainer} ${styles.isOnLeave}`
+    : styles.tableContainer;
 
-    return (
-      <div className={styles.containerEmployer} key={v._id}>
-        <div>
-          <div className={rowClass} onClick={() => openVolunteer(v._id)}>
-            <div className={styles.tableCell}>{v.firstName}</div>
-            <div className={styles.tableCell}>{v.lastName}</div>
-            <div className={styles.tableCellCenter}></div>
-            <div className={styles.tableCellStatus}>
-              {v.active ? "activo" : "inactivo"}
-            </div>
+  const s = getState(v);
+  const sClass = styles[`state_${stateKey(s)}`] || "";
+
+  return (
+    <div className={styles.containerEmployer} key={v._id}>
+      <div>
+        <div className={rowClass} onClick={() => openVolunteer(v._id)}>
+          <div className={styles.tableCell}>{v.firstName}</div>
+          <div className={styles.tableCell}>{v.lastName}</div>
+
+          {/* NUEVO */}
+          <div className={styles.tableCell}>{getProvinceLabel(v)}</div>
+          <div className={styles.tableCell}>{getAreasLabel(v)}</div>
+
+          {/* Estado con select inline */}
+          <div className={styles.tableCellStatus}>
+            <select
+              className={`${styles.stateSelect} ${sClass}`}
+              value={s}
+              onClick={(e) => e.stopPropagation()}      // 👈 clave: no abrir/cerrar panel
+              onChange={(e) => {
+                e.stopPropagation();
+                onChangeStateInline(v._id, e.target.value);
+              }}
+            >
+              <option value="no asignado">No asignado</option>
+              <option value="activo">Activo</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="descartado">Descartado</option>
+            </select>
           </div>
-
-          {selectedId === v._id && selected && renderExpanded(selected)}
         </div>
+
+        {selectedId === v._id && selected && renderExpanded(selected)}
       </div>
-    );
-  };
+    </div>
+  );
+};
+
 
   return (
     <div className={styles.contenedor}>
@@ -444,12 +515,17 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
 
           <div className={styles.containerTableContainer}>
             <div>
-              <div className={styles.tableContainer} id={styles.cabeceraTabla}>
-                <div className={styles.tableCell}>Nombre</div>
-                <div className={styles.tableCell}>Apellidos</div>
-                <div className={styles.tableCellCenter}></div>
-                <div className={styles.tableCellStatus}>Status</div>
-              </div>
+             <div className={styles.tableContainer} id={styles.cabeceraTabla}>
+  <div className={styles.tableCell}>Nombre</div>
+  <div className={styles.tableCell}>Apellidos</div>
+
+  {/* NUEVO */}
+  <div className={styles.tableCell}>Provincia</div>
+  <div className={styles.tableCell}>Áreas</div>
+
+  <div className={styles.tableCellStatus}>Estado</div>
+</div>
+
 
               {activeItems.map(renderRow)}
 

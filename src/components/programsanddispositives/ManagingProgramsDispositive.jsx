@@ -122,10 +122,8 @@ const ManagingProgramsDispositive = ({
 
   const provinceOptions = useMemo(() => {
     const idx = enumsData?.provincesIndex || {};
-    const excludedIds = ["66a7366208bebc63c0f8992d", "66a7369b08bebc63c0f89a05"];
 
     return Object.entries(idx)
-      .filter(([id]) => !excludedIds.includes(id))
       .map(([id, p]) => ({ value: id, label: p?.name || id }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [enumsData]);

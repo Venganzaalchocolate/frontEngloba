@@ -183,34 +183,262 @@ select[name="fostered"], select[name='gender'] {
 }
 }
 
-.volunteerInterview__iconAdd {
-  cursor: pointer;
-  margin-left: 10px;
+/* ================================
+   ENTREVISTAS (look tipo cronología)
+   Usa estas clases globales (no module):
+   .volunteerInterview__body, __row, __label, __value, __value--pre
+   ================================ */
+/* ================================
+   ENTREVISTAS (CSS Modules)
+   ================================ */
+
+.volunteerInterviewBody {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #ffffff);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-morado) 7%, #ffffff),
+    #ffffff 58%
+  );
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
+  padding: 12px 12px 12px 16px;
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
-.volunteerInterview__body {
+.volunteerInterviewBody:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-morado) 28%, #ffffff);
+  box-shadow: 0 16px 34px rgba(17, 24, 39, 0.10);
+}
+
+.volunteerInterviewBody::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    var(--color-morado),
+    color-mix(in srgb, var(--color-chicle) 55%, var(--color-morado))
+  );
+  opacity: 0.95;
+}
+
+.volunteerInterviewRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.volunteerInterviewRowLast {
+  border-bottom: 0;
+  padding-bottom: 2px;
+}
+
+.volunteerInterviewLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+  color: rgba(15, 23, 42, 0.8);
+}
+
+.volunteerInterviewValue {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.88);
+  gap: 0.3rem;
+  padding: 5px;
+}
+
+.volunteerInterviewValuePre {
+  font-weight: 500;
+  white-space: pre-wrap;
+  line-height: 1.35;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-chicle) 10%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--color-chicle) 18%, #ffffff);
+}
+
+/* Chips para Fecha / Hora / Estado */
+.volunteerInterviewRow:nth-child(2) .volunteerInterviewValue,
+.volunteerInterviewRow:nth-child(3) .volunteerInterviewValue,
+.volunteerInterviewRow:nth-child(4) .volunteerInterviewValue {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  width: fit-content;
+  line-height: 1;
+}
+
+/* Fecha */
+.volunteerInterviewRow:nth-child(2) .volunteerInterviewValue {
+  background: color-mix(in srgb, var(--color-morado) 12%, #ffffff);
+  border-color: color-mix(in srgb, var(--color-morado) 22%, #ffffff);
+  color: color-mix(in srgb, var(--color-morado) 72%, #111827);
+}
+
+/* Hora */
+.volunteerInterviewRow:nth-child(3) .volunteerInterviewValue {
+  background: color-mix(in srgb, var(--color-chicle) 12%, #ffffff);
+  border-color: color-mix(in srgb, var(--color-chicle) 24%, #ffffff);
+  color: color-mix(in srgb, var(--color-chicle) 65%, #111827);
+}
+
+/* Estado */
+.volunteerInterviewRow:nth-child(4) .volunteerInterviewValue {
+  background: color-mix(in srgb, #22c55e 14%, #ffffff);
+  border-color: color-mix(in srgb, #22c55e 26%, #ffffff);
+  color: color-mix(in srgb, #16a34a 70%, #111827);
+}
+
+.volunteerInterviewActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  justify-content: space-between;
+}
+
+.volunteerInterviewBody button {
+  gap:0.4rem;
+  color: white;
+}
+
+.volunteerInterviewActions>button:nth-child(2){
+  background-color: tomato;
+}
+
+.volunteerInterviewBody button:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--color-morado) 14%, #ffffff);
+}
+
+
+@media (max-width: 780px) {
+  .volunteerInterviewRow {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+/* ================================
+   NOTAS INTERNAS
+   ================================ */
+
+.notesWrap {
   flex: 1 1 100%;
 }
 
-.volunteerInterview__row {
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
+.notesList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
 }
 
-.volunteerInterview__row--last {
-  border-bottom: 0;
+.noteItem {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #ffffff);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-morado) 6%, #ffffff),
+    #ffffff 58%
+  );
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
+  padding: 12px 12px 12px 16px;
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
-.volunteerInterview__label {
-  font-size: 9pt;
-  opacity: 0.7;
-  margin-bottom: 4px;
+.noteItem:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-morado) 28%, #ffffff);
+  box-shadow: 0 16px 34px rgba(17, 24, 39, 0.10);
 }
 
-.volunteerInterview__value {
-  line-height: 1.35;
+.noteItem::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    var(--color-morado),
+    color-mix(in srgb, var(--color-chicle) 55%, var(--color-morado))
+  );
+  opacity: 0.95;
 }
 
-.volunteerInterview__value--pre {
+.noteHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.noteMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.noteAuthor {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+.noteDot {
+  opacity: 0.55;
+}
+
+.noteDate {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-chicle) 20%, #ffffff);
+  background: color-mix(in srgb, var(--color-chicle) 10%, #ffffff);
+  color: rgba(15, 23, 42, 0.82);
+  line-height: 1;
+}
+
+.noteTrash {
+  cursor: pointer;
+  opacity: 0.9;
+  transition: transform 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  flex: 0 0 auto;
+}
+
+.noteTrash:hover {
+  color: tomato;
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+.noteBody {
+  margin-top: 10px;
   white-space: pre-wrap;
+  line-height: 1.35;
+  font-size: 12.5px;
+  color: rgba(15, 23, 42, 0.86);
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(15, 23, 42, 0.03);
 }

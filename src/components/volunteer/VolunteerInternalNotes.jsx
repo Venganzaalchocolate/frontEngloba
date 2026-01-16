@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
-import styles from "../styles/infoEmployer.module.css"; // mismo look
+import { useMemo, useState, useCallback } from "react";
+import styles from "../styles/infoEmployer.module.css";
 import { FaSquarePlus } from "react-icons/fa6";
+import { FaTrashAlt } from "react-icons/fa";
 import ModalForm from "../globals/ModalForm";
+import ModalConfirmation from "../globals/ModalConfirmation";
 import { getToken } from "../../lib/serviceToken";
-import { volunteerAddNote } from "../../lib/data";
+import { volunteerAddNote, volunteerDeleteNote } from "../../lib/data"; 
 import { useLogin } from "../../hooks/useLogin";
 
 const deepClone = (x) => JSON.parse(JSON.stringify(x || {}));
@@ -12,111 +14,159 @@ export default function VolunteerInternalNotes({
   doc,
   modal,
   charge,
-  onNotesUpdated, // callback (idealmente actualiza doc en padre)
+  onDocUpdated, // ✅ doc completo
 }) {
-  const notes = useMemo(() => deepClone(doc?.internalNotes || []), [doc?.internalNotes]);
   const { logged } = useLogin();
-  const [openAdd, setOpenAdd] = useState(false);
 
-  const openCreate = () => {
+  const volunteerApplicationId = useMemo(() => String(doc?._id || ""), [doc?._id]);
+
+  const notes = useMemo(() => deepClone(doc?.internalNotes || []), [doc?.internalNotes]);
+
+  const sortedNotes = useMemo(() => {
+    const arr = Array.isArray(notes) ? [...notes] : [];
+    arr.sort((a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0));
+    return arr;
+  }, [notes]);
+
+  const [openAdd, setOpenAdd] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // nota a borrar
+  const [isBusy, setIsBusy] = useState(false);
+
+  const openCreate = useCallback(() => {
+    if (!volunteerApplicationId) return modal?.("Error", "volunteerApplicationId no válido");
     setOpenAdd(true);
-  };
+  }, [volunteerApplicationId, modal]);
 
   const addFields = useMemo(
     () => [
       { name: "section1", type: "section", label: "Añadir nota interna" },
-      {
-        name: "note",
-        label: "Nota",
-        type: "textarea",
-        required: true,
-        defaultValue: "",
-      },
+      { name: "note", label: "Nota", type: "textarea", required: true, defaultValue: "" },
     ],
     []
   );
 
+  const authorLabel = (n) => {
+    const u = n?.userId;
+    if (!u || typeof u === "string") return "Autor";
+    const name = `${u.firstName || ""} ${u.lastName || ""}`.trim();
+    return name || (u.email ? String(u.email) : "Autor");
+  };
+
   const handleAdd = async (form) => {
+    if (isBusy) return;
+
     const text = String(form?.note || "").trim();
-    if (!text) {
-      modal?.("Error", "Escribe una nota");
-      return;
-    }
+    if (!text) return modal?.("Error", "Escribe una nota");
+
+    const authorId = logged?.user?._id || null;
 
     try {
+      setIsBusy(true);
       charge?.(true);
+
       const token = getToken();
+      const payload = {
+        volunteerApplicationId,
+        note: text,
+        ...(authorId ? { userId: authorId } : {}),
+      };
 
-      const resp = await volunteerAddNote(
-        {
-          volunteerApplicationId: doc?._id,
-          note: text,
-          userId: logged.user._id, // si tu back usa req.user, puedes quitar esto
-        },
-        token
-      );
+      const res = await volunteerAddNote(payload, token);
+      if (res?.error) throw new Error(res.message || "No se pudo añadir la nota");
 
-      if (resp?.error) {
-        modal?.("Error", resp.message || "No se pudo añadir la nota");
-        return;
-      }
-
-      // resp suele ser el array updated.internalNotes (según tu controller)
-      onNotesUpdated?.(resp);
+      const fullDoc = res?.data || res;
 
       setOpenAdd(false);
       modal?.("Voluntariado", "Nota añadida");
+      onDocUpdated?.(fullDoc);
     } catch (e) {
       modal?.("Error", e?.message || "No se pudo añadir la nota");
     } finally {
       charge?.(false);
+      setIsBusy(false);
     }
   };
 
-  const authorLabel = (n) => {
-    const u = n?.userId;
-    if (!u) return "Autor";
-    // a veces puede venir populate (obj) o id (string)
-    if (typeof u === "string") return "Autor";
-    const name = `${u.firstName || ""} ${u.lastName || ""}`.trim();
-    return name || "Autor";
+  const askDelete = (note) => {
+    if (isBusy) return;
+    if (!note?._id) return;
+    setConfirmDelete(note);
+  };
+
+  const doDelete = async () => {
+    if (isBusy) return;
+    const note = confirmDelete;
+    if (!note?._id) return;
+
+    try {
+      setIsBusy(true);
+      charge?.(true);
+
+      const token = getToken();
+      const res = await volunteerDeleteNote(
+        { volunteerApplicationId, noteId: String(note._id) },
+        token
+      );
+
+      if (res?.error) throw new Error(res.message || "No se pudo eliminar la nota");
+
+      const fullDoc = res?.data || res;
+
+      setConfirmDelete(null);
+      modal?.("Voluntariado", "Nota eliminada");
+      onDocUpdated?.(fullDoc);
+    } catch (e) {
+      modal?.("Error", e?.message || "No se pudo eliminar la nota");
+    } finally {
+      charge?.(false);
+      setIsBusy(false);
+    }
   };
 
   return (
     <div className={styles.contenedor}>
       <h2>
         NOTAS INTERNAS
-       
+
           <FaSquarePlus
             title="Añadir nota"
-            style={{ cursor: "pointer", marginLeft: 10 }}
-            onClick={openCreate}
+            className={`${styles.icon} ${isBusy ? styles.disabled : ""}`}
+            onClick={() => !isBusy && openCreate()}
           />
-       
+
       </h2>
 
-      <div style={{ flex: "1 1 100%" }}>
+      <div className={styles.notesWrap}>
         <label>Histórico</label>
 
-        {notes?.length ? (
-          notes
-            .slice()
-            .reverse()
-            .map((n, i) => (
-              <div
-                key={n?._id || i}
-                style={{ padding: "8px 0", borderBottom: "1px solid #eee" }}
-              >
-                <div style={{ fontSize: "9pt", opacity: 0.7 }}>
-                  {authorLabel(n)}
-                  {" · "}
-                  {n?.createdAt ? new Date(n.createdAt).toLocaleString("es-ES") : ""}
+        {sortedNotes.length ? (
+          <div className={styles.notesList}>
+            {sortedNotes.map((n, i) => (
+              <div key={n?._id || i} className={styles.noteItem}>
+                <div className={styles.noteHead}>
+                  <div className={styles.noteMeta}>
+                    <span className={styles.noteAuthor}>{authorLabel(n)}</span>
+                    <span className={styles.noteDot}>·</span>
+                    <span className={styles.noteDate}>
+                      {n?.createdAt ? new Date(n.createdAt).toLocaleString("es-ES") : "—"}
+                    </span>
+                  </div>
+
+
+                    <FaTrashAlt
+                      title="Eliminar nota"
+                      className={`${styles.noteTrash} ${isBusy ? styles.disabled : ""}`}
+                      onClick={() => askDelete(n)}
+                    />
+                 
                 </div>
-                <div style={{ whiteSpace: "pre-wrap" }}>{n?.note}</div>
+
+                <div className={styles.noteBody}>{n?.note || ""}</div>
               </div>
-            ))
+            ))}
+          </div>
         ) : (
-          <div style={{ opacity: 0.7 }}>No hay notas internas.</div>
+          <div className={styles.muted}>No hay notas internas.</div>
         )}
       </div>
 
@@ -128,6 +178,15 @@ export default function VolunteerInternalNotes({
           onSubmit={handleAdd}
           onClose={() => setOpenAdd(false)}
           modal={modal}
+        />
+      )}
+
+      {confirmDelete && (
+        <ModalConfirmation
+          title="Eliminar nota"
+          message="¿Seguro que deseas eliminar esta nota interna?"
+          onConfirm={doDelete}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>

@@ -507,6 +507,7 @@ export const volunteerDelete=(data,token)=>fetchData('/volunteerdelete','POST',t
 export const volunteerList=(filters,token)=>fetchData('/volunteerlist','POST',token,filters);
 export const volunteerGetById=(data,token)=>fetchData('/volunteerget','POST',token,data);
 export const volunteerAddNote=(data,token)=>fetchData('/volunteeraddnote','POST',token,data);
+export const volunteerDeleteNote=(data,token)=>fetchData('/volunteerdeletenote','POST',token,data);
 export const volunteerChronologyAdd = (data, token) =>fetchData("/volunteeraddchronology", "POST", token, data);
 export const volunteerChronologyUpdate = (data, token) =>fetchData("/volunteerchronologyupdate", "POST", token, data);
 export const volunteerChronologyDelete = (data, token) =>fetchData("/volunteerchronologydelete", "POST", token, data);

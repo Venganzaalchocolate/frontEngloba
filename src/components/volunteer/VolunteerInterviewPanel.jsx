@@ -1,8 +1,9 @@
 import { useMemo, useState, useCallback } from "react";
 import styles from "../styles/infoEmployer.module.css";
-import { FaSquarePlus } from "react-icons/fa6";
-import { FaRegTrashAlt, FaRegEdit } from "react-icons/fa";
+import { FaCalendar, FaClock, FaRegClock, FaSquarePlus } from "react-icons/fa6";
+import { FaRegTrashAlt, FaRegEdit, FaTimesCircle } from "react-icons/fa";
 import ModalForm from "../globals/ModalForm";
+import ModalConfirmation from "../globals/ModalConfirmation";
 import { getToken } from "../../lib/serviceToken";
 import { volunteerInterview } from "../../lib/data";
 import { useLogin } from "../../hooks/useLogin";
@@ -15,31 +16,32 @@ const STATUS_OPTIONS = [
   { value: "cancelada", label: "Cancelada" },
 ];
 
+const pad2 = (n) => String(n).padStart(2, "0");
+
 const toDateInputValue = (v) => {
   if (!v) return "";
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return "";
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
 const toTimeInputValue = (v) => {
   if (!v) return "";
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return "";
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 };
 
+// devuelve ISO o null. Si solo hay una de las dos -> lanza error
 const combineDateTimeToISO = (dateStr, timeStr) => {
   const d = String(dateStr || "").trim();
   const t = String(timeStr || "").trim();
 
   if (!d && !t) return null;
-  if (!d || !t) return "__INVALID__";
+  if (!d || !t) throw new Error("Debes indicar fecha y hora (o dejar ambas vacías)");
 
   const dt = new Date(`${d}T${t}:00`);
-  if (Number.isNaN(dt.getTime())) return "__INVALID__";
+  if (Number.isNaN(dt.getTime())) throw new Error("Fecha/hora inválida");
   return dt.toISOString();
 };
 
@@ -58,7 +60,7 @@ const timeOnlyLabel = (it) => {
 };
 
 const statusLabel = (it) => {
-  const s = it?.status || "pendiente";
+  const s = String(it?.status || "pendiente");
   if (s === "pendiente") return "Pendiente";
   if (s === "realizada") return "Realizada";
   if (s === "cancelada") return "Cancelada";
@@ -70,58 +72,83 @@ const interviewerLabel = (it) => {
   if (!u) return "—";
   if (typeof u === "string") return "—";
   const name = `${u.firstName || ""} ${u.lastName || ""}`.trim();
-  return name || "—";
+  return name || (u.email ? String(u.email) : "—");
 };
 
 export default function VolunteerInterviewsPanel({
   doc,
   modal,
   charge,
-  onInterviewsUpdated,
   canEdit = true,
+  onDocUpdated, // ✅ doc completo
   useReqUserAsInterviewer = false,
 }) {
   const { logged } = useLogin();
 
-  const interviews = useMemo(
-    () => deepClone(doc?.interview || []),
-    [doc?.interview]
-  );
+  const volunteerApplicationId = useMemo(() => String(doc?._id || ""), [doc?._id]);
+
+  // ✅ source of truth: doc.interview
+  const interviews = useMemo(() => deepClone(doc?.interview || []), [doc?.interview]);
+
+  const sortedInterviews = useMemo(() => {
+    const arr = Array.isArray(interviews) ? [...interviews] : [];
+    // más reciente primero (los null al final)
+    arr.sort((a, b) => {
+      const ta = a?.date ? new Date(a.date).getTime() : -Infinity;
+      const tb = b?.date ? new Date(b.date).getTime() : -Infinity;
+      return tb - ta;
+    });
+    return arr;
+  }, [interviews]);
 
   const [openEdit, setOpenEdit] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [isBusy, setIsBusy] = useState(false);
 
-  const openCreate = () => {
-    if (!canEdit) return;
+  const openCreate = useCallback(() => {
+    if (!canEdit || isBusy) return;
+    if (!volunteerApplicationId) {
+      modal?.("Error", "volunteerApplicationId no válido");
+      return;
+    }
     setEditingId(null);
     setOpenEdit(true);
-  };
+  }, [canEdit, isBusy, volunteerApplicationId, modal]);
 
-  const openEditOne = (id) => {
-    if (!canEdit) return;
-    setEditingId(id);
-    setOpenEdit(true);
-  };
+  const openEditOne = useCallback(
+    (id) => {
+      if (!canEdit || isBusy) return;
+      setEditingId(String(id || ""));
+      setOpenEdit(true);
+    },
+    [canEdit, isBusy]
+  );
 
   const currentEditing = useMemo(() => {
     if (!editingId) return null;
-    return interviews.find((x) => String(x?._id) === String(editingId)) || null;
-  }, [editingId, interviews]);
+    return sortedInterviews.find((x) => String(x?._id) === String(editingId)) || null;
+  }, [editingId, sortedInterviews]);
 
   const fields = useMemo(() => {
     const it = currentEditing;
 
     const nameFromLogged = `${logged?.user?.firstName || ""} ${logged?.user?.lastName || ""}`.trim();
     const nameFromIt = it ? interviewerLabel(it) : "—";
+    const interviewer = nameFromIt !== "—" ? nameFromIt : (nameFromLogged || "—");
 
     return [
-      { name: "section1", type: "section", label: editingId ? "Editar entrevista" : "Nueva entrevista" },
+      {
+        name: "section1",
+        type: "section",
+        label: editingId ? "Editar entrevista" : "Nueva entrevista",
+      },
       {
         name: "interviewer",
         label: "Entrevistador/a",
         type: "text",
         disabled: true,
-        defaultValue: nameFromIt !== "—" ? nameFromIt : (nameFromLogged || "—"),
+        defaultValue: interviewer,
       },
       {
         name: "date",
@@ -156,69 +183,81 @@ export default function VolunteerInterviewsPanel({
   }, [currentEditing, editingId, logged?.user]);
 
   const handleSubmit = async (form) => {
-    try {
-      charge?.(true);
-      const token = getToken();
+    if (!canEdit || isBusy) return;
 
+    try {
       const iso = combineDateTimeToISO(form?.date, form?.time);
-      if (iso === "__INVALID__") {
-        modal?.("Error", "Debes indicar fecha y hora (o dejar ambas vacías)");
-        return;
-      }
 
       const payload = {
-        volunteerApplicationId: doc?._id,
+        volunteerApplicationId,
         interview: {
-          date: iso || null,
+          date: iso, // null si vacío
           status: String(form?.status || "pendiente"),
           notes: String(form?.notes || "").trim(),
         },
       };
 
+      // ✅ si NO usas req.user en back, mandamos userId (si existe)
       if (!useReqUserAsInterviewer && logged?.user?._id) {
         payload.interview.userId = logged.user._id;
       }
 
-      // update si hay editingId
       if (editingId) payload.interviewId = editingId;
 
-      const resp = await volunteerInterview(payload, token);
-      if (resp?.error) {
-        modal?.("Error", resp.message || "No se pudo guardar la entrevista");
-        return;
-      }
+      setIsBusy(true);
+      charge?.(true);
 
-      onInterviewsUpdated?.(resp); // resp debería ser updated.interview (array)
+      const token = getToken();
+      const res = await volunteerInterview(payload, token);
+
+      if (res?.error) throw new Error(res.message || "No se pudo guardar la entrevista");
+
+      const fullDoc = res?.data || res;
+
       setOpenEdit(false);
       setEditingId(null);
       modal?.("Voluntariado", "Entrevista guardada");
+      onDocUpdated?.(fullDoc);
     } catch (e) {
       modal?.("Error", e?.message || "No se pudo guardar la entrevista");
     } finally {
       charge?.(false);
+      setIsBusy(false);
     }
   };
 
-  const removeOne = async (id) => {
+  const doDelete = async () => {
+    if (!canEdit || isBusy) return;
+
+    const it = confirmDelete;
+    if (!it?._id) return;
+
     try {
+      setIsBusy(true);
       charge?.(true);
+
       const token = getToken();
-      const resp = await volunteerInterview(
-        { volunteerApplicationId: doc?._id, action: "remove_one", interviewId: id },
+      const res = await volunteerInterview(
+        {
+          volunteerApplicationId,
+          action: "remove_one",
+          interviewId: String(it._id),
+        },
         token
       );
 
-      if (resp?.error) {
-        modal?.("Error", resp.message || "No se pudo borrar la entrevista");
-        return;
-      }
+      if (res?.error) throw new Error(res.message || "No se pudo borrar la entrevista");
 
-      onInterviewsUpdated?.(resp);
+      const fullDoc = res?.data || res;
+
+      setConfirmDelete(null);
       modal?.("Voluntariado", "Entrevista eliminada");
+      onDocUpdated?.(fullDoc);
     } catch (e) {
       modal?.("Error", e?.message || "No se pudo borrar la entrevista");
     } finally {
       charge?.(false);
+      setIsBusy(false);
     }
   };
 
@@ -226,63 +265,66 @@ export default function VolunteerInterviewsPanel({
     <div className={styles.contenedor}>
       <h2>
         ENTREVISTAS
-        <FaSquarePlus
-          title="Añadir entrevista"
-          style={{ cursor: "pointer", marginLeft: 10 }}
-          onClick={openCreate}
-        />
+        {canEdit && (
+          <FaSquarePlus
+            title="Añadir entrevista"
+            style={{
+              cursor: isBusy ? "not-allowed" : "pointer",
+              marginLeft: 10,
+              opacity: isBusy ? 0.6 : 1,
+            }}
+            onClick={() => !isBusy && openCreate()}
+          />
+        )}
       </h2>
 
-      {interviews?.length ? (
-        interviews
-          .slice()
-          .reverse()
-          .map((it) => (
-            <div key={it?._id} className="volunteerInterview__body" style={{ marginBottom: 12 }}>
-              <div className="volunteerInterview__row">
-                <div className="volunteerInterview__label">Entrevistador/a</div>
-                <div className="volunteerInterview__value">{interviewerLabel(it)}</div>
-              </div>
+{sortedInterviews.length ? (
+  sortedInterviews.map((it) => (
+    <div
+      key={it?._id}
+      className={styles.volunteerInterviewBody}
+    >
+      <div className={styles.volunteerInterviewRow}>
+        <div className={styles.volunteerInterviewLabel}>Entrevistador/a</div>
+        <div className={styles.volunteerInterviewValue}>{interviewerLabel(it)}</div>
+      </div>
 
-              <div className="volunteerInterview__row">
-                <div className="volunteerInterview__label">Fecha</div>
-                <div className="volunteerInterview__value">{dateOnlyLabel(it)}</div>
-              </div>
+      <div className={styles.volunteerInterviewRow}>
+        <div className={styles.volunteerInterviewValue}><FaCalendar/>{dateOnlyLabel(it)}</div>
+        <div className={styles.volunteerInterviewValue}><FaRegClock/>{timeOnlyLabel(it)}</div>
+        <div className={styles.volunteerInterviewValue}>{statusLabel(it)}</div>
+      </div>
 
-              <div className="volunteerInterview__row">
-                <div className="volunteerInterview__label">Hora</div>
-                <div className="volunteerInterview__value">{timeOnlyLabel(it)}</div>
-              </div>
 
-              <div className="volunteerInterview__row">
-                <div className="volunteerInterview__label">Estado</div>
-                <div className="volunteerInterview__value">{statusLabel(it)}</div>
-              </div>
+      <div className={`${styles.volunteerInterviewRow} ${styles.volunteerInterviewRowLast}`}>
+        <div className={styles.volunteerInterviewLabel}>Notas</div>
+        <div className={`${styles.volunteerInterviewValue} ${styles.volunteerInterviewValuePre}`}>
+          {it?.notes?.trim() ? it.notes : "—"}
+        </div>
+      </div>
 
-              <div className="volunteerInterview__row volunteerInterview__row--last">
-                <div className="volunteerInterview__label">Notas</div>
-                <div className="volunteerInterview__value volunteerInterview__value--pre">
-                  {it?.notes?.trim() ? it.notes : "—"}
-                </div>
-              </div>
+      {canEdit && (
+        <div className={styles.volunteerInterviewActions}>
+          <button onClick={() => openEditOne(it._id)}>
+            <FaRegEdit/>
+            Editar
+          </button>
 
-              {canEdit && (
-                <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                  <button type="button" onClick={() => openEditOne(it._id)}>
-                    <FaRegEdit style={{ marginRight: 6 }} />
-                    Editar
-                  </button>
-                  <button type="button" className="tomato" onClick={() => removeOne(it._id)}>
-                    <FaRegTrashAlt style={{ marginRight: 6 }} />
-                    Eliminar
-                  </button>
-                </div>
-              )}
-            </div>
-          ))
-      ) : (
-        <div style={{ opacity: 0.7 }}>No hay entrevistas.</div>
+          <button
+            className='tomato'
+            onClick={() => setConfirmDelete(it)}
+          >
+            <FaRegTrashAlt/>
+            Eliminar
+          </button>
+        </div>
       )}
+    </div>
+  ))
+) : (
+  <div style={{ opacity: 0.7 }}>No hay entrevistas.</div>
+)}
+
 
       {openEdit && (
         <ModalForm
@@ -295,6 +337,15 @@ export default function VolunteerInterviewsPanel({
             setEditingId(null);
           }}
           modal={modal}
+        />
+      )}
+
+      {confirmDelete && (
+        <ModalConfirmation
+          title="Eliminar entrevista"
+          message="¿Seguro que deseas eliminar esta entrevista?"
+          onConfirm={doDelete}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>

@@ -428,7 +428,7 @@ filtros
 
     .tableCellStatus {
         flex: 1;
-        justify-content: end;
+       
         display: flex;
         align-self: center;
     }
@@ -454,41 +454,32 @@ filtros
     flex:1;
 }
 
-/* --- State select inline (Volunteer) --- */
-.stateSelect {
-  width: 100%;
-  max-width: 220px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(0,0,0,0.12);
-  font-size: 0.95rem;
-  background: #fff;
-  cursor: pointer;
+/* Para que el fondo se vea en toda la fila */
+.tableContainer {
+  transition: background-color 180ms ease, border-color 180ms ease;
 }
 
-/* sin color: como está ahora */
-.state_no_asignado {
-  background: #fff;
-  color: inherit;
+/* Importante: si tus celdas tienen background propio, esto lo anula */
+.tableCell,
+.tableCellStatus {
+  background: transparent;
+  display: flex;
+  flex: 1;
 }
 
-/* verde */
-.state_activo {
-  background: rgba(46, 204, 113, 0.18);
-  border-color: rgba(46, 204, 113, 0.45);
-  color: #1f7a43;
+/* Estados (ajusta colores a tu gusto) */
+.row_no_asignado {
+  background: rgba(150, 150, 150, 0.10);
 }
 
-/* rojo */
-.state_descartado {
-  background: rgba(231, 76, 60, 0.18);
-  border-color: rgba(231, 76, 60, 0.45);
-  color: #8f2d23;
+.row_activo {
+  background: rgba(0, 160, 80, 0.12);
 }
 
-/* amarillo */
-.state_pendiente {
-  background: rgba(241, 196, 15, 0.22);
-  border-color: rgba(241, 196, 15, 0.55);
-  color: #7a5a00;
+.row_pendiente {
+  background: rgba(255, 170, 0, 0.12);
+}
+
+.row_descartado {
+  background: rgba(220, 40, 40, 0.10);
 }

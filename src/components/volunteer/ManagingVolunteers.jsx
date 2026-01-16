@@ -5,7 +5,7 @@ import { TbFileTypeXml } from "react-icons/tb";
 import { useDebounce } from "../../hooks/useDebounce.jsx";
 import { useLogin } from "../../hooks/useLogin.jsx";
 import { getToken } from "../../lib/serviceToken.js";
-import { capitalizeWords } from "../../lib/utils.js";
+import { capitalizeWords, formatDatetime } from "../../lib/utils.js";
 
 
 import InfoVolunteer from "./InfoVolunteer.jsx";
@@ -67,7 +67,7 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
 const getAreasLabel = (v) => {
   const arr = Array.isArray(v?.areaInterest) ? v.areaInterest : [];
   if (!arr.length) return "—";
-  return arr.join(", ");
+  return arr.join(", ").toUpperCase();
 };
 
 const stateKey = (s) =>
@@ -104,8 +104,8 @@ const onChangeStateInline = async (id, nextState) => {
   // -------------------------
   // LIST
   // -------------------------
-  const loadList = async (showLoader = false) => {
-    if (showLoader) charge(true);
+  const loadList = async () => {
+    charge(true);
     try {
       const token = getToken();
 
@@ -147,12 +147,14 @@ const onChangeStateInline = async (id, nextState) => {
     } catch (e) {
       modal("Error", e?.message || "Ocurrió un error inesperado");
     } finally {
-      if (showLoader) charge(false);
+      charge(false);
     }
   };
 
+
+
   useEffect(() => {
-    if (logged?.isLoggedIn) loadList(true);
+    if (logged?.isLoggedIn) loadList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedFilters, page, limit]);
 
@@ -217,61 +219,83 @@ const onChangeStateInline = async (id, nextState) => {
   // -------------------------
   // DISABLE / DELETE
   // -------------------------
-  const onDisable = async () => {
-    if (!isRootOrGlobal || !selectedId) return;
+ const onDisable = async () => {
+  if (!isRootOrGlobal || !selectedId) return;
 
-    try {
-      charge(true);
-      const token = getToken();
-      const updated = await volunteerDisable(
-        { volunteerApplicationId: selectedId },
-        token
-      );
+  const rollback = optimisticPatch({ _id: selectedId, active: false });
 
-      if (updated?.error) {
-        modal("Error", updated.message || "No se pudo desactivar");
-        return;
-      }
-      setShowModal('')
-      modal("Voluntariado", "Solicitud desactivada");
-      updateSelectedLocally(updated);
-      await loadList(false);
-      
-    } catch (e) {
-      modal("Error", e?.message || "No se pudo desactivar");
-    } finally {
-      charge(false);
+  try {
+    charge(true);
+    const token = getToken();
+
+    const updated = await volunteerDisable({ volunteerApplicationId: selectedId }, token);
+
+    if (updated?.error) {
+      rollback();
+      modal("Error", updated.message || "No se pudo desactivar");
+      return;
     }
+
+    setShowModal("");
+    modal("Voluntariado", "Solicitud desactivada");
+
+    const doc = updated?.data || updated;
+    updateSelectedLocally({ _id: selectedId, active: doc?.active ?? false });
+  } catch (e) {
+    rollback();
+    modal("Error", e?.message || "No se pudo desactivar");
+  } finally {
+    charge(false);
+  }
+};
+
+const optimisticRemove = (id) => {
+  const prevItems = items;
+  const prevSelected = selected;
+  const prevSelectedId = selectedId;
+
+  setItems((prev) => prev.filter((x) => x._id !== id));
+  if (prevSelectedId === id) {
+    setSelected(null);
+    setSelectedId(null);
+  }
+
+  return () => {
+    setItems(prevItems);
+    setSelected(prevSelected);
+    setSelectedId(prevSelectedId);
   };
-
-  const onDelete = async () => {
-    if (!isRootOrGlobal || !selectedId) return;
+};
 
 
-    try {
-      charge(true);
-      const token = getToken();
-      const resp = await volunteerDelete(
-        { volunteerApplicationId: selectedId },
-        token
-      );
+ const onDelete = async () => {
+  if (!isRootOrGlobal || !selectedId) return;
 
-      if (resp?.error) {
-        modal("Error", resp.message || "No se pudo eliminar");
-        return;
-      }
-      setShowModal('')
-      modal("Voluntariado", "Solicitud eliminada");
-      setSelected(null);
-      setSelectedId(null);
-      await loadList(false);
-      
-    } catch (e) {
-      modal("Error", e?.message || "No se pudo eliminar");
-    } finally {
-      charge(false);
+  const id = selectedId;
+  const rollback = optimisticRemove(id);
+
+  try {
+    charge(true);
+    const token = getToken();
+
+    const resp = await volunteerDelete({ volunteerApplicationId: id }, token);
+
+    if (resp?.error) {
+      rollback();
+      modal("Error", resp.message || "No se pudo eliminar");
+      return;
     }
-  };
+
+    setShowModal("");
+    modal("Voluntariado", "Solicitud eliminada");
+  } catch (e) {
+    rollback();
+    modal("Error", e?.message || "No se pudo eliminar");
+  } finally {
+    charge(false);
+  }
+};
+
 
   // -------------------------
   // Agrupar activos/inactivos
@@ -306,6 +330,76 @@ const { activeItems, inactiveItems } = useMemo(() => {
     setFilters((prev) => ({ ...prev, [name]: value || "" }));
   }, []);
 
+  const optimisticPatch = (patch) => {
+  // snapshot para rollback
+  const prevItems = items;
+  const prevSelected = selected;
+
+  // aplica parche local
+  if (patch?._id) updateSelectedLocally(patch);
+
+  // devuelve rollback
+  return () => {
+    setItems(prevItems);
+    setSelected(prevSelected);
+  };
+};
+
+// ✅ 1) Normaliza un doc que venga del back (por si viene populate o ids)
+const normalizeVolunteerDoc = (doc) => {
+  if (!doc?._id) return doc;
+
+  return {
+    ...doc,
+    province: doc?.province?._id || doc?.province || "",
+    studies: Array.isArray(doc?.studies) ? doc.studies.map((x) => x?._id || x).filter(Boolean) : [],
+    programInterest: Array.isArray(doc?.programInterest)
+      ? doc.programInterest.map((x) => x?._id || x).filter(Boolean)
+      : [],
+    areaInterest: Array.isArray(doc?.areaInterest) ? doc.areaInterest : [],
+    occupation: Array.isArray(doc?.occupation) ? doc.occupation : [],
+    chronology: Array.isArray(doc?.chronology) ? doc.chronology : [],
+    interview: Array.isArray(doc?.interview) ? doc.interview : [],
+    internalNotes: Array.isArray(doc?.internalNotes) ? doc.internalNotes : [],
+    firstName: doc.firstName ? capitalizeWords(doc.firstName) : "",
+    lastName: doc.lastName ? capitalizeWords(doc.lastName) : "",
+  };
+};
+
+// ✅ 2) Esta es LA función que llamarán todos los hijos
+const syncVolunteerDoc = useCallback((incoming) => {
+  const doc = normalizeVolunteerDoc(incoming);
+  if (!doc?._id) return;
+
+  setItems((prev) => prev.map((x) => (x._id === doc._id ? { ...x, ...doc } : x)));
+
+  setSelected((prev) => {
+    // si el panel abierto es este mismo, lo actualizamos
+    if (selectedId === doc._id) return { ...(prev || {}), ...doc };
+    return prev;
+  });
+}, [selectedId]);
+
+
+const syncVolunteerDeleted = useCallback((id) => {
+  setItems((prev) => prev.filter((x) => x._id !== id));
+  if (selectedId === id) {
+    setSelected(null);
+    setSelectedId(null);
+  }
+}, [selectedId]);
+
+const syncVolunteerDisabled = useCallback((docOrId) => {
+  const id = typeof docOrId === "string" ? docOrId : docOrId?._id;
+  if (!id) return;
+  // si el back devuelve doc completo, usa syncVolunteerDoc
+  if (typeof docOrId === "object") return syncVolunteerDoc(docOrId);
+  // si solo tuvieras id:
+  setItems((prev) => prev.map((x) => (x._id === id ? { ...x, active: false } : x)));
+  if (selectedId === id) setSelected((p) => ({ ...(p || {}), active: false }));
+}, [selectedId, syncVolunteerDoc]);
+
+
   const resetFilters = useCallback(() => {
     setPage(1);
     setSelected(null);
@@ -332,10 +426,7 @@ const { activeItems, inactiveItems } = useMemo(() => {
         charge={charge}
         enumsData={enumsData}
         canEdit={isRootOrGlobal}
-        onUpdated={(u) => {
-          updateSelectedLocally(u);
-          loadList(false);
-        }}
+        onUpdated={(fullDocFromBack) => syncVolunteerDoc(fullDocFromBack)}
       />
 
       <VolunteerChronology
@@ -345,9 +436,7 @@ const { activeItems, inactiveItems } = useMemo(() => {
         enumsData={enumsData}
         currentUserId={logged?.user?._id}
         canWrite={isRootOrGlobal}
-        onChronologyUpdated={(chronology) => {
-          updateSelectedLocally({ _id: doc._id, chronology });
-        }}
+        onDocUpdated={(fullDocFromBack) => syncVolunteerDoc(fullDocFromBack)}
       />
 
       <VolunteerInternalNotes
@@ -356,9 +445,7 @@ const { activeItems, inactiveItems } = useMemo(() => {
         charge={charge}
         currentUserId={logged?.user?._id}
         canWrite={isRootOrGlobal}
-        onNotesUpdated={(notes) => {
-          updateSelectedLocally({ _id: doc._id, internalNotes: notes });
-        }}
+        onDocUpdated={(fullDocFromBack) => syncVolunteerDoc(fullDocFromBack)}
       />
 
       <VolunteerInterviewPanel
@@ -366,10 +453,7 @@ const { activeItems, inactiveItems } = useMemo(() => {
         modal={modal}
         charge={charge}
         canEdit={isRootOrGlobal}
-
-        onInterviewsUpdated={(interviews) => {
-    updateSelectedLocally({ _id: doc._id, interview: interviews });
-  }}
+        onDocUpdated={(fullDocFromBack) => syncVolunteerDoc(fullDocFromBack)}
       />
 
       <DocumentMiscelaneaGeneric
@@ -382,7 +466,7 @@ const { activeItems, inactiveItems } = useMemo(() => {
           enumsData={enumsData}
           categoryFiles={enumsData.categoryFiles}
           officialDocs={enumsData.documentation.filter((x) => x.model === "VolunteerApplication")}
-          onChange={(x) => updateSelectedLocally(x)}
+          onChange={(fullDocFromBack) => syncVolunteerDoc(fullDocFromBack)}
         />
 
          {showModal=='eliminar' && (
@@ -418,30 +502,35 @@ const { activeItems, inactiveItems } = useMemo(() => {
   );
 
 const renderRow = (v) => {
-  const rowClass = !v.active
-    ? `${styles.tableContainer} ${styles.isOnLeave}`
-    : styles.tableContainer;
-
   const s = getState(v);
-  const sClass = styles[`state_${stateKey(s)}`] || "";
+  const sKey = stateKey(s);
+
+  const rowClass = [
+    styles.tableContainer,
+    !v.active ? styles.isOnLeave : "",
+    styles[`row_${sKey}`] || "", // 👈 fondo según estado
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const sClass = styles[`state_${sKey}`] || "";
 
   return (
     <div className={styles.containerEmployer} key={v._id}>
       <div>
+
         <div className={rowClass} onClick={() => openVolunteer(v._id)}>
+          <div className={styles.tableCell}> {formatDatetime(v.createdAt)}</div>
           <div className={styles.tableCell}>{v.firstName}</div>
           <div className={styles.tableCell}>{v.lastName}</div>
-
-          {/* NUEVO */}
           <div className={styles.tableCell}>{getProvinceLabel(v)}</div>
           <div className={styles.tableCell}>{getAreasLabel(v)}</div>
 
-          {/* Estado con select inline */}
           <div className={styles.tableCellStatus}>
             <select
               className={`${styles.stateSelect} ${sClass}`}
               value={s}
-              onClick={(e) => e.stopPropagation()}      // 👈 clave: no abrir/cerrar panel
+              onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
                 e.stopPropagation();
                 onChangeStateInline(v._id, e.target.value);
@@ -460,6 +549,7 @@ const renderRow = (v) => {
     </div>
   );
 };
+
 
 
   return (
@@ -516,6 +606,7 @@ const renderRow = (v) => {
           <div className={styles.containerTableContainer}>
             <div>
              <div className={styles.tableContainer} id={styles.cabeceraTabla}>
+              <div className={styles.tableCell}>Fecha Creación</div>
   <div className={styles.tableCell}>Nombre</div>
   <div className={styles.tableCell}>Apellidos</div>
 

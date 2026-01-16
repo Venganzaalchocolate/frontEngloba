@@ -1,14 +1,17 @@
-
 import { useMemo, useState, useCallback, useEffect } from "react";
 import styles from "../styles/infoEmployer.module.css";
 import { FaSquarePlus } from "react-icons/fa6";
+
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
+
 import { getToken } from "../../lib/serviceToken";
 import { volunteerUpdate } from "../../lib/data";
 import { buildModalFormOptionsFromIndex } from "../../lib/utils.js";
 
-// ✅ Ahora SOLO áreas (sin programas)
+// =========================
+// CONSTS
+// =========================
 const PROGRAM_AREA_ENUM = [
   "igualdad",
   "desarrollo comunitario",
@@ -29,6 +32,7 @@ const OCCUPATION_FALLBACK = [
 ];
 
 const GENDER_ENUM = ["male", "female", "others", "nonBinary"];
+
 const GENDER_OPTIONS = [
   { value: "male", label: "Masculino" },
   { value: "female", label: "Femenino" },
@@ -36,11 +40,14 @@ const GENDER_OPTIONS = [
   { value: "nonBinary", label: "No binario" },
 ];
 
+// =========================
+// HELPERS
+// =========================
 const deepClone = (x) => JSON.parse(JSON.stringify(x || {}));
 
-const toYMD = (iso) => {
-  if (!iso) return "";
-  const d = new Date(iso);
+const toYMD = (v) => {
+  if (!v) return "";
+  const d = v instanceof Date ? v : new Date(v);
   if (Number.isNaN(d.getTime())) return "";
   return d.toISOString().slice(0, 10);
 };
@@ -58,24 +65,27 @@ const genderLabel = (g) => {
   return hit?.label || "—";
 };
 
+// =========================
+// COMPONENT
+// =========================
 export default function InfoVolunteer({
   doc,
   modal,
   charge,
   enumsData,
   canEdit,
-  onUpdated,
+  onDocUpdated, // ✅ nombre estándar
 }) {
-  // =========================
-  // Normalizado (ids puros)
-  // =========================
+  // -------------------------
+  // Normalización (ids puros)
+  // -------------------------
   const normalized = useMemo(() => {
     const d = deepClone(doc);
 
     return {
       ...d,
-      volunteerApplicationId: d?._id,
-      gender: d?.gender || "", // ✅ nuevo
+      volunteerApplicationId: d?._id || "",
+      gender: d?.gender || "",
       province: d?.province?._id || d?.province || "",
       studies: Array.isArray(d?.studies)
         ? d.studies.map((x) => x?._id || x).filter(Boolean)
@@ -83,11 +93,11 @@ export default function InfoVolunteer({
       areaInterest: Array.isArray(d?.areaInterest) ? d.areaInterest : [],
       occupation: Array.isArray(d?.occupation) ? d.occupation : [],
     };
-  }, [doc?._id]);
+  }, [doc]); // ✅ importante: depende del doc entero
 
-  // =========================
-  // Options (para ModalForm + labels chips)
-  // =========================
+  // -------------------------
+  // Options (ModalForm + Chips)
+  // -------------------------
   const provincesOptions = useMemo(
     () => buildModalFormOptionsFromIndex(enumsData?.provincesIndex),
     [enumsData?.provincesIndex]
@@ -98,9 +108,7 @@ export default function InfoVolunteer({
     return Object.entries(idx)
       .filter(([, v]) => v?.isSub || !v?.isRoot)
       .map(([id, v]) => ({ value: String(id), label: v?.name || String(id) }))
-      .sort((a, b) =>
-        a.label.localeCompare(b.label, "es", { sensitivity: "base" })
-      );
+      .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
   }, [enumsData?.studiesIndex]);
 
   const occupationOptions = useMemo(() => {
@@ -128,9 +136,9 @@ export default function InfoVolunteer({
       .filter(Boolean);
   }, []);
 
-  // =========================
-  // Modales
-  // =========================
+  // -------------------------
+  // Modales / estado UI
+  // -------------------------
   const [openEdit, setOpenEdit] = useState(false);
   const [confirmCtx, setConfirmCtx] = useState(null); // { message }
   const [pendingPatch, setPendingPatch] = useState(null);
@@ -141,21 +149,19 @@ export default function InfoVolunteer({
     setPendingPatch(null);
   }, [normalized?.volunteerApplicationId]);
 
+  // -------------------------
+  // ModalForm fields
+  // -------------------------
   const buildEditFields = useCallback(() => {
     const d = normalized;
 
     return [
-      {
-        name: "section1",
-        type: "section",
-        label: `Solicitud: ${d.firstName || ""} ${d.lastName || ""}`,
-      },
+      { name: "section1", type: "section", label: `Solicitud: ${d.firstName || ""} ${d.lastName || ""}` },
 
       { name: "firstName", label: "Nombre", type: "text", required: true, defaultValue: d.firstName || "" },
       { name: "lastName", label: "Apellidos", type: "text", required: true, defaultValue: d.lastName || "" },
       { name: "birthDate", label: "Fecha de nacimiento", type: "date", required: true, defaultValue: toYMD(d.birthDate) },
 
-      // ✅ NUEVO: Género
       {
         name: "gender",
         label: "Género",
@@ -196,12 +202,11 @@ export default function InfoVolunteer({
 
       { name: "availability", label: "Disponibilidad", type: "text", required: true, defaultValue: d.availability || "" },
 
-      // ✅ Quitado: programInterest
       {
         name: "areaInterest",
         label: "Áreas de interés",
         type: "multiChips",
-        required: true, // ✅ ahora debe haber áreas
+        required: true,
         defaultValue: Array.isArray(d.areaInterest) ? d.areaInterest : [],
         options: areaOptions,
         placeholder: "Busca y añade…",
@@ -226,87 +231,87 @@ export default function InfoVolunteer({
     ];
   }, [normalized, provincesOptions, occupationOptions, studiesOptions, areaOptions]);
 
-  const computeDiffPatch = (form) => {
-    const base = normalized;
+  // -------------------------
+  // Patch diff
+  // -------------------------
+  const computeDiffPatch = useCallback(
+    (form) => {
+      const base = normalized;
 
-    const patch = {
-      firstName: form.firstName,
-      lastName: form.lastName,
-      birthDate: form.birthDate || null,
+      const patch = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        birthDate: form.birthDate || null,
+        gender: form.gender,
 
-      // ✅ nuevo
-      gender: form.gender,
+        documentId: form.documentId,
+        email: form.email,
+        phone: form.phone,
+        province: form.province,
+        localidad: form.localidad,
 
-      documentId: form.documentId,
-      email: form.email,
-      phone: form.phone,
-      province: form.province,
-      localidad: form.localidad,
+        occupation: Array.isArray(form.occupation) ? form.occupation : [],
+        occupationOtherText: form.occupationOtherText || "",
 
-      occupation: Array.isArray(form.occupation) ? form.occupation : [],
-      occupationOtherText: form.occupationOtherText || "",
+        studies: Array.isArray(form.studies) ? form.studies : [],
+        studiesOtherText: form.studiesOtherText || "",
 
-      studies: Array.isArray(form.studies) ? form.studies : [],
-      studiesOtherText: form.studiesOtherText || "",
+        availability: form.availability || "",
+        areaInterest: Array.isArray(form.areaInterest) ? form.areaInterest : [],
 
-      availability: form.availability || "",
+        referralSource: form.referralSource || "",
+        userNote: form.userNote || "",
 
-      // ✅ solo áreas
-      areaInterest: Array.isArray(form.areaInterest) ? form.areaInterest : [],
+        active: form.active === "true",
+        disableAt: form.disableAt || null,
+        disabledReason: form.disabledReason || "",
+      };
 
-      referralSource: form.referralSource || "",
-      userNote: form.userNote || "",
+      if (!(patch.occupation || []).includes("otro")) patch.occupationOtherText = "";
 
-      active: form.active === "true",
-      disableAt: form.disableAt || null,
-      disabledReason: form.disabledReason || "",
-    };
+      const nextAreas = patch.areaInterest ?? base.areaInterest ?? [];
+      if (!nextAreas || !nextAreas.length) throw new Error("Debes indicar areaInterest");
 
-    if (!(patch.occupation || []).includes("otro")) patch.occupationOtherText = "";
-
-    // ✅ regla negocio: debe haber áreas
-    const nextAreas = patch.areaInterest ?? base.areaInterest ?? [];
-    if (!nextAreas || !nextAreas.length) {
-      throw new Error("Debes indicar areaInterest");
-    }
-
-    // ✅ validación género
-    if (!GENDER_ENUM.includes(String(patch.gender || ""))) {
-      throw new Error("Debes indicar un género válido");
-    }
-
-    // diff real
-    const changed = {};
-    for (const k of Object.keys(patch)) {
-      const a = JSON.stringify(patch[k] ?? null);
-      const b = JSON.stringify(base[k] ?? null);
-      if (a !== b) changed[k] = patch[k];
-    }
-    return changed;
-  };
-
-  const handleSubmitEdit = (form) => {
-    try {
-      const diff = computeDiffPatch(form);
-
-      if (!Object.keys(diff).length) {
-        setOpenEdit(false);
-        modal?.("Voluntariado", "No hay cambios que guardar");
-        return;
+      if (!GENDER_ENUM.includes(String(patch.gender || ""))) {
+        throw new Error("Debes indicar un género válido");
       }
 
-      setPendingPatch(diff);
-      setOpenEdit(false);
-      setConfirmCtx({
-        message:
-          "Vas a guardar cambios en la solicitud de voluntariado. ¿Deseas continuar?",
-      });
-    } catch (e) {
-      modal?.("Error", e?.message || "No se pudo validar el formulario");
-    }
-  };
+      const changed = {};
+      for (const k of Object.keys(patch)) {
+        const a = JSON.stringify(patch[k] ?? null);
+        const b = JSON.stringify(base[k] ?? null);
+        if (a !== b) changed[k] = patch[k];
+      }
 
-  const doConfirmSave = async () => {
+      return changed;
+    },
+    [normalized]
+  );
+
+  const handleSubmitEdit = useCallback(
+    (form) => {
+      try {
+        const diff = computeDiffPatch(form);
+
+        if (!Object.keys(diff).length) {
+          setOpenEdit(false);
+          modal?.("Voluntariado", "No hay cambios que guardar");
+          return;
+        }
+
+        setPendingPatch(diff);
+        setOpenEdit(false);
+        setConfirmCtx({
+          message: "Vas a guardar cambios en la solicitud de voluntariado. ¿Deseas continuar?",
+        });
+      } catch (e) {
+        modal?.("Error", e?.message || "No se pudo validar el formulario");
+      }
+    },
+    [computeDiffPatch, modal]
+  );
+
+  const doConfirmSave = useCallback(async () => {
     if (!pendingPatch) {
       setConfirmCtx(null);
       return;
@@ -322,11 +327,11 @@ export default function InfoVolunteer({
       };
 
       const updated = await volunteerUpdate(payload, token);
-      if (updated?.error)
-        throw new Error(updated.message || "No se pudo actualizar");
+      if (updated?.error) throw new Error(updated.message || "No se pudo actualizar");
 
+      const fullDoc = updated?.data || updated; // ✅ doc completo
       modal?.("Voluntariado", "Solicitud actualizada");
-      onUpdated?.(updated);
+      onDocUpdated?.(fullDoc); // ✅ estándar
     } catch (e) {
       modal?.("Error", e?.message || "No se pudo actualizar");
     } finally {
@@ -334,11 +339,11 @@ export default function InfoVolunteer({
       setPendingPatch(null);
       setConfirmCtx(null);
     }
-  };
+  }, [pendingPatch, normalized.volunteerApplicationId, charge, modal, onDocUpdated]);
 
-  // =========================
-  // Render helpers (chips)
-  // =========================
+  // -------------------------
+  // UI: chips
+  // -------------------------
   const Chips = ({ values, options }) => {
     const labels = toLabels(values, options);
     return (
@@ -354,7 +359,7 @@ export default function InfoVolunteer({
   };
 
   // =========================
-  // Render (solo lectura)
+  // Render
   // =========================
   return (
     <div className={styles.contenedor}>
@@ -382,16 +387,11 @@ export default function InfoVolunteer({
       <div>
         <label>Fecha de nacimiento</label>
         <input
-          value={
-            normalized.birthDate
-              ? new Date(normalized.birthDate).toLocaleDateString("es-ES")
-              : ""
-          }
+          value={normalized.birthDate ? new Date(normalized.birthDate).toLocaleDateString("es-ES") : ""}
           disabled
         />
       </div>
 
-      {/* ✅ NUEVO */}
       <div>
         <label>Género</label>
         <input value={genderLabel(normalized.gender)} disabled />
@@ -472,10 +472,7 @@ export default function InfoVolunteer({
       {normalized.disableAt && (
         <div>
           <label>DisableAt</label>
-          <input
-            value={new Date(normalized.disableAt).toLocaleDateString("es-ES")}
-            disabled
-          />
+          <input value={new Date(normalized.disableAt).toLocaleDateString("es-ES")} disabled />
         </div>
       )}
 
@@ -512,4 +509,3 @@ export default function InfoVolunteer({
     </div>
   );
 }
-

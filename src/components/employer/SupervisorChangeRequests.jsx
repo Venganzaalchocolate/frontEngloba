@@ -31,58 +31,44 @@ export default function SupervisorChangeRequests({
   const [docsLoading, setDocsLoading] = useState({});// { [reqId]: boolean }
 
   const handleChangeTimeOffHours = (reqId, dateKey, value) => {
-  setTimeOffOverrides((prev) => {
-    const next = { ...prev };
-    const keyReq = String(reqId);
-    const byReq = { ...(next[keyReq] || {}) };
+    setTimeOffOverrides((prev) => {
+      const next = { ...prev };
+      const keyReq = String(reqId);
+      const byReq = { ...(next[keyReq] || {}) };
 
-    let val = value;
+      let val = value;
 
-    // Si el campo se queda vacío (borras para escribir otro número),
-    // guardamos "" para que el input se vea vacío y puedas volver a teclear.
-    if (val === "" || val === null || val === undefined) {
-      byReq[dateKey] = "";
+      // Si el campo se queda vacío (borras para escribir otro número),
+      // guardamos "" para que el input se vea vacío y puedas volver a teclear.
+      if (val === "" || val === null || val === undefined) {
+        byReq[dateKey] = "";
+        next[keyReq] = byReq;
+        return next;
+      }
+
+      // Normalizar coma/punto
+      if (typeof val === "string") {
+        val = val.replace(",", ".");
+      }
+
+      const hours = Number(val);
+
+      // Valor inválido → no tocamos nada (se queda el estado anterior)
+      if (Number.isNaN(hours) || hours < 0) {
+        return prev;
+      }
+
+      byReq[dateKey] = hours;
       next[keyReq] = byReq;
       return next;
-    }
-
-    // Normalizar coma/punto
-    if (typeof val === "string") {
-      val = val.replace(",", ".");
-    }
-
-    const hours = Number(val);
-
-    // Valor inválido → no tocamos nada (se queda el estado anterior)
-    if (Number.isNaN(hours) || hours < 0) {
-      return prev;
-    }
-
-    byReq[dateKey] = hours;
-    next[keyReq] = byReq;
-    return next;
-  });
-};
+    });
+  };
 
 
 
 
 
   // ==================== helpers de UI ====================
-  const studiesMap = useMemo(() => {
-    const map = new Map();
-    if (Array.isArray(enumsData?.studies)) {
-      for (const cat of enumsData.studies) {
-        if (Array.isArray(cat?.subcategories) && cat.subcategories.length) {
-          for (const sub of cat.subcategories) map.set(String(sub._id), sub.name);
-        } else if (cat?._id) {
-          map.set(String(cat._id), cat.name);
-        }
-      }
-    }
-    return map;
-  }, [enumsData]);
-
   // Documentación oficial por id (para histórico)
   const officialById = useMemo(() => {
     const m = new Map();
@@ -116,13 +102,16 @@ export default function SupervisorChangeRequests({
   const fmtBool = (v) => (v === true ? "Sí" : v === false ? "No" : "—");
   const fmtDate = (v) => (v ? formatDate(v) : "—");
   const fmtValue = (path, v) => {
+    console.log(path)
+    console.log(v)
     if (v === null || v === undefined || v === "") return "—";
     if (path === "birthday") return fmtDate(v);
     if (["fostered", "apafa", "consetmentDataProtection"].includes(path)) return fmtBool(v);
     if (path === "studies") {
       const arr = Array.isArray(v) ? v : [];
       if (!arr.length) return "—";
-      return arr.map((id) => studiesMap.get(String(id)) || String(id)).join(", ");
+      let studies=arr.map((id) =>enumsData.studiesIndex[id].name || 'no disponible');
+      return studies.join(',')
     }
     if (path === "disability.percentage") return `${v}%`;
     return String(v);
@@ -286,15 +275,15 @@ export default function SupervisorChangeRequests({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
-const handleRemoveTimeOffDay = (reqId, dateKey) => {
-  setTimeOffOverrides((prev) => {
-    const keyReq = String(reqId);
-    const prevForReq = prev[keyReq] || {};
-    // Marcamos ese día con 0 horas → es la forma "oficial" de quitarlo
-    const nextForReq = { ...prevForReq, [dateKey]: 0 };
-    return { ...prev, [keyReq]: nextForReq };
-  });
-};
+  const handleRemoveTimeOffDay = (reqId, dateKey) => {
+    setTimeOffOverrides((prev) => {
+      const keyReq = String(reqId);
+      const prevForReq = prev[keyReq] || {};
+      // Marcamos ese día con 0 horas → es la forma "oficial" de quitarlo
+      const nextForReq = { ...prevForReq, [dateKey]: 0 };
+      return { ...prev, [keyReq]: nextForReq };
+    });
+  };
 
 
   // ===== Descarga / Visualización =====
@@ -345,31 +334,31 @@ const handleRemoveTimeOffDay = (reqId, dateKey) => {
       // si la solicitud es de vacaciones/asuntos propios, añadimos override
       const req = items.find((r) => String(r._id) === String(id));
       if (req && isTimeOffRequest(req)) {
-  const entries = getTimeOffEntries(req);
-  const overridesForReq = timeOffOverrides[String(id)] || {};
+        const entries = getTimeOffEntries(req);
+        const overridesForReq = timeOffOverrides[String(id)] || {};
 
-  const overrideEntries = entries.map((e) => {
-    const rawOverride = overridesForReq[e.key];
+        const overrideEntries = entries.map((e) => {
+          const rawOverride = overridesForReq[e.key];
 
-    let h;
+          let h;
 
-    if (rawOverride === "" || rawOverride === undefined) {
-      // Campo vacío o sin tocar → dejamos las horas originales
-      h = e.hours;
-    } else {
-      // Override numérico o 0 (0 = eliminar ese día)
-      h = Number(rawOverride);
-      if (!Number.isFinite(h) || h < 0) h = 0;
-    }
+          if (rawOverride === "" || rawOverride === undefined) {
+            // Campo vacío o sin tocar → dejamos las horas originales
+            h = e.hours;
+          } else {
+            // Override numérico o 0 (0 = eliminar ese día)
+            h = Number(rawOverride);
+            if (!Number.isFinite(h) || h < 0) h = 0;
+          }
 
-    return { date: e.rawDate, hours: h };
-  });
+          return { date: e.rawDate, hours: h };
+        });
 
-  payload.timeOffOverride = {
-    kind: req.timeOff.kind,  // "vacation" | "personal"
-    entries: overrideEntries,
-  };
-}
+        payload.timeOffOverride = {
+          kind: req.timeOff.kind,  // "vacation" | "personal"
+          entries: overrideEntries,
+        };
+      }
 
       const res = await approvechangerequest(payload, token);
 
@@ -550,96 +539,96 @@ const handleRemoveTimeOffDay = (reqId, dateKey) => {
               {/* Bloque de vacaciones / asuntos propios */}
               {/* Vacaciones / asuntos propios */}
               {req.timeOff &&
-  Array.isArray(req.timeOff.entries) &&
-  req.timeOff.entries.length > 0 && (() => {
-    const reqId = String(req._id);
-    const allEntries = getTimeOffEntries(req);           // [{ key, date, hours }]
-    const overrides = timeOffOverrides[reqId] || {};
+                Array.isArray(req.timeOff.entries) &&
+                req.timeOff.entries.length > 0 && (() => {
+                  const reqId = String(req._id);
+                  const allEntries = getTimeOffEntries(req);           // [{ key, date, hours }]
+                  const overrides = timeOffOverrides[reqId] || {};
 
-    // Solo ocultamos los que el responsable ha marcado explícitamente con 0 horas
-    const visibleEntries = allEntries.filter((e) => {
-      const ov = overrides[e.key];
+                  // Solo ocultamos los que el responsable ha marcado explícitamente con 0 horas
+                  const visibleEntries = allEntries.filter((e) => {
+                    const ov = overrides[e.key];
 
-      // 0 significa "borrar este día"
-      if (ov === 0) return false;
+                    // 0 significa "borrar este día"
+                    if (ov === 0) return false;
 
-      // "" o undefined → usa las horas originales para decidir visibilidad
-      if (ov === "" || ov === undefined) {
-        return (e.hours || 0) > 0;
-      }
-
-      // Override numérico
-      return Number(ov) > 0;
-    });
-
-    return (
-      <>
-        <h4 className={styles.sectionTitle}>
-          {req.timeOff.kind === "vacation"
-            ? "DÍAS DE VACACIONES SOLICITADOS"
-            : "DÍAS DE ASUNTOS PROPIOS SOLICITADOS"}
-        </h4>
-
-        {visibleEntries.length === 0 ? (
-          <p className={styles.empty}>
-            No hay días seleccionados. Si apruebas así, no se aplicará ningún día.
-          </p>
-        ) : (
-          <ul className={styles.changes}>
-            {visibleEntries.map((e) => {
-              const overrideRaw = overrides[e.key];
-              // Para el input:
-              // - undefined → mostramos las horas originales
-              // - "" → mostramos vacío (estás editando)
-              // - número → mostramos el número override
-              const currentHours =
-                overrideRaw === undefined ? e.hours : overrideRaw;
-
-              return (
-                <li key={e.key} className={styles.changeRow}>
-                  {/* Fecha */}
-                  <span className={styles.path}>{fmtDate(e.key)}</span>
-
-                  {/* Horas editables */}
-                  <input
-                    type="number"
-                    min={0}
-                    max={24}
-                    step={0.5}
-                    className={styles.hourInput}
-                    value={currentHours}
-                    onChange={(ev) =>
-                      handleChangeTimeOffHours(
-                        reqId,
-                        e.key,
-                        ev.target.value
-                      )
+                    // "" o undefined → usa las horas originales para decidir visibilidad
+                    if (ov === "" || ov === undefined) {
+                      return (e.hours || 0) > 0;
                     }
-                  />
-                  <span className={styles.to}>horas</span>
 
-                  {/* Botón para quitar el día */}
-                  <button
-                    type="button"
-                    className={styles.btnGhost}
-                    onClick={() => handleRemoveTimeOffDay(reqId, e.key)}
-                  >
-                    Quitar día
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                    // Override numérico
+                    return Number(ov) > 0;
+                  });
 
-        <p className={styles.note}>
-          Puedes ajustar las horas por día o quitar un día con el botón
-          “Quitar día” antes de aprobar. Los días que marques con 0 horas
-          no se aplicarán.
-        </p>
-      </>
-    );
-  })()}
+                  return (
+                    <>
+                      <h4 className={styles.sectionTitle}>
+                        {req.timeOff.kind === "vacation"
+                          ? "DÍAS DE VACACIONES SOLICITADOS"
+                          : "DÍAS DE ASUNTOS PROPIOS SOLICITADOS"}
+                      </h4>
+
+                      {visibleEntries.length === 0 ? (
+                        <p className={styles.empty}>
+                          No hay días seleccionados. Si apruebas así, no se aplicará ningún día.
+                        </p>
+                      ) : (
+                        <ul className={styles.changes}>
+                          {visibleEntries.map((e) => {
+                            const overrideRaw = overrides[e.key];
+                            // Para el input:
+                            // - undefined → mostramos las horas originales
+                            // - "" → mostramos vacío (estás editando)
+                            // - número → mostramos el número override
+                            const currentHours =
+                              overrideRaw === undefined ? e.hours : overrideRaw;
+
+                            return (
+                              <li key={e.key} className={styles.changeRow}>
+                                {/* Fecha */}
+                                <span className={styles.path}>{fmtDate(e.key)}</span>
+
+                                {/* Horas editables */}
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={24}
+                                  step={0.5}
+                                  className={styles.hourInput}
+                                  value={currentHours}
+                                  onChange={(ev) =>
+                                    handleChangeTimeOffHours(
+                                      reqId,
+                                      e.key,
+                                      ev.target.value
+                                    )
+                                  }
+                                />
+                                <span className={styles.to}>horas</span>
+
+                                {/* Botón para quitar el día */}
+                                <button
+                                  type="button"
+                                  className={styles.btnGhost}
+                                  onClick={() => handleRemoveTimeOffDay(reqId, e.key)}
+                                >
+                                  Quitar día
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+
+                      <p className={styles.note}>
+                        Puedes ajustar las horas por día o quitar un día con el botón
+                        “Quitar día” antes de aprobar. Los días que marques con 0 horas
+                        no se aplicarán.
+                      </p>
+                    </>
+                  );
+                })()}
 
 
 

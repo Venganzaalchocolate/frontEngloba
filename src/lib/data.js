@@ -503,6 +503,7 @@ export const leaveGetById = (data, token) =>
 export const volunteerCreate=(data)=>fetchData('/volunteercreate','POST',null, data);
 export const volunteerUpdate=(data,token)=>fetchData('/volunteerupdate','POST',token,data);
 export const volunteerDisable=(data,token)=>fetchData('/volunteerdisable','POST',token,data);
+export const volunteerEnable=(data,token)=>fetchData('/volunteerenable','POST',token,data);
 export const volunteerDelete=(data,token)=>fetchData('/volunteerdelete','POST',token,data);
 export const volunteerList=(filters,token)=>fetchData('/volunteerlist','POST',token,filters);
 export const volunteerGetById=(data,token)=>fetchData('/volunteerget','POST',token,data);

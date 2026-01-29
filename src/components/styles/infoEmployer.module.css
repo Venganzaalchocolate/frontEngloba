@@ -162,7 +162,7 @@ align-items: baseline;
   min-height:38px;
   align-items:center;
 }
-.chip{
+.chip, .chipAlta, .chipBaja{
   padding:4px 10px;
   border-radius:999px;
   border:1px solid rgba(10, 119, 131);
@@ -170,6 +170,34 @@ align-items: baseline;
   color: rgb(10, 119, 131);
   font-size: 0.9rem;
 }
+
+.chipAlta, .chipBaja{
+  border-radius: 0.2rem;
+}
+
+.chipAlta{
+  background-color: rgb(214, 247, 226);
+  border:1px solid rgb(28, 132, 66);
+  color: rgb(28, 132, 66);
+}
+
+.chipBaja{
+  background-color: rgb(247, 214, 219);
+  border:1px solid rgb(130, 45, 59);
+  color: rgb(130, 45, 59);
+}
+
+.estados{
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.contenedor> .notaVoluntario{
+  flex: 1 1 100%;
+}
+
 .muted{ opacity:.6; }
 /* ====== LAYOUT RESPONSIVE ====== */
 @media (min-width: 1000px) {

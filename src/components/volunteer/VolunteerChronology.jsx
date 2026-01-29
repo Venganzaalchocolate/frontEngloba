@@ -253,6 +253,8 @@ export default function VolunteerChronology({
   // API calls (esperan doc completo)
   // -------------------------
   const handleCreate = async (form) => {
+    if (isBusy) return;          // ✅ evita doble submit
+  setIsBusy(true);             // ✅ ponlo lo antes posible
     try {
       validateDates(form.startAt, form.endAt);
       validateEntry(form);
@@ -260,7 +262,7 @@ export default function VolunteerChronology({
       const hoursNum = Number(form.hours);
       if (Number.isNaN(hoursNum) || hoursNum < 0) throw new Error("Horas no válidas");
 
-      setIsBusy(true);
+
       charge?.(true);
 
       const token = getToken();
@@ -292,6 +294,8 @@ export default function VolunteerChronology({
   };
 
   const handleEdit = async (form) => {
+    if (isBusy) return;          // ✅ evita doble submit
+  setIsBusy(true);             // ✅ ponlo lo antes posible
     try {
       if (!editItem) return;
 
@@ -304,7 +308,7 @@ export default function VolunteerChronology({
       const chronologyId = String(editItem?._id || "");
       if (!isValidObjectId(chronologyId)) throw new Error("chronologyId no válido");
 
-      setIsBusy(true);
+
       charge?.(true);
 
       const token = getToken();
@@ -337,6 +341,8 @@ export default function VolunteerChronology({
   };
 
   const doDelete = async () => {
+    if (isBusy) return;          // ✅ evita doble submit
+  setIsBusy(true);             // ✅ ponlo lo antes posible
     try {
       const item = confirmDelete;
       if (!item) return;

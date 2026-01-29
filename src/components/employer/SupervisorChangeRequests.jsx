@@ -102,8 +102,6 @@ export default function SupervisorChangeRequests({
   const fmtBool = (v) => (v === true ? "Sí" : v === false ? "No" : "—");
   const fmtDate = (v) => (v ? formatDate(v) : "—");
   const fmtValue = (path, v) => {
-    console.log(path)
-    console.log(v)
     if (v === null || v === undefined || v === "") return "—";
     if (path === "birthday") return fmtDate(v);
     if (["fostered", "apafa", "consetmentDataProtection"].includes(path)) return fmtBool(v);
@@ -273,7 +271,7 @@ export default function SupervisorChangeRequests({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items]);
+  }, []);
 
   const handleRemoveTimeOffDay = (reqId, dateKey) => {
     setTimeOffOverrides((prev) => {

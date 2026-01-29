@@ -7,7 +7,16 @@ import ModalConfirmation from "../globals/ModalConfirmation";
 
 import { getToken } from "../../lib/serviceToken";
 import { volunteerUpdate } from "../../lib/data";
-import { buildModalFormOptionsFromIndex } from "../../lib/utils.js";
+import { buildModalFormOptionsFromIndex, formatDate } from "../../lib/utils.js";
+
+import {
+  validateDNIorNIE,
+  validEmail,
+  validNumber,
+  validText,
+} from "../../lib/valid";
+
+import { textErrors } from "../../lib/textErrors";
 
 // =========================
 // CONSTS
@@ -65,6 +74,32 @@ const genderLabel = (g) => {
   return hit?.label || "—";
 };
 
+// computed active desde statusEvents (si el back no te manda doc.active)
+const getComputedActive = (doc) => {
+  if (typeof doc?.active === "boolean") return doc.active;
+
+  const evs = Array.isArray(doc?.statusEvents) ? doc.statusEvents : [];
+  const last = evs.length ? evs[evs.length - 1] : null;
+
+  if (last?.type === "disable") return false;
+  if (last?.type === "enable") return true;
+  return true; // sin eventos => activo por defecto
+};
+
+const getLastStatus = (doc) => {
+  if (doc?.lastStatus) return doc.lastStatus; // si el back te lo manda
+  const evs = Array.isArray(doc?.statusEvents) ? doc.statusEvents : [];
+  return evs.length ? evs[evs.length - 1] : null;
+};
+
+const isValidBirthDate = (v) => {
+  if (!v) return false;
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return false;
+  return d <= new Date();
+};
+
+
 // =========================
 // COMPONENT
 // =========================
@@ -74,7 +109,7 @@ export default function InfoVolunteer({
   charge,
   enumsData,
   canEdit,
-  onDocUpdated, // ✅ nombre estándar
+  onDocUpdated,
 }) {
   // -------------------------
   // Normalización (ids puros)
@@ -82,21 +117,37 @@ export default function InfoVolunteer({
   const normalized = useMemo(() => {
     const d = deepClone(doc);
 
+    const programInterestIds = Array.isArray(d?.programInterest)
+      ? d.programInterest.map((x) => x?._id || x).filter(Boolean)
+      : [];
+
+    const statusEvents = Array.isArray(d?.statusEvents) ? d.statusEvents : [];
+    const activeComputed = getComputedActive(d);
+    const lastStatus = getLastStatus(d);
+
     return {
       ...d,
       volunteerApplicationId: d?._id || "",
       gender: d?.gender || "",
+
       province: d?.province?._id || d?.province || "",
       studies: Array.isArray(d?.studies)
         ? d.studies.map((x) => x?._id || x).filter(Boolean)
         : [],
+      programInterest: programInterestIds,
+
       areaInterest: Array.isArray(d?.areaInterest) ? d.areaInterest : [],
       occupation: Array.isArray(d?.occupation) ? d.occupation : [],
+
+      // 👇 computed (no persistido)
+      active: activeComputed,
+      lastStatus,
+      statusEvents,
     };
-  }, [doc]); // ✅ importante: depende del doc entero
+  }, [doc]);
 
   // -------------------------
-  // Options (ModalForm + Chips)
+  // Options
   // -------------------------
   const provincesOptions = useMemo(
     () => buildModalFormOptionsFromIndex(enumsData?.provincesIndex),
@@ -140,7 +191,7 @@ export default function InfoVolunteer({
   // Modales / estado UI
   // -------------------------
   const [openEdit, setOpenEdit] = useState(false);
-  const [confirmCtx, setConfirmCtx] = useState(null); // { message }
+  const [confirmCtx, setConfirmCtx] = useState(null);
   const [pendingPatch, setPendingPatch] = useState(null);
 
   useEffect(() => {
@@ -150,7 +201,7 @@ export default function InfoVolunteer({
   }, [normalized?.volunteerApplicationId]);
 
   // -------------------------
-  // ModalForm fields
+  // ModalForm fields (SIN active/disableAt/disabledReason)
   // -------------------------
   const buildEditFields = useCallback(() => {
     const d = normalized;
@@ -158,10 +209,30 @@ export default function InfoVolunteer({
     return [
       { name: "section1", type: "section", label: `Solicitud: ${d.firstName || ""} ${d.lastName || ""}` },
 
-      { name: "firstName", label: "Nombre", type: "text", required: true, defaultValue: d.firstName || "" },
-      { name: "lastName", label: "Apellidos", type: "text", required: true, defaultValue: d.lastName || "" },
-      { name: "birthDate", label: "Fecha de nacimiento", type: "date", required: true, defaultValue: toYMD(d.birthDate) },
-
+      {
+        name: "firstName",
+        label: "Nombre",
+        type: "text",
+        required: true,
+        defaultValue: d.firstName || "",
+        isValid: (v) => (validText(v, 2, 120) ? "" : (textErrors("firstName") || textErrors("name") || "Nombre inválido")),
+      },
+      {
+        name: "lastName",
+        label: "Apellidos",
+        type: "text",
+        required: true,
+        defaultValue: d.lastName || "",
+        isValid: (v) => (validText(v, 2, 180) ? "" : (textErrors("lastName") || textErrors("name") || "Apellidos inválidos")),
+      },
+      {
+        name: "birthDate",
+        label: "Fecha de nacimiento",
+        type: "date",
+        required: true,
+        defaultValue: toYMD(d.birthDate),
+        isValid: (v) => (isValidBirthDate(v) ? "" : (textErrors("birthDate") || "Fecha inválida")),
+      },
       {
         name: "gender",
         label: "Género",
@@ -169,15 +240,50 @@ export default function InfoVolunteer({
         required: true,
         defaultValue: GENDER_ENUM.includes(d.gender) ? d.gender : "",
         options: [{ value: "", label: "Selecciona..." }, ...GENDER_OPTIONS],
+        isValid: (v) => (GENDER_ENUM.includes(String(v || "")) ? "" : "Género inválido"),
+      },
+      {
+        name: "documentId",
+        label: "DNI/NIE",
+        type: "text",
+        required: true,
+        defaultValue: d.documentId || "",
+        isValid: (v) => (validateDNIorNIE(v) ? "" : (textErrors("dni") || "DNI/NIE inválido")),
+      },
+      {
+        name: "email",
+        label: "Email",
+        type: "text",
+        required: true,
+        defaultValue: d.email || "",
+        isValid: (v) => (validEmail(v) ? "" : (textErrors("email") || "Email inválido")),
+      },
+      {
+        name: "phone",
+        label: "Teléfono",
+        type: "text",
+        required: true,
+        defaultValue: d.phone || "",
+        isValid: (v) => (validNumber(v) ? "" : (textErrors("phone") || "Teléfono inválido")),
       },
 
-      { name: "documentId", label: "DNI/NIE", type: "text", required: true, defaultValue: d.documentId || "" },
-      { name: "email", label: "Email", type: "text", required: true, defaultValue: d.email || "" },
-      { name: "phone", label: "Teléfono", type: "text", required: true, defaultValue: d.phone || "" },
-
-      { name: "province", label: "Provincia", type: "select", required: true, defaultValue: d.province || "", options: provincesOptions || [] },
-      { name: "localidad", label: "Localidad", type: "text", required: true, defaultValue: d.localidad || "" },
-
+      {
+        name: "province",
+        label: "Provincia",
+        type: "select",
+        required: true,
+        defaultValue: d.province || "",
+        options: provincesOptions || [],
+        isValid: (v) => (!!v ? "" : (textErrors("province") || "Provincia requerida")),
+      },
+      {
+        name: "localidad",
+        label: "Localidad",
+        type: "text",
+        required: true,
+        defaultValue: d.localidad || "",
+        isValid: (v) => (validText(v, 2, 120) ? "" : (textErrors("localidad") || "Localidad inválida")),
+      },
       {
         name: "occupation",
         label: "Ocupación",
@@ -185,7 +291,7 @@ export default function InfoVolunteer({
         required: true,
         defaultValue: Array.isArray(d.occupation) ? d.occupation : [],
         options: occupationOptions,
-        placeholder: "Busca y añade una o varias…",
+        isValid: (arr) => (Array.isArray(arr) && arr.length > 0 ? "" : (textErrors("occupation") || "Ocupación requerida")),
       },
       { name: "occupationOtherText", label: "Ocupación (otro)", type: "text", required: false, defaultValue: d.occupationOtherText || "" },
 
@@ -200,39 +306,41 @@ export default function InfoVolunteer({
       },
       { name: "studiesOtherText", label: "Estudios (otro)", type: "text", required: false, defaultValue: d.studiesOtherText || "" },
 
-      { name: "availability", label: "Disponibilidad", type: "text", required: true, defaultValue: d.availability || "" },
+      {
+        name: "availability",
+        label: "Disponibilidad",
+        type: "text",
+        required: true,
+        defaultValue: d.availability || "",
+        isValid: (v) => (validText(v, 0, 2000) ? "" : (textErrors("availability") || "Campo inválido")),
+      },
+
 
       {
         name: "areaInterest",
         label: "Áreas de interés",
         type: "multiChips",
-        required: true,
+        required: false, // 👈 OJO: puede estar vacío si programInterest existe
         defaultValue: Array.isArray(d.areaInterest) ? d.areaInterest : [],
         options: areaOptions,
         placeholder: "Busca y añade…",
       },
 
-      { name: "referralSource", label: "Cómo nos conoció", type: "text", required: true, defaultValue: d.referralSource || "" },
-      { name: "userNote", label: "Nota de la persona (userNote)", type: "textarea", required: false, defaultValue: d.userNote || "" },
-
       {
-        name: "active",
-        label: "Activo",
-        type: "select",
+        name: "referralSource",
+        label: "Cómo nos conoció",
+        type: "text",
         required: true,
-        defaultValue: d.active ? "true" : "false",
-        options: [
-          { value: "true", label: "Sí" },
-          { value: "false", label: "No" },
-        ],
+        defaultValue: d.referralSource || "",
+        isValid: (v) => (validText(v, 2, 500) ? "" : (textErrors("referralSource") || "Campo inválido")),
       },
-      { name: "disableAt", label: "DisableAt", type: "date", required: false, defaultValue: toYMD(d.disableAt) },
-      { name: "disabledReason", label: "Motivo desactivación", type: "textarea", required: false, defaultValue: d.disabledReason || "" },
+      { name: "userNote", label: "Nota de la persona (userNote)", type: "textarea", required: false, defaultValue: d.userNote || "" },
     ];
   }, [normalized, provincesOptions, occupationOptions, studiesOptions, areaOptions]);
 
   // -------------------------
-  // Patch diff
+  // Patch diff (SIN active/disableAt/disabledReason)
+  // + valida: (programInterest o areaInterest)
   // -------------------------
   const computeDiffPatch = useCallback(
     (form) => {
@@ -261,19 +369,19 @@ export default function InfoVolunteer({
 
         referralSource: form.referralSource || "",
         userNote: form.userNote || "",
-
-        active: form.active === "true",
-        disableAt: form.disableAt || null,
-        disabledReason: form.disabledReason || "",
       };
 
       if (!(patch.occupation || []).includes("otro")) patch.occupationOtherText = "";
 
-      const nextAreas = patch.areaInterest ?? base.areaInterest ?? [];
-      if (!nextAreas || !nextAreas.length) throw new Error("Debes indicar areaInterest");
-
       if (!GENDER_ENUM.includes(String(patch.gender || ""))) {
         throw new Error("Debes indicar un género válido");
+      }
+
+      // ✅ Regla back: programInterest o areaInterest
+      const nextAreas = patch.areaInterest ?? base.areaInterest ?? [];
+      const basePrograms = Array.isArray(base.programInterest) ? base.programInterest : [];
+      if ((!basePrograms || !basePrograms.length) && (!nextAreas || !nextAreas.length)) {
+        throw new Error("Debes indicar programInterest o areaInterest");
       }
 
       const changed = {};
@@ -291,6 +399,15 @@ export default function InfoVolunteer({
   const handleSubmitEdit = useCallback(
     (form) => {
       try {
+        // ✅ fuerza validación de todos los isValid (por si ModalForm no lo hace)
+        const fields = buildEditFields();
+        for (const f of fields) {
+          if (typeof f?.isValid === "function") {
+            const msg = f.isValid(form?.[f.name]);
+            if (msg) throw new Error(msg);
+          }
+        }
+
         const diff = computeDiffPatch(form);
 
         if (!Object.keys(diff).length) {
@@ -308,8 +425,9 @@ export default function InfoVolunteer({
         modal?.("Error", e?.message || "No se pudo validar el formulario");
       }
     },
-    [computeDiffPatch, modal]
+    [computeDiffPatch, modal, buildEditFields]
   );
+
 
   const doConfirmSave = useCallback(async () => {
     if (!pendingPatch) {
@@ -329,9 +447,9 @@ export default function InfoVolunteer({
       const updated = await volunteerUpdate(payload, token);
       if (updated?.error) throw new Error(updated.message || "No se pudo actualizar");
 
-      const fullDoc = updated?.data || updated; // ✅ doc completo
+      const fullDoc = updated?.data || updated;
       modal?.("Voluntariado", "Solicitud actualizada");
-      onDocUpdated?.(fullDoc); // ✅ estándar
+      onDocUpdated?.(fullDoc);
     } catch (e) {
       modal?.("Error", e?.message || "No se pudo actualizar");
     } finally {
@@ -358,6 +476,17 @@ export default function InfoVolunteer({
     );
   };
 
+  // status text (solo display)
+  const statusText = useMemo(() => {
+    const ls = normalized.lastStatus;
+    if (!ls) return normalized.active ? "Activo" : "En baja";
+    const d = ls.at ? new Date(ls.at) : null;
+    const dateTxt = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString("es-ES") : "";
+    const reasonTxt = ls.reason ? ` · ${ls.reason}` : "";
+    const typeTxt = ls.type === "disable" ? "Baja" : "Alta";
+    return `${typeTxt}${dateTxt ? ` (${dateTxt})` : ""}${reasonTxt}`;
+  }, [normalized.active, normalized.lastStatus]);
+
   // =========================
   // Render
   // =========================
@@ -365,13 +494,8 @@ export default function InfoVolunteer({
     <div className={styles.contenedor}>
       <h2>
         DATOS DE LA SOLICITUD
-        {canEdit && (
-          <FaSquarePlus
-            title="Editar solicitud"
-            style={{ cursor: "pointer", marginLeft: 10 }}
-            onClick={() => setOpenEdit(true)}
-          />
-        )}
+        <button onClick={() => setOpenEdit(true)}>Editar</button>
+
       </h2>
 
       <div>
@@ -458,30 +582,28 @@ export default function InfoVolunteer({
         <label>Cómo nos conoció</label>
         <input value={normalized.referralSource || ""} disabled />
       </div>
-
-      <div>
+ <div>
+        
+        <label>Alta/Baja</label>
+        <ul className={styles.estados}>
+          {normalized.statusEvents.map((x)=>{
+            return <li className={x?.type=="enable"?styles.chipAlta:styles.chipBaja}>
+              <p >{x?.type=="enable"?'Alta':'Baja'}{': '}{formatDate(x?.at)}</p>
+              {x?.type!="enable" && <p>Motivo: {x?.reason}</p>}
+            </li>
+          })}
+        </ul>
+      </div>
+      { normalized?.userNote &&
+      <div className={styles.notaVoluntario}>
         <label>Nota de la persona (userNote)</label>
-        <input value={normalized.userNote || ""} disabled />
+        <p>{normalized.userNote}</p>
       </div>
 
-      <div>
-        <label>Activo</label>
-        <input value={normalized.active ? "Sí" : "No"} disabled />
-      </div>
+      }
+      
 
-      {normalized.disableAt && (
-        <div>
-          <label>DisableAt</label>
-          <input value={new Date(normalized.disableAt).toLocaleDateString("es-ES")} disabled />
-        </div>
-      )}
-
-      {!!normalized.disabledReason && (
-        <div>
-          <label>Motivo desactivación</label>
-          <input value={normalized.disabledReason} disabled />
-        </div>
-      )}
+     
 
       {/* ===== Modales ===== */}
       {openEdit && (

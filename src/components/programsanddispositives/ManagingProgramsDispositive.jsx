@@ -144,6 +144,7 @@ const ManagingProgramsDispositive = ({
         { value: "infancia y juventud", label: "Infancia y juventud" },
         { value: "personas con discapacidad", label: "Personas con discapacidad" },
         { value: "mayores", label: "Mayores" },
+        { value: 'migraciones', label: "Migraciones"},
       ],
       defaultValue: "no identificado",
     },

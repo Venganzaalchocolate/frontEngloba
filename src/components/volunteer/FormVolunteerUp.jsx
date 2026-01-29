@@ -6,7 +6,6 @@ import { useNavigate, Link } from "react-router";
 import styles from "../styles/formJobUp.module.css";
 import logoUrl from "/graphic/logotipo.png";
 
-import MultiSelectFlat from "../globals/MultiSelectFlat";
 import { buildOptionsFromIndex } from "../../lib/utils";
 import MultiSelectGrouped from "../globals/MultiSelectGrouped";
 

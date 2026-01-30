@@ -326,6 +326,25 @@ export default function FormJobUp({
         return { ok: false, serverError: null };
       }
 
+      // ✅ Control previo: oferta exclusiva discapacidad
+if (offerInfo?.disability === true) {
+  const d = Number(values.disability || 0);
+  if (!(d > 0)) {
+    modal(
+      'Oferta exclusiva',
+      'No puedes enviar el CV a esta oferta porque es exclusiva para personas con discapacidad. Para inscribirte, debes indicar una discapacidad superior a 0%.'
+    );
+    // opcional: marcar error en el campo para que se vea en el formulario
+    setFormErrors((fe) => ({
+      ...fe,
+      disability:
+        'Esta oferta es exclusiva: debes indicar una discapacidad > 0%',
+    }));
+    return { ok: false, serverError: null };
+  }
+}
+
+
       const fileToSend = values.file;
       delete values.file;
 

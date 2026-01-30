@@ -143,6 +143,17 @@ const FormOffer = ({
         { value: "no", label: "No" },
       ],
     },
+     {
+      name: "disability",
+      label: "¿Es una oferta exclusiva para personas con discapacidad?",
+      type: "select",
+      required: true,
+      defaultValue: offer?.disability ? "si" : "no",
+      options: [
+        { value: "si", label: "Sí" },
+        { value: "no", label: "No" },
+      ],
+    },
     {
       name: "type",
       label: "Tipo de oferta",
@@ -205,6 +216,7 @@ const FormOffer = ({
         optionals_requirements: asStr(formData.optionals_requirements || ""),
         conditions: asStr(formData.conditions || ""),
         studiesId: Array.isArray(formData.studiesId) ? formData.studiesId.map(String) : [],
+        disability:toBool(formData.disability)
       };
 
       const token = getToken();
@@ -228,6 +240,7 @@ const FormOffer = ({
           active: true,
           jobId: newValues.jobId,
           provinceId: newValues.provinceId, // lo incluimos también en create
+          disability: newValues.disability
         };
 
         const result = await offerCreate(payload, token);
@@ -262,6 +275,7 @@ const FormOffer = ({
         conditions: asStr(offer?.conditions ?? ""),
         studiesId: Array.isArray(offer?.studiesId) ? offer.studiesId.map(String) : [],
         provinceId: asStr(offer?.provinceId ?? ""),
+        disability: !!offer?.disability,
       };
 
       const patch = {};
@@ -285,6 +299,7 @@ const FormOffer = ({
       }
 
       if (newValues.sepe !== curr.sepe) patch.sepe = newValues.sepe;
+      if (newValues.disability !== curr.disability) patch.disability = newValues.disability;
       if (newValues.type !== curr.type) patch.type = newValues.type;
       if (newValues.datecreate !== curr.datecreate) patch.datecreate = newValues.datecreate;
       if (newValues.essentials_requirements !== curr.essentials_requirements)

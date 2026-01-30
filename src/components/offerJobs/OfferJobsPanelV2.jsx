@@ -9,6 +9,7 @@ import { FaEye, FaEyeSlash, FaLock, FaSquarePlus } from "react-icons/fa6";
 import { FaEdit, FaInfoCircle, FaTrashAlt, FaLockOpen, FaUserFriends } from "react-icons/fa";
 import { useLogin } from '../../hooks/useLogin';
 import logoUrl from '/graphic/logotipo.png';
+import logoDiscapacidad from '/graphic/discapacidad.svg';
 
 const normDni = (dni) => (dni ? String(dni).replace(/\s+/g, '').toUpperCase() : '—');
 const humanEmployment = (status) => {
@@ -44,7 +45,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
         Array.isArray(o?.usersCv) ? o.usersCv.length :
           typeof o?.cvCount === "number" ? o.cvCount : 0
   );
-  
+
   const getDeviceId = (o) => {
     return o.dispositive?.newDispositiveId || "";
   }
@@ -52,7 +53,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   // Ahora el nombre del dispositivo sale de dispositiveIndex (no de programsIndex).
   const getDeviceName = (o) => {
     const id = getDeviceId(o);
-   
+
     const dev = dispositiveIndex?.[id];
     return dev?.name || o?.dispositive?.name || "—";
   };
@@ -112,7 +113,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
         const hiredAt = fmtDate(p.startDate);
         const statusPeriod = p.endDate ? `Fin: ${fmtDate(p.endDate)}` : 'En curso';
         const activeCompany = humanEmployment(u.employmentStatus);
-        return {name:name, dni:dni, alta:hiredAt, fin:statusPeriod, active: activeCompany};
+        return { name: name, dni: dni, alta: hiredAt, fin: statusPeriod, active: activeCompany };
       });
 
       setLinkedUsers({ offer, rows });
@@ -177,7 +178,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const buildInfoFields = (o) => {
     const fields = [
       { name: "jobLabel", label: "Función", type: "text", defaultValue: getFunctionLabel(o), disabled: true },
-      { name: "deviceLabel", label: "Dispositivo", type: "text", defaultValue: getDeviceName(o), disabled: true,  },
+      { name: "deviceLabel", label: "Dispositivo", type: "text", defaultValue: getDeviceName(o), disabled: true, },
     ];
     if (o?.location) fields.push({ name: "location", label: "Ubicación", type: "text", defaultValue: o.location, disabled: true });
     fields.push({ name: "status", label: "Estado", type: "text", defaultValue: (o?.active === false ? "Cerrada" : "Activa"), disabled: true });
@@ -278,7 +279,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
     // Siempre programId
     handleHistFilterChange("programId", item.programId);
     // Si es device, guardamos dispositiveId; si es programa, vaciamos dispositiveId
-    const deviceVal = item.type === "device" ? item.newDispositiveId  : "";
+    const deviceVal = item.type === "device" ? item.newDispositiveId : "";
     handleHistFilterChange("newDispositiveId", deviceVal);
     fetchHistory(1, histLimit, { programId: item.programId, newDispositiveId: deviceVal });
   };
@@ -359,26 +360,26 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   };
 
   const reactivateOffer = async (offer) => {
-  try {
-    charge?.(true);
-    const id = offer?._id || offer?.id;
-    const res = await offerUpdate({ active: true, offerId: id, id }, token);
+    try {
+      charge?.(true);
+      const id = offer?._id || offer?.id;
+      const res = await offerUpdate({ active: true, offerId: id, id }, token);
 
-    if (res?.error) throw new Error(res.message || "No se pudo reactivar la oferta.");
+      if (res?.error) throw new Error(res.message || "No se pudo reactivar la oferta.");
 
-    modal?.("Oferta", "Oferta reactivada correctamente.");
+      modal?.("Oferta", "Oferta reactivada correctamente.");
 
-    // Sacarla del histórico
-    setHistItems((prev) => prev.filter((o) => String(o._id || o.id) !== String(id)));
+      // Sacarla del histórico
+      setHistItems((prev) => prev.filter((o) => String(o._id || o.id) !== String(id)));
 
-    // Añadirla a activas
-    setOffers((prev) => [res, ...prev]);
-  } catch (e) {
-    modal?.("Error", e?.message);
-  } finally {
-    charge?.(false);
-  }
-};
+      // Añadirla a activas
+      setOffers((prev) => [res, ...prev]);
+    } catch (e) {
+      modal?.("Error", e?.message);
+    } finally {
+      charge?.(false);
+    }
+  };
 
   // ===== render =====
   return (
@@ -400,6 +401,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
                 <th>Función</th>
                 <th>Creada</th>
                 <th title="Pública o Privada">Tipo de Oferta</th>
+                <th >Exclusiva</th>
                 <th className={styles.thAcciones}>Acciones</th>
               </tr>
             </thead>
@@ -416,6 +418,18 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
                       <span className={styles.badge} title={o.type === 'internal' ? 'Oferta Privada' : 'Oferta Pública'}>
                         {o.type !== 'internal' ? <FaEye /> : <FaEyeSlash />}
                       </span>
+                    </td>
+                    <td className={styles.cell}>
+                      {o?.disability ? (
+                        <img
+                          src={logoDiscapacidad}
+                          alt="Oferta exclusiva discapacidad"
+                          title="Oferta exclusiva discapacidad"
+                          className={styles.iconDisability}
+                        />
+                      ) : (
+                        <span className={styles.iconPlaceholder} />
+                      )}
                     </td>
                     <td className={`${styles.cell} ${styles.actions}`}>
                       <FaInfoCircle className={styles.iconAction} title="Ver info" onClick={() => openInfo(o)} />
@@ -534,6 +548,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
                         <th>Función</th>
                         <th>Cerrada/Actualizada</th>
                         <th title="Pública o Privada">Tipo de Oferta</th>
+                        <th >Exclusiva</th>
                         <th className={styles.thAcciones}>Acciones</th>
                       </tr>
                     </thead>
@@ -542,7 +557,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
                         const key = o._id || o.id;
                         const nameJob = getFunctionLabel(o);
                         const closedAt = o?.closedAt || o?.deactivatedAt || o?.updatedAt || getCreatedDate(o);
-                        
+
                         return (
                           <tr key={key} className={styles.rowMuted}>
                             <td className={styles.cell}><span className={styles.device}>{getDeviceName(o)}</span></td>
@@ -553,26 +568,39 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
                                 {o.type !== 'internal' ? <FaEye /> : <FaEyeSlash />}
                               </span>
                             </td>
+                            <td className={styles.cell}>
+                              {o?.disability ? (
+                                <img
+                                  src={logoDiscapacidad}
+                                  alt="Oferta exclusiva discapacidad"
+                                  title="Oferta exclusiva discapacidad"
+                                  className={styles.iconDisability}
+                                />
+                              ) : (
+                                <span className={styles.iconPlaceholder} />
+                              )}
+                            </td>
+
                             <td className={`${styles.cell} ${styles.actions}`}>
-  <FaInfoCircle 
-    className={styles.iconAction} 
-    title="Ver info" 
-    onClick={() => openInfo(o)} 
-  />
+                              <FaInfoCircle
+                                className={styles.iconAction}
+                                title="Ver info"
+                                onClick={() => openInfo(o)}
+                              />
 
-  <FaUserFriends 
-    className={styles.iconAction} 
-    title="Ver contrataciones vinculadas" 
-    onClick={() => openLinkedHirings(o)} 
-  />
+                              <FaUserFriends
+                                className={styles.iconAction}
+                                title="Ver contrataciones vinculadas"
+                                onClick={() => openLinkedHirings(o)}
+                              />
 
-  {/* 🔥 Botón para reactivar oferta */}
-  <FaLock
-    className={styles.iconAction}
-    title="Reactivar oferta"
-    onClick={() => reactivateOffer(o)}
-  />
-</td>
+                              {/* 🔥 Botón para reactivar oferta */}
+                              <FaLock
+                                className={styles.iconAction}
+                                title="Reactivar oferta"
+                                onClick={() => reactivateOffer(o)}
+                              />
+                            </td>
                           </tr>
                         );
                       })}
@@ -674,10 +702,10 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
                           activoTxt === "Sí"
                             ? styles.badgeOk
                             : activoTxt === "No"
-                            ? styles.badgeDanger
-                            : activoTxt === "En proceso"
-                            ? styles.badgeWarn
-                            : styles.badgeMuted;
+                              ? styles.badgeDanger
+                              : activoTxt === "En proceso"
+                                ? styles.badgeWarn
+                                : styles.badgeMuted;
 
                         return (
                           <div key={idx} className={styles.linkedCard}>

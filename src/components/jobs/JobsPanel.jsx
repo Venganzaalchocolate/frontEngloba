@@ -5,6 +5,7 @@ import { getData, offerList } from "../../lib/data";
 import { FaArrowLeft } from "react-icons/fa";
 import { LuMapPin, LuClock3, LuChevronDown } from "react-icons/lu";
 import logoUrl from '/graphic/logotipo.png';
+import logoDiscapacidad from '/graphic/discapacidad.svg';
 
 const fmtDate = (d) => {
   if (!d) return "";
@@ -217,7 +218,15 @@ export default function JobsPanel({ modal, charge }) {
                       )}
                     </div>
                   </div>
-
+                  {!!o?.disability && (
+                    <img
+                    src={logoDiscapacidad}
+                    alt="Oferta exclusiva discapacidad"
+                    title="Oferta exclusiva discapacidad"
+                    className={styles.iconDisability}
+                  />
+                                            ) 
+                  }
                   <LuChevronDown className={styles.chev} aria-hidden="true" />
                 </button>
 
@@ -267,6 +276,7 @@ export default function JobsPanel({ modal, charge }) {
                     )}
 
                     <div className={styles.actions}>
+                      {!!o?.disability && <span className={styles.disabilityAlert}>Oferta Exclusiva para personas con discapacidad</span>}
                       <button
                         className={styles.btn}
                         onClick={() => navigate(`/trabajaconnosotros/${oid}`)}

@@ -92,11 +92,17 @@
 
 .row:nth-child(even) { background: #fafaff; }
 
-.cell {
+.cell, .cellCentrado {
   padding: 10px 12px;
   vertical-align: middle;
   color: color-mix(in srgb, var(--color-morado) 92%, #222);
   border-top: 1px solid color-mix(in srgb, var(--color-morado) 10%, #fff);
+}
+
+.cellCentrado{
+  display: flex;
+  justify-content: center;
+  align-content: center;
 }
 
 /* badges & text */
@@ -395,4 +401,16 @@
 
     }
 
+}
+
+.iconDisability{
+  display: inline-block;
+  vertical-align: middle;
+  max-height: 3rem;
+}
+
+.iconPlaceholder{
+  width: 18px;
+  height: 18px;
+  display: inline-block;
 }

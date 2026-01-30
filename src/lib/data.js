@@ -513,3 +513,4 @@ export const volunteerChronologyAdd = (data, token) =>fetchData("/volunteeraddch
 export const volunteerChronologyUpdate = (data, token) =>fetchData("/volunteerchronologyupdate", "POST", token, data);
 export const volunteerChronologyDelete = (data, token) =>fetchData("/volunteerchronologydelete", "POST", token, data);
 export const volunteerInterview=(data,token)=>fetchData('/volunteerinterview', 'POST', token, data)
+export const volunteerGetNotLimit=(data,token)=>fetchData('/volunteergetnotlimit', 'POST', token, data)

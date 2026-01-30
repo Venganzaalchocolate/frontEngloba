@@ -11,6 +11,8 @@ import InfoVolunteer from "./InfoVolunteer.jsx";
 import VolunteerInternalNotes from "./VolunteerInternalNotes.jsx";
 import VolunteerChronology from "./VolunteerChronology.jsx";
 import FiltersVolunteer from "./FiltersVolunteer.jsx";
+import CreateVolunteerDocumentXLS from "./CreateVolunteerDocumentXLS.jsx";
+
 
 import {
   volunteerList,
@@ -19,6 +21,7 @@ import {
   volunteerDelete,
   volunteerUpdate,
   volunteerEnable,
+  volunteerGetNotLimit
 } from "../../lib/data";
 
 import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric.jsx";
@@ -43,6 +46,10 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
 
   // modal eliminar/desactivar/activar
   const [showModal, setShowModal] = useState("");
+
+  //EXCEL
+  const [volunteerXLS, setVolunteerXLS] = useState(null);
+
 
   // filtros
   const [filters, setFilters] = useState({
@@ -443,27 +450,64 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
     [selectedId]
   );
 
+  const getVolunteersNotLimit = async () => {
+    try {
+      charge(true);
+      const token = getToken();
+
+      const payload = {
+        q: debouncedFilters.q || undefined,
+        province: debouncedFilters.province || undefined,
+        programId: debouncedFilters.programId || undefined,
+        area: debouncedFilters.area || undefined,
+      };
+
+      if (debouncedFilters.active === "active") payload.active = true;
+      if (debouncedFilters.active === "inactive") payload.active = false;
+
+      const data = await volunteerGetNotLimit(payload, token);
+      if (data?.error) throw new Error(data.message || "No se pudo exportar");
+
+      return data?.items || data?.data?.items || [];
+    } catch (e) {
+      modal("Error", e?.message || "Error al obtener voluntariado");
+      return [];
+    } finally {
+      charge(false);
+    }
+  };
+
+  const openXlsForm = async () => {
+    const all = await getVolunteersNotLimit();
+    if (!all || all.length === 0) {
+      modal?.("Info", "No hay voluntarios para exportar con los filtros actuales");
+      return;
+    }
+    setVolunteerXLS(all);
+  };
+
+
   // -------------------------
   // Render expandido
   // -------------------------
   const renderExpanded = (doc) => (
     <div className={styles.contenedorEmployer} style={{ flexDirection: "column" }}>
-            <div className={styles.contenedorEmployerButtonVolun}>
+      <div className={styles.contenedorEmployerButtonVolun}>
         {isRootOrGlobal && (
           <button onClick={() => setShowModal("eliminar")} className="tomato">
             Eliminar
           </button>
         )}
-        {!doc?.active 
-        ? (
-          <button onClick={() => setShowModal("activar")}>
-            Dar de Alta
+        {!doc?.active
+          ? (
+            <button onClick={() => setShowModal("activar")}>
+              Dar de Alta
+            </button>
+          )
+          : <button onClick={() => setShowModal("desactivar")} disabled={!doc?.active}>
+            Dar de Baja
           </button>
-        )
-        : <button onClick={() => setShowModal("desactivar")} disabled={!doc?.active}>
-          Dar de Baja
-        </button>
-      }
+        }
       </div>
       <InfoVolunteer
         doc={doc}
@@ -551,6 +595,7 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
       )}
 
 
+
     </div>
   );
 
@@ -615,9 +660,19 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
           <div>
             <h2>GESTIÓN DE VOLUNTARIADO</h2>
             <TbFileTypeXml
-              title="(pendiente) Exportar"
-              onClick={() => modal("Info", "Export pendiente de implementar")}
+              title="Exportar XLS"
+              onClick={openXlsForm}
+              style={{ cursor: "pointer" }}
             />
+
+            {!!volunteerXLS && (
+              <CreateVolunteerDocumentXLS
+                volunteers={volunteerXLS}
+                enumsData={enumsData}
+                closeXls={() => setVolunteerXLS(null)}
+                modal={modal}
+              />
+            )}
           </div>
 
           <div className={styles.paginacion}>

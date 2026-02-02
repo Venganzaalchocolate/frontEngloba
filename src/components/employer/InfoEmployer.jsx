@@ -11,9 +11,11 @@ import {
 } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 import { getToken } from "../../lib/serviceToken";
-import { createChangeRequest, editUser } from "../../lib/data";
+import { createChangeRequest, editUser, recreateCorporateEmail } from "../../lib/data";
 import { deepClone, formatDate } from "../../lib/utils";
 import { useLogin } from "../../hooks/useLogin";
+import ModalConfirmation from "../globals/ModalConfirmation";
+
 
 const InfoEmployer = ({
   user,
@@ -22,7 +24,7 @@ const InfoEmployer = ({
   changeUser,
   listResponsability,
   enumsData,
-  chargeUser = () => {},
+  chargeUser = () => { },
   soloInfo = false,
   onRequestCreated,
 }) => {
@@ -41,6 +43,9 @@ const InfoEmployer = ({
   const [datos, setDatos] = useState(initialState);
   const [errores, setErrores] = useState({});
   const { logged, changeLogged } = useLogin();
+  const [confirmRecreateEmail, setConfirmRecreateEmail] = useState(false);
+  const [isRecreatingEmail, setIsRecreatingEmail] = useState(false);
+
 
   const [selectedStudy, setSelectedStudy] = useState("");
 
@@ -242,66 +247,66 @@ const InfoEmployer = ({
 
   // handleSave modificado (sin stringify)
 
-const handleSave = async () => {
-  if (!validateFields()) return;
+  const handleSave = async () => {
+    if (!validateFields()) return;
 
-  const modifiedData = getModifiedFields();
-  if (Object.keys(modifiedData).length === 0) {
+    const modifiedData = getModifiedFields();
+    if (Object.keys(modifiedData).length === 0) {
+      setIsEditing(false);
+      return;
+    }
+
     setIsEditing(false);
-    return;
-  }
+    charge(true);
+    const token = getToken();
 
-  setIsEditing(false);
-  charge(true);
-  const token = getToken();
+    try {
+      if (canDirectEdit) {
 
-  try {
-    if (canDirectEdit) {
-      
-      const payload = { ...modifiedData, _id: originalData._id };
+        const payload = { ...modifiedData, _id: originalData._id };
 
-      const response = await editUser(payload, token);
+        const response = await editUser(payload, token);
 
-      if (!response.error) {
-        changeUser(response);
-        modal("Editar Usuario", "Usuario editado con éxito");
+        if (!response.error) {
+          changeUser(response);
+          modal("Editar Usuario", "Usuario editado con éxito");
 
-        if (logged.user._id === user._id) {
-          changeLogged(response);
+          if (logged.user._id === user._id) {
+            changeLogged(response);
+          }
+
+          chargeUser();
+        } else {
+          throw new Error(response.message || "Error al editar");
         }
 
-        chargeUser();
       } else {
-        throw new Error(response.message || "Error al editar");
+        const changes = toChangeLines(modifiedData, originalData);
+
+        const payload = {
+          userId: originalData._id,
+          changes,
+          note: "",
+        };
+
+        const resp = await createChangeRequest(payload, token);
+
+        if (!resp.error) {
+          const created = resp?.data && resp?.data?._id ? resp.data : resp;
+          onRequestCreated?.(created);
+          modal("Solicitud enviada", "Tu supervisor revisará los cambios");
+          setDatos(deepClone(originalData));
+        } else {
+          throw new Error(resp.message || "No se pudo crear la solicitud");
+        }
       }
-
-    } else {
-      const changes = toChangeLines(modifiedData, originalData);
-
-      const payload = {
-        userId: originalData._id,
-        changes,
-        note: "",
-      };
-
-      const resp = await createChangeRequest(payload, token);
-
-      if (!resp.error) {
-        const created = resp?.data && resp?.data?._id ? resp.data : resp;
-        onRequestCreated?.(created);
-        modal("Solicitud enviada", "Tu supervisor revisará los cambios");
-        setDatos(deepClone(originalData));
-      } else {
-        throw new Error(resp.message || "No se pudo crear la solicitud");
-      }
+    } catch (e) {
+      setDatos(deepClone(originalData));
+      modal("Error", e.message || "No se pudo procesar la operación");
+    } finally {
+      charge(false);
     }
-  } catch (e) {
-    setDatos(deepClone(originalData));
-    modal("Error", e.message || "No se pudo procesar la operación");
-  } finally {
-    charge(false);
-  }
-};
+  };
 
 
   const reset = () => {
@@ -370,10 +375,57 @@ const handleSave = async () => {
     }));
   };
 
-  
-   return (
+  const recreateEmail = () => {
+    if (!datos?._id) return;
+    setConfirmRecreateEmail(true);
+  };
+
+  const doRecreateEmail = async () => {
+    const idUser = datos?._id;
+    if (!idUser) return;
+
+    setConfirmRecreateEmail(false);
+    setIsRecreatingEmail(true);
+    charge(true);
+
+    try {
+      const token = getToken();
+      // OJO: ajusta la firma si tu lib/data lo pide distinto
+      const resp = await recreateCorporateEmail({ userId: idUser }, token);
+      if (resp?.error) {
+        modal('Error', "No se pudo recrear el correo");
+      } else {
+        setDatos((prev) => ({
+          ...prev,
+          email: resp.email
+        }));
+        changeUser(resp);
+
+        if (logged.user?._id === idUser) {
+          changeLogged(resp);
+        }
+
+        modal(
+          "Email recreado",
+          "Se ha generado un nuevo email corporativo. El anterior usuario de Workspace se ha eliminado."
+        );
+
+        chargeUser?.();
+      }
+
+
+    } catch (e) {
+      modal("Error", e.message || "No se pudo recrear el email corporativo");
+    } finally {
+      charge(false);
+      setIsRecreatingEmail(false);
+    }
+  };
+
+
+  return (
     <div className={styles.contenedor}>
-      <h2>INFORMACIÓN PERSONAL {boton()}</h2>
+      <h2>INFORMACIÓN PERSONAL {boton()} {(logged.user.role === "root" || logged.user.role === "global") && (<button onClick={() => recreateEmail()}>Volver a crear el email coorporativo</button>)}</h2>
 
       {logged.user.role === "root" && (
         <div className={styles.roleContainer}>
@@ -708,6 +760,20 @@ const handleSave = async () => {
           </>
         )}
       </div>
+      {confirmRecreateEmail && (
+        <ModalConfirmation
+          title="Volver a crear el email corporativo"
+          message={
+            "Esta acción eliminará el usuario actual de Google Workspace y se creará uno nuevo.\n\n" +
+            "Esta acción NO ES REVERSIBLE y el buzón anterior se perderá si no existe copia.\n\n" +
+            "¿Quieres continuar?"
+          }
+          onCancel={() => setConfirmRecreateEmail(false)}
+          onConfirm={() => doRecreateEmail()}
+          textConfirm="Sí, recrear email"
+        />
+      )}
+
     </div>
   );
 

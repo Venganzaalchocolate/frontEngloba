@@ -332,7 +332,7 @@ if (offerInfo?.disability === true) {
   if (!(d > 0)) {
     modal(
       'Oferta exclusiva',
-      'No puedes enviar el CV a esta oferta porque es exclusiva para personas con discapacidad. Para inscribirte, debes indicar una discapacidad superior a 0%.'
+      'No puedes enviar el CV a esta oferta porque no has especificado que tienes discapacidad y esta es una oferta exclusiva para personas con discapacidad. Puedes enviarnos tu curriculum a https://app.engloba.org.es/trabajaconnosotros directamente.'
     );
     // opcional: marcar error en el campo para que se vea en el formulario
     setFormErrors((fe) => ({

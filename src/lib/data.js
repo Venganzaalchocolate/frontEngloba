@@ -251,6 +251,7 @@ export const updatePayroll = async (data, token) => {
   const result = await fetchData(endpoint, method, token, formData);
   return result;
 };
+export const recreateCorporateEmail=(data, token) =>fetchData("/recreatecorporateemail", 'POST', token, data);
 
 
 

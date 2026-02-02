@@ -469,6 +469,7 @@ const InfoEmployer = ({
           return (
             <div key={fieldName} className={styles[fieldName + "Container"]}>
               <label className={styles[fieldName + "Label"]}>{label}</label>
+              
               {!isEditing ? (
                 <input
                   className={styles[fieldName]}
@@ -549,7 +550,19 @@ const InfoEmployer = ({
             />
           );
         } else {
-          // Resto de campos: input normal
+          if(fieldName=='email'){
+             control = (
+            <input
+              className={styles[fieldName]}
+              type="text"
+              name={fieldName}
+              value={datos[fieldName] || ""}
+              onChange={handleChange}
+              disabled={true}
+            />
+          );
+          } else {
+             // Resto de campos: input normal
           control = (
             <input
               className={styles[fieldName]}
@@ -560,6 +573,8 @@ const InfoEmployer = ({
               disabled={!isEditing}
             />
           );
+          }
+         
         }
 
         return (

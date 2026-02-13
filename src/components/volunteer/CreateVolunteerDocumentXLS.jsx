@@ -1,6 +1,9 @@
 // src/components/volunteer/CreateVolunteerDocumentXLS.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import ModalForm from "../globals/ModalForm";
+
+import { volunteerGetNotLimit } from "../../lib/data";
+import { getToken } from "../../lib/serviceToken";
 
 /* =========================
  * Helpers label resolvers
@@ -14,9 +17,25 @@ const formatDate = (date) => {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("es-ES");
 };
 
+const formatGender = (g) => {
+  const key = String(g || "").trim();
+  switch (key) {
+    case "female":
+      return "Mujer";
+    case "male":
+      return "Hombre";
+    case "nonBinary":
+      return "No binario";
+    case "others":
+      return "Otros";
+    default:
+      return "";
+  }
+};
+
+
 function getProvinceName(enumsData, province) {
   if (!province) return "";
-  // populated
   if (typeof province === "object") return (province.name || "").trim();
   const idx = enumsData?.provincesIndex || {};
   return (idx[String(province)]?.name || String(province)).trim();
@@ -66,17 +85,48 @@ function normalizeIdsArray(value) {
  * ========================= */
 
 export default function CreateVolunteerDocumentXLS({
-  volunteers,
   enumsData,
   closeXls,
   modal,
+  charge
 }) {
   const [showModal] = useState(true);
+  const [step, setStep] = useState("filters"); // "filters" | "columns"
+  const [loading, setLoading] = useState(false);
+  const [volunteers, setVolunteers] = useState([]);
+
   const ALL = "__ALL__";
 
+  // ====== AÑOS (2024 -> año actual) ======
+  const yearsOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const start = 2024;
+    const out = [];
+    for (let y = currentYear; y >= start; y--) {
+      out.push({ value: String(y), label: String(y) });
+    }
+    return out;
+  }, []);
+
+  // ====== PROGRAMAS ======
+  const programOptions = useMemo(() => {
+    const idx = enumsData?.programsIndex || {};
+    const arr = Object.entries(idx).map(([id, p]) => ({
+      value: id,
+      label: (p?.acronym || p?.name || id).trim(),
+    }));
+    arr.sort((a, b) => a.label.localeCompare(b.label, "es"));
+    return [{ value: "", label: "Todos" }, ...arr];
+  }, [enumsData]);
+
+  // ====== Campos XLS ======
   const fieldLabels = useMemo(
     () => ({
-      createdAt: "Fecha Creación",
+      createdAt: "Fecha de Creación del Formulario",
+      statusEnable: "Fecha de Alta",
+      statusDisable: "Fecha de Baja",
+      delitosSexualesDate: "Delitos sexuales (última fecha)",
+
       firstName: "Nombre",
       lastName: "Apellidos",
       documentId: "DNI/NIE",
@@ -84,25 +134,16 @@ export default function CreateVolunteerDocumentXLS({
       phone: "Teléfono",
       gender: "Género",
       birthDate: "Fecha Nacimiento",
-
       province: "Provincia",
       localidad: "Localidad",
-
       state: "Estado",
-      active: "Activo",
-      lastStatus_type: "Último estado (tipo)",
-      lastStatus_at: "Último estado (fecha)",
-      lastStatus_reason: "Último estado (motivo)",
-
-      programInterest: "Programas de interés",
+      programInterest: "Programas",
       areaInterest: "Áreas de interés",
       studies: "Estudios",
       occupation: "Ocupación",
       occupationOtherText: "Ocupación (otro)",
       availability: "Disponibilidad",
       referralSource: "Origen derivación",
-      userNote: "Nota del usuario",
-
       chronology: "Cronología (dinámica)",
     }),
     []
@@ -118,7 +159,28 @@ export default function CreateVolunteerDocumentXLS({
     [finalFields, fieldLabels]
   );
 
-  const fields = useMemo(
+
+const filterFields = useMemo(() => [
+  {
+    name: "year",
+    label: "Fecha de Inscripción",
+    type: "select",
+    required: false,            // 👈 para permitir "Todos"
+    defaultValue: "",           // 👈 "" = todos
+    options: [{ value: "", label: "Todos" }, ...yearsOptions],
+  },
+  {
+    name: "programId",
+    label: "Programa",
+    type: "select",
+    required: false,
+    defaultValue: "",
+    options: programOptions,    // ya incluye "Todos"
+  },
+], [yearsOptions, programOptions]);
+
+  // ====== MODAL 2: COLUMNAS ======
+  const columnsFields = useMemo(
     () => [
       {
         name: "columnsToInclude",
@@ -132,10 +194,42 @@ export default function CreateVolunteerDocumentXLS({
     [checkboxOptions]
   );
 
+  // ====== FETCH volunteers ======
+const fetchVolunteers = useCallback(async ({ year, programId }) => {
+  charge?.(true);
+  setLoading(true);
+  try {
+    const token = getToken();
+
+    let payload = {};
+    if(!!year)payload['year']=year
+    if(!!programId)payload['programId']=programId
+
+    const data = await volunteerGetNotLimit(payload, token);
+    if (data?.error) throw new Error(data.message || "No se pudo exportar");
+
+    const items = data?.items || data?.data?.items || [];
+    setVolunteers(items);
+
+    if (!items.length) {
+      modal?.("Info", "No hay voluntarios para exportar con esos filtros");
+      closeXls?.(false);
+      return;
+    }
+
+    setStep("columns");
+  } catch (e) {
+    modal?.("Error", e?.message || "Error al obtener voluntariado");
+  } finally {
+    setLoading(false);
+    charge?.(false);
+  }
+}, []);
+
+  // ====== XLS ======
   const downloadXlsxFromVolunteers = async (rawVolunteers, selectedColumns = []) => {
     const ExcelJS = (await import("exceljs/dist/exceljs.min.js")).default;
 
-    // normaliza y calcula max cronologías
     const normalized = (rawVolunteers || []).map((v) => ({
       ...v,
       provinceLabel: getProvinceName(enumsData, v?.province),
@@ -163,10 +257,10 @@ export default function CreateVolunteerDocumentXLS({
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Volunteers");
 
-    // columnas dinámicas
     const finalCols = [];
     selectedColumns.forEach((col) => {
       switch (col) {
+
         case "chronology": {
           for (let i = 0; i < maxChrono; i++) {
             const ix = i + 1;
@@ -188,12 +282,12 @@ export default function CreateVolunteerDocumentXLS({
 
     worksheet.columns = finalCols.map((c) => ({ ...c, width: 25 }));
 
-    // filas
     normalized.forEach((v) => {
       const row = {};
 
       selectedColumns.forEach((col) => {
         switch (col) {
+          
           case "createdAt":
             row.createdAt = formatDate(v.createdAt);
             break;
@@ -201,7 +295,9 @@ export default function CreateVolunteerDocumentXLS({
           case "birthDate":
             row.birthDate = formatDate(v.birthDate);
             break;
-
+case "gender":
+            row.gender = formatGender(v?.gender);
+            break;
           case "province":
             row.province = v.provinceLabel || "";
             break;
@@ -228,16 +324,17 @@ export default function CreateVolunteerDocumentXLS({
             row.active = v.active === false ? "No" : "Sí";
             break;
 
-          case "lastStatus_type":
-            row.lastStatus_type = v?.lastStatus?.type || "";
+          // XLS keys statusEnable/statusDisable, pero datos vienen como stateEnable/stateDisable
+          case "statusEnable":
+            row.statusEnable = formatDate(v?.stateEnable);
             break;
 
-          case "lastStatus_at":
-            row.lastStatus_at = v?.lastStatus?.at ? formatDate(v.lastStatus.at) : "";
+          case "statusDisable":
+            row.statusDisable = formatDate(v?.stateDisable);
             break;
 
-          case "lastStatus_reason":
-            row.lastStatus_reason = v?.lastStatus?.reason || "";
+          case "delitosSexualesDate":
+            row.delitosSexualesDate = formatDate(v?.delitosSexualesDate);
             break;
 
           case "chronology": {
@@ -292,7 +389,6 @@ export default function CreateVolunteerDocumentXLS({
       worksheet.addRow(row);
     });
 
-    // descarga
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -307,7 +403,15 @@ export default function CreateVolunteerDocumentXLS({
     URL.revokeObjectURL(url);
   };
 
-  const handleSubmit = (formData) => {
+  // ====== SUBMITS ======
+  const handleSubmitFilters = async (formData) => {
+    await fetchVolunteers({
+      year: formData?.year,
+      programId: formData?.programId,
+    });
+  };
+
+  const handleSubmitColumns = (formData) => {
     const selected =
       Array.isArray(formData.columnsToInclude) && formData.columnsToInclude.includes(ALL)
         ? finalFields
@@ -320,13 +424,34 @@ export default function CreateVolunteerDocumentXLS({
   if (!showModal) return null;
 
   return (
-    <ModalForm
-      title="Descargar XLS (Voluntariado)"
-      message="Selecciona las columnas a exportar."
-      fields={fields}
-      onSubmit={handleSubmit}
-      onClose={() => closeXls?.(false)}
-      modal={modal}
-    />
+    <>
+      {step === "filters" && (
+        <ModalForm
+          title="Filtros de exportación (Voluntariado)"
+          message={loading ? "Cargando datos..." : "Selecciona los filtros antes de generar el XLS."}
+          fields={filterFields}
+          onSubmit={handleSubmitFilters}
+          onClose={() => closeXls?.(false)}
+          modal={modal}
+          // si tu ModalForm soporta deshabilitar submit, úsalo:
+          // disabled={loading}
+        />
+      )}
+
+      {step === "columns" && (
+        <ModalForm
+          title="Descargar XLS (Voluntariado)"
+          message={
+            loading
+              ? "Preparando..."
+              : `Selecciona las columnas a exportar. Registros: ${volunteers?.length || 0}`
+          }
+          fields={columnsFields}
+          onSubmit={handleSubmitColumns}
+          onClose={() => closeXls?.(false)}
+          modal={modal}
+        />
+      )}
+    </>
   );
 }

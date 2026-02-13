@@ -515,3 +515,15 @@ export const volunteerChronologyUpdate = (data, token) =>fetchData("/volunteerch
 export const volunteerChronologyDelete = (data, token) =>fetchData("/volunteerchronologydelete", "POST", token, data);
 export const volunteerInterview=(data,token)=>fetchData('/volunteerinterview', 'POST', token, data)
 export const volunteerGetNotLimit=(data,token)=>fetchData('/volunteergetnotlimit', 'POST', token, data)
+
+
+
+export const profilePhotoGet = async (token, datos) => fetchData('/getphotoprofile', 'POST', token, datos, true);
+export const profilePhotoSet = (token, datos) => {
+   const fd = new FormData();
+  fd.append('idUser', datos.idUser);
+  if (datos.file instanceof File) fd.append('file', datos.file);
+  return fetchData('/profilephotoset', 'POST', token, fd);
+};
+export const profilePhotoGetBatch = (data, token) =>fetchData('/profilephotogetbatch', 'POST', token, data);
+

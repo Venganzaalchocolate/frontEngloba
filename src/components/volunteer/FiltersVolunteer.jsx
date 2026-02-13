@@ -1,6 +1,8 @@
 import styles from "../styles/ManagingEmployer.module.css";
 import { useMemo, useRef, useState, useEffect } from "react";
 
+const STATE_ENUM = ["no asignado", "activo", "descartado", "pendiente"];
+
 const PROGRAM_AREA_ENUM = [
   "igualdad",
   "desarrollo comunitario",
@@ -151,7 +153,7 @@ const FiltersVolunteer = ({
 
       {/* Programa (typeahead como empleados) */}
       <div>
-        <label htmlFor="pdSearch">Programa de interés:</label>
+        <label htmlFor="pdSearch">Justificación en programas:</label>
         <div className={styles.pdSearchWrap} ref={programSearchWrapRef}>
           <input
             id="pdSearch"
@@ -226,7 +228,7 @@ const FiltersVolunteer = ({
 
       {/* Estado (back: active boolean u omit) */}
       <div>
-        <label htmlFor="active">Estado</label>
+        <label htmlFor="active">Tipo</label>
         <select
           id="active"
           name="active"
@@ -236,6 +238,25 @@ const FiltersVolunteer = ({
           <option value="total">Activos e inactivos</option>
           <option value="active">Activos</option>
           <option value="inactive">Inactivos</option>
+        </select>
+      </div>
+
+            {/* Estado (back: active boolean u omit) */}
+      <div>
+        <label htmlFor="active">Estado</label>
+        <select
+          id="state"
+          name="state"
+          onChange={handleFilterChange}
+          value={filters.state || "todos"}
+        >
+          <option value={"todos"}>Todos</option>
+          {
+            STATE_ENUM.map((x)=>{
+              return <option value={x}>{x}</option>
+            })
+          }
+          
         </select>
       </div>
 

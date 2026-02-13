@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import styles from '../styles/ManagingEmployer.module.css';
 import { FaSquarePlus, FaBell } from "react-icons/fa6";
 import { RiUserSharedFill } from 'react-icons/ri';
@@ -12,6 +12,7 @@ import { useLogin } from '../../hooks/useLogin.jsx';
 import {
   getusers,
   getusersnotlimit,
+  profilePhotoGetBatch
 } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
 import { capitalizeWords } from '../../lib/utils.js';
@@ -77,6 +78,12 @@ const ManagingEmployer = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userXLS, setUsersXls] = useState(null);
+
+  // cache real (no provoca re-render)
+const thumbsCacheRef = useRef({}); // { [userId]: thumbUrl }
+
+// estado solo para pintar (provoca re-render cuando cambie)
+const [thumbByUserId, setThumbByUserId] = useState({});
 
   // =========================
   // RESPONSABILIDADES
@@ -201,6 +208,58 @@ const ManagingEmployer = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedFilters, page, limit, selectedResponsibility]);
+
+  // =========================
+  // CARGA DE miniaturas
+  // =========================
+// useEffect(() => {
+//   if (!logged?.isLoggedIn) return;
+//   if (!Array.isArray(users) || users.length === 0) return;
+
+//   const token = getToken();
+
+//   const ids = users.map(u => u?._id).filter(Boolean);
+//   const cache = thumbsCacheRef.current;
+
+//   // solo los que no estén cacheados
+//   const missing = ids.filter(id => !cache[id]);
+
+//   if (missing.length === 0) {
+//     // aseguramos snapshot actualizado (por si venimos de otra página)
+//     setThumbByUserId(cache);
+//     return;
+//   }
+
+//   let cancelled = false;
+
+//   (async () => {
+//     try {
+//       const resp = await profilePhotoGetBatch({ userIds: missing }, token);
+//       if (cancelled) return;
+//       if (resp?.error) return;
+
+//       const photos = resp?.photos || {};
+//       let changed = false;
+
+//       for (const id of missing) {
+//         const thumbUrl = photos?.[id]; // string data:image/png;base64,...
+//         if (thumbUrl) cache[id] = thumbUrl;
+//       }
+
+//       // snapshot para pintar: solo si hay cambios
+//       if (changed) setThumbByUserId({ ...cache });
+//       else setThumbByUserId({ ...cache }); // opcional: mantiene sync
+//     } catch (e) {
+//       // no rompemos UI por fallo de thumbs
+//     }
+//   })();
+
+//   return () => {
+//     cancelled = true;
+//   };
+// }, [users, logged?.isLoggedIn]);
+
+
 
   // =========================
   // AGRUPAR ACTIVOS / DE BAJA (usando user.isOnLeave)
@@ -410,6 +469,7 @@ const ManagingEmployer = ({
           enumsData={enumsData}
           chargeUser={() => loadUsers(true)}
           changeUser={(x) => changeUserLocally(x)}
+          // photoThumbUrl={thumbByUserId[user._id] || ""}
         />
       ),
     ],
@@ -509,6 +569,7 @@ const ManagingEmployer = ({
       user.isOnLeave
         ? `${styles.tableContainer} ${styles.isOnLeave}`
         : styles.tableContainer;
+    const thumbUrl = thumbByUserId[user._id]; // snapshot
 
     return (
       <div className={styles.containerEmployer} key={user._id}>
@@ -521,6 +582,22 @@ const ManagingEmployer = ({
                 : setUserSelected(null)
             }
           >
+            
+
+         
+            {/* <div className={styles.tableCellPhoto}>
+              {thumbUrl ? (
+                <img
+                  src={thumbUrl}
+                  alt=""
+                  className={styles.photoThumb}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div className={styles.photoPlaceholder} />
+              )}
+            </div> */}
             <div className={styles.tableCell}>{user.firstName}</div>
             <div className={styles.tableCell}>{user.lastName}</div>
             <div className={styles.tableCell}>
@@ -678,6 +755,7 @@ const ManagingEmployer = ({
                   className={styles.tableContainer}
                   id={styles.cabeceraTabla}
                 >
+                  {/* <div className={styles.tableCellPhoto}></div> */}
                   <div className={styles.tableCell}>Nombre</div>
                   <div className={styles.tableCell}>Apellidos</div>
                   <div className={styles.tableCellCenter}>Peticiones</div>

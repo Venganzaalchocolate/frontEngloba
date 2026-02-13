@@ -21,7 +21,6 @@ import {
   volunteerDelete,
   volunteerUpdate,
   volunteerEnable,
-  volunteerGetNotLimit
 } from "../../lib/data";
 
 import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric.jsx";
@@ -48,7 +47,7 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
   const [showModal, setShowModal] = useState("");
 
   //EXCEL
-  const [volunteerXLS, setVolunteerXLS] = useState(null);
+  const [volunteerXLS, setVolunteerXLS] = useState(false);
 
 
   // filtros
@@ -126,6 +125,7 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
         province: debouncedFilters.province || undefined,
         programId: debouncedFilters.programId || undefined,
         area: debouncedFilters.area || undefined,
+        state:debouncedFilters.state || undefined
       };
 
       if (debouncedFilters.active === "active") payload.active = true;
@@ -399,6 +399,7 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
       programId: "",
       area: "",
       active: "total",
+      state:'todos'
     });
   }, []);
 
@@ -450,41 +451,8 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
     [selectedId]
   );
 
-  const getVolunteersNotLimit = async () => {
-    try {
-      charge(true);
-      const token = getToken();
 
-      const payload = {
-        q: debouncedFilters.q || undefined,
-        province: debouncedFilters.province || undefined,
-        programId: debouncedFilters.programId || undefined,
-        area: debouncedFilters.area || undefined,
-      };
 
-      if (debouncedFilters.active === "active") payload.active = true;
-      if (debouncedFilters.active === "inactive") payload.active = false;
-
-      const data = await volunteerGetNotLimit(payload, token);
-      if (data?.error) throw new Error(data.message || "No se pudo exportar");
-
-      return data?.items || data?.data?.items || [];
-    } catch (e) {
-      modal("Error", e?.message || "Error al obtener voluntariado");
-      return [];
-    } finally {
-      charge(false);
-    }
-  };
-
-  const openXlsForm = async () => {
-    const all = await getVolunteersNotLimit();
-    if (!all || all.length === 0) {
-      modal?.("Info", "No hay voluntarios para exportar con los filtros actuales");
-      return;
-    }
-    setVolunteerXLS(all);
-  };
 
 
   // -------------------------
@@ -661,7 +629,7 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
             <h2>GESTIÓN DE VOLUNTARIADO</h2>
             <TbFileTypeXml
               title="Exportar XLS"
-              onClick={openXlsForm}
+              onClick={() => setVolunteerXLS(true)}
               style={{ cursor: "pointer" }}
             />
 
@@ -669,8 +637,9 @@ const ManagingVolunteers = ({ modal, charge, enumsData }) => {
               <CreateVolunteerDocumentXLS
                 volunteers={volunteerXLS}
                 enumsData={enumsData}
-                closeXls={() => setVolunteerXLS(null)}
+                closeXls={() => setVolunteerXLS(false)}
                 modal={modal}
+                charge={charge}
               />
             )}
           </div>

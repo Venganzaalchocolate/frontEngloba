@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import styles from "../styles/infoEmployer.module.css";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
@@ -11,10 +11,12 @@ import {
 } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 import { getToken } from "../../lib/serviceToken";
-import { createChangeRequest, editUser, recreateCorporateEmail } from "../../lib/data";
+import { createChangeRequest, editUser, recreateCorporateEmail, profilePhotoSet, profilePhotoGet } from "../../lib/data";
 import { deepClone, formatDate } from "../../lib/utils";
 import { useLogin } from "../../hooks/useLogin";
 import ModalConfirmation from "../globals/ModalConfirmation";
+
+
 
 
 const InfoEmployer = ({
@@ -27,6 +29,7 @@ const InfoEmployer = ({
   chargeUser = () => { },
   soloInfo = false,
   onRequestCreated,
+  // photoThumbUrl
 }) => {
   // Estado inicial (booleanos como "si"/"no")
   const initialState = {
@@ -44,10 +47,92 @@ const InfoEmployer = ({
   const [errores, setErrores] = useState({});
   const { logged, changeLogged } = useLogin();
   const [confirmRecreateEmail, setConfirmRecreateEmail] = useState(false);
-  const [isRecreatingEmail, setIsRecreatingEmail] = useState(false);
-
-
   const [selectedStudy, setSelectedStudy] = useState("");
+
+  const [photoError, setPhotoError] = useState("");
+  const [photoNormalUrl, setPhotoNormalUrl] = useState("");
+  const [photoVersion, setPhotoVersion] = useState(0); // opcional para refrescar tras subir
+
+
+  // useEffect(() => {
+  //   let alive = true;
+  //   let objectUrlToRevoke = null;
+
+  //   const loadNormalPhoto = async () => {
+  //     try {
+  //       if (!datos?._id) return;
+
+  //       const token = getToken();
+
+  //       // IMPORTANTE: esto debe devolverte un Blob (o algo convertible a Blob)
+  //       const resp = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
+
+  //       // Caso 1: ya es Blob
+  //       let blob = resp instanceof Blob ? resp : null;
+
+  //       // Caso 2: fetchData te devuelve { blob } o { data } (por si acaso)
+  //       if (!blob && resp?.blob instanceof Blob) blob = resp.blob;
+  //       if (!blob && resp?.data instanceof Blob) blob = resp.data;
+
+  //       // Caso 3: te devuelve ArrayBuffer
+  //       if (!blob && resp instanceof ArrayBuffer) blob = new Blob([resp], { type: "image/png" });
+
+  //       // Si no he podido inferir blob, corto
+  //       if (!blob) {
+  //         if (alive) setPhotoNormalUrl("");
+  //         return;
+  //       }
+
+  //       const url = URL.createObjectURL(blob);
+  //       objectUrlToRevoke = url;
+
+  //       if (alive) setPhotoNormalUrl(url);
+  //     } catch (e) {
+  //       // Si el back devuelve 404 "Usuario sin foto", aquí caerá.
+  //       if (alive) setPhotoNormalUrl("");
+  //     }
+  //   };
+
+  //   loadNormalPhoto();
+
+  //   return () => {
+  //     alive = false;
+  //     if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+  //   };
+  // }, [datos?._id, photoVersion]);
+
+
+
+  // const onPickProfileImage = async (e) => {
+  //   const f = e.target.files?.[0];
+  //   if (!f) return;
+
+  //   setPhotoError("");
+  //   charge(true);
+
+  //   try {
+  //     const token = getToken();
+
+  //     // 1) sube + actualiza usuario
+  //     const updated = await profilePhotoSet(token, { idUser: datos._id, file: f });
+  //     if (updated?.error) throw new Error(updated.message || "No se pudo subir la foto");
+
+  //     // 2) refresca usuario en UI
+  //     changeUser(updated);
+  //     setDatos((prev) => ({ ...prev, ...updated }));
+
+  //     if (logged.user?._id === updated?._id) changeLogged(updated);
+
+  //     // 3) (opcional) forzar recarga inmediata de la imagen
+  //     // como updated.photoProfile ya cambió, el useEffect la recargará
+  //   } catch (e) {
+  //     setPhotoError(e.message || "Error subiendo la foto");
+  //   } finally {
+  //     charge(false);
+  //   }
+  // };
+
+
 
   // Supervisión / permisos
   const isSupervisor = Array.isArray(listResponsability)
@@ -385,7 +470,6 @@ const InfoEmployer = ({
     if (!idUser) return;
 
     setConfirmRecreateEmail(false);
-    setIsRecreatingEmail(true);
     charge(true);
 
     try {
@@ -418,14 +502,36 @@ const InfoEmployer = ({
       modal("Error", e.message || "No se pudo recrear el email corporativo");
     } finally {
       charge(false);
-      setIsRecreatingEmail(false);
     }
   };
 
+  // const src = !isEditing
+  // ? (photoNormalUrl || photoThumbUrl)
+  // : (photoThumbUrl || photoNormalUrl);
 
   return (
     <div className={styles.contenedor}>
       <h2>INFORMACIÓN PERSONAL {boton()} {(logged.user.role === "root" || logged.user.role === "global") && (<button onClick={() => recreateEmail()}>Volver a crear el email coorporativo</button>)}</h2>
+ 
+        {/* <div className={styles.photoContainer}>
+          {src ? (
+            <img
+              src={src}
+              alt=""
+              style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 8 }}
+            />
+          ) : (
+            <div style={{ width: 120, height: 120, background: "#eee", borderRadius: 8 }} />
+          )}
+          {!!photoError && <p className={styles.errorSpan}>{photoError}</p>} */}
+
+    
+          {/* {isEditing && (
+            <input type="file" accept="image/*" onChange={onPickProfileImage} />
+          )} */}
+        {/* </div>  */}
+        
+
 
       {logged.user.role === "root" && (
         <div className={styles.roleContainer}>
@@ -469,7 +575,7 @@ const InfoEmployer = ({
           return (
             <div key={fieldName} className={styles[fieldName + "Container"]}>
               <label className={styles[fieldName + "Label"]}>{label}</label>
-              
+
               {!isEditing ? (
                 <input
                   className={styles[fieldName]}
@@ -550,31 +656,31 @@ const InfoEmployer = ({
             />
           );
         } else {
-          if(fieldName=='email'){
-             control = (
-            <input
-              className={styles[fieldName]}
-              type="text"
-              name={fieldName}
-              value={datos[fieldName] || ""}
-              onChange={handleChange}
-              disabled={true}
-            />
-          );
+          if (fieldName == 'email') {
+            control = (
+              <input
+                className={styles[fieldName]}
+                type="text"
+                name={fieldName}
+                value={datos[fieldName] || ""}
+                onChange={handleChange}
+                disabled={true}
+              />
+            );
           } else {
-             // Resto de campos: input normal
-          control = (
-            <input
-              className={styles[fieldName]}
-              type="text"
-              name={fieldName}
-              value={datos[fieldName] || ""}
-              onChange={handleChange}
-              disabled={!isEditing}
-            />
-          );
+            // Resto de campos: input normal
+            control = (
+              <input
+                className={styles[fieldName]}
+                type="text"
+                name={fieldName}
+                value={datos[fieldName] || ""}
+                onChange={handleChange}
+                disabled={!isEditing}
+              />
+            );
           }
-         
+
         }
 
         return (

@@ -174,6 +174,15 @@ export default function InfoVolunteer({
     []
   );
 
+  const programsOptions = useMemo(() => {
+    const idx=enumsData?.programsIndex || {};
+    return Object.entries(idx)
+    .map(([id, v]) => ({ value: String(id), label: v?.name || String(id) }))
+    .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
+  }, [enumsData?.programsIndex]);
+
+ 
+
   const provinceLabel = useMemo(() => {
     const idx = enumsData?.provincesIndex || {};
     const hit = idx?.[normalized.province];
@@ -325,6 +334,15 @@ export default function InfoVolunteer({
         options: areaOptions,
         placeholder: "Busca y añade…",
       },
+      {
+        name: "programInterest",
+        label: "Justificación en programas",
+        type: "multiChips",
+        required: false, 
+        defaultValue: Array.isArray(d.programInterest) ? d.programInterest : [],
+        options: programsOptions,
+        placeholder: "Busca y añade…",
+      },
 
       {
         name: "referralSource",
@@ -366,6 +384,7 @@ export default function InfoVolunteer({
 
         availability: form.availability || "",
         areaInterest: Array.isArray(form.areaInterest) ? form.areaInterest : [],
+        programInterest:Array.isArray(form.programInterest) ? form.programInterest : [],
 
         referralSource: form.referralSource || "",
         userNote: form.userNote || "",
@@ -576,6 +595,11 @@ export default function InfoVolunteer({
       <div>
         <label>Áreas de interés</label>
         <Chips values={normalized.areaInterest || []} options={areaOptions} />
+      </div>
+
+      <div>
+        <label>Justificación en programas</label>
+        <Chips values={normalized.programInterest || []} options={programsOptions} />
       </div>
 
       <div>

@@ -48,86 +48,86 @@ const InfoEmployer = ({
   const [confirmRecreateEmail, setConfirmRecreateEmail] = useState(false);
   const [selectedStudy, setSelectedStudy] = useState("");
 
-  //=========================================
-  //PARTE DE PHOTOS
-  //=========================================
-const [photoUrl, setPhotoUrl] = useState("");
-const [photoError, setPhotoError] = useState("");
-const [photoVersion, setPhotoVersion] = useState(0);
+//   //=========================================
+//   //PARTE DE PHOTOS
+//   //=========================================
+// const [photoUrl, setPhotoUrl] = useState("");
+// const [photoError, setPhotoError] = useState("");
+// const [photoVersion, setPhotoVersion] = useState(0);
 
-const fileInputRef = useRef(null);
+// const fileInputRef = useRef(null);
 
-const openFilePicker = () => {
-  fileInputRef.current?.click();
-};
-
-
-// InfoEmployer: SIEMPRE normal
-const loadPhoto = useCallback(async () => {
-  try {
-    if (!datos?._id) return;
-    setPhotoError("");
-
-    const token = getToken();
-    const blob = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
-
-    if (blob?.error) {
-      setPhotoUrl("");
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(blob);
-    setPhotoUrl(objectUrl);
-  } catch {
-    setPhotoUrl("");
-  }
-}, [datos?._id]);
+// const openFilePicker = () => {
+//   fileInputRef.current?.click();
+// };
 
 
-useEffect(() => {
-  loadPhoto();
-}, [loadPhoto, photoVersion]);
+// // InfoEmployer: SIEMPRE normal
+// const loadPhoto = useCallback(async () => {
+//   try {
+//     if (!datos?._id) return;
+//     setPhotoError("");
 
-useEffect(() => {
-  return () => {
-    if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
-  };
-}, [photoUrl]);
+//     const token = getToken();
+//     const blob = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
 
+//     if (blob?.error) {
+//       setPhotoUrl("");
+//       return;
+//     }
 
-const onPickProfileImage = async (e) => {
-  const f = e.target.files?.[0];
-  if (!f) return;
-
-  setPhotoError("");
-  charge(true);
-
-  try {
-    const token = getToken();
-
-    const updated = await profilePhotoSet(token, { idUser: datos._id, file: f });
-    if (updated?.error) throw new Error(updated.message || "No se pudo subir la foto");
-
-    changeUser(updated);
-    setDatos((prev) => ({ ...prev, ...updated }));
-
-    if (logged.user?._id === updated?._id) changeLogged(updated);
-
-    // fuerza recarga de imagen (y respeta isEditing => thumb o normal)
-    setPhotoVersion((v) => v + 1);
-
-  } catch (e) {
-    setPhotoError(e.message || "Error subiendo la foto");
-  } finally {
-    charge(false);
-    e.target.value = ""; // permite volver a elegir el mismo archivo
-  }
-};
+//     const objectUrl = URL.createObjectURL(blob);
+//     setPhotoUrl(objectUrl);
+//   } catch {
+//     setPhotoUrl("");
+//   }
+// }, [datos?._id]);
 
 
-  //=========================================
-  //FIN PARTE DE PHOTOS
-  //=========================================
+// useEffect(() => {
+//   loadPhoto();
+// }, [loadPhoto, photoVersion]);
+
+// useEffect(() => {
+//   return () => {
+//     if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
+//   };
+// }, [photoUrl]);
+
+
+// const onPickProfileImage = async (e) => {
+//   const f = e.target.files?.[0];
+//   if (!f) return;
+
+//   setPhotoError("");
+//   charge(true);
+
+//   try {
+//     const token = getToken();
+
+//     const updated = await profilePhotoSet(token, { idUser: datos._id, file: f });
+//     if (updated?.error) throw new Error(updated.message || "No se pudo subir la foto");
+
+//     changeUser(updated);
+//     setDatos((prev) => ({ ...prev, ...updated }));
+
+//     if (logged.user?._id === updated?._id) changeLogged(updated);
+
+//     // fuerza recarga de imagen (y respeta isEditing => thumb o normal)
+//     setPhotoVersion((v) => v + 1);
+
+//   } catch (e) {
+//     setPhotoError(e.message || "Error subiendo la foto");
+//   } finally {
+//     charge(false);
+//     e.target.value = ""; // permite volver a elegir el mismo archivo
+//   }
+// };
+
+
+//   //=========================================
+//   //FIN PARTE DE PHOTOS
+//   //=========================================
 
   // Supervisión / permisos
   const isSupervisor = Array.isArray(listResponsability)
@@ -508,7 +508,7 @@ const onPickProfileImage = async (e) => {
     <div className={styles.contenedor}>
       <h2>INFORMACIÓN PERSONAL {boton()} {(logged.user.role === "root" || logged.user.role === "global") && (<button onClick={() => recreateEmail()}>Volver a crear el email coorporativo</button>)}</h2>
  
-<div className={styles.photoContainer}>
+{/* <div className={styles.photoContainer}>
   <button
     type="button"
     className={styles.photoButton}
@@ -525,7 +525,7 @@ const onPickProfileImage = async (e) => {
     <span className={styles.photoHint}>Cambiar foto</span>
   </button>
 
-  {/* INPUT OCULTO (siempre activo) */}
+
   <input
     ref={fileInputRef}
     type="file"
@@ -535,7 +535,7 @@ const onPickProfileImage = async (e) => {
     className={styles.photoFileHidden}
   />
 
-  {/* INPUT VISIBLE SOLO EN EDIT */}
+
   {isEditing && (
     <div className={styles.photoEditRow}>
       <input
@@ -547,9 +547,8 @@ const onPickProfileImage = async (e) => {
       />
     </div>
   )}
-
   {photoError && <span className={styles.errorSpan}>{photoError}</span>}
-</div>
+</div> */}
 
 
       {logged.user.role === "root" && (

@@ -77,11 +77,11 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
   });
   const debouncedFilters = useDebounce(filters, 300);
 
-  // =========================
-  // STATE: thumbs cache
-  // =========================
-  const thumbsCacheRef = useRef({}); // { [userId: string]: dataUrl }
-  const [thumbByUserId, setThumbByUserId] = useState({}); // snapshot para render
+  // // =========================
+  // // STATE: thumbs cache
+  // // =========================
+  // const thumbsCacheRef = useRef({}); // { [userId: string]: dataUrl }
+  // const [thumbByUserId, setThumbByUserId] = useState({}); // snapshot para render
 
   // =========================
   // HELPERS
@@ -167,60 +167,60 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
     } finally {
       if (showLoader) charge(false);
     }
-  }, [charge, debouncedFilters, isRootOrGlobal, limit, modal, page, selectedResponsibility]);
+  }, [debouncedFilters, isRootOrGlobal, limit, page, selectedResponsibility]);
 
-  const refreshThumbForUser = useCallback(async (userId) => {
-    try {
-      const token = getToken();
-      const id = normId(userId);
+  // const refreshThumbForUser = useCallback(async (userId) => {
+  //   try {
+  //     const token = getToken();
+  //     const id = normId(userId);
 
-      const resp = await profilePhotoGetBatch({ userIds: [id], size: "thumb" }, token);
-      if (resp?.error) return;
+  //     const resp = await profilePhotoGetBatch({ userIds: [id], size: "thumb" }, token);
+  //     if (resp?.error) return;
 
-      const raw = resp?.photos?.[id];
-      const dataUrl = extractDataUrl(raw);
-      if (!dataUrl) return;
+  //     const raw = resp?.photos?.[id];
+  //     const dataUrl = extractDataUrl(raw);
+  //     if (!dataUrl) return;
 
-      thumbsCacheRef.current[id] = dataUrl;
-      setThumbByUserId((prev) => ({ ...prev, [id]: dataUrl }));
-    } catch (e) {}
-  }, []);
+  //     thumbsCacheRef.current[id] = dataUrl;
+  //     setThumbByUserId((prev) => ({ ...prev, [id]: dataUrl }));
+  //   } catch (e) {}
+  // }, []);
 
-  const loadThumbsForUsers = useCallback(async (usersList, signal) => {
-    const token = getToken();
-    const ids = (usersList || []).map(u => normId(u?._id)).filter(Boolean);
+  // const loadThumbsForUsers = useCallback(async (usersList, signal) => {
+  //   const token = getToken();
+  //   const ids = (usersList || []).map(u => normId(u?._id)).filter(Boolean);
 
-    const cache = thumbsCacheRef.current;
-    const missing = ids.filter(id => !cache[id]);
+  //   const cache = thumbsCacheRef.current;
+  //   const missing = ids.filter(id => !cache[id]);
 
-    if (missing.length === 0) {
-      setThumbByUserId({ ...cache });
-      return;
-    }
+  //   if (missing.length === 0) {
+  //     setThumbByUserId({ ...cache });
+  //     return;
+  //   }
 
-    const resp = await profilePhotoGetBatch(
-      { userIds: missing, size: "thumb" },
-      token,
-      signal
-    );
+  //   const resp = await profilePhotoGetBatch(
+  //     { userIds: missing, size: "thumb" },
+  //     token,
+  //     signal
+  //   );
 
-    if (resp?.error) return;
+  //   if (resp?.error) return;
 
-    const photos = resp?.photos || {};
-    let changed = false;
+  //   const photos = resp?.photos || {};
+  //   let changed = false;
 
-    for (const id of missing) {
-      const dataUrl = extractDataUrl(photos?.[id]);
-      if (dataUrl && cache[id] !== dataUrl) {
-        cache[id] = dataUrl;
-        changed = true;
-      }
-    }
+  //   for (const id of missing) {
+  //     const dataUrl = extractDataUrl(photos?.[id]);
+  //     if (dataUrl && cache[id] !== dataUrl) {
+  //       cache[id] = dataUrl;
+  //       changed = true;
+  //     }
+  //   }
 
-    // siempre copia
-    setThumbByUserId({ ...cache });
-    return changed;
-  }, []);
+  //   // siempre copia
+  //   setThumbByUserId({ ...cache });
+  //   return changed;
+  // }, []);
 
   // =========================
   // EFFECTS
@@ -256,16 +256,16 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logged?.isLoggedIn, debouncedFilters, page, limit, selectedResponsibility]);
 
-  // cargar thumbs (sin IIFE rara)
-  useEffect(() => {
-    if (!logged?.isLoggedIn) return;
-    if (!users?.length) return;
+  // // cargar thumbs (sin IIFE rara)
+  // useEffect(() => {
+  //   if (!logged?.isLoggedIn) return;
+  //   if (!users?.length) return;
 
-    const ac = new AbortController();
+  //   const ac = new AbortController();
 
-    loadThumbsForUsers(users, ac.signal).catch(() => {});
-    return () => ac.abort();
-  }, [users, logged?.isLoggedIn, loadThumbsForUsers]);
+  //   loadThumbsForUsers(users, ac.signal).catch(() => {});
+  //   return () => ac.abort();
+  // }, [users, logged?.isLoggedIn, loadThumbsForUsers]);
 
   // =========================
   // MEMOS
@@ -363,12 +363,12 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
 
     setUserSelected(updatedUser);
 
-    // si cambia la foto → invalida cache + recarga
-    if (updatedUser?.photoProfile?.thumb || updatedUser?.photoProfile?.normal) {
-      const id = normId(updatedUser._id);
-      delete thumbsCacheRef.current[id];
-      refreshThumbForUser(id);
-    }
+    // // si cambia la foto → invalida cache + recarga
+    // if (updatedUser?.photoProfile?.thumb || updatedUser?.photoProfile?.normal) {
+    //   const id = normId(updatedUser._id);
+    //   delete thumbsCacheRef.current[id];
+    //   refreshThumbForUser(id);
+    // }
   };
 
   // =========================
@@ -528,7 +528,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
       : styles.tableContainer;
 
     const id = normId(user._id);
-    const thumbUrl = thumbByUserId[id];
+    // const thumbUrl = thumbByUserId[id];
 
     return (
       <div className={styles.containerEmployer} key={id}>

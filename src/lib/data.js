@@ -518,12 +518,13 @@ export const volunteerGetNotLimit=(data,token)=>fetchData('/volunteergetnotlimit
 
 
 
-export const profilePhotoGet = async (token, datos) => fetchData('/getphotoprofile', 'POST', token, datos, true);
+export const profilePhotoGet = async (token, datos) => fetchData('/getphotoprofile', 'POST', token, datos,true);
 export const profilePhotoSet = (token, datos) => {
    const fd = new FormData();
   fd.append('idUser', datos.idUser);
   if (datos.file instanceof File) fd.append('file', datos.file);
   return fetchData('/profilephotoset', 'POST', token, fd);
 };
-export const profilePhotoGetBatch = (data, token) =>fetchData('/profilephotogetbatch', 'POST', token, data);
+export const profilePhotoGetBatch = (data, token, signal) =>
+  fetchData('/profilephotogetbatch', 'POST', token, data, false, signal);
 

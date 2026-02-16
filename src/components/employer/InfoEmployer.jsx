@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+
 import styles from "../styles/infoEmployer.module.css";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
@@ -15,9 +16,7 @@ import { createChangeRequest, editUser, recreateCorporateEmail, profilePhotoSet,
 import { deepClone, formatDate } from "../../lib/utils";
 import { useLogin } from "../../hooks/useLogin";
 import ModalConfirmation from "../globals/ModalConfirmation";
-
-
-
+import perfil512 from "../../assets/perfil_512.png";
 
 const InfoEmployer = ({
   user,
@@ -49,90 +48,86 @@ const InfoEmployer = ({
   const [confirmRecreateEmail, setConfirmRecreateEmail] = useState(false);
   const [selectedStudy, setSelectedStudy] = useState("");
 
-  const [photoError, setPhotoError] = useState("");
-  const [photoNormalUrl, setPhotoNormalUrl] = useState("");
-  const [photoVersion, setPhotoVersion] = useState(0); // opcional para refrescar tras subir
+  //=========================================
+  //PARTE DE PHOTOS
+  //=========================================
+const [photoUrl, setPhotoUrl] = useState("");
+const [photoError, setPhotoError] = useState("");
+const [photoVersion, setPhotoVersion] = useState(0);
+
+const fileInputRef = useRef(null);
+
+const openFilePicker = () => {
+  fileInputRef.current?.click();
+};
 
 
-  // useEffect(() => {
-  //   let alive = true;
-  //   let objectUrlToRevoke = null;
+// InfoEmployer: SIEMPRE normal
+const loadPhoto = useCallback(async () => {
+  try {
+    if (!datos?._id) return;
+    setPhotoError("");
 
-  //   const loadNormalPhoto = async () => {
-  //     try {
-  //       if (!datos?._id) return;
+    const token = getToken();
+    const blob = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
 
-  //       const token = getToken();
+    if (blob?.error) {
+      setPhotoUrl("");
+      return;
+    }
 
-  //       // IMPORTANTE: esto debe devolverte un Blob (o algo convertible a Blob)
-  //       const resp = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
-
-  //       // Caso 1: ya es Blob
-  //       let blob = resp instanceof Blob ? resp : null;
-
-  //       // Caso 2: fetchData te devuelve { blob } o { data } (por si acaso)
-  //       if (!blob && resp?.blob instanceof Blob) blob = resp.blob;
-  //       if (!blob && resp?.data instanceof Blob) blob = resp.data;
-
-  //       // Caso 3: te devuelve ArrayBuffer
-  //       if (!blob && resp instanceof ArrayBuffer) blob = new Blob([resp], { type: "image/png" });
-
-  //       // Si no he podido inferir blob, corto
-  //       if (!blob) {
-  //         if (alive) setPhotoNormalUrl("");
-  //         return;
-  //       }
-
-  //       const url = URL.createObjectURL(blob);
-  //       objectUrlToRevoke = url;
-
-  //       if (alive) setPhotoNormalUrl(url);
-  //     } catch (e) {
-  //       // Si el back devuelve 404 "Usuario sin foto", aquí caerá.
-  //       if (alive) setPhotoNormalUrl("");
-  //     }
-  //   };
-
-  //   loadNormalPhoto();
-
-  //   return () => {
-  //     alive = false;
-  //     if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
-  //   };
-  // }, [datos?._id, photoVersion]);
+    const objectUrl = URL.createObjectURL(blob);
+    setPhotoUrl(objectUrl);
+  } catch {
+    setPhotoUrl("");
+  }
+}, [datos?._id]);
 
 
+useEffect(() => {
+  loadPhoto();
+}, [loadPhoto, photoVersion]);
 
-  // const onPickProfileImage = async (e) => {
-  //   const f = e.target.files?.[0];
-  //   if (!f) return;
-
-  //   setPhotoError("");
-  //   charge(true);
-
-  //   try {
-  //     const token = getToken();
-
-  //     // 1) sube + actualiza usuario
-  //     const updated = await profilePhotoSet(token, { idUser: datos._id, file: f });
-  //     if (updated?.error) throw new Error(updated.message || "No se pudo subir la foto");
-
-  //     // 2) refresca usuario en UI
-  //     changeUser(updated);
-  //     setDatos((prev) => ({ ...prev, ...updated }));
-
-  //     if (logged.user?._id === updated?._id) changeLogged(updated);
-
-  //     // 3) (opcional) forzar recarga inmediata de la imagen
-  //     // como updated.photoProfile ya cambió, el useEffect la recargará
-  //   } catch (e) {
-  //     setPhotoError(e.message || "Error subiendo la foto");
-  //   } finally {
-  //     charge(false);
-  //   }
-  // };
+useEffect(() => {
+  return () => {
+    if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
+  };
+}, [photoUrl]);
 
 
+const onPickProfileImage = async (e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+
+  setPhotoError("");
+  charge(true);
+
+  try {
+    const token = getToken();
+
+    const updated = await profilePhotoSet(token, { idUser: datos._id, file: f });
+    if (updated?.error) throw new Error(updated.message || "No se pudo subir la foto");
+
+    changeUser(updated);
+    setDatos((prev) => ({ ...prev, ...updated }));
+
+    if (logged.user?._id === updated?._id) changeLogged(updated);
+
+    // fuerza recarga de imagen (y respeta isEditing => thumb o normal)
+    setPhotoVersion((v) => v + 1);
+
+  } catch (e) {
+    setPhotoError(e.message || "Error subiendo la foto");
+  } finally {
+    charge(false);
+    e.target.value = ""; // permite volver a elegir el mismo archivo
+  }
+};
+
+
+  //=========================================
+  //FIN PARTE DE PHOTOS
+  //=========================================
 
   // Supervisión / permisos
   const isSupervisor = Array.isArray(listResponsability)
@@ -513,23 +508,52 @@ const InfoEmployer = ({
     <div className={styles.contenedor}>
       <h2>INFORMACIÓN PERSONAL {boton()} {(logged.user.role === "root" || logged.user.role === "global") && (<button onClick={() => recreateEmail()}>Volver a crear el email coorporativo</button>)}</h2>
  
-        {/* <div className={styles.photoContainer}>
-          {src ? (
-            <img
-              src={src}
-              alt=""
-              style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 8 }}
-            />
-          ) : (
-            <div style={{ width: 120, height: 120, background: "#eee", borderRadius: 8 }} />
-          )}
-          {!!photoError && <p className={styles.errorSpan}>{photoError}</p>} */}
+<div className={styles.photoContainer}>
+  {/* CLICK EN LA FOTO: SIEMPRE PERMITE SUBIR */}
+  <button
+    type="button"
+    className={styles.photoButton}
+    onClick={openFilePicker}
+    title="Cambiar foto de perfil"
+  >
+    <img
+      src={photoUrl || perfil512}
+      alt="Foto de perfil"
+      className={styles.photoNormal}
+      decoding="async"
+      onError={(e) => { e.currentTarget.src = perfil512; }}
+    />
+    <span className={styles.photoHint}>Cambiar foto</span>
+  </button>
 
-    
-          {/* {isEditing && (
-            <input type="file" accept="image/*" onChange={onPickProfileImage} />
-          )} */}
-        {/* </div>  */}
+  {/* INPUT OCULTO (siempre activo) */}
+  <input
+    ref={fileInputRef}
+    type="file"
+    accept="image/*"
+    capture="user"     // 👈 móvil: ofrece cámara (selfie)
+    onChange={onPickProfileImage}
+    className={styles.photoFileHidden}
+  />
+
+  {/* INPUT VISIBLE SOLO EN EDIT */}
+  {isEditing && (
+    <div className={styles.photoEditRow}>
+      <input
+        type="file"
+        accept="image/*"
+        capture="user"
+        onChange={onPickProfileImage}
+        className={styles.photoFileVisible}
+      />
+    </div>
+  )}
+
+  {photoError && <span className={styles.errorSpan}>{photoError}</span>}
+</div>
+
+
+
         
 
 

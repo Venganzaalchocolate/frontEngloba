@@ -9,11 +9,7 @@ import FilterStatus from './FilterStatus.jsx';
 
 import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
-import {
-  getusers,
-  getusersnotlimit,
-  profilePhotoGetBatch
-} from '../../lib/data';
+import { getusers, getusersnotlimit, profilePhotoGetBatch } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken.js';
 import { capitalizeWords } from '../../lib/utils.js';
 
@@ -30,14 +26,13 @@ import PreferentsEmployee from './PreferentsEmployee.jsx';
 import MenuOptionsEmployee from './MenuOptionsEmployee.jsx';
 import SupervisorChangeRequests from './SupervisorChangeRequests.jsx';
 import RelocateHiringsModal from './RelocateHiringsModal.jsx';
+import perfil92 from "../../assets/perfil_92.png";
 
-const ManagingEmployer = ({
-  modal,
-  charge,
-  listResponsability = [],
-  enumsData,
-  closeAction,
-}) => {
+
+const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, closeAction }) => {
+  // =========================
+  // AUTH / ROLE
+  // =========================
   const { logged } = useLogin();
   const isRootOrGlobal =
     logged?.user?.role === 'root' || logged?.user?.role === 'global';
@@ -49,8 +44,14 @@ const ManagingEmployer = ({
       ? 'no'
       : 'si';
 
+  // =========================
+  // STATE: UI
+  // =========================
   const [userSelected, setUserSelected] = useState(null);
   const [isRelocateOpen, setIsRelocateOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [selectOptionMenuEmployee, setselectOptionMenuEmployee] = useState('mis-datos');
 
   // paginación
   const [limit, setLimit] = useState(50);
@@ -60,10 +61,11 @@ const ManagingEmployer = ({
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
 
-  const [selectOptionMenuEmployee, setselectOptionMenuEmployee] = useState('mis-datos');
-
   // responsabilidad elegida (SOLO no root/global)
   const [selectedResponsibility, setSelectedResponsibility] = useState(null);
+
+  // XLS
+  const [userXLS, setUsersXls] = useState(null);
 
   // filtros
   const [filters, setFilters] = useState({
@@ -73,102 +75,67 @@ const ManagingEmployer = ({
     apafa: apafaUser,
     status: 'total',
   });
-
   const debouncedFilters = useDebounce(filters, 300);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userXLS, setUsersXls] = useState(null);
-
-  // cache real (no provoca re-render)
-const thumbsCacheRef = useRef({}); // { [userId]: thumbUrl }
-
-// estado solo para pintar (provoca re-render cuando cambie)
-const [thumbByUserId, setThumbByUserId] = useState({});
+  // =========================
+  // STATE: thumbs cache
+  // =========================
+  const thumbsCacheRef = useRef({}); // { [userId: string]: dataUrl }
+  const [thumbByUserId, setThumbByUserId] = useState({}); // snapshot para render
 
   // =========================
-  // RESPONSABILIDADES
+  // HELPERS
   // =========================
-  const getResponsibilityOptions = () => {
+  const normId = (id) => String(id || '');
+
+  const extractDataUrl = (photoValue) => {
+    // soporta: photos[id] = "data:..."  ó  photos[id] = { dataUrl: "data:..." }
+    if (!photoValue) return '';
+    if (typeof photoValue === 'string') return photoValue;
+    return photoValue?.dataUrl || '';
+  };
+
+  const getResponsibilityOptions = useCallback(() => {
     const options = [];
     listResponsability.forEach((item) => {
       if (item.isProgramResponsible) {
-        const label = `(Programa) ${item.programName}`;
-        const valueObj = {
-          type: "program",
-          programId: item.idProgram,
-        };
-        options.push({ label, value: JSON.stringify(valueObj) });
+        options.push({
+          label: `(Programa) ${item.programName}`,
+          value: JSON.stringify({ type: "program", programId: item.idProgram }),
+        });
       }
       if (item.isDeviceResponsible || item.isDeviceCoordinator) {
-        const label = `(Dispositivo) ${item.dispositiveName} [${item.programName}]`;
-        const valueObj = {
-          type: "device",
-          programId: item.idProgram,
-          deviceId: item.dispositiveId,
-        };
-        options.push({ label, value: JSON.stringify(valueObj) });
-      }
-    });
-    return options;
-  };
-
-  // Si no eres root/global, auto-seleccionar responsabilidad cuando solo tienes una
-  useEffect(() => {
-    if (isRootOrGlobal) return;
-
-    if (!listResponsability || listResponsability.length === 0) {
-      setSelectedResponsibility(null);
-      return;
-    }
-
-    if (listResponsability.length === 1) {
-      const item = listResponsability[0];
-      if (item.isProgramResponsible) {
-        setSelectedResponsibility(
-          JSON.stringify({
-            type: "program",
-            programId: item.idProgram,
-          })
-        );
-      } else if (item.isDeviceResponsible || item.isDeviceCoordinator) {
-        setSelectedResponsibility(
-          JSON.stringify({
+        options.push({
+          label: `(Dispositivo) ${item.dispositiveName} [${item.programName}]`,
+          value: JSON.stringify({
             type: "device",
             programId: item.idProgram,
             deviceId: item.dispositiveId,
-          })
-        );
+          }),
+        });
       }
-    }
-  }, [isRootOrGlobal, listResponsability]);
-
-  const handleSelectResponsibility = (e) => {
-    const value = e.target.value || null;
-    setSelectedResponsibility(value);
-    setPage(1);
-    setUserSelected(null);
-  };
+    });
+    return options;
+  }, [listResponsability]);
 
   // =========================
-  // CARGA DE USUARIOS
+  // LOADERS
   // =========================
-  const loadUsers = async (showLoader = false) => {
+  const loadUsers = useCallback(async (showLoader = false) => {
     if (showLoader) charge(true);
+
     try {
       const token = getToken();
       let auxFilters = { ...debouncedFilters };
 
       // quitar vacíos
       for (let key in auxFilters) {
-        if (auxFilters[key] === "") {
-          delete auxFilters[key];
-        }
+        if (auxFilters[key] === "") delete auxFilters[key];
       }
 
       // Si NO eres root/global, se fuerza a su responsabilidad
       if (!isRootOrGlobal) {
         if (!selectedResponsibility) {
-          // aún no se ha elegido responsabilidad → no cargamos nada
           if (showLoader) charge(false);
           return;
         }
@@ -200,77 +167,114 @@ const [thumbByUserId, setThumbByUserId] = useState({});
     } finally {
       if (showLoader) charge(false);
     }
-  };
+  }, [charge, debouncedFilters, isRootOrGlobal, limit, modal, page, selectedResponsibility]);
 
-  useEffect(() => {
-    if (logged?.isLoggedIn) {
-      loadUsers(true);
+  const refreshThumbForUser = useCallback(async (userId) => {
+    try {
+      const token = getToken();
+      const id = normId(userId);
+
+      const resp = await profilePhotoGetBatch({ userIds: [id], size: "thumb" }, token);
+      if (resp?.error) return;
+
+      const raw = resp?.photos?.[id];
+      const dataUrl = extractDataUrl(raw);
+      if (!dataUrl) return;
+
+      thumbsCacheRef.current[id] = dataUrl;
+      setThumbByUserId((prev) => ({ ...prev, [id]: dataUrl }));
+    } catch (e) {}
+  }, []);
+
+  const loadThumbsForUsers = useCallback(async (usersList, signal) => {
+    const token = getToken();
+    const ids = (usersList || []).map(u => normId(u?._id)).filter(Boolean);
+
+    const cache = thumbsCacheRef.current;
+    const missing = ids.filter(id => !cache[id]);
+
+    if (missing.length === 0) {
+      setThumbByUserId({ ...cache });
+      return;
     }
+
+    const resp = await profilePhotoGetBatch(
+      { userIds: missing, size: "thumb" },
+      token,
+      signal
+    );
+
+    if (resp?.error) return;
+
+    const photos = resp?.photos || {};
+    let changed = false;
+
+    for (const id of missing) {
+      const dataUrl = extractDataUrl(photos?.[id]);
+      if (dataUrl && cache[id] !== dataUrl) {
+        cache[id] = dataUrl;
+        changed = true;
+      }
+    }
+
+    // siempre copia
+    setThumbByUserId({ ...cache });
+    return changed;
+  }, []);
+
+  // =========================
+  // EFFECTS
+  // =========================
+
+  // auto-seleccionar responsabilidad si solo hay una (no root/global)
+  useEffect(() => {
+    if (isRootOrGlobal) return;
+
+    if (!listResponsability || listResponsability.length === 0) {
+      setSelectedResponsibility(null);
+      return;
+    }
+
+    if (listResponsability.length === 1) {
+      const item = listResponsability[0];
+      if (item.isProgramResponsible) {
+        setSelectedResponsibility(JSON.stringify({ type: "program", programId: item.idProgram }));
+      } else if (item.isDeviceResponsible || item.isDeviceCoordinator) {
+        setSelectedResponsibility(JSON.stringify({
+          type: "device",
+          programId: item.idProgram,
+          deviceId: item.dispositiveId,
+        }));
+      }
+    }
+  }, [isRootOrGlobal, listResponsability]);
+
+  // cargar usuarios
+  useEffect(() => {
+    if (!logged?.isLoggedIn) return;
+    loadUsers(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedFilters, page, limit, selectedResponsibility]);
+  }, [logged?.isLoggedIn, debouncedFilters, page, limit, selectedResponsibility]);
+
+  // cargar thumbs (sin IIFE rara)
+  useEffect(() => {
+    if (!logged?.isLoggedIn) return;
+    if (!users?.length) return;
+
+    const ac = new AbortController();
+
+    loadThumbsForUsers(users, ac.signal).catch(() => {});
+    return () => ac.abort();
+  }, [users, logged?.isLoggedIn, loadThumbsForUsers]);
 
   // =========================
-  // CARGA DE miniaturas
-  // =========================
-// useEffect(() => {
-//   if (!logged?.isLoggedIn) return;
-//   if (!Array.isArray(users) || users.length === 0) return;
-
-//   const token = getToken();
-
-//   const ids = users.map(u => u?._id).filter(Boolean);
-//   const cache = thumbsCacheRef.current;
-
-//   // solo los que no estén cacheados
-//   const missing = ids.filter(id => !cache[id]);
-
-//   if (missing.length === 0) {
-//     // aseguramos snapshot actualizado (por si venimos de otra página)
-//     setThumbByUserId(cache);
-//     return;
-//   }
-
-//   let cancelled = false;
-
-//   (async () => {
-//     try {
-//       const resp = await profilePhotoGetBatch({ userIds: missing }, token);
-//       if (cancelled) return;
-//       if (resp?.error) return;
-
-//       const photos = resp?.photos || {};
-//       let changed = false;
-
-//       for (const id of missing) {
-//         const thumbUrl = photos?.[id]; // string data:image/png;base64,...
-//         if (thumbUrl) cache[id] = thumbUrl;
-//       }
-
-//       // snapshot para pintar: solo si hay cambios
-//       if (changed) setThumbByUserId({ ...cache });
-//       else setThumbByUserId({ ...cache }); // opcional: mantiene sync
-//     } catch (e) {
-//       // no rompemos UI por fallo de thumbs
-//     }
-//   })();
-
-//   return () => {
-//     cancelled = true;
-//   };
-// }, [users, logged?.isLoggedIn]);
-
-
-
-  // =========================
-  // AGRUPAR ACTIVOS / DE BAJA (usando user.isOnLeave)
+  // MEMOS
   // =========================
   const { activeUsers, onLeaveUsers } = useMemo(() => {
     const active = [];
     const leave = [];
 
-    for (const u of users) {
-      (u.isOnLeave ? leave : active).push(u);
-    }
+    for (const u of users) (u.isOnLeave ? leave : active).push(u);
 
     const sortByName = (a, b) =>
       (a.lastName || '').localeCompare(b.lastName || '', 'es', { sensitivity: 'base' }) ||
@@ -285,13 +289,16 @@ const [thumbByUserId, setThumbByUserId] = useState({});
   // =========================
   // HANDLERS
   // =========================
-  const handlePageChange = useCallback((newPage) => {
-    setPage(newPage);
-  }, []);
+  const handleSelectResponsibility = (e) => {
+    const value = e.target.value || null;
+    setSelectedResponsibility(value);
+    setPage(1);
+    setUserSelected(null);
+  };
 
+  const handlePageChange = useCallback((newPage) => setPage(newPage), []);
   const handleLimitChange = useCallback((event) => {
-    const newLimit = parseInt(event.target.value, 10);
-    setLimit(newLimit);
+    setLimit(parseInt(event.target.value, 10));
     setPage(1);
   }, []);
 
@@ -301,15 +308,9 @@ const [thumbByUserId, setThumbByUserId] = useState({});
     const { name, value } = event.target;
 
     if (apafaUser === 'no') {
-      setFilters((prev) => ({
-        ...prev,
-        [name]: value || '',
-      }));
+      setFilters((prev) => ({ ...prev, [name]: value || '' }));
     } else if (apafaUser === 'si' && name !== 'apafa') {
-      setFilters((prev) => ({
-        ...prev,
-        [name]: value || '',
-      }));
+      setFilters((prev) => ({ ...prev, [name]: value || '' }));
     }
   }, [apafaUser]);
 
@@ -333,17 +334,14 @@ const [thumbByUserId, setThumbByUserId] = useState({});
   const closeModal = () => setIsModalOpen(false);
   const openModal = () => setIsModalOpen(true);
 
-  // =========================
-  // changeUserLocally (conservando flags si no vienen del back)
-  // =========================
   const changeUserLocally = (updatedUser) => {
     setUsers((prev) => {
       let found = false;
+
       const next = prev.map((u) => {
         if (u._id === updatedUser._id) {
           found = true;
           return {
-            // mantenemos flags anteriores si el back no los manda
             ...u,
             ...updatedUser,
             hasPendingRequests:
@@ -358,56 +356,20 @@ const [thumbByUserId, setThumbByUserId] = useState({});
         }
         return u;
       });
-      if (!found && updatedUser._id) {
-        next.push(updatedUser);
-      }
+
+      if (!found && updatedUser._id) next.push(updatedUser);
       return next;
     });
+
     setUserSelected(updatedUser);
+
+    // si cambia la foto → invalida cache + recarga
+    if (updatedUser?.photoProfile?.thumb || updatedUser?.photoProfile?.normal) {
+      const id = normId(updatedUser._id);
+      delete thumbsCacheRef.current[id];
+      refreshThumbForUser(id);
+    }
   };
-
-  // =========================
-  // RESTRICCIONES POR ROL
-  // =========================
-  if (!isRootOrGlobal) {
-    if (!listResponsability || listResponsability.length === 0) {
-      return (
-        <div className={styles.contenedor}>
-          <div className={styles.contenido}>
-            <h2>No tienes programas o dispositivos asignados.</h2>
-          </div>
-        </div>
-      );
-    }
-
-    // Si hay varias responsabilidades y aún no se ha elegido, mostramos sólo el selector inicial
-    if (listResponsability.length > 1 && !selectedResponsibility) {
-      const options = getResponsibilityOptions();
-      return (
-        <div className={styles.contenedor}>
-          <div className={styles.contenido}>
-            <h2>Selecciona un Programa o Dispositivo</h2>
-            <select
-              onChange={handleSelectResponsibility}
-              defaultValue=""
-              className={styles.selectInicial}
-            >
-              <option value="">Seleccionar una opción</option>
-              {options.map((opt, i) => (
-                <option key={i} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      );
-    }
-
-    if (!selectedResponsibility) {
-      return null;
-    }
-  }
 
   // =========================
   // XLS
@@ -419,9 +381,7 @@ const [thumbByUserId, setThumbByUserId] = useState({});
       let auxFilters = { ...debouncedFilters };
 
       for (let key in auxFilters) {
-        if (auxFilters[key] === "") {
-          delete auxFilters[key];
-        }
+        if (auxFilters[key] === "") delete auxFilters[key];
       }
 
       if (!!selectedResponsibility) {
@@ -435,9 +395,8 @@ const [thumbByUserId, setThumbByUserId] = useState({});
       }
 
       const data = await getusersnotlimit(auxFilters, token);
-      if (!data || !data.users || data.users.length === 0) {
-        throw new Error("No se recibieron datos de usuarios");
-      }
+      if (!data?.users?.length) throw new Error("No se recibieron datos de usuarios");
+
       return data.users;
     } catch (err) {
       modal("Error", "Error al obtener usuarios o generar Excel");
@@ -452,10 +411,7 @@ const [thumbByUserId, setThumbByUserId] = useState({});
   };
 
   // =========================
-  // MENÚ LATERAL DE USUARIO (de momento solo "mis-datos")
-  // =========================
- // =========================
-  // MENÚ LATERAL DE USUARIO
+  // MENÚ LATERAL
   // =========================
   const menuConfig = {
     "mis-datos": [
@@ -469,7 +425,6 @@ const [thumbByUserId, setThumbByUserId] = useState({});
           enumsData={enumsData}
           chargeUser={() => loadUsers(true)}
           changeUser={(x) => changeUserLocally(x)}
-          // photoThumbUrl={thumbByUserId[user._id] || ""}
         />
       ),
     ],
@@ -564,60 +519,58 @@ const [thumbByUserId, setThumbByUserId] = useState({});
     ],
   };
 
+  // =========================
+  // RENDER HELPERS
+  // =========================
   const renderUserRow = (user) => {
-    const rowClass =
-      user.isOnLeave
-        ? `${styles.tableContainer} ${styles.isOnLeave}`
-        : styles.tableContainer;
-    const thumbUrl = thumbByUserId[user._id]; // snapshot
+    const rowClass = user.isOnLeave
+      ? `${styles.tableContainer} ${styles.isOnLeave}`
+      : styles.tableContainer;
+
+    const id = normId(user._id);
+    const thumbUrl = thumbByUserId[id];
 
     return (
-      <div className={styles.containerEmployer} key={user._id}>
+      <div className={styles.containerEmployer} key={id}>
         <div>
           <div
             className={rowClass}
             onClick={() =>
-              !userSelected || userSelected._id !== user._id
+              !userSelected || normId(userSelected._id) !== id
                 ? setUserSelected(user)
                 : setUserSelected(null)
             }
           >
-            
+          <div className={styles.tableCellPhoto}>
+            <img
+              src={thumbUrl || perfil92}
+              alt=""
+              className={styles.photoThumb}
+              loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                // si la URL del usuario falla, ponemos el placeholder
+                e.currentTarget.src = perfil92;
+              }}
+            />
+          </div>
 
-         
-            {/* <div className={styles.tableCellPhoto}>
-              {thumbUrl ? (
-                <img
-                  src={thumbUrl}
-                  alt=""
-                  className={styles.photoThumb}
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : (
-                <div className={styles.photoPlaceholder} />
-              )}
-            </div> */}
             <div className={styles.tableCell}>{user.firstName}</div>
             <div className={styles.tableCell}>{user.lastName}</div>
             <div className={styles.tableCell}>
-              {user.hasPendingRequests && (
-                <FaBell color="tomato" />
-              )}
+              {user.hasPendingRequests && <FaBell color="tomato" />}
             </div>
             <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
           </div>
 
-          {userSelected && userSelected._id === user._id && (
+          {userSelected && normId(userSelected._id) === id && (
             <div className={styles.contenedorEmployer}>
               <MenuOptionsEmployee
                 options={Object.keys(menuConfig)}
                 current={selectOptionMenuEmployee}
                 onSelect={setselectOptionMenuEmployee}
               />
-              {menuConfig[selectOptionMenuEmployee]?.map((Render) =>
-                Render(userSelected)
-              )}
+              {menuConfig[selectOptionMenuEmployee]?.map((Render) => Render(userSelected))}
             </div>
           )}
         </div>
@@ -635,6 +588,44 @@ const [thumbByUserId, setThumbByUserId] = useState({});
   };
 
   // =========================
+  // RESTRICCIONES POR ROL
+  // =========================
+  if (!isRootOrGlobal) {
+    if (!listResponsability?.length) {
+      return (
+        <div className={styles.contenedor}>
+          <div className={styles.contenido}>
+            <h2>No tienes programas o dispositivos asignados.</h2>
+          </div>
+        </div>
+      );
+    }
+
+    if (listResponsability.length > 1 && !selectedResponsibility) {
+      const options = getResponsibilityOptions();
+      return (
+        <div className={styles.contenedor}>
+          <div className={styles.contenido}>
+            <h2>Selecciona un Programa o Dispositivo</h2>
+            <select
+              onChange={handleSelectResponsibility}
+              defaultValue=""
+              className={styles.selectInicial}
+            >
+              <option value="">Seleccionar una opción</option>
+              {options.map((opt, i) => (
+                <option key={i} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      );
+    }
+
+    if (!selectedResponsibility) return null;
+  }
+
+  // =========================
   // RENDER
   // =========================
   return (
@@ -646,6 +637,7 @@ const [thumbByUserId, setThumbByUserId] = useState({});
               <h2>GESTIÓN DE EMPLEADOS</h2>
               {isRootOrGlobal && <FaSquarePlus onClick={openModal} />}
               <TbFileTypeXml onClick={openXlsForm} />
+
               {!!userXLS && (
                 <CreateDocumentXLS
                   users={userXLS}
@@ -662,6 +654,7 @@ const [thumbByUserId, setThumbByUserId] = useState({});
                   title="Reubicar personal"
                 />
               )}
+
               {isRelocateOpen && (
                 <RelocateHiringsModal
                   enumsData={enumsData}
@@ -672,6 +665,7 @@ const [thumbByUserId, setThumbByUserId] = useState({});
                   resetFilters={resetFilters}
                 />
               )}
+
               {isModalOpen && (
                 <FormCreateEmployer
                   selectedResponsibility={selectedResponsibility}
@@ -696,18 +690,13 @@ const [thumbByUserId, setThumbByUserId] = useState({});
                     <option value={50}>50</option>
                   </select>
                 </div>
+
                 <div>
-                  <button
-                    onClick={() => handlePageChange(page - 1)}
-                    disabled={page === 1}
-                  >
+                  <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
                     {'<'}
                   </button>
                   <span>Página {page}</span>
-                  <button
-                    onClick={() => handlePageChange(page + 1)}
-                    disabled={page === totalPages}
-                  >
+                  <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
                     {'>'}
                   </button>
                 </div>
@@ -715,14 +704,9 @@ const [thumbByUserId, setThumbByUserId] = useState({});
             ) : (
               <div className={styles.cajaSeleccionActiva}>
                 <h4>Activo</h4>
-                <select
-                  onChange={handleSelectResponsibility}
-                  value={selectedResponsibility || ""}
-                >
+                <select onChange={handleSelectResponsibility} value={selectedResponsibility || ""}>
                   {getResponsibilityOptions().map((opt, i) => (
-                    <option key={i} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={i} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </div>
@@ -751,11 +735,7 @@ const [thumbByUserId, setThumbByUserId] = useState({});
 
             <div className={styles.containerTableContainer}>
               <div>
-                <div
-                  className={styles.tableContainer}
-                  id={styles.cabeceraTabla}
-                >
-                  {/* <div className={styles.tableCellPhoto}></div> */}
+                <div className={styles.tableContainer} id={styles.cabeceraTabla}>
                   <div className={styles.tableCell}>Nombre</div>
                   <div className={styles.tableCell}>Apellidos</div>
                   <div className={styles.tableCellCenter}>Peticiones</div>

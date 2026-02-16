@@ -203,12 +203,35 @@ align-items: baseline;
 /* ====== LAYOUT RESPONSIVE ====== */
 @media (min-width: 1000px) {
   .contenedor { border-radius: 1rem; }
-  .contenedor > div { flex: 0 0 30%; }
   .studiesContainer p:first-of-type {
     margin-top: -5px; /* ejemplo */
 }
 select[name="fostered"], select[name='gender'] {
   flex: 0 2rem;
+}
+
+
+/* Desktop: grid 3 columnas exactas */
+@media (min-width: 1000px){
+  .contenedor{
+    flex: 1;
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 16px; /* ajusta a gusto */
+    align-items: start;
+  }
+
+  /* Título a lo ancho */
+  .contenedor > h2{
+    grid-column: 1 / -1;
+  }
+
+  /* Foto a lo ancho y centrada */
+  .contenedor > .photoContainer{
+    grid-column: 1 / -1;
+    justify-content: center;
+    padding: 8px 0 4px;
+  }
 }
 }
 
@@ -470,4 +493,159 @@ select[name="fostered"], select[name='gender'] {
   border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.06);
   background: rgba(15, 23, 42, 0.03);
+}
+
+.contenedor>div.photoContainer{
+  flex: 1 1 100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap: 14px;
+  padding: 8px 0 4px;
+}
+
+
+/* Botón que envuelve la imagen (para que sea clicable y accesible) */
+/* =========================
+   FOTO PERFIL (alta especificidad)
+   ========================= */
+/* =========================
+   FOTO PERFIL (Avatar)
+   ========================= */
+
+/* --- Botón (click en la foto) --- */
+.contenedor .photoContainer .photoButton{
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer;
+  position: relative;
+  outline: none;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden; /* overlay circular */
+}
+
+/* Quita outline “raro” */
+.contenedor .photoContainer .photoButton:focus{
+  outline: none;
+}
+
+/* Focus accesible */
+.contenedor .photoContainer .photoButton:focus-visible{
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-morado) 25%, transparent) !important;
+}
+
+/* --- Contenedores circulares (por si usas wrap/inner) --- */
+.contenedor .photoContainer .photoWrap,
+.contenedor .photoContainer .photoInner{
+  border-radius: 999px !important;
+  overflow: hidden !important;
+}
+
+/* --- Imagen (avatar) --- */
+.contenedor .photoContainer .photoNormal{
+  width: 220px !important;
+  height: 220px !important;
+  border-radius: 999px !important;
+  object-fit: cover !important;
+  object-position: center 35% !important; /* sube un poco la cara */
+  border: 6px solid color-mix(in srgb, var(--color-morado) 35%, #fff) !important;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.10) !important;
+  background: color-mix(in srgb, var(--color-morado) 6%, #fff) !important;
+  display: block !important;
+
+  transition: transform .18s ease, filter .18s ease;
+  will-change: transform, filter;
+}
+
+/* --- Hint (texto “Cambiar foto”) --- */
+.contenedor .photoContainer .photoHint{
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(17,24,39,.55);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity .15s ease, transform .15s ease;
+  pointer-events: none;
+  z-index: 2; /* por encima del overlay */
+}
+
+/* --- Overlay oscuro al hover/focus --- */
+.contenedor .photoContainer .photoButton::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0);
+  transition: background .18s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Hover / Focus: oscurecer + zoom + hint */
+.contenedor .photoContainer .photoButton:hover::after,
+.contenedor .photoContainer .photoButton:focus-visible::after{
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.contenedor .photoContainer .photoButton:hover .photoNormal,
+.contenedor .photoContainer .photoButton:focus-visible .photoNormal{
+  transform: scale(1.03);
+  filter: brightness(0.85) saturate(1.05);
+}
+
+.contenedor .photoContainer .photoButton:hover .photoHint,
+.contenedor .photoContainer .photoButton:focus-visible .photoHint{
+  opacity: 1;
+  transform: translateX(-50%) translateY(-3px);
+}
+
+/* Anillo extra opcional al hover */
+.contenedor .photoContainer .photoButton:hover,
+.contenedor .photoContainer .photoButton:focus-visible{
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-morado) 18%, transparent);
+}
+
+/* --- Input file oculto (click en la imagen) --- */
+.contenedor .photoContainer .photoFileHidden{
+  display: none !important;
+}
+
+/* --- Fila extra en edición (input visible) --- */
+.contenedor .photoContainer .photoEditRow{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.contenedor .photoContainer .photoLabel{
+  color: var(--color-malva);
+  font-size: 9pt;
+}
+
+.contenedor .photoContainer .photoFileVisible{
+  background: var(--color-gris-claro) !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  padding: 8px 10px !important;
+  font-size: 10pt !important;
+}
+
+/* --- Responsive --- */
+@media (max-width: 780px){
+  .contenedor .photoContainer .photoNormal{
+    width: 160px !important;
+    height: 160px !important;
+  }
 }

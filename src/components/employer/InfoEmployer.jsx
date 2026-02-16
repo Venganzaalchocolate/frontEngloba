@@ -509,7 +509,6 @@ const onPickProfileImage = async (e) => {
       <h2>INFORMACIÓN PERSONAL {boton()} {(logged.user.role === "root" || logged.user.role === "global") && (<button onClick={() => recreateEmail()}>Volver a crear el email coorporativo</button>)}</h2>
  
 <div className={styles.photoContainer}>
-  {/* CLICK EN LA FOTO: SIEMPRE PERMITE SUBIR */}
   <button
     type="button"
     className={styles.photoButton}
@@ -551,10 +550,6 @@ const onPickProfileImage = async (e) => {
 
   {photoError && <span className={styles.errorSpan}>{photoError}</span>}
 </div>
-
-
-
-        
 
 
       {logged.user.role === "root" && (

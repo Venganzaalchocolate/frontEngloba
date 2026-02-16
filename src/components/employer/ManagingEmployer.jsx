@@ -541,7 +541,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
                 : setUserSelected(null)
             }
           >
-          <div className={styles.tableCellPhoto}>
+          {/* <div className={styles.tableCellPhoto}>
             <img
               src={thumbUrl || perfil92}
               alt=""
@@ -553,7 +553,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
                 e.currentTarget.src = perfil92;
               }}
             />
-          </div>
+          </div> */}
 
             <div className={styles.tableCell}>{user.firstName}</div>
             <div className={styles.tableCell}>{user.lastName}</div>

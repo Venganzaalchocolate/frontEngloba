@@ -371,7 +371,7 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
           }
           modal={modal}
           charge={charge}
-          authorized={canManage}
+          authorized={true}
           onChange={(updated) => {
             if (updated && updated._id === currentInfo?._id) {
               setCurrentInfo(updated);

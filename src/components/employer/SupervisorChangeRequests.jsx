@@ -260,18 +260,18 @@ export default function SupervisorChangeRequests({
   };
 
   // Prefetch automático de documentos para todas las solicitudes pendientes con uploads
-  useEffect(() => {
-    const pendWithUploads = items
-      .filter((r) => r.status === "pending" && (r.uploads?.length || 0) > 0)
-      .map((r) => String(r._id));
+useEffect(() => {
+  const pendWithUploads = items
+    .filter((r) => r.status === "pending" && (r.uploads?.length || 0) > 0)
+    .map((r) => String(r._id));
 
-    for (const reqId of pendWithUploads) {
-      if (!docsByReq[reqId] && !docsLoading[reqId]) {
-        fetchDocsForRequest(reqId);
-      }
+  for (const reqId of pendWithUploads) {
+    if (!docsByReq[reqId] && !docsLoading[reqId]) {
+      fetchDocsForRequest(reqId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [items, docsByReq, docsLoading]);
 
   const handleRemoveTimeOffDay = (reqId, dateKey) => {
     setTimeOffOverrides((prev) => {

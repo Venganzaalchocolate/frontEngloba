@@ -198,3 +198,70 @@
     gap: 1rem;
 }
 
+@media (max-width: 600px) {
+  /* Evita overflow del bloque */
+  .contenedor {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* H2: que haga wrap y los botones bajen */
+  .contenedor > h2 {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* Los botones del título: en móvil mejor 100% */
+  .contenedor > h2 :global(.btn-secondary) {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;       /* que rompa línea si es largo */
+    overflow-wrap: anywhere;
+    text-align: left;          /* queda más “listado” */
+  }
+
+  /* Header de la card: si no cabe, que se parta */
+  .header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .left {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .meta {
+    flex: 1 1 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .right {
+    flex: 1 1 100%;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  /* Valores largos (IBAN, email, etc.) */
+  .values {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .from,
+  .to,
+  .path {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 600px) {
+  .btnGhost { width: 100%; }
+}

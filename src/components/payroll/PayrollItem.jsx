@@ -1,13 +1,16 @@
 // PayrollItem.jsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FaTrashAlt, FaFileDownload } from "react-icons/fa";
-import { AiOutlineSignature, AiFillSignature } from "react-icons/ai";
+import { AiOutlineSignature } from "react-icons/ai";
 import { FaCloudUploadAlt } from "react-icons/fa";
 import styles from "../styles/payrollsEmployer.module.css";
 import stylesTooltip from "../styles/tooltip.module.css";
 import { useLogin } from "../../hooks/useLogin.jsx";
 import { obtenerNombreMes } from "../../lib/utils.js";
 import ModalConfirmation from "../globals/ModalConfirmation.jsx";
+
+const hasSignature = (u) =>
+  Array.isArray(u?.signature?.strokes) && u.signature.strokes.length > 0;
 
 const PayrollItem = ({
   payroll,
@@ -19,16 +22,26 @@ const PayrollItem = ({
   isLatest = false,
 }) => {
   const { logged } = useLogin();
+
   const [wDelete, setWDelete] = useState(false);
+  const [wNoSig, setWNoSig] = useState(false);
 
   if (!payroll) return null;
 
   const monthName = obtenerNombreMes(payroll.payrollMonth);
   const labelBase = `${monthName || payroll.payrollMonth}_${payroll.payrollYear}`;
+
   const canManage =
     logged?.user?.role === "global" ||
     logged?.user?.role === "root" ||
     !!listResponsability?.payrolls;
+
+  const isUserPayroll = logged?.user?._id === userId;
+
+  const userHasSignature = useMemo(
+    () => hasSignature(logged?.user),
+    [logged?.user]
+  );
 
   const handleDownloadPdf = () => {
     if (!payroll.pdf) return;
@@ -41,6 +54,12 @@ const PayrollItem = ({
   };
 
   const handleSign = () => {
+    // 1) si no hay firma guardada, NO dejamos firmar
+    if (!userHasSignature) {
+      setWNoSig(true);
+      return;
+    }
+    // 2) si hay firma, seguimos flujo normal
     signPayroll(payroll);
   };
 
@@ -55,10 +74,10 @@ const PayrollItem = ({
   };
 
   const handleCancelDelete = () => setWDelete(false);
-const isUserPayroll= logged.user._id ===userId
+
   return (
     <li className={styles.payrollItem}>
-      {/* Celda principal: clic completo = descargar nómina */}
+      {/* Descargar nómina */}
       <button
         type="button"
         className={styles.payrollmonth}
@@ -72,16 +91,12 @@ const isUserPayroll= logged.user._id ===userId
         <FaFileDownload className={styles.botonNomina} />
       </button>
 
-      {/* Columna: firma / subir firma */}
+      {/* Firma / subir firmada */}
       <div className={styles.firma}>
         {payroll.sign ? (
-          <span
-            className={stylesTooltip.tooltip}
-            onClick={handleDownloadSigned}
-          >
-            <AiFillSignature className={styles.botonNomina} />
-            <span className={stylesTooltip.tooltiptext}>Descargar firmada</span>
-          </span>
+          <button type="button" onClick={handleDownloadSigned}>
+            Descargar firmada
+          </button>
         ) : isUserPayroll ? (
           <button
             type="button"
@@ -113,12 +128,28 @@ const isUserPayroll= logged.user._id ===userId
         </div>
       )}
 
+      {/* Modal borrar */}
       {wDelete && (
         <ModalConfirmation
           title="Eliminar nómina"
           message={`¿Seguro que quieres eliminar la nómina de ${monthName} ${payroll.payrollYear}?`}
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
+        />
+      )}
+
+      {/* Modal “no hay firma guardada” */}
+      {wNoSig && (
+        <ModalConfirmation
+          title="No tienes firma guardada"
+          message={
+            "Para poder firmar una nómina necesitas registrar tu firma primero.\n\n" +
+            "Ve a “Mi Perfil” → “FIRMA”, crea tu firma y guárdala. " +
+            "Este paso solo tendrás que hacerlo una vez."
+          }
+          textConfirm="Entendido"
+          deleteCancel={true}   // solo botón confirm
+          onConfirm={() => setWNoSig(false)}
         />
       )}
     </li>

@@ -5,7 +5,7 @@ import { coordinators, responsibles } from "../../lib/data";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import { FaTrash } from "react-icons/fa6";
-import { IoArrowUndo, IoRadioButtonOn} from "react-icons/io5";
+import { IoArrowUndo, IoRadioButtonOn } from "react-icons/io5";
 import { BsPersonFillAdd } from "react-icons/bs";
 
 const InfoProgramOrDispositive = ({
@@ -18,7 +18,8 @@ const InfoProgramOrDispositive = ({
   searchUsers,
   onManageCronology,
   changeActive,
-  deviceWorkers
+  deviceWorkers,
+  onQuickEditContact 
 }) => {
   const token = getToken();
   const [showAddModal, setShowAddModal] = useState(false);
@@ -87,23 +88,23 @@ const InfoProgramOrDispositive = ({
     },
   ];
 
- const dispositivos = useMemo(() => {
-  if (!info || info.type !== "program") return [];
+  const dispositivos = useMemo(() => {
+    if (!info || info.type !== "program") return [];
 
-  // `filter` ya devuelve un array nuevo, podemos ordenar directamente
-  return Object.values(enumsData?.dispositiveIndex || {})
-    .filter((d) => d.program === info._id)
-    .sort((a, b) => {
-      const aActive = a.active ? 1 : 0;
-      const bActive = b.active ? 1 : 0;
+    // `filter` ya devuelve un array nuevo, podemos ordenar directamente
+    return Object.values(enumsData?.dispositiveIndex || {})
+      .filter((d) => d.program === info._id)
+      .sort((a, b) => {
+        const aActive = a.active ? 1 : 0;
+        const bActive = b.active ? 1 : 0;
 
-      // 1) activos primero
-      if (aActive !== bActive) return bActive - aActive;
+        // 1) activos primero
+        if (aActive !== bActive) return bActive - aActive;
 
-      // 2) dentro de cada grupo, orden alfabético por nombre (opcional)
-      return (a.name || "").localeCompare(b.name || "");
-    });
-}, [info, enumsData]);
+        // 2) dentro de cada grupo, orden alfabético por nombre (opcional)
+        return (a.name || "").localeCompare(b.name || "");
+      });
+  }, [info, enumsData]);
 
   if (!info) {
     return (
@@ -150,11 +151,11 @@ const InfoProgramOrDispositive = ({
   return (
     <div className={styles.contenedor}>
       {!!info && isProgram &&
-      <div className={`${styles.fieldContainer} ${styles.fieldContainerInfo}`}>
-        <h3></h3>
-        <button onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}>{(info?.active)?'Desactivar':'Activar'}</button>
-      </div>
-       
+        <div className={`${styles.fieldContainer} ${styles.fieldContainerInfo}`}>
+          <h3></h3>
+          <button onClick={() => changeActive(info)} className={(info?.active) ? styles.activeDis : styles.inactiveDis}>{(info?.active) ? 'Desactivar' : 'Activar'}</button>
+        </div>
+
       }
       {/* ✅ Botón para ir al programa si el info actual es un dispositivo */}
       {!isProgram && info?.program && (
@@ -167,7 +168,7 @@ const InfoProgramOrDispositive = ({
             Info del Programa
 
           </button>
-          <button onClick={()=>changeActive(info)} className={(info?.active)?styles.activeDis:styles.inactiveDis}>{(info?.active)?'Desactivar':'Activar'}</button>
+          <button onClick={() => changeActive(info)} className={(info?.active) ? styles.activeDis : styles.inactiveDis}>{(info?.active) ? 'Desactivar' : 'Activar'}</button>
         </div>
       )}
       {/* Nombre */}
@@ -184,8 +185,33 @@ const InfoProgramOrDispositive = ({
         </div>
       ) : (
         <div className={styles.fieldContainer}>
-          <label className={styles.fieldLabel}>Dirección</label>
+          <label className={styles.fieldLabel}>
+            Dirección
+            <button
+              type="button"
+              className={styles.btnInlineEdit}
+              onClick={() => onQuickEditContact?.("address")}
+            >
+              Editar
+            </button>
+          </label>
           <p className={styles.fieldTextStatic}>{info.address || "—"}</p>
+        </div>
+      )}
+
+      {!isProgram && (
+        <div className={styles.fieldContainer}>
+          <label className={styles.fieldLabel}>
+            Teléfono del Centro
+            <button
+              type="button"
+              className={styles.btnInlineEdit}
+              onClick={() => onQuickEditContact?.("phone")}
+            >
+              Editar
+            </button>
+          </label>
+          <p className={styles.fieldTextStatic}>{info.phone || "—"}</p>
         </div>
       )}
 
@@ -205,55 +231,55 @@ const InfoProgramOrDispositive = ({
       )}
 
       <div className={styles.fieldContainer}>
-          <label className={styles.fieldLabel}>Email de grupo</label>
-          <p className={styles.fieldTextStatic}>{info.email || "—"}</p>
-        </div>
+        <label className={styles.fieldLabel}>Email de grupo</label>
+        <p className={styles.fieldTextStatic}>{info.email || "—"}</p>
+      </div>
 
       {/* === CRONOLOGÍA === */}
-<div className={styles.fieldContainer}>
-  <label className={styles.fieldLabel}>
-    Cronología
-    <button
-      className={styles.btnSmallAdd}
-      onClick={() => {
-        setEditCronology(null);
-        setShowCronologyModal(true);
-      }}
-    >
-      + Añadir
-    </button>
-  </label>
+      <div className={styles.fieldContainer}>
+        <label className={styles.fieldLabel}>
+          Cronología
+          <button
+            className={styles.btnSmallAdd}
+            onClick={() => {
+              setEditCronology(null);
+              setShowCronologyModal(true);
+            }}
+          >
+            + Añadir
+          </button>
+        </label>
 
-  {info.cronology?.length > 0 ? (
-    <ul className={styles.list}>
-      {info.cronology.map((c) => (
-        <li key={c._id} className={styles.listItem}>
-          <div>
-            <strong>Inicio:</strong> {c.open ? new Date(c.open).toLocaleDateString() : "—"}  
-            <strong style={{ marginLeft: "1rem" }}>Fin:</strong> {c.closed ? new Date(c.closed).toLocaleDateString() : "—"}
-          </div>
-          <div className={styles.listItemActions}>
-            <button
-              className={styles.btnTiny}
-              onClick={() => {
-                setEditCronology(c);
-                setShowCronologyModal(true);
-              }}
-            >
-              Editar
-            </button>
-            <FaTrash
-              className={styles.trash}
-              onClick={() => setConfirmCronology({ show: true, cronology: c })}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <p className={styles.fieldTextEmpty}>Sin registros de cronología</p>
-  )}
-</div>
+        {info.cronology?.length > 0 ? (
+          <ul className={styles.list}>
+            {info.cronology.map((c) => (
+              <li key={c._id} className={styles.listItem}>
+                <div>
+                  <strong>Inicio:</strong> {c.open ? new Date(c.open).toLocaleDateString() : "—"}
+                  <strong style={{ marginLeft: "1rem" }}>Fin:</strong> {c.closed ? new Date(c.closed).toLocaleDateString() : "—"}
+                </div>
+                <div className={styles.listItemActions}>
+                  <button
+                    className={styles.btnTiny}
+                    onClick={() => {
+                      setEditCronology(c);
+                      setShowCronologyModal(true);
+                    }}
+                  >
+                    Editar
+                  </button>
+                  <FaTrash
+                    className={styles.trash}
+                    onClick={() => setConfirmCronology({ show: true, cronology: c })}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.fieldTextEmpty}>Sin registros de cronología</p>
+        )}
+      </div>
 
 
       {/* Descripción / Objetivos / Perfil */}
@@ -357,12 +383,12 @@ const InfoProgramOrDispositive = ({
       )}
 
       {
-        !isProgram && (deviceWorkers && deviceWorkers.length>0)
-        ? <div className={styles.fieldContainer}>
+        !isProgram && (deviceWorkers && deviceWorkers.length > 0)
+          ? <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Lista de Trabajadores</label>
-            {deviceWorkers.map((p)=>(
-              <div className={styles.boxPerson} key={p._id+p.dni}>
-              <p
+            {deviceWorkers.map((p) => (
+              <div className={styles.boxPerson} key={p._id + p.dni}>
+                <p
                   className={styles.fieldText}
                   onClick={() =>
                     modal(
@@ -373,17 +399,17 @@ const InfoProgramOrDispositive = ({
                 >
                   {p.firstName} {p.lastName}
                 </p>
-                </div>
+              </div>
             ))}
-            
-            
-        </div>
-        : (!isProgram) && <div className={styles.fieldContainer}>
+
+
+          </div>
+          : (!isProgram) && <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Lista de Trabajadores</label>
             <div className={styles.boxPerson}>
               <p>Este dispositivo no tiene trabajadores</p>
             </div>
-        </div>
+          </div>
       }
 
       {/* Dispositivos asociados */}
@@ -394,10 +420,10 @@ const InfoProgramOrDispositive = ({
             <ul className={styles.list}>
               {dispositivos.map((d) => (
                 <li key={d._id} className={styles.listItem} onClick={() => onSelect(d)}>
-                  
+
                   <strong>{d.name}</strong>
                   <span className={styles.iconSmall}>
-                    <IoRadioButtonOn className={(d.active)?styles.activeDis:styles.inactiveDis}/>                                                                                          
+                    <IoRadioButtonOn className={(d.active) ? styles.activeDis : styles.inactiveDis} />
                   </span>
                   {d.address && <span className={styles.subtext}>{d.address}</span>}
                 </li>
@@ -433,52 +459,52 @@ const InfoProgramOrDispositive = ({
       )}
 
       {/* === Modal añadir/editar cronología === */}
-{/* === Modal añadir/editar cronología === */}
-{showCronologyModal && (
-  <ModalForm
-    title={`${editCronology ? "Editar" : "Añadir"} Cronología`}
-    message="Complete las fechas de inicio y fin."
-    fields={[
-      {
-        name: "open",
-        label: "Fecha de inicio",
-        type: "date",
-        defaultValue: editCronology?.open
-          ? new Date(editCronology.open).toISOString().slice(0, 10)
-          : "",
-      },
-      {
-        name: "closed",
-        label: "Fecha de fin",
-        type: "date",
-        defaultValue: editCronology?.closed
-          ? new Date(editCronology.closed).toISOString().slice(0, 10)
-          : "",
-      },
-    ]}
-    onSubmit={(formData) => {
-      const type = editCronology ? "edit" : "add";
-      onManageCronology(info, { ...formData, _id: editCronology?._id }, type);
-      setShowCronologyModal(false);
-    }}
-    onClose={() => setShowCronologyModal(false)}
-  />
-)}
+      {/* === Modal añadir/editar cronología === */}
+      {showCronologyModal && (
+        <ModalForm
+          title={`${editCronology ? "Editar" : "Añadir"} Cronología`}
+          message="Complete las fechas de inicio y fin."
+          fields={[
+            {
+              name: "open",
+              label: "Fecha de inicio",
+              type: "date",
+              defaultValue: editCronology?.open
+                ? new Date(editCronology.open).toISOString().slice(0, 10)
+                : "",
+            },
+            {
+              name: "closed",
+              label: "Fecha de fin",
+              type: "date",
+              defaultValue: editCronology?.closed
+                ? new Date(editCronology.closed).toISOString().slice(0, 10)
+                : "",
+            },
+          ]}
+          onSubmit={(formData) => {
+            const type = editCronology ? "edit" : "add";
+            onManageCronology(info, { ...formData, _id: editCronology?._id }, type);
+            setShowCronologyModal(false);
+          }}
+          onClose={() => setShowCronologyModal(false)}
+        />
+      )}
 
-{/* === Modal eliminar cronología === */}
-{confirmCronology.show && (
-  <ModalConfirmation
-    title="Eliminar registro de cronología"
-    message="¿Seguro que deseas eliminar este registro de cronología?"
-    confirmText="Eliminar"
-    cancelText="Cancelar"
-    onConfirm={() => {
-      onManageCronology(info, { _id: confirmCronology.cronology._id }, "delete");
-      setConfirmCronology({ show: false, cronology: null });
-    }}
-    onCancel={() => setConfirmCronology({ show: false, cronology: null })}
-  />
-)}
+      {/* === Modal eliminar cronología === */}
+      {confirmCronology.show && (
+        <ModalConfirmation
+          title="Eliminar registro de cronología"
+          message="¿Seguro que deseas eliminar este registro de cronología?"
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          onConfirm={() => {
+            onManageCronology(info, { _id: confirmCronology.cronology._id }, "delete");
+            setConfirmCronology({ show: false, cronology: null });
+          }}
+          onCancel={() => setConfirmCronology({ show: false, cronology: null })}
+        />
+      )}
 
 
     </div>

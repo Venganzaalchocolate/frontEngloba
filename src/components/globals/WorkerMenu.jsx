@@ -15,6 +15,7 @@ import { getMenuOptions } from "../../lib/menuOptions";
 import Spinnning from "./Spinning";
 
 
+
 // === Importación diferida (lazy) de los módulos pesados ===
 // Nota: con esto React hace code-splitting y cada panel se descarga solo cuando se usa.
 // Así evitamos que toda la app se cargue de golpe.
@@ -30,6 +31,7 @@ const ManagingWorkspace = React.lazy(() => import("../woprkspace/Managingworkspa
 const FormCreateEmployer = React.lazy(() => import("../employer/FormCreateEmployer"));
 const ManagingProgramsDispositive=React.lazy(() => import("../programsanddispositives/ManagingProgramsDispositive"));
 const ManagingVolunteers=React.lazy(() => import("../volunteer/ManagingVolunteers"));
+const ManagingPermissions=React.lazy(() => import("../permissions/ManagingPermissions"));
 
 /* === Tile reutilizable (card clickable con icono y texto) ===
    Le paso un icono, label, color de acento y callback onClick */
@@ -246,6 +248,13 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
         )}
         {MenuWorker === "volunteer" && (
           <ManagingVolunteers
+            enumsData={enumsEmployer}
+            modal={(title, message) => modal(title, message)}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {MenuWorker === "permissions" && (
+          <ManagingPermissions
             enumsData={enumsEmployer}
             modal={(title, message) => modal(title, message)}
             charge={(x) => charge(x)}

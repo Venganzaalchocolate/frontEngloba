@@ -165,8 +165,6 @@ const Payrolls = ({ user, modal, charge, listResponsability, title = true }) => 
   const canManage =
     logged?.user?.role === 'global' || logged?.user?.role === 'root';
 
-  
-
   return (
     <div className={title ? styles.contenedor : styles.contenedorModuloNominas}>
       {title && (

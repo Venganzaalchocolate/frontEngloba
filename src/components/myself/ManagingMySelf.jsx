@@ -8,6 +8,7 @@ import DocumentMiscelaneaGeneric from '../globals/DocumentMiscelaneaGeneric.jsx'
 import MyChangeRequests from './MyChangeRequest.jsx';
 import { useState } from 'react';
 import VacationDays from '../employer/VacationDays.jsx';
+import MySignature from './MySignature.jsx';
 
 
 const ManagingMySelf = ({
@@ -88,6 +89,13 @@ const handleRequestCreated = (payload) => {
                         onRequestCreated={handleRequestCreated}
                     />
 
+                    <MySignature
+                        user={myself}
+                        modal={modal}
+                        charge={charge}
+                        onChange={changeUser}
+                    />
+
                     <Payrolls
                         user={myself}
                         modal={modal}
@@ -110,6 +118,8 @@ const handleRequestCreated = (payload) => {
                         enumsData={enumsData}
                         initialItems={optimisticReqs}
                     />
+
+                    
 
                 </div>
 

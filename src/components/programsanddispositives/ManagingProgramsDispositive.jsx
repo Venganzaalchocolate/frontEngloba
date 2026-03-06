@@ -20,6 +20,8 @@ import {
 } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import ProgramTabs from "./ProgramTabs";
+import { textErrors } from "../../lib/textErrors";
+import { validNumber } from "../../lib/valid";
 
 const ManagingProgramsDispositive = ({
   modal,
@@ -41,7 +43,42 @@ const ManagingProgramsDispositive = ({
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionType, setActionType] = useState(null); // "edit" o "delete"
-    const [deviceWorkers, setDeviceWorkers] = useState([]);
+  const [deviceWorkers, setDeviceWorkers] = useState([]);
+  const [showQuickContactForm, setShowQuickContactForm] = useState(false);
+  const [quickContactTarget, setQuickContactTarget] = useState(null);
+
+  const handleQuickUpdateDispositiveField = async (formData) => {
+    if (!infoSelect?._id || infoSelect?.type !== "dispositive" || !quickContactTarget?.field) return;
+
+    charge(true);
+
+    const value = formData?.[quickContactTarget.field] ?? "";
+
+    const payload = {
+      dispositiveId: infoSelect._id,
+      [quickContactTarget.field]: value,
+    };
+
+    const res = await updateDispositive(payload, token);
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo actualizar el campo.");
+      charge(false);
+      return;
+    }
+
+    await chargeEnums();
+    await info({ type: "dispositive", _id: infoSelect._id });
+
+    modal(
+      "Actualización correcta",
+      `${quickContactTarget.label} actualizado correctamente.`
+    );
+
+    setShowQuickContactForm(false);
+    setQuickContactTarget(null);
+    charge(false);
+  };
 
   // Helper: desempaqueta { error, data } o devuelve el objeto tal cual
   const normalizeEntity = (res, type) => {
@@ -77,7 +114,7 @@ const ManagingProgramsDispositive = ({
   const onSelect = (x) => {
     setSelect(x);
     info(x);
-    
+
     if (x.type === "dispositive") {
       fetchDeviceWorkers(x._id);      // 👈 NUEVO
     } else {
@@ -112,9 +149,8 @@ const ManagingProgramsDispositive = ({
     return Object.entries(idx)
       .map(([id, p]) => ({
         value: id,
-        label: `${p?.name || id}${
-          p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
-        }`,
+        label: `${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
+          }`,
         acronym: (p?.acronym || "").toUpperCase(),
       }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
@@ -144,7 +180,7 @@ const ManagingProgramsDispositive = ({
         { value: "infancia y juventud", label: "Infancia y juventud" },
         { value: "personas con discapacidad", label: "Personas con discapacidad" },
         { value: "mayores", label: "Mayores" },
-        { value: 'migraciones', label: "Migraciones"},
+        { value: 'migraciones', label: "Migraciones" },
       ],
       defaultValue: "no identificado",
     },
@@ -202,9 +238,8 @@ const ManagingProgramsDispositive = ({
       options: [
         ...Object.entries(enumsData?.programsIndex || {}).map(([id, p]) => ({
           value: JSON.stringify({ type: "program", _id: id }),
-          label: `📘 Programa · ${p?.name || id}${
-            p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
-          }`,
+          label: `📘 Programa · ${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
+            }`,
         })),
         ...Object.entries(enumsData?.dispositiveIndex || {}).map(([id, d]) => ({
           value: JSON.stringify({ type: "dispositive", _id: id }),
@@ -306,9 +341,8 @@ const ManagingProgramsDispositive = ({
       "Actualizado",
       type === "delete"
         ? "Registro eliminado correctamente."
-        : `Cronología ${
-            type === "edit" ? "actualizada" : "añadida"
-          } correctamente.`
+        : `Cronología ${type === "edit" ? "actualizada" : "añadida"
+        } correctamente.`
     );
   };
 
@@ -558,31 +592,31 @@ const ManagingProgramsDispositive = ({
       const fieldsWithValues =
         data.type === "program"
           ? programFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "area"
-                  ? data.area
-                  : f.name === "active"
+            ...f,
+            defaultValue:
+              f.name === "area"
+                ? data.area
+                : f.name === "active"
                   ? Boolean(data.active)
                   : f.name === "description"
-                  ? data.about?.description || ""
-                  : f.name === "objectives"
-                  ? data.about?.objectives || ""
-                  : f.name === "profile"
-                  ? data.about?.profile || ""
-                  : data[f.name] ?? f.defaultValue ?? "",
-            }))
+                    ? data.about?.description || ""
+                    : f.name === "objectives"
+                      ? data.about?.objectives || ""
+                      : f.name === "profile"
+                        ? data.about?.profile || ""
+                        : data[f.name] ?? f.defaultValue ?? "",
+          }))
           : deviceFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "program"
-                  ? data.program?._id || data.program || ""
-                  : f.name === "province"
+            ...f,
+            defaultValue:
+              f.name === "program"
+                ? data.program?._id || data.program || ""
+                : f.name === "province"
                   ? data.province?._id || data.province || ""
                   : f.name === "active"
-                  ? Boolean(data.active)
-                  : data[f.name] ?? f.defaultValue ?? "",
-            }));
+                    ? Boolean(data.active)
+                    : data[f.name] ?? f.defaultValue ?? "",
+          }));
 
       setEditTarget({ ...data, fieldsWithValues });
       setShowEditForm(true);
@@ -602,31 +636,31 @@ const ManagingProgramsDispositive = ({
       const fieldsWithValues =
         data.type === "program"
           ? programFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "area"
-                  ? data.area
-                  : f.name === "active"
+            ...f,
+            defaultValue:
+              f.name === "area"
+                ? data.area
+                : f.name === "active"
                   ? Boolean(data.active)
                   : f.name === "description"
-                  ? data.about?.description || ""
-                  : f.name === "objectives"
-                  ? data.about?.objectives || ""
-                  : f.name === "profile"
-                  ? data.about?.profile || ""
-                  : data[f.name] ?? f.defaultValue ?? "",
-            }))
+                    ? data.about?.description || ""
+                    : f.name === "objectives"
+                      ? data.about?.objectives || ""
+                      : f.name === "profile"
+                        ? data.about?.profile || ""
+                        : data[f.name] ?? f.defaultValue ?? "",
+          }))
           : deviceFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "program"
-                  ? data.program?._id || data.program || ""
-                  : f.name === "province"
+            ...f,
+            defaultValue:
+              f.name === "program"
+                ? data.program?._id || data.program || ""
+                : f.name === "province"
                   ? data.province?._id || data.province || ""
                   : f.name === "active"
-                  ? Boolean(data.active)
-                  : data[f.name] ?? f.defaultValue ?? "",
-            }));
+                    ? Boolean(data.active)
+                    : data[f.name] ?? f.defaultValue ?? "",
+          }));
 
       setEditTarget({ ...data, fieldsWithValues });
       setShowEditForm(true);
@@ -785,6 +819,19 @@ const ManagingProgramsDispositive = ({
     }
   };
 
+  const quickContactForm = (field) => {
+    const labelMap = {
+      address: "Dirección",
+      phone: "Teléfono del centro",
+    };
+
+    setQuickContactTarget({
+      field,
+      label: labelMap[field] || field,
+    });
+    setShowQuickContactForm(true);
+  }
+
   // === RENDER ===
   return (
     <div className={styles.contenedor}>
@@ -792,22 +839,22 @@ const ManagingProgramsDispositive = ({
         <div className={styles.titulo}>
           <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
           {logged?.user?.role === "root" && (
-          <div className={styles.botones}>
-            <button className={styles.btnAdd} onClick={() => setShowProgramForm(true)}>
-              + Añadir Programa <FaFolderOpen />
-            </button>
-            <button className={styles.btnAdd} onClick={() => setShowDeviceForm(true)}>
-              + Añadir Dispositivo <RiBuilding2Line />
-            </button>
-            <button className={styles.btnEdit} onClick={openEdit}>
-              Editar <FaEdit />
-            </button>
-            
+            <div className={styles.botones}>
+              <button className={styles.btnAdd} onClick={() => setShowProgramForm(true)}>
+                + Añadir Programa <FaFolderOpen />
+              </button>
+              <button className={styles.btnAdd} onClick={() => setShowDeviceForm(true)}>
+                + Añadir Dispositivo <RiBuilding2Line />
+              </button>
+              <button className={styles.btnEdit} onClick={openEdit}>
+                Editar <FaEdit />
+              </button>
+
               <button className={styles.btnDelete} onClick={openDelete}>
                 Eliminar <FaTrashAlt />
               </button>
-            
-          </div>
+
+            </div>
           )}
         </div>
 
@@ -832,6 +879,7 @@ const ManagingProgramsDispositive = ({
             onManageCronology={handleCronology}
             changeActive={handleToggleActive}
             deviceWorkers={deviceWorkers}
+            onQuickEditContact={(field) => quickContactForm(field)}
           />
         </div>
       </div>
@@ -869,9 +917,8 @@ const ManagingProgramsDispositive = ({
       {showDeleteConfirm && (
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Seguro que deseas eliminar este ${
-            deleteTarget?.type === "program" ? "programa" : "dispositivo"
-          }?`}
+          message={`¿Seguro que deseas eliminar este ${deleteTarget?.type === "program" ? "programa" : "dispositivo"
+            }?`}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteConfirm(false)}
         />
@@ -879,13 +926,36 @@ const ManagingProgramsDispositive = ({
 
       {showSelectModal && (
         <ModalForm
-          title={`Seleccionar elemento para ${
-            actionType === "edit" ? "editar" : "eliminar"
-          }`}
+          title={`Seleccionar elemento para ${actionType === "edit" ? "editar" : "eliminar"
+            }`}
           message="Busca y selecciona el programa o dispositivo que deseas gestionar."
           fields={selectFields}
           onSubmit={handleSelectForAction}
           onClose={() => setShowSelectModal(false)}
+        />
+      )}
+
+      {showQuickContactForm && quickContactTarget && infoSelect?.type === "dispositive" && (
+        <ModalForm
+          title={`Editar ${quickContactTarget.label}`}
+          message={`Actualiza el campo ${quickContactTarget.label.toLowerCase()} del dispositivo.`}
+          fields={[
+            {
+              name: quickContactTarget.field,
+              label: quickContactTarget.label,
+              type: "text",
+              required: true,
+              defaultValue: infoSelect?.[quickContactTarget.field] || "",
+              ...(quickContactTarget.field === "phone" && {
+                isValid: (v) => (validNumber(v) ? "" : textErrors("phone")),
+              }),
+            },
+          ]}
+          onSubmit={handleQuickUpdateDispositiveField}
+          onClose={() => {
+            setShowQuickContactForm(false);
+            setQuickContactTarget(null);
+          }}
         />
       )}
     </div>

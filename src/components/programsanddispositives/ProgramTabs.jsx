@@ -14,7 +14,8 @@ const ProgramTabs = ({
   searchUsers,
   onManageCronology,
   changeActive,
-  deviceWorkers
+  deviceWorkers,
+  onQuickEditContact,
 }) => {
   const [activeTab, setActiveTab] = useState("info"); // "info" | "docs" | "workspace"
 
@@ -64,6 +65,7 @@ const ProgramTabs = ({
             onManageCronology={onManageCronology}
             changeActive={changeActive}
             deviceWorkers={deviceWorkers}
+            onQuickEditContact={onQuickEditContact}
           />
         )}
 

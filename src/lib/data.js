@@ -38,6 +38,7 @@ const fetchData = async (
   isBlob = false,
   signal = null
 ) => {
+
   const url = `${urlApi}${endpoint}`;
 
   const isFormData = body instanceof FormData;
@@ -528,3 +529,86 @@ export const profilePhotoSet = (token, datos) => {
 export const profilePhotoGetBatch = (data, token, signal) =>
   fetchData('/profilephotogetbatch', 'POST', token, data, false, signal);
 
+
+
+/// ===================== PERMISSIONS (admin | unified) =====================
+// Base: /permissions
+// Controller: permissionsUnifiedController
+
+// PROFILES (PermissionProfile)
+export const permissionProfileList = (datos, token) =>
+  fetchData("/permissions/profile/list", "POST", token, datos);
+
+export const permissionProfileGet = (datos, token) =>
+  fetchData("/permissions/profile/get", "POST", token, datos);
+
+export const permissionProfileCreate = (datos, token) =>
+  fetchData("/permissions/profile/create", "POST", token, datos);
+
+export const permissionProfileUpdate = (datos, token) =>
+  fetchData("/permissions/profile/update", "POST", token, datos);
+
+export const permissionProfileToggle = (datos, token) =>
+  fetchData("/permissions/profile/toggle", "POST", token, datos);
+
+// Hard delete real (cascada + sync)
+export const permissionProfileDeleteHard = (datos, token) =>
+  fetchData("/permissions/profile/delete", "POST", token, datos);
+
+
+// ASSIGNMENTS (UserProfileAssignment)
+export const userProfileAssignmentList = (datos, token) =>
+  fetchData("/permissions/assignment/list", "POST", token, datos);
+
+export const userProfileAssignmentUpsert = (datos, token) =>
+  fetchData("/permissions/assignment/upsert", "POST", token, datos);
+
+export const userProfileAssignmentUpdate = (datos, token) =>
+  fetchData("/permissions/assignment/update", "POST", token, datos);
+
+// Hard delete real (sin histórico) + sync
+export const userProfileAssignmentDeleteHard = (datos, token) =>
+  fetchData("/permissions/assignment/delete", "POST", token, datos);
+
+
+// USER SCOPES (UserScope)
+export const userScopeList = (datos, token) =>
+  fetchData("/permissions/scope/list", "POST", token, datos);
+
+export const userScopeUpsert = (datos, token) =>
+  fetchData("/permissions/scope/upsert", "POST", token, datos);
+
+export const userScopeUpdate = (datos, token) =>
+  fetchData("/permissions/scope/update", "POST", token, datos);
+
+// Hard delete + sync
+export const userScopeDelete = (datos, token) =>
+  fetchData("/permissions/scope/delete", "POST", token, datos);
+
+
+// SCOPE ↔ PROFILE LINKS (ScopeProfileLink)
+export const scopeProfileLinkList = (datos, token) =>
+  fetchData("/permissions/link/list", "POST", token, datos);
+
+export const scopeProfileLinkUpsert = (datos, token) =>
+  fetchData("/permissions/link/upsert", "POST", token, datos);
+
+export const scopeProfileLinkUpdate = (datos, token) =>
+  fetchData("/permissions/link/update", "POST", token, datos);
+
+// Hard delete + sync de afectados
+export const scopeProfileLinkDeleteHard = (datos, token) =>
+  fetchData("/permissions/link/delete", "POST", token, datos);
+
+
+// SYNC (manual)
+export const permissionsSyncUserNow = (datos, token) =>
+  fetchData("/permissions/sync/user", "POST", token, datos);
+
+/* =========================
+ *  USER SIGNATURE (strokes)
+ * ========================= */
+
+export const userSignatureGet = (datos,token) =>  fetchData("/user/signature/get", "POST", token, datos);
+export const userSignatureUpsert = (datos, token) =>  fetchData("/user/signature/upsert", "POST", token, datos);
+export const userSignatureDelete = (datos, token) =>  fetchData("/user/signature/delete", "POST", token, datos);

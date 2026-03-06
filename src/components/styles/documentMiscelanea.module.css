@@ -263,3 +263,77 @@
 .iconWarning {
   color: #e67e22;
 }
+
+/* =========================
+ *  MOBILE FIXES (<= 600px)
+ * ========================= */
+@media (max-width: 600px) {
+  /* Evita que cualquier hijo empuje el ancho del documento */
+  .contenedorDocument {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* H2: que el botón baje de línea si hace falta */
+  .contenedorDocument > h2 {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* Si tu botón "Descargar todo" tiene estilos propios, mejor que no fuerce ancho */
+  .downloadAll {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Subtítulos: también pueden necesitar wrap */
+  .titulin {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  /* La cabecera del doc (chip + botón + estado) debe poder partir */
+  .officialDocGroup > div,
+  .officialDocGroupUser > div,
+  .docHeader {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* Chips / labels: nunca deben medir más que el contenedor */
+  .docLabel,
+  .docLabeluploadButton {
+    max-width: 100%;
+    width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Evita que en filas flex el texto empuje */
+  .fileRow {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .infoFile {
+    min-width: 0;
+    flex: 1 1 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* El estado de renovación que no se salga */
+  .renewalStatus {
+    max-width: 100%;
+    flex: 1 1 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 600px) {
+  .categoryGroup { overflow-x: hidden; }
+}

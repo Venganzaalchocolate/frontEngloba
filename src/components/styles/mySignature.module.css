@@ -1,0 +1,179 @@
+/* src/components/styles/mySignature.module.css */
+.contenedor {
+  --radius: 12px;
+  --pad: 16px;
+  --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  --shadow: 0 6px 18px rgba(0,0,0,.06);
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  border: var(--bd);
+  background: #fff;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+
+.contenedor > h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  font-size: 13pt;
+  color: var(--color-morado);
+  border-bottom: 1px solid var(--color-morado);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status {
+  color: color-mix(in srgb, var(--color-morado) 80%, #000);
+  font-weight: 700;
+}
+
+.actions { display: flex; gap: 10px; }
+
+.primary, .secondary, .danger {
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease;
+}
+
+.primary {
+  background: var(--color-morado);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(44,25,102,.12);
+}
+.primary:hover {
+  background: color-mix(in srgb, var(--color-morado) 18%, #fff);
+  color: var(--color-morado);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,.08);
+}
+
+.secondary {
+  background: #fafaff;
+  color: var(--color-morado);
+  border: 1px solid color-mix(in srgb, var(--color-morado) 22%, #fff);
+}
+.secondary:hover { transform: translateY(-1px); }
+
+.danger {
+  background: tomato;
+  color: white;
+
+}
+.danger:hover { transform: translateY(-1px); }
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 9999;
+}
+
+.modalCard {
+  width: min(560px, 95vw);
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  box-shadow: 0 18px 45px rgba(0,0,0,.22);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitle {
+  margin: 0;
+  color: var(--color-morado);
+  font-weight: 900;
+}
+
+.iconBtn {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16pt;
+  line-height: 1;
+  color: color-mix(in srgb, var(--color-morado) 75%, #000);
+}
+
+.padWrap {
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  border-radius: 12px;
+  background: #fafaff;
+  padding: 10px;
+}
+
+.canvas {
+  width: 100%;
+  height: 220px;
+  display: block;
+  border-radius: 10px;
+  background: #fff;
+  touch-action: none; /* importante para móvil */
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.hint {
+  font-size: 10.5pt;
+  color: #444;
+}
+
+.buttonEye{
+  gap: 0.5rem;
+}
+
+.previewBox{
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  border-radius: 12px;
+  background: #fafaff;
+  padding: 10px;
+}
+
+.previewCanvas{
+  width: 100%;
+  height: 110px;      /* compacto */
+  display: block;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.previewEmpty{
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 10px;
+  color: #666;
+  font-weight: 700;
+}
+
+.previewCanvas {
+  width: 100%;
+  height: 120px; /* o 140px */
+}

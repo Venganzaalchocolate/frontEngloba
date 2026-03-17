@@ -17,6 +17,7 @@ import { deepClone, formatDate } from "../../lib/utils";
 import { useLogin } from "../../hooks/useLogin";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import perfil512 from "../../assets/perfil_512.png";
+import { processProfileImageSet } from "../../lib/imageProfile";
 
 const InfoEmployer = ({
   user,
@@ -30,19 +31,38 @@ const InfoEmployer = ({
   onRequestCreated,
   // photoThumbUrl
 }) => {
-  // Estado inicial (booleanos como "si"/"no")
-  const initialState = {
+
+const initialState = useMemo(
+  () => ({
     ...user,
     fostered: user.fostered ? "si" : "no",
     apafa: user.apafa ? "si" : "no",
     consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
-    tracking: user.tracking === true ? "si" : "no", // NUEVO: siempre presente
+    tracking: user.tracking === true ? "si" : "no",
+  }),
+  [user]
+);
+const [originalData, setOriginalData] = useState(() => deepClone(initialState));
+const [datos, setDatos] = useState(initialState);
+
+useEffect(() => {
+  const nextState = {
+    ...user,
+    fostered: user.fostered ? "si" : "no",
+    apafa: user.apafa ? "si" : "no",
+    consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
+    tracking: user.tracking === true ? "si" : "no",
   };
 
+  setOriginalData(deepClone(nextState));
+  setDatos(nextState);
+  setErrores({});
+  setIsEditing(false);
+}, [user]);
 
-  const [originalData] = useState(() => deepClone(initialState));
+
+
   const [isEditing, setIsEditing] = useState(false);
-  const [datos, setDatos] = useState(initialState);
   const [errores, setErrores] = useState({});
   const { logged, changeLogged } = useLogin();
   const [confirmRecreateEmail, setConfirmRecreateEmail] = useState(false);
@@ -51,78 +71,100 @@ const InfoEmployer = ({
 //   //=========================================
 //   //PARTE DE PHOTOS
 //   //=========================================
-// const [photoUrl, setPhotoUrl] = useState("");
-// const [photoError, setPhotoError] = useState("");
-// const [photoVersion, setPhotoVersion] = useState(0);
+const [photoUrl, setPhotoUrl] = useState("");
+const [photoError, setPhotoError] = useState("");
+const [photoVersion, setPhotoVersion] = useState(0);
+const fileInputRef = useRef(null);
 
-// const fileInputRef = useRef(null);
-
-// const openFilePicker = () => {
-//   fileInputRef.current?.click();
-// };
+//abrir el edito de fotos sin restricción
+const openFilePicker = () => fileInputRef.current?.click();
 
 
-// // InfoEmployer: SIEMPRE normal
-// const loadPhoto = useCallback(async () => {
-//   try {
-//     if (!datos?._id) return;
-//     setPhotoError("");
 
-//     const token = getToken();
-//     const blob = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
+// InfoEmployer: SIEMPRE normal
+const loadPhoto = useCallback(async () => {
+  try {
+    if (!datos?._id) return;
+    setPhotoError("");
 
-//     if (blob?.error) {
-//       setPhotoUrl("");
-//       return;
-//     }
+    const token = getToken();
+    const blob = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
 
-//     const objectUrl = URL.createObjectURL(blob);
-//     setPhotoUrl(objectUrl);
-//   } catch {
-//     setPhotoUrl("");
-//   }
-// }, [datos?._id]);
+    if (blob?.error) {
+      setPhotoUrl("");
+      return;
+    }
 
+    const objectUrl = URL.createObjectURL(blob);
+setPhotoUrl((prev) => {
+  if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+  return objectUrl;
+});
+  } catch {
+    setPhotoUrl("");
+  }
+}, [datos?._id]);
 
-// useEffect(() => {
-//   loadPhoto();
-// }, [loadPhoto, photoVersion]);
+useEffect(() => {
+  loadPhoto();
+}, [loadPhoto, photoVersion]);
 
-// useEffect(() => {
-//   return () => {
-//     if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
-//   };
-// }, [photoUrl]);
+useEffect(() => {
+  return () => {
+    if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
+  };
+}, [photoUrl]);
 
+const onPickProfileImage = async (e) => {
+  const selectedFile = e.target.files?.[0];
+  if (!selectedFile) return;
 
-// const onPickProfileImage = async (e) => {
-//   const f = e.target.files?.[0];
-//   if (!f) return;
+  setPhotoError("");
+  charge(true);
 
-//   setPhotoError("");
-//   charge(true);
+  try {
+const processed = await processProfileImageSet(selectedFile, {
+  normalSize: 512,
+  thumbSize: 96,
+  mimeType: "image/jpeg",
+  normalQuality: 0.86,
+  thumbQuality: 0.8,
+});
 
-//   try {
-//     const token = getToken();
+    const token = getToken();
 
-//     const updated = await profilePhotoSet(token, { idUser: datos._id, file: f });
-//     if (updated?.error) throw new Error(updated.message || "No se pudo subir la foto");
+const updated = await profilePhotoSet(token, {
+  idUser: datos._id,
+  file: processed.normalFile,
+  thumb: processed.thumbFile,
+});
 
-//     changeUser(updated);
-//     setDatos((prev) => ({ ...prev, ...updated }));
+    if (updated?.error) {
+      throw new Error(updated.message || "No se pudo subir la foto");
+    }
 
-//     if (logged.user?._id === updated?._id) changeLogged(updated);
+    changeUser(updated);
+    setDatos((prev) => ({ ...prev, ...updated }));
 
-//     // fuerza recarga de imagen (y respeta isEditing => thumb o normal)
-//     setPhotoVersion((v) => v + 1);
+    if (logged.user?._id === updated?._id) {
+      changeLogged(updated);
+    }
 
-//   } catch (e) {
-//     setPhotoError(e.message || "Error subiendo la foto");
-//   } finally {
-//     charge(false);
-//     e.target.value = ""; // permite volver a elegir el mismo archivo
-//   }
-// };
+    if (processed.previewUrl) {
+      setPhotoUrl((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return processed.previewUrl;
+      });
+    }
+
+    setPhotoVersion((v) => v + 1);
+  } catch (error) {
+    setPhotoError(error.message || "Error subiendo la foto");
+  } finally {
+    charge(false);
+    e.target.value = "";
+  }
+};
 
 
 //   //=========================================
@@ -461,6 +503,7 @@ const InfoEmployer = ({
   };
 
   const doRecreateEmail = async () => {
+
     const idUser = datos?._id;
     if (!idUser) return;
 
@@ -469,7 +512,7 @@ const InfoEmployer = ({
 
     try {
       const token = getToken();
-      // OJO: ajusta la firma si tu lib/data lo pide distinto
+
       const resp = await recreateCorporateEmail({ userId: idUser }, token);
       if (resp?.error) {
         modal('Error', "No se pudo recrear el correo");
@@ -508,7 +551,7 @@ const InfoEmployer = ({
     <div className={styles.contenedor}>
       <h2>INFORMACIÓN PERSONAL {boton()} {(logged.user.role === "root" || logged.user.role === "global") && (<button onClick={() => recreateEmail()}>Volver a crear el email coorporativo</button>)}</h2>
  
-{/* <div className={styles.photoContainer}>
+<div className={styles.photoContainer}>
   <button
     type="button"
     className={styles.photoButton}
@@ -520,35 +563,23 @@ const InfoEmployer = ({
       alt="Foto de perfil"
       className={styles.photoNormal}
       decoding="async"
-      onError={(e) => { e.currentTarget.src = perfil512; }}
+      onError={(e) => {
+        e.currentTarget.src = perfil512;
+      }}
     />
-    <span className={styles.photoHint}>Cambiar foto</span>
   </button>
-
 
   <input
     ref={fileInputRef}
     type="file"
-    accept="image/*"
-    capture="user"     // 👈 móvil: ofrece cámara (selfie)
+    accept="image/jpeg,image/png,image/webp"
+    capture="user"
     onChange={onPickProfileImage}
     className={styles.photoFileHidden}
   />
 
-
-  {isEditing && (
-    <div className={styles.photoEditRow}>
-      <input
-        type="file"
-        accept="image/*"
-        capture="user"
-        onChange={onPickProfileImage}
-        className={styles.photoFileVisible}
-      />
-    </div>
-  )}
   {photoError && <span className={styles.errorSpan}>{photoError}</span>}
-</div> */}
+</div>
 
 
       {logged.user.role === "root" && (

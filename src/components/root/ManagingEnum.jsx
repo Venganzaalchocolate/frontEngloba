@@ -1,3 +1,5 @@
+// ManagingEnum.jsx
+
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import EnumDocumentationCRUD from "./EnumDocumentationCRUD";
 import { EnumCRUD } from "./EnumCRUD";
@@ -13,31 +15,7 @@ import {
   deleteFileEnums,
 } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
-
-/* ===============================
-   OPCIONES Y CONFIGURACIÓN
-================================= */
-export const ENUM_OPTIONS = [
-  { key: "documentation", label: "Documentación" },
-  { key: "studies", label: "Estudios" },
-  { key: "jobs", label: "Trabajos" },
-  { key: "provinces", label: "Provincias" },
-  { key: "work_schedule", label: "Horarios" },
-  { key: "finantial", label: "Financiación" },
-  { key: "leavetype", label: "Excedencias" },
-];
-
-export const NO_SUB_ENUMS = [
-  "documentation",
-  "leavetype",
-  "work_schedule",
-  "finantial",
-];
-
-export const ENUM_LABEL = ENUM_OPTIONS.reduce((acc, it) => {
-  acc[it.key] = it.label;
-  return acc;
-}, {});
+import { ENUM_OPTIONS } from "./enumsConfig";
 
 /* ===============================
    FUNCIONES AUXILIARES
@@ -85,10 +63,7 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
   const [crudData, setCrudData] = useState({});
   const [confirm, setConfirm] = useState(null);
 
-
-  /* Normalización de datos */
-useEffect(() => {
-    // ⛑️ Si aún no ha llegado enumsData, inicializamos vacío y salimos
+  useEffect(() => {
     if (!enumsData) {
       setCrudData({
         jobs: [],
@@ -99,26 +74,31 @@ useEffect(() => {
         finantial: [],
         documentation: [],
         categoryFiles: [],
+        entity: [],
       });
       return;
     }
 
     const normalized = {
-      // ⛑️ Nunca expandir si pudiera ser undefined
-      jobs: enumsData.jobsIndex ? indexToTree(enumsData.jobsIndex) : (enumsData.jobs || []),
-      provinces: enumsData.provincesIndex ? indexToTree(enumsData.provincesIndex) : (enumsData.provinces || []),
-      leavetype: enumsData.leavesIndex ? indexToTree(enumsData.leavesIndex) : (enumsData.leavetype || []),
-      studies: enumsData.studiesIndex ? indexToTree(enumsData.studiesIndex) : (enumsData.studies || []),
-
+      jobs: enumsData.jobsIndex ? indexToTree(enumsData.jobsIndex) : enumsData.jobs || [],
+      provinces: enumsData.provincesIndex
+        ? indexToTree(enumsData.provincesIndex)
+        : enumsData.provinces || [],
+      leavetype: enumsData.leavesIndex
+        ? indexToTree(enumsData.leavesIndex)
+        : enumsData.leavetype || [],
+      studies: enumsData.studiesIndex
+        ? indexToTree(enumsData.studiesIndex)
+        : enumsData.studies || [],
       work_schedule: enumsData.work_schedule || [],
       finantial: enumsData.finantial || [],
       documentation: enumsData.documentation || [],
       categoryFiles: Array.isArray(enumsData.categoryFiles) ? enumsData.categoryFiles : [],
+      entity: enumsData.entity || [],
     };
 
     setCrudData(normalized);
   }, [enumsData]);
-
 
   const selectedData = useMemo(() => crudData[selectedKey] || [], [crudData, selectedKey]);
 
@@ -135,9 +115,6 @@ useEffect(() => {
     return grouped;
   }, [crudData.documentation]);
 
-  /* ===============================
-     FUNCIONES CRUD CON SPINNER
-  ================================ */
   const runWithSpinner = useCallback(
     async (fn) => {
       try {
@@ -154,9 +131,6 @@ useEffect(() => {
     [chargeEnums, charge, modal]
   );
 
-  /* ===============================
-     HANDLERS CRUD
-  ================================ */
   const handleCreate = async (form) => {
     const payload = buildCreatePayload(selectedKey, form);
     if (selectedKey === "documentation" && payload.date === "si" && (!payload.duration || payload.duration <= 0)) {
@@ -178,9 +152,15 @@ useEffect(() => {
   const handleDelete = (item) => {
     setConfirm({
       title: "Confirmar eliminación",
-      message: (item.name) ?`¿Seguro que deseas eliminar "${item.name}"?`:`¿Seguro que deseas eliminar el archivo asociado?`,
+      message: item.name
+        ? `¿Seguro que deseas eliminar "${item.name}"?`
+        : `¿Seguro que deseas eliminar el archivo asociado?`,
       onConfirm: async () => {
-        await runWithSpinner(() => (item.name)?deleteData(getToken(), { id: item._id, type: selectedKey }):deleteFileEnums(getToken(), item));
+        await runWithSpinner(() =>
+          item.name
+            ? deleteData(getToken(), { id: item._id, type: selectedKey })
+            : deleteFileEnums(getToken(), item)
+        );
         setConfirm(null);
       },
       onCancel: () => setConfirm(null),
@@ -206,9 +186,6 @@ useEffect(() => {
     });
   };
 
-  /* ===============================
-     RENDER
-  ================================ */
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Gestión de Enums</h1>
@@ -256,9 +233,6 @@ useEffect(() => {
   );
 }
 
-/* ===============================
-   HELPERS DE PAYLOAD
-================================= */
 function buildCreatePayload(enumKey, form) {
   const payload = { type: enumKey, name: form.name?.trim() };
 
@@ -268,11 +242,9 @@ function buildCreatePayload(enumKey, form) {
     payload.date = form.date;
     payload.model = form.model;
     payload.categoryFiles = form.categoryFiles || "";
-payload.requiresSignature = form.requiresSignature; // "si" | "no"
+    payload.requiresSignature = form.requiresSignature;
 
     if (form.date === "si") payload.duration = Number(form.duration || 0);
-
-    // ✅ NUEVO
     if (form.file) payload.file = form.file;
   }
 
@@ -289,14 +261,11 @@ function buildEditPayload(enumKey, itemOrParent, form, extra = {}) {
     payload.date = form.date;
     payload.model = form.model;
     payload.categoryFiles = form.categoryFiles || "";
-payload.requiresSignature = form.requiresSignature; // "si" | "no"
+    payload.requiresSignature = form.requiresSignature;
 
     if (form.date === "si") payload.duration = Number(form.duration || 0);
-
-    // ✅ NUEVO
     if (form.file) payload.file = form.file;
   }
 
   return payload;
 }
-

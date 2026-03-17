@@ -48,6 +48,48 @@ const FormOffer = ({
     [offer]
   );
 
+  const isRoot = logged?.user?.role === "root";
+const responsabilities = Array.isArray(logged?.listResponsability)
+  ? logged.listResponsability
+  : [];
+
+const allowedDispositiveOptions = useMemo(() => {
+  const allDevices = enumsData?.dispositiveIndex || {};
+
+  if (isRoot) {
+    return buildModalFormOptionsFromIndex(allDevices, { onlyActive: true });
+  }
+
+  const allowedDeviceIds = new Set();
+  const allowedProgramIds = new Set();
+
+  responsabilities.forEach((r) => {
+    if (r?.isProgramResponsible && r?.idProgram) {
+      allowedProgramIds.add(String(r.idProgram));
+    }
+
+    if ((r?.isDeviceResponsible || r?.isDeviceCoordinator) && r?.dispositiveId) {
+      allowedDeviceIds.add(String(r.dispositiveId));
+    }
+  });
+
+  Object.entries(allDevices).forEach(([deviceId, device]) => {
+    const programId = String(device?.program || "");
+    if (allowedProgramIds.has(programId)) {
+      allowedDeviceIds.add(String(deviceId));
+    }
+  });
+
+  const filteredIndex = {};
+  Object.entries(allDevices).forEach(([deviceId, device]) => {
+    if (!allowedDeviceIds.has(String(deviceId))) return;
+    if (device?.active === false) return;
+    filteredIndex[deviceId] = device;
+  });
+
+  return buildModalFormOptionsFromIndex(filteredIndex, { onlyActive: true });
+}, [isRoot, responsabilities]);
+
 
   // ===== Definición de campos (ModalForm) =====
   const buildFields = () => [
@@ -92,9 +134,7 @@ const FormOffer = ({
       type: "select",
       required: true,
       defaultValue: dispositiveDefault,
-       options: buildModalFormOptionsFromIndex(enumsData.dispositiveIndex, {
-        onlyActive: true,
-    }),
+      options: allowedDispositiveOptions
     },
     {
       name: "studiesId",
@@ -183,6 +223,17 @@ const FormOffer = ({
       charge?.(true);
 
       const newDispositiveId = asStr(formData.newDispositiveId || "");
+      if (!isRoot) {
+  const isAllowed = allowedDispositiveOptions.some(
+    (opt) => String(opt.value) === String(newDispositiveId)
+  );
+
+  if (!isAllowed) {
+    modal?.("Error", "No tienes permisos para crear o editar ofertas en ese dispositivo.");
+    charge?.(false);
+    return;
+  }
+}
 
       // Resolver programa y provincia desde dispositiveIndex
       const dispositiveEntry = enumsData?.dispositiveIndex?.[newDispositiveId] || {};
@@ -240,7 +291,7 @@ const FormOffer = ({
           active: true,
           jobId: newValues.jobId,
           provinceId: newValues.provinceId, // lo incluimos también en create
-          disability: newValues.disability
+          disability: newValues.disability,
         };
 
         const result = await offerCreate(payload, token);
@@ -330,6 +381,19 @@ const FormOffer = ({
       charge?.(false);
     }
   };
+
+  if (!isRoot && allowedDispositiveOptions.length === 0) {
+  return (
+    <ModalForm
+      title={isEditing ? "Editar Oferta de Empleo" : "Crear Oferta de Empleo"}
+      message="No tienes dispositivos disponibles para gestionar ofertas."
+      fields={[]}
+      onSubmit={closeModal}
+      onClose={closeModal}
+      modal={modal}
+    />
+  );
+}
 
   return (
     <ModalForm

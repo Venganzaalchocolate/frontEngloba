@@ -20,6 +20,8 @@ const humanEmployment = (status) => {
   return status || '—';
 };
 
+
+
 const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const token = getToken();
   const [offers, setOffers] = useState([]);
@@ -31,6 +33,33 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const { logged } = useLogin();
   const [linkedUsers, setLinkedUsers] = useState(null);
 
+  
+const isRoot = logged?.user?.role === "root";
+const responsabilities = Array.isArray(logged?.listResponsability)
+  ? logged.listResponsability
+  : [];
+
+const accessFilters = useMemo(() => {
+  if (isRoot) return null;
+
+  const programIds = [];
+  const newDispositiveIds = [];
+
+  responsabilities.forEach((r) => {
+    if (r?.isProgramResponsible && r?.idProgram) {
+      programIds.push(String(r.idProgram));
+    }
+
+    if ((r?.isDeviceResponsible || r?.isDeviceCoordinator) && r?.dispositiveId) {
+      newDispositiveIds.push(String(r.dispositiveId));
+    }
+  });
+
+  return {
+    programIds: [...new Set(programIds)],
+    newDispositiveIds: [...new Set(newDispositiveIds)],
+  };
+}, [isRoot, responsabilities]);
   // ===== helpers de mapeo (NUEVOS índices) =====
   const jobsIndex = enumsData?.jobsIndex || {};
   const programsIndex = enumsData?.programsIndex || {};       // claves = programId
@@ -61,21 +90,31 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const getCreatedDate = (o) => o?.datecreate || o?.date || o?.createdAt || null;
 
   // ===== cargar listado ACTIVO =====
-  useEffect(() => {
-    (async () => {
-      charge?.(true);
-      const res = await offerList({ page: 1, limit: 200, active: true });
-      if (res?.error) {
-        modal?.("Error", res.message || "No se pudieron cargar las ofertas.");
-      } else {
-        const docs = res?.docs || res || [];
-        const onlyActive = Array.isArray(docs) ? docs.filter(o => o?.active !== false) : [];
-        setOffers(onlyActive);
-      }
-      charge?.(false);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+useEffect(() => {
+  (async () => {
+    charge?.(true);
+
+    const params = { page: 1, limit: 200, active: true };
+
+    if (!isRoot && accessFilters) {
+      params.programIds = accessFilters.programIds;
+      params.newDispositiveIds = accessFilters.newDispositiveIds;
+    }
+
+    const res = await offerList(params);
+
+    if (res?.error) {
+      modal?.("Error", res.message || "No se pudieron cargar las ofertas.");
+    } else {
+      const docs = res?.docs || res || [];
+      const onlyActive = Array.isArray(docs) ? docs.filter((o) => o?.active !== false) : [];
+      setOffers(onlyActive);
+    }
+
+    charge?.(false);
+  })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isRoot, accessFilters]);
 
   const openLinkedHirings = async (offer) => {
     try {
@@ -256,6 +295,40 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
     return items.sort((a, b) => a.display.localeCompare(b.display, "es"));
   }, [programsIndex, dispositiveIndex]);
 
+  const allowedProgramDeviceOptions = useMemo(() => {
+  if (isRoot) return [];
+
+  const items = [];
+
+  (accessFilters?.programIds || []).forEach((programId) => {
+    const p = programsIndex?.[programId];
+    if (!p) return;
+
+    const acr = p?.acronym || "";
+    items.push({
+      type: "program",
+      id: programId,
+      programId,
+      display: `${p?.name || programId}${acr ? ` (${acr})` : ""}`,
+    });
+  });
+
+  (accessFilters?.newDispositiveIds || []).forEach((deviceId) => {
+    const d = dispositiveIndex?.[deviceId];
+    if (!d) return;
+
+    items.push({
+      type: "device",
+      id: deviceId,
+      programId: d?.program || "",
+      newDispositiveId: deviceId,
+      display: d?.name || deviceId,
+    });
+  });
+
+  return items.sort((a, b) => a.display.localeCompare(b.display, "es"));
+}, [isRoot, accessFilters, programsIndex, dispositiveIndex]);
+
   const pdResults = useMemo(() => {
     const q = norm(pdQuery);
     if (!q) return flatProgDev;
@@ -285,65 +358,72 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   };
 
   // Fetch histórico con filtros (mantiene dispositiveId en la query)
-  const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => {
-    try {
-      setLoadingHistory(true);
+const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => {
+  try {
+    setLoadingHistory(true);
 
-      const currentFilters = {
-        programId: histFilters.programId,
-        newDispositiveId: histFilters.newDispositiveId,
-        ...(filtersArg || {}),
-      };
+    const currentFilters = {
+      programId: histFilters.programId,
+      newDispositiveId: histFilters.newDispositiveId,
+      ...(filtersArg || {}),
+    };
 
-      const limitStr = String(limitOverride);
-      const isAll = limitStr === "ALL";
+    const limitStr = String(limitOverride);
+    const isAll = limitStr === "ALL";
 
-      const params = { active: false, sort: "-createdAt" };
-      if (!isAll) {
-        params.page = page;
-        params.limit = Number(limitStr);
-      }
-      if (currentFilters.programId) params.programId = currentFilters.programId;
-      if (currentFilters.newDispositiveId) params.newDispositiveId = currentFilters.newDispositiveId;
+    const params = { active: false, sort: "-createdAt" };
 
-      const res = await offerList(params);
-
-      const items = Array.isArray(res?.docs)
-        ? res.docs
-        : Array.isArray(res?.items)
-          ? res.items
-          : Array.isArray(res?.data)
-            ? res.data
-            : [];
-
-      const totalDocsFromServer = Number(res?.total);
-      const totalDocs = Number.isFinite(totalDocsFromServer) ? totalDocsFromServer : items.length;
-
-      const limitUsedFromServer = Number(res?.limit);
-      const limitUsed = isAll
-        ? (Number.isFinite(totalDocsFromServer) ? totalDocs : items.length)
-        : Number.isFinite(limitUsedFromServer) && limitUsedFromServer > 0
-          ? limitUsedFromServer
-          : Number(limitStr) || 10;
-
-      const srvPageFromServer = Number(res?.page);
-      const srvPage = isAll
-        ? 1
-        : Number.isFinite(srvPageFromServer) && srvPageFromServer > 0
-          ? srvPageFromServer
-          : page;
-
-      setHistItems(items);
-
-      const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalDocs / limitUsed));
-      setHistTotalPages(totalPages);
-      setHistPage(Math.min(Math.max(1, srvPage), totalPages));
-    } catch {
-      modal?.("Error", "No se pudo cargar el histórico de ofertas.");
-    } finally {
-      setLoadingHistory(false);
+    if (!isAll) {
+      params.page = page;
+      params.limit = Number(limitStr);
     }
-  };
+
+    if (currentFilters.programId) params.programId = currentFilters.programId;
+    if (currentFilters.newDispositiveId) params.newDispositiveId = currentFilters.newDispositiveId;
+
+    if (!isRoot && accessFilters) {
+      params.programIds = accessFilters.programIds;
+      params.newDispositiveIds = accessFilters.newDispositiveIds;
+    }
+
+    const res = await offerList(params);
+
+    const items = Array.isArray(res?.docs)
+      ? res.docs
+      : Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+          ? res.data
+          : [];
+
+    const totalDocsFromServer = Number(res?.total);
+    const totalDocs = Number.isFinite(totalDocsFromServer) ? totalDocsFromServer : items.length;
+
+    const limitUsedFromServer = Number(res?.limit);
+    const limitUsed = isAll
+      ? (Number.isFinite(totalDocsFromServer) ? totalDocs : items.length)
+      : Number.isFinite(limitUsedFromServer) && limitUsedFromServer > 0
+        ? limitUsedFromServer
+        : Number(limitStr) || 10;
+
+    const srvPageFromServer = Number(res?.page);
+    const srvPage = isAll
+      ? 1
+      : Number.isFinite(srvPageFromServer) && srvPageFromServer > 0
+        ? srvPageFromServer
+        : page;
+
+    setHistItems(items);
+
+    const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalDocs / limitUsed));
+    setHistTotalPages(totalPages);
+    setHistPage(Math.min(Math.max(1, srvPage), totalPages));
+  } catch {
+    modal?.("Error", "No se pudo cargar el histórico de ofertas.");
+  } finally {
+    setLoadingHistory(false);
+  }
+};
 
   const toggleHistory = () => {
     setShowHistory((prev) => {
@@ -460,62 +540,101 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
               <div className={styles.box}>
                 {/* Filtro Programa/Dispositivo (combobox) */}
                 <div className={styles.pdGroup}>
-                  <label htmlFor="histPdSearch" className={styles.pdFieldLabel}>
-                    Programa o Dispositivo:
-                  </label>
+  <label htmlFor="histPdSearch" className={styles.pdFieldLabel}>
+    Programa o Dispositivo:
+  </label>
 
-                  <div ref={searchWrapRef} className={styles.pdSearchWrap}>
-                    <input
-                      id="histPdSearch"
-                      type="text"
-                      className={styles.pdSearchInput}
-                      placeholder="Escribe para buscar…"
-                      value={pdQuery}
-                      onChange={(e) => { setPdQuery(e.target.value); setPdOpen(true); }}
-                      onFocus={() => setPdOpen(true)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && pdResults[0]) { e.preventDefault(); selectPd(pdResults[0]); }
-                        if (e.key === 'Escape') setPdOpen(false);
-                      }}
-                      role="combobox"
-                      aria-expanded={pdOpen}
-                      aria-controls="histPdList"
-                      aria-autocomplete="list"
-                    />
+  {isRoot ? (
+    <div ref={searchWrapRef} className={styles.pdSearchWrap}>
+      <input
+        id="histPdSearch"
+        type="text"
+        className={styles.pdSearchInput}
+        placeholder="Escribe para buscar…"
+        value={pdQuery}
+        onChange={(e) => { setPdQuery(e.target.value); setPdOpen(true); }}
+        onFocus={() => setPdOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && pdResults[0]) {
+            e.preventDefault();
+            selectPd(pdResults[0]);
+          }
+          if (e.key === "Escape") setPdOpen(false);
+        }}
+        role="combobox"
+        aria-expanded={pdOpen}
+        aria-controls="histPdList"
+        aria-autocomplete="list"
+      />
 
-                    {!!pdQuery && (
-                      <button
-                        type="button"
-                        className={styles.pdClearBtn}
-                        onClick={clearPd}
-                        aria-label="Limpiar búsqueda"
-                        title="Limpiar búsqueda"
-                      >
-                        ×
-                      </button>
-                    )}
+      {!!pdQuery && (
+        <button
+          type="button"
+          className={styles.pdClearBtn}
+          onClick={clearPd}
+          aria-label="Limpiar búsqueda"
+          title="Limpiar búsqueda"
+        >
+          ×
+        </button>
+      )}
 
-                    {pdOpen && pdResults.length > 0 && (
-                      <ul id="histPdList" role="listbox" className={styles.pdSearchList}>
-                        {pdResults.map((item, i) => (
-                          <li key={`${item.type}-${item.id}`} role="option" aria-selected={i === 0}>
-                            <p
-                              className={styles.pdSearchItem}
-                              onClick={() => selectPd(item)}
-                              tabIndex={0}
-                              onKeyDown={(e) => (e.key === 'Enter' ? selectPd(item) : null)}
-                            >
-                              <span className={styles.pdBadge}>
-                                {item.type === 'program' ? 'Programa' : 'Dispositivo'}
-                              </span>
-                              <span className={styles.pdLabel}>{item.display}</span>
-                            </p>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
+      {pdOpen && pdResults.length > 0 && (
+        <ul id="histPdList" role="listbox" className={styles.pdSearchList}>
+          {pdResults.map((item, i) => (
+            <li key={`${item.type}-${item.id}`} role="option" aria-selected={i === 0}>
+              <p
+                className={styles.pdSearchItem}
+                onClick={() => selectPd(item)}
+                tabIndex={0}
+                onKeyDown={(e) => (e.key === "Enter" ? selectPd(item) : null)}
+              >
+                <span className={styles.pdBadge}>
+                  {item.type === "program" ? "Programa" : "Dispositivo"}
+                </span>
+                <span className={styles.pdLabel}>{item.display}</span>
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  ) : (
+    <select
+      id="histPdSearch"
+      className={styles.select}
+      value={
+        histFilters.newDispositiveId
+          ? `device:${histFilters.newDispositiveId}`
+          : histFilters.programId
+            ? `program:${histFilters.programId}`
+            : ""
+      }
+      onChange={(e) => {
+        const value = e.target.value;
+
+        if (!value) {
+          clearPd();
+          return;
+        }
+
+        const [type, id] = value.split(":");
+        const item = allowedProgramDeviceOptions.find(
+          (x) => x.type === type && String(x.id) === String(id)
+        );
+
+        if (item) selectPd(item);
+      }}
+    >
+      <option value="">Todos los permitidos</option>
+      {allowedProgramDeviceOptions.map((item) => (
+        <option key={`${item.type}-${item.id}`} value={`${item.type}:${item.id}`}>
+          {item.type === "program" ? "Programa" : "Dispositivo"} · {item.display}
+        </option>
+      ))}
+    </select>
+  )}
+</div>
 
                 {/* Selector de límite */}
                 <div className={styles.box}>

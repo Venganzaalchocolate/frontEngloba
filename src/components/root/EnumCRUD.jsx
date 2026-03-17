@@ -1,32 +1,10 @@
+// EnumCRUD.jsx
+
 import React, { useState } from "react";
 import { FaEdit, FaTrash, FaPlus, FaEye, FaEyeSlash } from "react-icons/fa";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import styles from "../styles/EnumCRUD.module.css";
-
-/* ===============================
-   CONFIGURACIÓN
-================================= */
-export const ENUM_OPTIONS = [
-  { key: "documentation", label: "Documentación" },
-  { key: "studies", label: "Estudios" },
-  { key: "jobs", label: "Trabajos" },
-  { key: "provinces", label: "Provincias" },
-  { key: "work_schedule", label: "Horarios" },
-  { key: "finantial", label: "Financiación" },
-  { key: "leavetype", label: "Excedencias" },
-];
-
-export const NO_SUB_ENUMS = [
-  "documentation",
-  "leavetype",
-  "work_schedule",
-  "finantial",
-];
-
-export const ENUM_LABEL = ENUM_OPTIONS.reduce((acc, it) => {
-  acc[it.key] = it.label;
-  return acc;
-}, {});
+import { ENUM_LABEL, NO_SUB_ENUMS } from "./enumsConfig";
 
 /* ===============================
    ICONO DE VISIBILIDAD
@@ -62,20 +40,28 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData, modal }) {
 
   const handleSubmit = () => {
     if (!form.name.trim()) return modal("Campo obligatorio", "El nombre es obligatorio.");
+
     if (enumKey === "documentation") {
       if (!form.model) return modal("Campo obligatorio", "El campo 'Sección (model)' es obligatorio.");
       if (form.date === "si") {
         const d = Number(form.duration || 0);
-        if (!Number.isFinite(d) || d <= 0)
-          return modal("Campo obligatorio", "Duración debe ser mayor que 0 cuando el documento tiene fecha.");
+        if (!Number.isFinite(d) || d <= 0) {
+          return modal(
+            "Campo obligatorio",
+            "Duración debe ser mayor que 0 cuando el documento tiene fecha."
+          );
+        }
       }
     }
+
     onSubmit(form);
   };
 
   return (
     <div className={styles.modalCard}>
-      <h3 className={styles.formTitle}>{item ? "Editar" : "Crear"} {label}</h3>
+      <h3 className={styles.formTitle}>
+        {item ? "Editar" : "Crear"} {label}
+      </h3>
 
       <div className={styles.field}>
         <label className={styles.label}>Nombre</label>
@@ -155,7 +141,9 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData, modal }) {
             >
               <option value="">Seleccione una opción</option>
               {(enumsData?.categoryFiles ?? []).map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
           </div>
@@ -163,7 +151,9 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData, modal }) {
       )}
 
       <div className={styles.modalBtns}>
-        <button className={`${styles.btn} ${styles.btnGhost}`} onClick={onCancel}>Cancelar</button>
+        <button className={`${styles.btn} ${styles.btnGhost}`} onClick={onCancel}>
+          Cancelar
+        </button>
         <button className={`${styles.btn} ${styles.btnBlue}`} onClick={handleSubmit}>
           {item ? "Guardar" : "Crear"}
         </button>
@@ -184,7 +174,9 @@ function SubcategoryForm({ enumKey, parent, onCancel, onSubmit, modal }) {
   };
 
   const handleSubmit = () => {
-    if (!form.name.trim()) return modal("Campo obligatorio", "El nombre de la subcategoría es obligatorio.");
+    if (!form.name.trim()) {
+      return modal("Campo obligatorio", "El nombre de la subcategoría es obligatorio.");
+    }
     onSubmit(form);
   };
 
@@ -216,8 +208,12 @@ function SubcategoryForm({ enumKey, parent, onCancel, onSubmit, modal }) {
       )}
 
       <div className={styles.modalBtns}>
-        <button className={`${styles.btn} ${styles.btnGhost}`} onClick={onCancel}>Cancelar</button>
-        <button className={`${styles.btn} ${styles.btnBlue}`} onClick={handleSubmit}>Crear</button>
+        <button className={`${styles.btn} ${styles.btnGhost}`} onClick={onCancel}>
+          Cancelar
+        </button>
+        <button className={`${styles.btn} ${styles.btnBlue}`} onClick={handleSubmit}>
+          Crear
+        </button>
       </div>
     </div>
   );
@@ -244,17 +240,34 @@ export const EnumCRUD = ({
   const [current, setCurrent] = useState(null);
   const [confirm, setConfirm] = useState(null);
 
-  const close = () => { setMode(null); setCurrent(null); };
+  const close = () => {
+    setMode(null);
+    setCurrent(null);
+  };
 
-  const startCreate = () => { setMode("create"); setCurrent(null); };
-  const startEdit = (item) => { setMode("edit"); setCurrent(item); };
-  const startAddSub = (parent) => { setMode("sub"); setCurrent(parent); };
+  const startCreate = () => {
+    setMode("create");
+    setCurrent(null);
+  };
+
+  const startEdit = (item) => {
+    setMode("edit");
+    setCurrent(item);
+  };
+
+  const startAddSub = (parent) => {
+    setMode("sub");
+    setCurrent(parent);
+  };
 
   const handleDelete = (item) => {
     setConfirm({
       title: "Confirmar eliminación",
       message: `¿Eliminar "${item.name}"?`,
-      onConfirm: () => { onDelete(item); setConfirm(null); },
+      onConfirm: () => {
+        onDelete(item);
+        setConfirm(null);
+      },
       onCancel: () => setConfirm(null),
     });
   };
@@ -276,15 +289,18 @@ export const EnumCRUD = ({
                 <span>{item.name}</span>
                 {selectedKey === "jobs" && <Eye val={item.public} />}
               </div>
+
               <div className={styles.actions}>
                 {allowSub && (
                   <button className={`${styles.iconBtn} ${styles.addSub}`} onClick={() => startAddSub(item)}>
                     + Sub
                   </button>
                 )}
+
                 <button className={`${styles.iconBtn} ${styles.edit}`} onClick={() => startEdit(item)}>
                   <FaEdit />
                 </button>
+
                 <button className={`${styles.iconBtn} ${styles.del}`} onClick={() => handleDelete(item)}>
                   <FaTrash />
                 </button>
@@ -300,6 +316,7 @@ export const EnumCRUD = ({
                         {sc.name}
                         {selectedKey === "jobs" && <Eye val={sc.public} />}
                       </div>
+
                       <div className={styles.actions}>
                         <button
                           className={`${styles.iconBtn} ${styles.edit}`}
@@ -307,6 +324,7 @@ export const EnumCRUD = ({
                         >
                           <FaEdit />
                         </button>
+
                         <button
                           className={`${styles.iconBtn} ${styles.del}`}
                           onClick={() =>
@@ -344,18 +362,25 @@ export const EnumCRUD = ({
               enumKey={selectedKey}
               item={null}
               onCancel={close}
-              onSubmit={(f) => { onCreate(f); close(); }}
+              onSubmit={(f) => {
+                onCreate(f);
+                close();
+              }}
               enumsData={enumsData}
               modal={modal}
             />
           )}
-          {mode === "edit" && (
-            current?._sub ? (
+
+          {mode === "edit" &&
+            (current?._sub ? (
               <EnumForm
                 enumKey={selectedKey}
                 item={current._sub}
                 onCancel={close}
-                onSubmit={(f) => { onEdit(current, f, { subId: current._sub._id }); close(); }}
+                onSubmit={(f) => {
+                  onEdit(current, f, { subId: current._sub._id });
+                  close();
+                }}
                 enumsData={enumsData}
                 modal={modal}
               />
@@ -364,18 +389,24 @@ export const EnumCRUD = ({
                 enumKey={selectedKey}
                 item={current}
                 onCancel={close}
-                onSubmit={(f) => { onEdit(current, f); close(); }}
+                onSubmit={(f) => {
+                  onEdit(current, f);
+                  close();
+                }}
                 enumsData={enumsData}
                 modal={modal}
               />
-            )
-          )}
+            ))}
+
           {mode === "sub" && (
             <SubcategoryForm
               enumKey={selectedKey}
               parent={current}
               onCancel={close}
-              onSubmit={(f) => { onAddSubcategory(current, f); close(); }}
+              onSubmit={(f) => {
+                onAddSubcategory(current, f);
+                close();
+              }}
               modal={modal}
             />
           )}

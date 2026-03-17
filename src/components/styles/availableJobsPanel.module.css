@@ -388,3 +388,94 @@ button.itemHeader {
   border-radius: 1rem;
   font-weight: bold;
 }
+
+.filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  gap: .75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.filterField,
+.filterFieldSearch {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filterFieldSearch {
+  min-width: 0;
+}
+
+.filterIcon {
+  position: absolute;
+  left: .75rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-malva-oscuro);
+  pointer-events: none;
+}
+
+.input,
+.select {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-malva-oscuro) 28%, transparent);
+  background: #fff;
+  color: var(--color-morado);
+  padding: .65rem .85rem;
+  font-size: .95rem;
+  outline: none;
+}
+
+.input {
+  padding-left: 2.25rem;
+}
+
+.input:focus,
+.select:focus {
+  border-color: var(--color-malva-oscuro);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-malva) 22%, transparent);
+}
+
+.clearBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-malva-oscuro) 35%, transparent);
+  background: #fff;
+  color: var(--color-morado);
+  padding: .65rem .9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.clearBtn:hover {
+  background: color-mix(in srgb, var(--color-malva) 12%, #fff 88%);
+}
+
+@media (max-width: 900px) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .clearBtn {
+    width: 100%;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

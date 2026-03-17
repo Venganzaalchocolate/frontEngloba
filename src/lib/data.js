@@ -54,7 +54,7 @@ const fetchData = async (
   };
 
   try {
- 
+
     const response = await fetch(url, options);
 
     // Si esperamos un archivo ZIP/PDF ↓↓↓
@@ -521,10 +521,18 @@ export const volunteerGetNotLimit=(data,token)=>fetchData('/volunteergetnotlimit
 
 export const profilePhotoGet = async (token, datos) => fetchData('/getphotoprofile', 'POST', token, datos,true);
 export const profilePhotoSet = (token, datos) => {
-   const fd = new FormData();
-  fd.append('idUser', datos.idUser);
-  if (datos.file instanceof File) fd.append('file', datos.file);
-  return fetchData('/profilephotoset', 'POST', token, fd);
+  const fd = new FormData();
+  fd.append("idUser", datos.idUser);
+
+  if (datos.file instanceof File) {
+    fd.append("file", datos.file, datos.file.name);
+  }
+
+  if (datos.thumb instanceof File) {
+    fd.append("thumb", datos.thumb, datos.thumb.name);
+  }
+
+  return fetchData("/profilephotoset", "POST", token, fd);
 };
 export const profilePhotoGetBatch = (data, token, signal) =>
   fetchData('/profilephotogetbatch', 'POST', token, data, false, signal);

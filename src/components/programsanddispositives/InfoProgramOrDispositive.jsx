@@ -115,6 +115,13 @@ const InfoProgramOrDispositive = ({
   }
 
   const isProgram = info?.type === "program";
+  const entityId = isProgram
+  ? (typeof info?.entity === "string" ? info.entity : info?.entity?._id)
+  : (typeof info?.program?.entity === "string"
+      ? info.program.entity
+      : info?.program?.entity?._id);
+
+const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
 
   const handleRemovePerson = async () => {
     if (!info?._id || !confirmDelete.personId) return;
@@ -176,6 +183,14 @@ const InfoProgramOrDispositive = ({
         <label className={styles.fieldLabel}>Nombre</label>
         <p className={styles.fieldTextStatic}>{info.name || "—"}</p>
       </div>
+      {
+        isProgram && 
+          <div className={styles.fieldContainer}>
+          <label className={styles.fieldLabel}>Entidad</label>
+          <p className={styles.fieldTextStatic}>{entityName}</p>
+        </div>
+      }
+
 
       {/* Acrónimo o Dirección */}
       {isProgram ? (

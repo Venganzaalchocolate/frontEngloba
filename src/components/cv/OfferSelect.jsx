@@ -8,6 +8,7 @@ import { deepClone } from "../../lib/utils";
 import styles from "../styles/OfferSelect.module.css";
 import { FaBriefcase, FaBuilding, FaLocationDot } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
+import { useLogin } from "../../hooks/useLogin.jsx";
 
 const OfferSelect = ({
   closeModal,
@@ -16,33 +17,69 @@ const OfferSelect = ({
   type,
   onChosen = () => {},
   list = false,
-  modal
+  modal,
 }) => {
   const { changeOffer } = useOffer();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [offersMod, setOffersMod] = useState([]);
   const [fieldsForm, setFieldsModal] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(""); // 🔍 NUEVO ESTADO
+  const [searchTerm, setSearchTerm] = useState("");
+  const { logged } = useLogin();
+  const isRoot = logged?.user?.role === "root";
 
-  
   useEffect(() => {
-
     const getOfferTitle = (o) => {
       const idJob = o?.jobId || "";
       const idDispositive = o?.dispositive?.newDispositiveId || "";
-      const job = enumsData?.jobsIndex[idJob]?.name || "";
-      const disp = enumsData?.dispositiveIndex[idDispositive]?.name || "";
+      const job = enumsData?.jobsIndex?.[idJob]?.name || "";
+      const disp = enumsData?.dispositiveIndex?.[idDispositive]?.name || "";
       const jobTitleAux = `${job} - ${o?.location || ""} - ${disp}`;
       return { jobName: job, dispositiveName: disp, jobTitle: jobTitleAux };
     };
 
-    const mapped = enumsData.offers.map((x) => ({
+    const allOffers = Array.isArray(enumsData?.offers) ? enumsData.offers : [];
+    const responsabilities = Array.isArray(logged?.listResponsability)
+      ? logged.listResponsability
+      : [];
+
+    let filtered = allOffers;
+
+    if (!isRoot) {
+      const allowedProgramIds = new Set();
+      const allowedDispositiveIds = new Set();
+
+      responsabilities.forEach((r) => {
+        if (r?.isProgramResponsible && r?.idProgram) {
+          allowedProgramIds.add(String(r.idProgram));
+        }
+
+        if (
+          (r?.isDeviceResponsible || r?.isDeviceCoordinator) &&
+          r?.dispositiveId
+        ) {
+          allowedDispositiveIds.add(String(r.dispositiveId));
+        }
+      });
+
+      filtered = allOffers.filter((offer) => {
+        const offerProgramId = String(offer?.dispositive?.programId || "");
+        const offerDispositiveId = String(
+          offer?.dispositive?.newDispositiveId || ""
+        );
+
+        if (allowedProgramIds.has(offerProgramId)) return true;
+        if (allowedDispositiveIds.has(offerDispositiveId)) return true;
+
+        return false;
+      });
+    }
+
+    const mapped = filtered.map((x) => ({
       ...x,
       dataAux: getOfferTitle(x),
     }));
 
-    
     setOffersMod(mapped);
 
     const fieldsAux = [
@@ -57,31 +94,28 @@ const OfferSelect = ({
         ],
       },
     ];
+
     setFieldsModal(fieldsAux);
-  }, []);
+  }, [enumsData, logged, isRoot]);
 
-  /* ---------- Filtro de búsqueda ---------- */
-/* ---------- Filtro de búsqueda ---------- */
-const normalize = (str = "") =>
-  str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // elimina acentos
+  const normalize = (str = "") =>
+    str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
 
-const filteredOffers = useMemo(() => {
-  if (!searchTerm.trim()) return offersMod;
-  const term = normalize(searchTerm);
+  const filteredOffers = useMemo(() => {
+    if (!searchTerm.trim()) return offersMod;
+    const term = normalize(searchTerm);
 
-  return offersMod.filter((o) => {
-    const job = normalize(o.dataAux?.jobName || "");
-    const disp = normalize(o.dataAux?.dispositiveName || "");
-    const loc = normalize(o.location || "");
-    return job.includes(term) || disp.includes(term) || loc.includes(term);
-  });
-}, [offersMod, searchTerm]);
+    return offersMod.filter((o) => {
+      const job = normalize(o.dataAux?.jobName || "");
+      const disp = normalize(o.dataAux?.dispositiveName || "");
+      const loc = normalize(o.location || "");
+      return job.includes(term) || disp.includes(term) || loc.includes(term);
+    });
+  }, [offersMod, searchTerm]);
 
-
-  /* ---------- Lógica común ---------- */
   const selectOffer = (offerAux) => {
     const alreadyIn = (offerAux?.userCv || []).includes(userSelected?._id);
     if (type !== "select" && userSelected && !alreadyIn) {
@@ -95,7 +129,7 @@ const filteredOffers = useMemo(() => {
   };
 
   const handleSubmit = (formData) => {
-    const offerAux = offersMod.find((o) => o._id === formData.offer);
+    const offerAux = offersMod.find((o) => String(o._id) === String(formData.offer));
     if (offerAux) selectOffer(offerAux);
   };
 
@@ -120,7 +154,6 @@ const filteredOffers = useMemo(() => {
     onChosen(finalOffer);
   };
 
-  /* ---------- Render ---------- */
   return (
     <>
       {showConfirmation && (
@@ -134,7 +167,6 @@ const filteredOffers = useMemo(() => {
         />
       )}
 
-      {/* 🔍 BUSCADOR en modo lista */}
       {list && (
         <div className={styles.listWrapper}>
           <div className={styles.searchBar}>
@@ -153,17 +185,17 @@ const filteredOffers = useMemo(() => {
                 key={offer._id}
                 className={styles.chip}
                 onClick={() => selectOffer(offer)}
-                title={offer.jobTitle}
-                aria-label={`Seleccionar oferta ${offer.jobTitle}`}
+                title={offer?.dataAux?.jobTitle || ""}
+                aria-label={`Seleccionar oferta ${offer?.dataAux?.jobTitle || ""}`}
               >
                 <p>
-                  <FaBriefcase /> <span>{offer.dataAux.jobName}</span>
+                  <FaBriefcase /> <span>{offer?.dataAux?.jobName}</span>
                 </p>
                 <p>
                   <FaLocationDot /> <span>{offer?.location}</span>
                 </p>
                 <p>
-                  <FaBuilding /> <span>{offer.dataAux.dispositiveName}</span>
+                  <FaBuilding /> <span>{offer?.dataAux?.dispositiveName}</span>
                 </p>
               </li>
             ))}
@@ -171,7 +203,6 @@ const filteredOffers = useMemo(() => {
         </div>
       )}
 
-      {/* Modo modal con formulario */}
       {!list && (
         <ModalForm
           title="Oferta de empleo"

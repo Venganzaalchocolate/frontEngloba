@@ -30,8 +30,10 @@ const ManagingProgramsDispositive = ({
   enumsData,
   chargeEnums,
 }) => {
-  const { logged } = useLogin();
+
   const token = getToken();
+  const { logged } = useLogin();
+  const isRoot = logged?.user?.role === "root";
 
   const [select, setSelect] = useState(null);
   const [infoSelect, setInfoSelect] = useState(null);
@@ -51,7 +53,6 @@ const ManagingProgramsDispositive = ({
     if (!infoSelect?._id || infoSelect?.type !== "dispositive" || !quickContactTarget?.field) return;
 
     charge(true);
-
     const value = formData?.[quickContactTarget.field] ?? "";
 
     const payload = {
@@ -164,40 +165,54 @@ const ManagingProgramsDispositive = ({
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [enumsData]);
 
+  const entityOptions = useMemo(() => {
+  const idx = enumsData?.entityIndex || {};
+
+    return Object.entries(idx)
+      .map(([id, p]) => ({ value: id, label: p?.name || id }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+}, [enumsData]);
   // === CAMPOS BASE ===
-  const programFields = [
-    { name: "name", label: "Nombre del Programa", type: "text", required: true },
-    { name: "acronym", label: "Acrónimo", type: "text", required: true },
-    {
-      name: "area",
-      label: "Área",
-      type: "select",
-      options: [
-        { value: "no identificado", label: "No identificado" },
-        { value: "igualdad", label: "Igualdad" },
-        { value: "desarrollo comunitario", label: "Desarrollo comunitario" },
-        { value: "lgtbiq", label: "LGTBIQ+" },
-        { value: "infancia y juventud", label: "Infancia y juventud" },
-        { value: "personas con discapacidad", label: "Personas con discapacidad" },
-        { value: "mayores", label: "Mayores" },
-        { value: 'migraciones', label: "Migraciones" },
-      ],
-      defaultValue: "no identificado",
-    },
-    {
-      name: "active",
-      label: "Activo",
-      type: "select",
-      options: [
-        { value: true, label: "Sí" },
-        { value: false, label: "No" },
-      ],
-      defaultValue: true,
-    },
-    { name: "description", label: "Descripción", type: "textarea" },
-    { name: "objectives", label: "Objetivos", type: "textarea" },
-    { name: "profile", label: "Perfil", type: "textarea" },
-  ];
+const programFields = [
+  { name: "name", label: "Nombre del Programa", type: "text", required: true },
+  { name: "acronym", label: "Acrónimo", type: "text", required: true },
+  {
+    name: "entity",
+    label: "Entidad",
+    type: "select",
+    required: true,
+    options: [{ value: "", label: "Seleccione entidad" }, ...entityOptions],
+  },
+  {
+    name: "area",
+    label: "Área",
+    type: "select",
+    options: [
+      { value: "no identificado", label: "No identificado" },
+      { value: "igualdad", label: "Igualdad" },
+      { value: "desarrollo comunitario", label: "Desarrollo comunitario" },
+      { value: "lgtbiq", label: "LGTBIQ+" },
+      { value: "infancia y juventud", label: "Infancia y juventud" },
+      { value: "personas con discapacidad", label: "Personas con discapacidad" },
+      { value: "mayores", label: "Mayores" },
+      { value: "migraciones", label: "Migraciones" },
+    ],
+    defaultValue: "no identificado",
+  },
+  {
+    name: "active",
+    label: "Activo",
+    type: "select",
+    options: [
+      { value: true, label: "Sí" },
+      { value: false, label: "No" },
+    ],
+    defaultValue: true,
+  },
+  { name: "description", label: "Descripción", type: "textarea" },
+  { name: "objectives", label: "Objetivos", type: "textarea" },
+  { name: "profile", label: "Perfil", type: "textarea" },
+];
 
   const deviceFields = [
     {
@@ -348,20 +363,21 @@ const ManagingProgramsDispositive = ({
 
   // === CREAR PROGRAMA ===
   const handleCreateProgram = async (formData) => {
-    const payload = {
-      name: formData.name,
-      acronym: formData.acronym?.toUpperCase(),
-      area: formData.area || "no identificado",
-      active: formData.active === true || formData.active === "true",
-      responsible: [],
-      finantial: [],
-      about: {
-        description: formData.description || "",
-        objectives: formData.objectives || "",
-        profile: formData.profile || "",
-      },
-      userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
-    };
+const payload = {
+  name: formData.name,
+  acronym: formData.acronym?.toUpperCase(),
+  entity: formData.entity || null,
+  area: formData.area || "no identificado",
+  active: formData.active === true || formData.active === "true",
+  responsible: [],
+  finantial: [],
+  about: {
+    description: formData.description || "",
+    objectives: formData.objectives || "",
+    profile: formData.profile || "",
+  },
+  userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
+};
 
     charge(true);
     const res = await createProgram(payload, token);
@@ -424,8 +440,18 @@ const ManagingProgramsDispositive = ({
 
     let res;
     if (editTarget.type === "program") {
+
+
       const original = editTarget;
       const update = {};
+
+      const newEntity = formData.entity || null;
+      const oldEntity =
+        typeof original.entity === "string"
+          ? original.entity
+          : original.entity?._id || null;
+
+      
 
       const newName = formData.name?.trim() || "";
       const oldName = original.name || "";
@@ -448,6 +474,7 @@ const ManagingProgramsDispositive = ({
       const newProfile = formData.profile || "";
       const oldProfile = original.about?.profile || "";
 
+      if (newEntity !== oldEntity) update.entity = newEntity;
       if (newName !== oldName) update.name = newName;
       if (newAcronym !== oldAcronym) update.acronym = newAcronym;
       if (newArea !== oldArea) update.area = newArea;
@@ -591,20 +618,22 @@ const ManagingProgramsDispositive = ({
     if (actionType === "edit") {
       const fieldsWithValues =
         data.type === "program"
-          ? programFields.map((f) => ({
+        ? programFields.map((f) => ({
             ...f,
             defaultValue:
-              f.name === "area"
-                ? data.area
-                : f.name === "active"
-                  ? Boolean(data.active)
-                  : f.name === "description"
-                    ? data.about?.description || ""
-                    : f.name === "objectives"
-                      ? data.about?.objectives || ""
-                      : f.name === "profile"
-                        ? data.about?.profile || ""
-                        : data[f.name] ?? f.defaultValue ?? "",
+              f.name === "entity"
+                ? data.entity || ""
+                : f.name === "area"
+                  ? data.area
+                  : f.name === "active"
+                    ? Boolean(data.active)
+                    : f.name === "description"
+                      ? data.about?.description || ""
+                      : f.name === "objectives"
+                        ? data.about?.objectives || ""
+                        : f.name === "profile"
+                          ? data.about?.profile || ""
+                          : data[f.name] ?? f.defaultValue ?? "",
           }))
           : deviceFields.map((f) => ({
             ...f,
@@ -635,20 +664,22 @@ const ManagingProgramsDispositive = ({
       if (!data) return;
       const fieldsWithValues =
         data.type === "program"
-          ? programFields.map((f) => ({
+        ? programFields.map((f) => ({
             ...f,
             defaultValue:
-              f.name === "area"
-                ? data.area
-                : f.name === "active"
-                  ? Boolean(data.active)
-                  : f.name === "description"
-                    ? data.about?.description || ""
-                    : f.name === "objectives"
-                      ? data.about?.objectives || ""
-                      : f.name === "profile"
-                        ? data.about?.profile || ""
-                        : data[f.name] ?? f.defaultValue ?? "",
+              f.name === "entity"
+                ? data.entity || ""
+                : f.name === "area"
+                  ? data.area
+                  : f.name === "active"
+                    ? Boolean(data.active)
+                    : f.name === "description"
+                      ? data.about?.description || ""
+                      : f.name === "objectives"
+                        ? data.about?.objectives || ""
+                        : f.name === "profile"
+                          ? data.about?.profile || ""
+                          : data[f.name] ?? f.defaultValue ?? "",
           }))
           : deviceFields.map((f) => ({
             ...f,
@@ -867,6 +898,7 @@ const ManagingProgramsDispositive = ({
             active={select}
             onSelect={onSelect}
             changeActive={handleToggleActive}
+            isRoot={isRoot}
           />
           <ProgramTabs
             modal={modal}

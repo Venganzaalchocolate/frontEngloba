@@ -105,19 +105,22 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
     }
 
     // CAMPO TIPO TEXTO, SELECT, ETC.
+
     const fieldConfig = fields.find((f) => f.name === name);
+    const nextFormData = { ...formData, [name]: value };
+
     if (fieldConfig?.required && !value) {
       setErrors((prev) => ({ ...prev, [name]: "Este campo es obligatorio." }));
     } else {
       if (typeof fieldConfig?.isValid === "function") {
-        const errorMsg = fieldConfig.isValid(value);
+        const errorMsg = fieldConfig.isValid(value, nextFormData);
         setErrors((prev) => ({ ...prev, [name]: errorMsg }));
       } else {
         setErrors((prev) => ({ ...prev, [name]: "" }));
       }
     }
 
-    // ——— Anti-mayúsculas: solo para text/textarea y si el campo lo pide (capsGuard) ———
+    // ——— Anti-mayúsculas...
     const isTextual = fieldConfig && (fieldConfig.type === "text" || fieldConfig.type === "textarea");
     if (isTextual && fieldConfig.capsGuard && typeof value === "string") {
       const now = Date.now();
@@ -133,7 +136,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
       }
     }
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(nextFormData);
   };
 
 

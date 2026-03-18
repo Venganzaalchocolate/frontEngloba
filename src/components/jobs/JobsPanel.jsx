@@ -3,6 +3,7 @@ import styles from "../styles/availableJobsPanel.module.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { getData, offerList } from "../../lib/data";
 import { FaArrowLeft } from "react-icons/fa";
+import ModalConfirmation from "../globals/ModalConfirmation";
 import {
   LuMapPin,
   LuClock3,
@@ -24,6 +25,11 @@ const INITIAL_FILTERS = {
 export default function JobsPanel({ modal, charge }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [sepeModal, setSepeModal] = useState({
+  open: false,
+  url: "",
+  offerId: "",
+});
 
   const [viewData, setViewData] = useState({
     offers: [],
@@ -39,6 +45,22 @@ export default function JobsPanel({ modal, charge }) {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
 
   const { offers, enums } = viewData;
+
+  const openSepeModal = (offer) => {
+  setSepeModal({
+    open: true,
+    url: typeof offer?.urlSepe === "string" ? offer.urlSepe.trim() : "",
+    offerId: String(offer?._id || ""),
+  });
+};
+
+const closeSepeModal = () => {
+  setSepeModal({
+    open: false,
+    url: "",
+    offerId: "",
+  });
+};
 
   const getJobData = (offer) => {
     const jobId = offer?.jobId ? String(offer.jobId) : "";
@@ -538,9 +560,21 @@ export default function JobsPanel({ modal, charge }) {
 
                       <button
                         className={styles.btn}
-                        onClick={() => navigate(`/trabajaconnosotros/${oid}`)}
+                        onClick={() => {
+                          const hasSepeUrl =
+                            typeof o?.urlSepe === "string" && o.urlSepe.trim() !== "";
+
+                          if (hasSepeUrl) {
+                            openSepeModal(o);
+                            return;
+                          }
+
+                          navigate(`/trabajaconnosotros/${oid}`);
+                        }}
                       >
-                        Enviar curriculum
+                        {typeof o?.urlSepe === "string" && o.urlSepe.trim() !== ""
+                          ? "Inscribirme"
+                          : "Enviar currículum"}
                       </button>
 
                       <button
@@ -557,6 +591,24 @@ export default function JobsPanel({ modal, charge }) {
           })}
         </section>
       </div>
+            {sepeModal.open && (
+        <ModalConfirmation
+          title="Oferta publicada en el SEPE"
+          message="Esta oferta se gestiona a través del SEPE, por lo que debes presentar tu candidatura allí. Además, te recomendamos enviarnos también tu currículum en engloba.org.es/trabajaconnosotros para que podamos tenerlo en cuenta en futuros procesos de selección."
+          textConfirm="Incribirme en el SEPE"
+          textCancel="Enviar CV a Engloba (después de inscribirme en el sepe)"
+          onConfirm={() => {
+            const url = sepeModal.url;
+            closeSepeModal();
+            if (url) window.open(url, "_blank", "noopener,noreferrer");
+          }}
+          onCancel={() => {
+            const offerId = sepeModal.offerId;
+            closeSepeModal();
+            navigate(`/trabajaconnosotros/${offerId}`);
+          }}
+        />
+      )}
     </div>
   );
 }

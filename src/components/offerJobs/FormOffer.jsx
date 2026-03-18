@@ -8,7 +8,7 @@ import { useLogin } from "../../hooks/useLogin";
 
 // DATA LAYER (sin fetch manual)
 import { offerCreate, offerUpdate } from "../../lib/data";
-import { buildModalFormOptionsFromIndex} from "../../lib/utils";
+import { buildModalFormOptionsFromIndex } from "../../lib/utils";
 
 const FormOffer = ({
   enumsData,
@@ -25,6 +25,7 @@ const FormOffer = ({
   const asStr = (v) => (v == null ? "" : String(v));
   const isoDay = (d) => (d ? new Date(d).toISOString().split("T")[0] : "");
   const toBool = (v) => v === true || ["si", "sí", "SI", "Sí"].includes(String(v));
+
   const eqArrayAsSet = (a = [], b = []) => {
     const A = new Set(a.map(String));
     const B = new Set(b.map(String));
@@ -33,65 +34,87 @@ const FormOffer = ({
     return true;
   };
 
-  // Horarios: de work_schedule (array con { _id, name })
+  const normalizeUrlSepe = (v) => String(v ?? "").trim();
+
+  const isValidHttpUrl = (value) => {
+    if (!value) return false;
+
+    try {
+      const url = new URL(String(value).trim());
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  const resolveOfferTypeFront = ({ sepe, urlSepe, manualType }) => {
+    if (sepe) return urlSepe ? "external" : "internal";
+    return manualType || "external";
+  };
+
+  // Horarios
   const workScheduleOptions = useMemo(() => {
     const arr = Array.isArray(enumsData?.work_schedule) ? enumsData.work_schedule : [];
     return arr.map((x) => ({ value: x.name, label: x.name }));
   }, [enumsData]);
-  
 
-  // Valor por defecto del dispositivo (acepta varias variantes en offer)
+  // Valor por defecto del dispositivo
   const dispositiveDefault = useMemo(
-    () =>
-      offer?.dispositive?.newDispositiveId ||
-      "",
+    () => offer?.dispositive?.newDispositiveId || "",
     [offer]
   );
 
   const isRoot = logged?.user?.role === "root";
-const responsabilities = Array.isArray(logged?.listResponsability)
-  ? logged.listResponsability
-  : [];
+  const responsabilities = Array.isArray(logged?.listResponsability)
+    ? logged.listResponsability
+    : [];
 
-const allowedDispositiveOptions = useMemo(() => {
-  const allDevices = enumsData?.dispositiveIndex || {};
+  const allowedDispositiveOptions = useMemo(() => {
+    const allDevices = enumsData?.dispositiveIndex || {};
 
-  if (isRoot) {
-    return buildModalFormOptionsFromIndex(allDevices, { onlyActive: true });
-  }
-
-  const allowedDeviceIds = new Set();
-  const allowedProgramIds = new Set();
-
-  responsabilities.forEach((r) => {
-    if (r?.isProgramResponsible && r?.idProgram) {
-      allowedProgramIds.add(String(r.idProgram));
+    if (isRoot) {
+      return buildModalFormOptionsFromIndex(allDevices, { onlyActive: true });
     }
 
-    if ((r?.isDeviceResponsible || r?.isDeviceCoordinator) && r?.dispositiveId) {
-      allowedDeviceIds.add(String(r.dispositiveId));
-    }
+    const allowedDeviceIds = new Set();
+    const allowedProgramIds = new Set();
+
+    responsabilities.forEach((r) => {
+      if (r?.isProgramResponsible && r?.idProgram) {
+        allowedProgramIds.add(String(r.idProgram));
+      }
+
+      if ((r?.isDeviceResponsible || r?.isDeviceCoordinator) && r?.dispositiveId) {
+        allowedDeviceIds.add(String(r.dispositiveId));
+      }
+    });
+
+    Object.entries(allDevices).forEach(([deviceId, device]) => {
+      const programId = String(device?.program || "");
+      if (allowedProgramIds.has(programId)) {
+        allowedDeviceIds.add(String(deviceId));
+      }
+    });
+
+    const filteredIndex = {};
+    Object.entries(allDevices).forEach(([deviceId, device]) => {
+      if (!allowedDeviceIds.has(String(deviceId))) return;
+      if (device?.active === false) return;
+      filteredIndex[deviceId] = device;
+    });
+
+    return buildModalFormOptionsFromIndex(filteredIndex, { onlyActive: true });
+  }, [isRoot, responsabilities, enumsData]);
+
+  const sepeDefault = offer?.sepe ? "si" : "no";
+  const urlSepeDefault = offer?.urlSepe || "";
+  const resolvedTypeDefault = resolveOfferTypeFront({
+    sepe: offer?.sepe === true,
+    urlSepe: normalizeUrlSepe(offer?.urlSepe),
+    manualType: offer?.type || "",
   });
 
-  Object.entries(allDevices).forEach(([deviceId, device]) => {
-    const programId = String(device?.program || "");
-    if (allowedProgramIds.has(programId)) {
-      allowedDeviceIds.add(String(deviceId));
-    }
-  });
-
-  const filteredIndex = {};
-  Object.entries(allDevices).forEach(([deviceId, device]) => {
-    if (!allowedDeviceIds.has(String(deviceId))) return;
-    if (device?.active === false) return;
-    filteredIndex[deviceId] = device;
-  });
-
-  return buildModalFormOptionsFromIndex(filteredIndex, { onlyActive: true });
-}, [isRoot, responsabilities]);
-
-
-  // ===== Definición de campos (ModalForm) =====
+  // ===== Definición de campos =====
   const buildFields = () => [
     {
       name: "functions",
@@ -100,7 +123,7 @@ const allowedDispositiveOptions = useMemo(() => {
       required: true,
       defaultValue: offer?.jobId || "",
       options: buildModalFormOptionsFromIndex(enumsData.jobsIndex, {
-      onlyPublic: true,
+        onlyPublic: true,
       }),
     },
     {
@@ -134,7 +157,7 @@ const allowedDispositiveOptions = useMemo(() => {
       type: "select",
       required: true,
       defaultValue: dispositiveDefault,
-      options: allowedDispositiveOptions
+      options: allowedDispositiveOptions,
     },
     {
       name: "studiesId",
@@ -177,13 +200,34 @@ const allowedDispositiveOptions = useMemo(() => {
       label: "¿Es una oferta del SEPE?",
       type: "select",
       required: true,
-      defaultValue: offer?.sepe ? "si" : "no",
+      defaultValue: sepeDefault,
       options: [
         { value: "si", label: "Sí" },
         { value: "no", label: "No" },
       ],
     },
-     {
+    {
+      name: "urlSepe",
+      label: "URL del SEPE",
+      type: "text",
+      required: false,
+      defaultValue: urlSepeDefault,
+      isValid: (v, allValues) => {
+        const sepe = toBool(allValues?.sepe);
+        const url = normalizeUrlSepe(v);
+
+        if (!sepe && url) return "La URL del SEPE solo debe informarse en ofertas SEPE.";
+        if (sepe && url && !isValidHttpUrl(url)) return "La URL del SEPE no es válida.";
+        return "";
+      },
+      placeholder: "https://...",
+    },
+    {
+      type: "info",
+      content:
+        "Si la oferta es del SEPE, el tipo real se calculará automáticamente al guardar: sin URL será interna y con URL será pública.",
+    },
+    {
       name: "disability",
       label: "¿Es una oferta exclusiva para personas con discapacidad?",
       type: "select",
@@ -199,7 +243,7 @@ const allowedDispositiveOptions = useMemo(() => {
       label: "Tipo de oferta",
       type: "select",
       required: true,
-      defaultValue: offer?.type || "",
+      defaultValue: resolvedTypeDefault,
       options: [
         { value: "internal", label: "Oferta Interna" },
         { value: "external", label: "Oferta Pública" },
@@ -217,25 +261,25 @@ const allowedDispositiveOptions = useMemo(() => {
     },
   ];
 
-  // ===== Submit (ajustado a dispositiveIndex) =====
+  // ===== Submit =====
   const handleSubmit = async (formData) => {
     try {
       charge?.(true);
 
       const newDispositiveId = asStr(formData.newDispositiveId || "");
+
       if (!isRoot) {
-  const isAllowed = allowedDispositiveOptions.some(
-    (opt) => String(opt.value) === String(newDispositiveId)
-  );
+        const isAllowed = allowedDispositiveOptions.some(
+          (opt) => String(opt.value) === String(newDispositiveId)
+        );
 
-  if (!isAllowed) {
-    modal?.("Error", "No tienes permisos para crear o editar ofertas en ese dispositivo.");
-    charge?.(false);
-    return;
-  }
-}
+        if (!isAllowed) {
+          modal?.("Error", "No tienes permisos para crear o editar ofertas en ese dispositivo.");
+          charge?.(false);
+          return;
+        }
+      }
 
-      // Resolver programa y provincia desde dispositiveIndex
       const dispositiveEntry = enumsData?.dispositiveIndex?.[newDispositiveId] || {};
       const newProgramId = asStr(dispositiveEntry?.program || "");
       const newProvinceId = asStr(dispositiveEntry?.province || "");
@@ -245,35 +289,56 @@ const allowedDispositiveOptions = useMemo(() => {
         charge?.(false);
         return;
       }
+
       if (!newProvinceId) {
         modal?.("Error", "No se pudo resolver la provincia a partir del dispositivo seleccionado.");
         charge?.(false);
         return;
       }
 
-      // Normalizar valores del formulario
+      const normalizedUrlSepe = normalizeUrlSepe(formData.urlSepe);
+      const sepeValue = toBool(formData.sepe);
+
+      if (!sepeValue && normalizedUrlSepe) {
+        modal?.("Error", "La URL del SEPE solo puede usarse en ofertas marcadas como SEPE.");
+        charge?.(false);
+        return;
+      }
+
+      if (sepeValue && normalizedUrlSepe && !isValidHttpUrl(normalizedUrlSepe)) {
+        modal?.("Error", "La URL del SEPE no es válida.");
+        charge?.(false);
+        return;
+      }
+
+      const resolvedType = resolveOfferTypeFront({
+        sepe: sepeValue,
+        urlSepe: normalizedUrlSepe,
+        manualType: asStr(formData.type || ""),
+      });
+
       const newValues = {
         jobId: asStr(formData.functions || ""),
         work_schedule: asStr(formData.work_schedule || ""),
         location: asStr(formData.location || ""),
         expected_incorporation_date: asStr(formData.expected_incorporation_date || ""),
-        dispositive: { programId: newProgramId, newDispositiveId: newDispositiveId },
-        programId: newProgramId, // para tu backend
-        provinceId: newProvinceId, // útil en create/patch
-        sepe: toBool(formData.sepe),
-        type: asStr(formData.type || ""),
+        dispositive: { programId: newProgramId, newDispositiveId },
+        programId: newProgramId,
+        provinceId: newProvinceId,
+        sepe: sepeValue,
+        urlSepe: sepeValue ? normalizedUrlSepe : "",
+        type: resolvedType,
         datecreate: isoDay(formData.datecreate),
         essentials_requirements: asStr(formData.essentials_requirements || ""),
         optionals_requirements: asStr(formData.optionals_requirements || ""),
         conditions: asStr(formData.conditions || ""),
         studiesId: Array.isArray(formData.studiesId) ? formData.studiesId.map(String) : [],
-        disability:toBool(formData.disability)
+        disability: toBool(formData.disability),
       };
 
       const token = getToken();
 
       if (!isEditing) {
-        // CREATE
         const payload = {
           work_schedule: newValues.work_schedule,
           essentials_requirements: newValues.essentials_requirements,
@@ -283,14 +348,15 @@ const allowedDispositiveOptions = useMemo(() => {
           create: logged?.user?._id,
           expected_incorporation_date: newValues.expected_incorporation_date,
           programId: newValues.programId,
-          newDispositiveId: newValues.dispositive.newDispositiveId, // según tu backend actual
+          newDispositiveId: newValues.dispositive.newDispositiveId,
           studiesId: newValues.studiesId,
           sepe: newValues.sepe,
+          urlSepe: newValues.urlSepe || undefined,
           type: newValues.type,
           datecreate: newValues.datecreate,
           active: true,
           jobId: newValues.jobId,
-          provinceId: newValues.provinceId, // lo incluimos también en create
+          provinceId: newValues.provinceId,
           disability: newValues.disability,
         };
 
@@ -299,13 +365,13 @@ const allowedDispositiveOptions = useMemo(() => {
           modal?.("Error", result.message || "No se pudo guardar la oferta.");
           return;
         }
+
         modal?.("Éxito", "Oferta creada con éxito.");
         changeOffers?.(result);
         closeModal?.();
         return;
       }
 
-      // EDIT → construir diff
       const curr = {
         jobId: asStr(offer?.jobId ?? ""),
         work_schedule: asStr(offer?.work_schedule ?? ""),
@@ -319,6 +385,7 @@ const allowedDispositiveOptions = useMemo(() => {
         ),
         programId: asStr(offer?.dispositive?.programId ?? ""),
         sepe: !!offer?.sepe,
+        urlSepe: asStr(offer?.urlSepe ?? ""),
         type: asStr(offer?.type ?? ""),
         datecreate: isoDay(offer?.datecreate),
         essentials_requirements: asStr(offer?.essentials_requirements ?? ""),
@@ -330,12 +397,13 @@ const allowedDispositiveOptions = useMemo(() => {
       };
 
       const patch = {};
+
       if (newValues.jobId && newValues.jobId !== curr.jobId) patch.jobId = newValues.jobId;
-      if (newValues.work_schedule !== curr.work_schedule)
-        patch.work_schedule = newValues.work_schedule;
+      if (newValues.work_schedule !== curr.work_schedule) patch.work_schedule = newValues.work_schedule;
       if (newValues.location !== curr.location) patch.location = newValues.location;
-      if (newValues.expected_incorporation_date !== curr.expected_incorporation_date)
+      if (newValues.expected_incorporation_date !== curr.expected_incorporation_date) {
         patch.expected_incorporation_date = newValues.expected_incorporation_date;
+      }
 
       const dispositiveChanged =
         newValues.dispositive.newDispositiveId !== curr.newDispositiveId ||
@@ -344,19 +412,23 @@ const allowedDispositiveOptions = useMemo(() => {
       if (dispositiveChanged) {
         patch.newDispositiveId = newValues.dispositive.newDispositiveId;
         patch.programId = newValues.programId;
+
         if (newValues.provinceId && newValues.provinceId !== curr.provinceId) {
           patch.provinceId = newValues.provinceId;
         }
       }
 
       if (newValues.sepe !== curr.sepe) patch.sepe = newValues.sepe;
+      if (newValues.urlSepe !== curr.urlSepe) patch.urlSepe = newValues.urlSepe || "";
       if (newValues.disability !== curr.disability) patch.disability = newValues.disability;
       if (newValues.type !== curr.type) patch.type = newValues.type;
       if (newValues.datecreate !== curr.datecreate) patch.datecreate = newValues.datecreate;
-      if (newValues.essentials_requirements !== curr.essentials_requirements)
+      if (newValues.essentials_requirements !== curr.essentials_requirements) {
         patch.essentials_requirements = newValues.essentials_requirements;
-      if (newValues.optionals_requirements !== curr.optionals_requirements)
+      }
+      if (newValues.optionals_requirements !== curr.optionals_requirements) {
         patch.optionals_requirements = newValues.optionals_requirements;
+      }
       if (newValues.conditions !== curr.conditions) patch.conditions = newValues.conditions;
       if (!eqArrayAsSet(newValues.studiesId, curr.studiesId)) patch.studiesId = newValues.studiesId;
 
@@ -365,6 +437,7 @@ const allowedDispositiveOptions = useMemo(() => {
         closeModal?.();
         return;
       }
+
       const result = await offerUpdate({ ...patch, offerId: offer?._id }, token);
       if (result?.error) {
         modal?.("Error", result.message || "No se pudo actualizar la oferta.");
@@ -383,17 +456,17 @@ const allowedDispositiveOptions = useMemo(() => {
   };
 
   if (!isRoot && allowedDispositiveOptions.length === 0) {
-  return (
-    <ModalForm
-      title={isEditing ? "Editar Oferta de Empleo" : "Crear Oferta de Empleo"}
-      message="No tienes dispositivos disponibles para gestionar ofertas."
-      fields={[]}
-      onSubmit={closeModal}
-      onClose={closeModal}
-      modal={modal}
-    />
-  );
-}
+    return (
+      <ModalForm
+        title={isEditing ? "Editar Oferta de Empleo" : "Crear Oferta de Empleo"}
+        message="No tienes dispositivos disponibles para gestionar ofertas."
+        fields={[]}
+        onSubmit={closeModal}
+        onClose={closeModal}
+        modal={modal}
+      />
+    );
+  }
 
   return (
     <ModalForm

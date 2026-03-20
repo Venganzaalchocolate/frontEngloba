@@ -16,6 +16,7 @@ import Spinnning from "./Spinning";
 
 
 
+
 // === Importación diferida (lazy) de los módulos pesados ===
 // Nota: con esto React hace code-splitting y cada panel se descarga solo cuando se usa.
 // Así evitamos que toda la app se cargue de golpe.
@@ -32,6 +33,7 @@ const FormCreateEmployer = React.lazy(() => import("../employer/FormCreateEmploy
 const ManagingProgramsDispositive=React.lazy(() => import("../programsanddispositives/ManagingProgramsDispositive"));
 const ManagingVolunteers=React.lazy(() => import("../volunteer/ManagingVolunteers"));
 const ManagingPermissions=React.lazy(() => import("../permissions/ManagingPermissions"));
+const OrganizationChart = React.lazy(() => import("./OrganizationChart"));
 
 /* === Tile reutilizable (card clickable con icono y texto) ===
    Le paso un icono, label, color de acento y callback onClick */
@@ -260,6 +262,12 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
             charge={(x) => charge(x)}
           />
         )}
+        {MenuWorker === "organizationChart" && (
+  <OrganizationChart
+    modal={(title, message) => modal(title, message)}
+    charge={(x) => charge(x)}
+  />
+)}
       </Suspense>
     );
   }

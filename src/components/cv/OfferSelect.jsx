@@ -39,7 +39,7 @@ const OfferSelect = ({
     };
 
     const allOffers = Array.isArray(enumsData?.offers) ? enumsData.offers : [];
-    const responsabilities = Array.isArray(logged?.listResponsability)
+    const scopedRoles = Array.isArray(logged?.listResponsability)
       ? logged.listResponsability
       : [];
 
@@ -49,13 +49,20 @@ const OfferSelect = ({
       const allowedProgramIds = new Set();
       const allowedDispositiveIds = new Set();
 
-      responsabilities.forEach((r) => {
-        if (r?.isProgramResponsible && r?.idProgram) {
+      scopedRoles.forEach((r) => {
+        if (
+          (r?.isProgramResponsible ||
+            r?.isProgramCoordinator ||
+            r?.isProgramSupervisor) &&
+          r?.idProgram
+        ) {
           allowedProgramIds.add(String(r.idProgram));
         }
 
         if (
-          (r?.isDeviceResponsible || r?.isDeviceCoordinator) &&
+          (r?.isDeviceResponsible ||
+            r?.isDeviceCoordinator ||
+            r?.isDeviceSupervisor) &&
           r?.dispositiveId
         ) {
           allowedDispositiveIds.add(String(r.dispositiveId));
@@ -68,10 +75,10 @@ const OfferSelect = ({
           offer?.dispositive?.newDispositiveId || ""
         );
 
-        if (allowedProgramIds.has(offerProgramId)) return true;
-        if (allowedDispositiveIds.has(offerDispositiveId)) return true;
-
-        return false;
+        return (
+          allowedProgramIds.has(offerProgramId) ||
+          allowedDispositiveIds.has(offerDispositiveId)
+        );
       });
     }
 

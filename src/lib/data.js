@@ -276,12 +276,8 @@ export const createDispositive = (dispositiveData, token) => fetchData('/created
 export const updateDispositive = (dispositiveData, token) => fetchData('/updatedevice', 'PUT', token, dispositiveData);
 export const deleteDispositive = (dispositiveData, token) => fetchData('/deletedispositive', 'DELETE', token, dispositiveData);
 export const getDispositiveId = (dispositiveData, token) => fetchData('/dispositive', 'POST', token, dispositiveData);
-export const getDispositiveResponsable = (datos, token) => fetchData('/dispositiveresponsable', 'POST', token, datos);
 export const deleteProgram = (datos, token) => fetchData('/deleteprogram', 'DELETE', token, datos);
 export const updateProgram = (datos, token) => fetchData('/updateprogram', 'PUT', token, datos);
-export const coordinators = (datos, token) => fetchData('/coordinators', 'POST', token, datos);
-export const responsibles = (datos, token) => fetchData('/responsibles', 'POST', token, datos);
-export const listsResponsiblesAndCoordinators = (datos, token) => fetchData('/listsresponsiblesprogram', 'POST', datos, token)
 
 
 // filesDrive
@@ -620,3 +616,10 @@ export const permissionsSyncUserNow = (datos, token) =>
 export const userSignatureGet = (datos,token) =>  fetchData("/user/signature/get", "POST", token, datos);
 export const userSignatureUpsert = (datos, token) =>  fetchData("/user/signature/upsert", "POST", token, datos);
 export const userSignatureDelete = (datos, token) =>  fetchData("/user/signature/delete", "POST", token, datos);
+
+// scoped roles
+export const scopedRole = (datos, token) => fetchData('/scopedrole', 'POST', token, datos);
+export const listScopedRoles = (datos, token) => fetchData('/listscopedroles', 'POST', token, datos);
+export const getUserScopedRoles = (datos, token) => fetchData('/userscopedroles', 'POST', token, datos);
+export const organizationChart=(datos, token) => fetchData('/organizationchart', 'POST', token, datos);
+

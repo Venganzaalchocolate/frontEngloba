@@ -2,7 +2,7 @@ import { FaUserAlt, FaUserCog } from "react-icons/fa";
 import { FaBriefcase, FaChartLine, FaClipboardList, FaPuzzlePiece, FaRegAddressBook, FaToolbox, FaUsers, FaUserShield, FaLock  } from "react-icons/fa6";
 import { MdOutlineVolunteerActivism } from "react-icons/md";
 
-
+import { FaHubspot } from "react-icons/fa";
 /**
  * Devuelve opciones según rol/responsabilidades SIN JSX.
  * icon: referencia a componente (p.ej. FaUsers), NO <FaUsers />
@@ -27,6 +27,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
   const rootOnly = [
     { key: 'root',       label: 'Panel Root',              icon: FaToolbox,        accent: '#d946ef' },
     { key: 'permissions',       label: 'Permisos',              icon: FaLock ,        accent: '#4ade80' },
+    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'}
     // { key: 'workspace',  label: 'Gestión de Workspace',    icon: FaUserCog,        accent: '#4ade80' },
   ];
 

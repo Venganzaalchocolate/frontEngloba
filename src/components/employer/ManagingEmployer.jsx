@@ -28,7 +28,6 @@ import SupervisorChangeRequests from './SupervisorChangeRequests.jsx';
 import RelocateHiringsModal from './RelocateHiringsModal.jsx';
 import perfil92 from "../../assets/perfil_92.png";
 
-
 const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, closeAction }) => {
   // =========================
   // AUTH / ROLE
@@ -77,11 +76,11 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
   });
   const debouncedFilters = useDebounce(filters, 300);
 
-  // // =========================
-  // // STATE: thumbs cache
-  // // =========================
-  const thumbsCacheRef = useRef({}); // { [userId: string]: dataUrl }
-  const [thumbByUserId, setThumbByUserId] = useState({}); // snapshot para render
+  // =========================
+  // STATE: thumbs cache
+  // =========================
+  const thumbsCacheRef = useRef({});
+  const [thumbByUserId, setThumbByUserId] = useState({});
 
   // =========================
   // HELPERS
@@ -89,34 +88,68 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
   const normId = (id) => String(id || '');
 
   const extractDataUrl = (photoValue) => {
-    // soporta: photos[id] = "data:..."  ó  photos[id] = { dataUrl: "data:..." }
     if (!photoValue) return '';
     if (typeof photoValue === 'string') return photoValue;
     return photoValue?.dataUrl || '';
   };
 
+  const hasProgramAccess = useCallback(
+    (item) =>
+      !!(
+        item?.isProgramResponsible ||
+        item?.isProgramCoordinator ||
+        item?.isProgramSupervisor
+      ),
+    []
+  );
+
+  const hasDeviceAccess = useCallback(
+    (item) =>
+      !!(
+        item?.isDeviceResponsible ||
+        item?.isDeviceCoordinator ||
+        item?.isDeviceSupervisor
+      ),
+    []
+  );
+
   const getResponsibilityOptions = useCallback(() => {
     const options = [];
+    const seen = new Set();
+
     listResponsability.forEach((item) => {
-      if (item.isProgramResponsible) {
-        options.push({
-          label: `(Programa) ${item.programName}`,
-          value: JSON.stringify({ type: "program", programId: item.idProgram }),
-        });
+      const programId = item?.idProgram ? String(item.idProgram) : '';
+      const dispositiveId = item?.dispositiveId ? String(item.dispositiveId) : '';
+
+      if (hasProgramAccess(item) && programId) {
+        const key = `program:${programId}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          options.push({
+            label: `(Programa) ${item.programAcronym || item.programName || 'Programa'}`,
+            value: JSON.stringify({ type: "program", programId }),
+          });
+        }
       }
-      if (item.isDeviceResponsible || item.isDeviceCoordinator) {
-        options.push({
-          label: `(Dispositivo) ${item.dispositiveName} [${item.programName}]`,
-          value: JSON.stringify({
-            type: "device",
-            programId: item.idProgram,
-            deviceId: item.dispositiveId,
-          }),
-        });
+
+      if (hasDeviceAccess(item) && dispositiveId) {
+        const key = `device:${dispositiveId}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          options.push({
+            label: `(Dispositivo) ${item.dispositiveName}${item.programAcronym || item.programName ? ` [${item.programAcronym || item.programName}]` : ''}`,
+            value: JSON.stringify({
+              type: "device",
+              programId,
+              deviceId: dispositiveId,
+            }),
+          });
+        }
       }
     });
+
     return options;
-  }, [listResponsability]);
+  }, [listResponsability, hasProgramAccess, hasDeviceAccess]);
 
   // =========================
   // LOADERS
@@ -128,18 +161,18 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
       const token = getToken();
       let auxFilters = { ...debouncedFilters };
 
-      // quitar vacíos
       for (let key in auxFilters) {
         if (auxFilters[key] === "") delete auxFilters[key];
       }
 
-      // Si NO eres root/global, se fuerza a su responsabilidad
       if (!isRootOrGlobal) {
         if (!selectedResponsibility) {
           if (showLoader) charge(false);
           return;
         }
+
         const resp = JSON.parse(selectedResponsibility);
+
         if (resp.type === "program") {
           auxFilters.programId = resp.programId;
         } else if (resp.type === "device") {
@@ -167,7 +200,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
     } finally {
       if (showLoader) charge(false);
     }
-  }, [debouncedFilters, isRootOrGlobal, limit, page, selectedResponsibility]);
+  }, [debouncedFilters, isRootOrGlobal, limit, page, selectedResponsibility, charge, modal]);
 
   const refreshThumbForUser = useCallback(async (userId) => {
     try {
@@ -217,7 +250,6 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
       }
     }
 
-    // siempre copia
     setThumbByUserId({ ...cache });
     return changed;
   }, []);
@@ -225,44 +257,39 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
   // =========================
   // EFFECTS
   // =========================
-
-  // auto-seleccionar responsabilidad si solo hay una (no root/global)
   useEffect(() => {
     if (isRootOrGlobal) return;
 
-    if (!listResponsability || listResponsability.length === 0) {
+    const options = getResponsibilityOptions();
+
+    if (!options.length) {
       setSelectedResponsibility(null);
       return;
     }
 
-    if (listResponsability.length === 1) {
-      const item = listResponsability[0];
-      if (item.isProgramResponsible) {
-        setSelectedResponsibility(JSON.stringify({ type: "program", programId: item.idProgram }));
-      } else if (item.isDeviceResponsible || item.isDeviceCoordinator) {
-        setSelectedResponsibility(JSON.stringify({
-          type: "device",
-          programId: item.idProgram,
-          deviceId: item.dispositiveId,
-        }));
-      }
+    if (options.length === 1) {
+      setSelectedResponsibility(options[0].value);
+      return;
     }
-  }, [isRootOrGlobal, listResponsability]);
 
-  // cargar usuarios
+    setSelectedResponsibility((prev) => {
+      if (!prev) return null;
+      const exists = options.some((opt) => opt.value === prev);
+      return exists ? prev : null;
+    });
+  }, [isRootOrGlobal, getResponsibilityOptions]);
+
   useEffect(() => {
     if (!logged?.isLoggedIn) return;
     loadUsers(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logged?.isLoggedIn, debouncedFilters, page, limit, selectedResponsibility]);
 
-  // // cargar thumbs (sin IIFE rara)
   useEffect(() => {
     if (!logged?.isLoggedIn) return;
     if (!users?.length) return;
 
     const ac = new AbortController();
-
     loadThumbsForUsers(users, ac.signal).catch(() => {});
     return () => ac.abort();
   }, [users, logged?.isLoggedIn, loadThumbsForUsers]);
@@ -285,6 +312,8 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
 
     return { activeUsers: active, onLeaveUsers: leave };
   }, [users]);
+
+  const responsibilityOptions = useMemo(() => getResponsibilityOptions(), [getResponsibilityOptions]);
 
   // =========================
   // HANDLERS
@@ -363,7 +392,6 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
 
     setUserSelected(updatedUser);
 
-    // // si cambia la foto → invalida cache + recarga
     if (updatedUser?.photoProfile?.thumb || updatedUser?.photoProfile?.normal) {
       const id = normId(updatedUser._id);
       delete thumbsCacheRef.current[id];
@@ -541,19 +569,18 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
                 : setUserSelected(null)
             }
           >
-          <div className={styles.tableCellPhoto}>
-            <img
-              src={thumbUrl || perfil92}
-              alt=""
-              className={styles.photoThumb}
-              loading="lazy"
-              decoding="async"
-              onError={(e) => {
-                // si la URL del usuario falla, ponemos el placeholder
-                e.currentTarget.src = perfil92;
-              }}
-            />
-          </div>
+            <div className={styles.tableCellPhoto}>
+              <img
+                src={thumbUrl || perfil92}
+                alt=""
+                className={styles.photoThumb}
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  e.currentTarget.src = perfil92;
+                }}
+              />
+            </div>
 
             <div className={styles.tableCell}>{user.firstName}</div>
             <div className={styles.tableCell}>{user.lastName}</div>
@@ -591,7 +618,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
   // RESTRICCIONES POR ROL
   // =========================
   if (!isRootOrGlobal) {
-    if (!listResponsability?.length) {
+    if (!responsibilityOptions.length) {
       return (
         <div className={styles.contenedor}>
           <div className={styles.contenido}>
@@ -601,8 +628,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
       );
     }
 
-    if (listResponsability.length > 1 && !selectedResponsibility) {
-      const options = getResponsibilityOptions();
+    if (responsibilityOptions.length > 1 && !selectedResponsibility) {
       return (
         <div className={styles.contenedor}>
           <div className={styles.contenido}>
@@ -613,7 +639,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
               className={styles.selectInicial}
             >
               <option value="">Seleccionar una opción</option>
-              {options.map((opt, i) => (
+              {responsibilityOptions.map((opt, i) => (
                 <option key={i} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -705,7 +731,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
               <div className={styles.cajaSeleccionActiva}>
                 <h4>Activo</h4>
                 <select onChange={handleSelectResponsibility} value={selectedResponsibility || ""}>
-                  {getResponsibilityOptions().map((opt, i) => (
+                  {responsibilityOptions.map((opt, i) => (
                     <option key={i} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>

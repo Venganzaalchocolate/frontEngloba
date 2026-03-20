@@ -1,0 +1,508 @@
+.contenedor {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 100%;
+    background-color: var(--color-morado);
+    gap: 1rem;
+}
+
+.contenedor > div.contenido {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-color: white;
+    border-radius: 0;
+    flex-wrap: wrap;
+    color: var(--color-morado);
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: #f3f3f6;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.header h2 {
+  margin: 0;
+  color: #4f5cab;
+  font-size: 2rem;
+}
+
+.header p {
+  margin: 4px 0 0;
+  color: #5f5f70;
+  font-size: 0.95rem;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn,
+.activeBtn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn {
+  background: #ece9fb;
+  color: #5a5db5;
+}
+
+.btn:hover {
+  background: #ddd7fa;
+}
+
+.activeBtn {
+  background: #5f63d3;
+  color: #fff;
+}
+
+.stickySearchBox {
+  position: sticky;
+  top: calc(var(--app-fixed-header-height, 72px) + 8px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(243, 243, 246, 0.96);
+  backdrop-filter: blur(8px);
+  padding: 8px 0 10px;
+}
+.searchInputWrap {
+  position: relative;
+}
+
+.searchInput {
+  width: 100%;
+  border: 1px solid #7d7de0;
+  border-radius: 14px;
+  padding: 12px 42px 12px 14px;
+  font-size: 0.95rem;
+  background: #fff;
+  box-sizing: border-box;
+  color: #47446b;
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: #5f63d3;
+  box-shadow: 0 0 0 3px rgba(95, 99, 211, 0.14);
+}
+
+.clearSearchBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #7b7b9a;
+}
+
+.searchResultsDropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #dddaf7;
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 10px 24px rgba(60, 50, 120, 0.08);
+}
+
+.searchResultItem {
+  text-align: left;
+  border: none;
+  background: #f8f7ff;
+  color: #484278;
+  border-radius: 10px;
+  padding: 9px 10px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  transition: 0.18s ease;
+}
+
+.searchResultItem:hover {
+  background: #ece9ff;
+}
+
+.noSearchResults {
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  color: #7a7898;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.92rem;
+  color: #5c5c6d;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legendDot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dotProgram {
+  background: #6d5bd0;
+}
+
+.dotDispositive {
+  background: #5aa0ff;
+}
+
+.dotSupervisor {
+  background: #f2a007;
+}
+
+.dotResponsible {
+  background: #35a853;
+}
+
+.dotCoordinator {
+  background: #d63384;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.emptyState {
+  padding: 30px;
+  border-radius: 18px;
+  background: #fff;
+  color: #727287;
+  text-align: center;
+  border: 1px solid #e5e4f4;
+}
+
+.structureView {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.programSection {
+  display: grid;
+  grid-template-columns: minmax(260px, 330px) 1fr;
+  gap: 26px;
+  align-items: start;
+  scroll-margin-top: 150px;
+}
+
+.highlightSection {
+  animation: chartHighlight 1.8s ease;
+  border-radius: 18px;
+}
+
+@keyframes chartHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(95, 99, 211, 0.32);
+    background: rgba(95, 99, 211, 0.08);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(95, 99, 211, 0);
+    background: transparent;
+  }
+}
+
+.programMainCard,
+.deviceCard {
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(50, 45, 104, 0.08);
+}
+
+.programMainCard {
+  background: #ffffff;
+  border: 1px solid #dddaf7;
+}
+
+.programMainHeader {
+  background: linear-gradient(135deg, #575dc8, #7a68df);
+  color: #fff;
+  padding: 14px 16px 12px;
+}
+
+.programBadge,
+.deviceBadge {
+  display: inline-block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 4px 8px;
+  margin-bottom: 8px;
+}
+
+.programBadge {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.deviceBadge {
+  background: rgba(90, 160, 255, 0.14);
+  color: #4e6de2;
+}
+
+.programMainHeader h3,
+.deviceCardHeader h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.programSubname,
+.programArea,
+.deviceCardHeader p {
+  margin: 4px 0 0;
+  opacity: 0.95;
+  font-size: 0.88rem;
+}
+
+.devicesColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.devicesColumnTitle {
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6a6aa0;
+  padding-left: 8px;
+}
+
+.deviceRow {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 18px;
+  align-items: start;
+  scroll-margin-top: 150px;
+}
+
+.deviceNameRail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 100%;
+  padding-top: 26px;
+}
+
+.deviceConnector {
+  width: 22px;
+  min-width: 22px;
+  height: 4px;
+  border-radius: 99px;
+  background: #8a8de7;
+}
+
+.deviceNameBox {
+  background: #161616;
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.deviceCard {
+  background: #fff;
+  border: 1px solid #d9e7ff;
+}
+
+.deviceCardHeader {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #edf2ff;
+}
+
+.scopeRolesBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: #fdfdff;
+}
+
+.scopeRolesHeader h4 {
+  margin: 0;
+  color: #404572;
+  font-size: 0.95rem;
+}
+
+.scopeRolesHeader p {
+  margin: 4px 0 0;
+  color: #7a7ea7;
+  font-size: 0.82rem;
+}
+
+.supervisorTopBlock {
+  border-radius: 14px;
+  padding: 10px;
+  background: linear-gradient(135deg, #fff5df, #fff9ef);
+  border: 1px solid #f4deab;
+}
+
+.supervisorTopBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.scopeRolesGridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.roleColumn {
+  border-radius: 14px;
+  padding: 10px;
+  min-height: 100%;
+}
+
+.roleColumn_responsible {
+  background: linear-gradient(135deg, #eaf8ee, #f5fcf6);
+  border: 1px solid #bee4c7;
+}
+
+.roleColumn_coordinator {
+  background: linear-gradient(135deg, #fff0f7, #fff7fb);
+  border: 1px solid #f0bfd5;
+}
+
+.roleColumnBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.rolePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  width: fit-content;
+}
+
+.pill_supervisor {
+  background: #f2a007;
+  color: #fff;
+}
+
+.pill_responsible {
+  background: #35a853;
+  color: #fff;
+}
+
+.pill_coordinator {
+  background: #d63384;
+  color: #fff;
+}
+
+.userMiniCard {
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: #fff;
+  border: 1px solid #ececf7;
+}
+
+.userMiniCard_supervisor {
+  border-color: #f1cc73;
+}
+
+.userMiniCard_responsible {
+  border-color: #b7debf;
+}
+
+.userMiniCard_coordinator {
+  border-color: #efc1d8;
+}
+
+.userMiniName {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #3f4267;
+}
+
+.userMiniEmail {
+  font-size: 0.76rem;
+  color: #7a7ea7;
+  margin-top: 3px;
+  word-break: break-word;
+}
+
+.emptyMini,
+.emptyDevices {
+  color: #8787a0;
+  font-size: 0.82rem;
+}
+
+.emptyDevices {
+  background: #fff;
+  border: 1px dashed #dddaf7;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+@media (max-width: 1100px) {
+  .programSection {
+    grid-template-columns: 1fr;
+  }
+
+  .deviceRow {
+    grid-template-columns: 1fr;
+  }
+
+  .deviceNameRail {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .scopeRolesGridTwo {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+}

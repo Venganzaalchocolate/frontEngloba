@@ -30,10 +30,10 @@ const ManagingProgramsDispositive = ({
   enumsData,
   chargeEnums,
 }) => {
-
   const token = getToken();
   const { logged } = useLogin();
-  const isRoot = logged?.user?.role === "root";
+  const isRootOrGlobal =
+    logged?.user?.role === "root";
 
   const [select, setSelect] = useState(null);
   const [infoSelect, setInfoSelect] = useState(null);
@@ -44,50 +44,16 @@ const ManagingProgramsDispositive = ({
   const [showSelectModal, setShowSelectModal] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [actionType, setActionType] = useState(null); // "edit" o "delete"
+  const [actionType, setActionType] = useState(null);
   const [deviceWorkers, setDeviceWorkers] = useState([]);
   const [showQuickContactForm, setShowQuickContactForm] = useState(false);
   const [quickContactTarget, setQuickContactTarget] = useState(null);
 
-  const handleQuickUpdateDispositiveField = async (formData) => {
-    if (!infoSelect?._id || infoSelect?.type !== "dispositive" || !quickContactTarget?.field) return;
-
-    charge(true);
-    const value = formData?.[quickContactTarget.field] ?? "";
-
-    const payload = {
-      dispositiveId: infoSelect._id,
-      [quickContactTarget.field]: value,
-    };
-
-    const res = await updateDispositive(payload, token);
-
-    if (!res || res.error) {
-      modal("Error", res?.message || "No se pudo actualizar el campo.");
-      charge(false);
-      return;
-    }
-
-    await chargeEnums();
-    await info({ type: "dispositive", _id: infoSelect._id });
-
-    modal(
-      "Actualización correcta",
-      `${quickContactTarget.label} actualizado correctamente.`
-    );
-
-    setShowQuickContactForm(false);
-    setQuickContactTarget(null);
-    charge(false);
-  };
-
-  // Helper: desempaqueta { error, data } o devuelve el objeto tal cual
   const normalizeEntity = (res, type) => {
     const payload = res && typeof res === "object" && "data" in res ? res.data : res;
     return { ...(payload || {}), type };
   };
 
-  // === CARGAR INFO DEL SELECCIONADO ===
   const info = async (x) => {
     if (!x) return;
 
@@ -117,41 +83,81 @@ const ManagingProgramsDispositive = ({
     info(x);
 
     if (x.type === "dispositive") {
-      fetchDeviceWorkers(x._id);      // 👈 NUEVO
+      fetchDeviceWorkers(x._id);
     } else {
-      setDeviceWorkers([]);           // 👈 NUEVO: limpiar si se selecciona programa
+      setDeviceWorkers([]);
     }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // === SELECCIÓN AUTOMÁTICA INICIAL ===
   useEffect(() => {
     if (select || !enumsData?.programsIndex) return;
 
     if (listResponsability && listResponsability.length > 0) {
-      const first = listResponsability[0];
+      const firstWithDevice = listResponsability.find((x) => x?.dispositiveId);
+      const firstWithProgram = listResponsability.find((x) => x?.idProgram);
 
-      if (first?.dispositiveId) {
-        onSelect({ type: "dispositive", _id: first.dispositiveId });
-      } else if (first?.idProgram) {
-        onSelect({ type: "program", _id: first.idProgram });
+      if (firstWithDevice?.dispositiveId) {
+        onSelect({ type: "dispositive", _id: firstWithDevice.dispositiveId });
+        return;
       }
-    } else {
-      const firstProgramId = Object.keys(enumsData.programsIndex)[0];
-      if (firstProgramId) {
-        onSelect({ type: "program", _id: firstProgramId });
+
+      if (firstWithProgram?.idProgram) {
+        onSelect({ type: "program", _id: firstWithProgram.idProgram });
+        return;
       }
+    }
+
+    const firstProgramId = Object.keys(enumsData.programsIndex)[0];
+    if (firstProgramId) {
+      onSelect({ type: "program", _id: firstProgramId });
     }
   }, [listResponsability, enumsData, select]);
 
-  // === OPTIONS ===
+  const handleQuickUpdateDispositiveField = async (formData) => {
+  if (!infoSelect?._id || infoSelect?.type !== "dispositive" || !quickContactTarget?.field) {
+    return;
+  }
+
+  charge(true);
+
+  try {
+    const value = formData?.[quickContactTarget.field] ?? "";
+
+    const payload = {
+      dispositiveId: infoSelect._id,
+      [quickContactTarget.field]: value,
+    };
+
+    const res = await updateDispositive(payload, token);
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo actualizar el campo.");
+      return;
+    }
+
+    await chargeEnums();
+    await info({ type: "dispositive", _id: infoSelect._id });
+
+    modal(
+      "Actualización correcta",
+      `${quickContactTarget.label} actualizado correctamente.`
+    );
+
+    setShowQuickContactForm(false);
+    setQuickContactTarget(null);
+  } finally {
+    charge(false);
+  }
+};
+
   const programsOptions = useMemo(() => {
     const idx = enumsData?.programsIndex || {};
     return Object.entries(idx)
       .map(([id, p]) => ({
         value: id,
-        label: `${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
-          }`,
+        label: `${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""}`,
         acronym: (p?.acronym || "").toUpperCase(),
       }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
@@ -159,60 +165,58 @@ const ManagingProgramsDispositive = ({
 
   const provinceOptions = useMemo(() => {
     const idx = enumsData?.provincesIndex || {};
-
     return Object.entries(idx)
       .map(([id, p]) => ({ value: id, label: p?.name || id }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [enumsData]);
 
   const entityOptions = useMemo(() => {
-  const idx = enumsData?.entityIndex || {};
-
+    const idx = enumsData?.entityIndex || {};
     return Object.entries(idx)
       .map(([id, p]) => ({ value: id, label: p?.name || id }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
-}, [enumsData]);
-  // === CAMPOS BASE ===
-const programFields = [
-  { name: "name", label: "Nombre del Programa", type: "text", required: true },
-  { name: "acronym", label: "Acrónimo", type: "text", required: true },
-  {
-    name: "entity",
-    label: "Entidad",
-    type: "select",
-    required: true,
-    options: [{ value: "", label: "Seleccione entidad" }, ...entityOptions],
-  },
-  {
-    name: "area",
-    label: "Área",
-    type: "select",
-    options: [
-      { value: "no identificado", label: "No identificado" },
-      { value: "igualdad", label: "Igualdad" },
-      { value: "desarrollo comunitario", label: "Desarrollo comunitario" },
-      { value: "lgtbiq", label: "LGTBIQ+" },
-      { value: "infancia y juventud", label: "Infancia y juventud" },
-      { value: "personas con discapacidad", label: "Personas con discapacidad" },
-      { value: "mayores", label: "Mayores" },
-      { value: "migraciones", label: "Migraciones" },
-    ],
-    defaultValue: "no identificado",
-  },
-  {
-    name: "active",
-    label: "Activo",
-    type: "select",
-    options: [
-      { value: true, label: "Sí" },
-      { value: false, label: "No" },
-    ],
-    defaultValue: true,
-  },
-  { name: "description", label: "Descripción", type: "textarea" },
-  { name: "objectives", label: "Objetivos", type: "textarea" },
-  { name: "profile", label: "Perfil", type: "textarea" },
-];
+  }, [enumsData]);
+
+  const programFields = [
+    { name: "name", label: "Nombre del Programa", type: "text", required: true },
+    { name: "acronym", label: "Acrónimo", type: "text", required: true },
+    {
+      name: "entity",
+      label: "Entidad",
+      type: "select",
+      required: true,
+      options: [{ value: "", label: "Seleccione entidad" }, ...entityOptions],
+    },
+    {
+      name: "area",
+      label: "Área",
+      type: "select",
+      options: [
+        { value: "no identificado", label: "No identificado" },
+        { value: "igualdad", label: "Igualdad" },
+        { value: "desarrollo comunitario", label: "Desarrollo comunitario" },
+        { value: "lgtbiq", label: "LGTBIQ+" },
+        { value: "infancia y juventud", label: "Infancia y juventud" },
+        { value: "personas con discapacidad", label: "Personas con discapacidad" },
+        { value: "mayores", label: "Mayores" },
+        { value: "migraciones", label: "Migraciones" },
+      ],
+      defaultValue: "no identificado",
+    },
+    {
+      name: "active",
+      label: "Activo",
+      type: "select",
+      options: [
+        { value: true, label: "Sí" },
+        { value: false, label: "No" },
+      ],
+      defaultValue: true,
+    },
+    { name: "description", label: "Descripción", type: "textarea" },
+    { name: "objectives", label: "Objetivos", type: "textarea" },
+    { name: "profile", label: "Perfil", type: "textarea" },
+  ];
 
   const deviceFields = [
     {
@@ -253,8 +257,7 @@ const programFields = [
       options: [
         ...Object.entries(enumsData?.programsIndex || {}).map(([id, p]) => ({
           value: JSON.stringify({ type: "program", _id: id }),
-          label: `📘 Programa · ${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""
-            }`,
+          label: `📘 Programa · ${p?.name || id}${p?.acronym ? ` (${p.acronym.toUpperCase()})` : ""}`,
         })),
         ...Object.entries(enumsData?.dispositiveIndex || {}).map(([id, d]) => ({
           value: JSON.stringify({ type: "dispositive", _id: id }),
@@ -264,33 +267,24 @@ const programFields = [
     },
   ];
 
-  // Función para cargar trabajadores del dispositivo 
   const fetchDeviceWorkers = async (dispositiveId) => {
     if (!dispositiveId) return;
 
     charge(true);
     try {
       const res = await getusers(1, 200, { dispositive: dispositiveId }, token);
-
-      const payload =
-        res && typeof res === "object" && "data" in res ? res.data : res;
-
+      const payload = res && typeof res === "object" && "data" in res ? res.data : res;
       const users = payload?.users || payload?.docs || [];
-
       setDeviceWorkers(users);
     } catch (err) {
       console.error("Error cargando trabajadores del dispositivo:", err);
-      modal(
-        "Error",
-        "No se pudieron cargar los trabajadores del dispositivo seleccionado."
-      );
+      modal("Error", "No se pudieron cargar los trabajadores del dispositivo seleccionado.");
       setDeviceWorkers([]);
     } finally {
       charge(false);
     }
   };
 
-  // === CRONOLOGÍA (optimista) ===
   const handleCronology = async (infoItem, formData, type) => {
     if (!infoItem?._id) return;
 
@@ -356,28 +350,28 @@ const programFields = [
       "Actualizado",
       type === "delete"
         ? "Registro eliminado correctamente."
-        : `Cronología ${type === "edit" ? "actualizada" : "añadida"
-        } correctamente.`
+        : `Cronología ${type === "edit" ? "actualizada" : "añadida"} correctamente.`
     );
   };
 
-  // === CREAR PROGRAMA ===
   const handleCreateProgram = async (formData) => {
-const payload = {
-  name: formData.name,
-  acronym: formData.acronym?.toUpperCase(),
-  entity: formData.entity || null,
-  area: formData.area || "no identificado",
-  active: formData.active === true || formData.active === "true",
-  responsible: [],
-  finantial: [],
-  about: {
-    description: formData.description || "",
-    objectives: formData.objectives || "",
-    profile: formData.profile || "",
-  },
-  userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
-};
+    const payload = {
+      name: formData.name,
+      acronym: formData.acronym?.toUpperCase(),
+      entity: formData.entity || null,
+      area: formData.area || "no identificado",
+      active: formData.active === true || formData.active === "true",
+      responsible: [],
+      coordinators: [],
+      supervisors: [],
+      finantial: [],
+      about: {
+        description: formData.description || "",
+        objectives: formData.objectives || "",
+        profile: formData.profile || "",
+      },
+      userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
+    };
 
     charge(true);
     const res = await createProgram(payload, token);
@@ -394,7 +388,6 @@ const payload = {
     charge(false);
   };
 
-  // === CREAR DISPOSITIVO ===
   const handleCreateDevice = async (formData) => {
     const selected = programsOptions.find((p) => p.value === formData.program);
     const acronym = selected?.acronym || "";
@@ -414,6 +407,9 @@ const payload = {
       phone: formData.phone || "",
       province: formData.province || null,
       program: formData.program || null,
+      responsible: [],
+      coordinators: [],
+      supervisors: [],
       userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
     };
 
@@ -432,7 +428,6 @@ const payload = {
     charge(false);
   };
 
-  // === EDITAR (solo envía campos modificados) ===
   const handleEdit = async (formData) => {
     if (!editTarget?._id || !editTarget.type) return;
 
@@ -440,8 +435,6 @@ const payload = {
 
     let res;
     if (editTarget.type === "program") {
-
-
       const original = editTarget;
       const update = {};
 
@@ -450,8 +443,6 @@ const payload = {
         typeof original.entity === "string"
           ? original.entity
           : original.entity?._id || null;
-
-      
 
       const newName = formData.name?.trim() || "";
       const oldName = original.name || "";
@@ -538,10 +529,7 @@ const payload = {
         return;
       }
 
-      res = await updateDispositive(
-        { dispositiveId: original._id, ...update },
-        token
-      );
+      res = await updateDispositive({ dispositiveId: original._id, ...update }, token);
     }
 
     if (!res || res.error) {
@@ -557,7 +545,6 @@ const payload = {
     charge(false);
   };
 
-  // === ELIMINAR ===
   const handleDelete = async () => {
     if (!deleteTarget?._id || !deleteTarget.type) return;
 
@@ -583,7 +570,6 @@ const payload = {
     charge(false);
   };
 
-  // === SELECCIONAR ELEMENTO PARA EDITAR/ELIMINAR ===
   const handleSelectForAction = async (formData) => {
     let parsed;
     try {
@@ -618,34 +604,34 @@ const payload = {
     if (actionType === "edit") {
       const fieldsWithValues =
         data.type === "program"
-        ? programFields.map((f) => ({
-            ...f,
-            defaultValue:
-              f.name === "entity"
-                ? data.entity || ""
-                : f.name === "area"
-                  ? data.area
-                  : f.name === "active"
-                    ? Boolean(data.active)
-                    : f.name === "description"
-                      ? data.about?.description || ""
-                      : f.name === "objectives"
-                        ? data.about?.objectives || ""
-                        : f.name === "profile"
-                          ? data.about?.profile || ""
-                          : data[f.name] ?? f.defaultValue ?? "",
-          }))
+          ? programFields.map((f) => ({
+              ...f,
+              defaultValue:
+                f.name === "entity"
+                  ? data.entity || ""
+                  : f.name === "area"
+                    ? data.area
+                    : f.name === "active"
+                      ? Boolean(data.active)
+                      : f.name === "description"
+                        ? data.about?.description || ""
+                        : f.name === "objectives"
+                          ? data.about?.objectives || ""
+                          : f.name === "profile"
+                            ? data.about?.profile || ""
+                            : data[f.name] ?? f.defaultValue ?? "",
+            }))
           : deviceFields.map((f) => ({
-            ...f,
-            defaultValue:
-              f.name === "program"
-                ? data.program?._id || data.program || ""
-                : f.name === "province"
-                  ? data.province?._id || data.province || ""
-                  : f.name === "active"
-                    ? Boolean(data.active)
-                    : data[f.name] ?? f.defaultValue ?? "",
-          }));
+              ...f,
+              defaultValue:
+                f.name === "program"
+                  ? data.program?._id || data.program || ""
+                  : f.name === "province"
+                    ? data.province?._id || data.province || ""
+                    : f.name === "active"
+                      ? Boolean(data.active)
+                      : data[f.name] ?? f.defaultValue ?? "",
+            }));
 
       setEditTarget({ ...data, fieldsWithValues });
       setShowEditForm(true);
@@ -658,40 +644,39 @@ const payload = {
     setShowSelectModal(false);
   };
 
-  // === ABRIR FORMULARIOS ===
   const openEdit = () => {
     const openFormWithData = (data) => {
       if (!data) return;
       const fieldsWithValues =
         data.type === "program"
-        ? programFields.map((f) => ({
-            ...f,
-            defaultValue:
-              f.name === "entity"
-                ? data.entity || ""
-                : f.name === "area"
-                  ? data.area
-                  : f.name === "active"
-                    ? Boolean(data.active)
-                    : f.name === "description"
-                      ? data.about?.description || ""
-                      : f.name === "objectives"
-                        ? data.about?.objectives || ""
-                        : f.name === "profile"
-                          ? data.about?.profile || ""
-                          : data[f.name] ?? f.defaultValue ?? "",
-          }))
+          ? programFields.map((f) => ({
+              ...f,
+              defaultValue:
+                f.name === "entity"
+                  ? data.entity || ""
+                  : f.name === "area"
+                    ? data.area
+                    : f.name === "active"
+                      ? Boolean(data.active)
+                      : f.name === "description"
+                        ? data.about?.description || ""
+                        : f.name === "objectives"
+                          ? data.about?.objectives || ""
+                          : f.name === "profile"
+                            ? data.about?.profile || ""
+                            : data[f.name] ?? f.defaultValue ?? "",
+            }))
           : deviceFields.map((f) => ({
-            ...f,
-            defaultValue:
-              f.name === "program"
-                ? data.program?._id || data.program || ""
-                : f.name === "province"
-                  ? data.province?._id || data.province || ""
-                  : f.name === "active"
-                    ? Boolean(data.active)
-                    : data[f.name] ?? f.defaultValue ?? "",
-          }));
+              ...f,
+              defaultValue:
+                f.name === "program"
+                  ? data.program?._id || data.program || ""
+                  : f.name === "province"
+                    ? data.province?._id || data.province || ""
+                    : f.name === "active"
+                      ? Boolean(data.active)
+                      : data[f.name] ?? f.defaultValue ?? "",
+            }));
 
       setEditTarget({ ...data, fieldsWithValues });
       setShowEditForm(true);
@@ -727,7 +712,6 @@ const payload = {
     }));
   };
 
-  // === ACTIVAR / DESACTIVAR PROGRAMA O DISPOSITIVO ===
   const handleToggleActive = async (item) => {
     if (!item?._id || !item?.type) return;
 
@@ -774,10 +758,7 @@ const payload = {
               failing[0].r?.message ||
               "Error al desactivar algunos dispositivos asociados.";
 
-            await updateProgram(
-              { id: item._id, active: originalActive },
-              token
-            );
+            await updateProgram({ id: item._id, active: originalActive }, token);
 
             const succeededDevices = previouslyActiveDevices.filter(
               (_, idx) => !results[idx]?.error
@@ -843,10 +824,7 @@ const payload = {
     if (error) {
       modal("Error", message || "No se pudo actualizar el estado activo.");
     } else {
-      modal(
-        "Actualizado",
-        `${label} ${nextActive ? "activado" : "desactivado"} correctamente.`
-      );
+      modal("Actualizado", `${label} ${nextActive ? "activado" : "desactivado"} correctamente.`);
     }
   };
 
@@ -861,15 +839,14 @@ const payload = {
       label: labelMap[field] || field,
     });
     setShowQuickContactForm(true);
-  }
+  };
 
-  // === RENDER ===
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
         <div className={styles.titulo}>
           <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
-          {logged?.user?.role === "root" && (
+          {isRootOrGlobal && (
             <div className={styles.botones}>
               <button className={styles.btnAdd} onClick={() => setShowProgramForm(true)}>
                 + Añadir Programa <FaFolderOpen />
@@ -880,11 +857,9 @@ const payload = {
               <button className={styles.btnEdit} onClick={openEdit}>
                 Editar <FaEdit />
               </button>
-
               <button className={styles.btnDelete} onClick={openDelete}>
                 Eliminar <FaTrashAlt />
               </button>
-
             </div>
           )}
         </div>
@@ -898,8 +873,9 @@ const payload = {
             active={select}
             onSelect={onSelect}
             changeActive={handleToggleActive}
-            isRoot={isRoot}
+            isRoot={isRootOrGlobal}
           />
+
           <ProgramTabs
             modal={modal}
             charge={charge}
@@ -916,7 +892,6 @@ const payload = {
         </div>
       </div>
 
-      {/* === MODALES === */}
       {showProgramForm && (
         <ModalForm
           title="Crear nuevo Programa"
@@ -949,8 +924,9 @@ const payload = {
       {showDeleteConfirm && (
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Seguro que deseas eliminar este ${deleteTarget?.type === "program" ? "programa" : "dispositivo"
-            }?`}
+          message={`¿Seguro que deseas eliminar este ${
+            deleteTarget?.type === "program" ? "programa" : "dispositivo"
+          }?`}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteConfirm(false)}
         />
@@ -958,8 +934,7 @@ const payload = {
 
       {showSelectModal && (
         <ModalForm
-          title={`Seleccionar elemento para ${actionType === "edit" ? "editar" : "eliminar"
-            }`}
+          title={`Seleccionar elemento para ${actionType === "edit" ? "editar" : "eliminar"}`}
           message="Busca y selecciona el programa o dispositivo que deseas gestionar."
           fields={selectFields}
           onSubmit={handleSelectForAction}

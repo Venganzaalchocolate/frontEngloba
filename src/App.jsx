@@ -3,7 +3,7 @@ import './App.css'
 import Header from './components/globals/Header'
 import { getToken } from './lib/serviceToken'
 import { useLogin } from './hooks/useLogin.jsx';
-import { getDispositiveResponsable, tokenUser } from './lib/data.js'
+import { tokenUser } from './lib/data.js'
 import MenuStart from './components/globals/MenuStart.jsx';
 import JobsPanel from './components/jobs/JobsPanel.jsx';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';

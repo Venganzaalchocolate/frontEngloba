@@ -6,128 +6,198 @@ import { FaTrashAlt } from "react-icons/fa";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import {
-  responsibles,
-  coordinators,
-  getDispositiveResponsable,
+  scopedRole,
+  getUserScopedRoles,
 } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import { useLogin } from "../../hooks/useLogin";
+
+const ROLE_CONFIG = {
+  supervisor: {
+    title: "SUPERVISIÓN",
+    roleType: "supervisors",
+    empty: "No tiene supervisiones asignadas",
+    addTitle: "Añadir Supervisión",
+    addMessage: "Seleccione un programa o dispositivo",
+  },
+  responsible: {
+    title: "RESPONSABILIDAD",
+    roleType: "responsible",
+    empty: "No tiene responsabilidades asignadas",
+    addTitle: "Añadir Responsabilidad",
+    addMessage: "Seleccione un programa o dispositivo",
+  },
+  coordinator: {
+    title: "COORDINACIÓN",
+    roleType: "coordinators",
+    empty: "No tiene coordinaciones asignadas",
+    addTitle: "Añadir Coordinación",
+    addMessage: "Seleccione un programa o dispositivo",
+  },
+
+};
 
 const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
   const token = getToken();
   const { logged } = useLogin();
   const canEdit = logged?.user?.role === "global" || logged?.user?.role === "root";
 
-  // estado UI
   const [loading, setLoading] = useState(false);
-  const [openModal, setOpenModal] = useState(null); // "resp" | "coord" | null
-  const [confirm, setConfirm] = useState(null);     // { type: "resp"|"coord", id: string }
+  const [openModal, setOpenModal] = useState(null); // responsible | coordinator | supervisor | null
+  const [confirm, setConfirm] = useState(null); // { roleKey, item }
 
-  // listas render
-  const [responsabilities, setResponsabilities] = useState([]); // [{_id,type:"program"|"device",name,programId?,programAcronym?}]
-  const [coordinations, setCoordinations] = useState([]);       // [{_id,name,programId,programAcronym?}]
+  const [roleGroups, setRoleGroups] = useState({
+    responsible: [],
+    coordinator: [],
+    supervisor: [],
+  });
 
-  // índices
   const programsIdx = enumsData?.programsIndex || {};
   const dispositiveIdx = enumsData?.dispositiveIndex || {};
 
-  // helper: resolver siempre ACRÓNIMO
   const getProgAcr = useCallback(
     (programId, fallbackAcr, fallbackName) => {
       const meta = programsIdx[String(programId)] || {};
       return meta.acronym || fallbackAcr || fallbackName || meta.name || "—";
     },
-    [programsIdx]
+    []
   );
 
-  /* ---------------- carga inicial desde API ---------------- */
+  const normalizeRowsToGroups = useCallback((rows = []) => {
+    const seen = {
+      responsible: new Set(),
+      coordinator: new Set(),
+      supervisor: new Set(),
+    };
+
+    const next = {
+      responsible: [],
+      coordinator: [],
+      supervisor: [],
+    };
+
+    const pushIfMissing = (roleKey, item) => {
+      const key = `${item.scopeType}:${item._id}`;
+      if (seen[roleKey].has(key)) return;
+      seen[roleKey].add(key);
+      next[roleKey].push(item);
+    };
+
+    rows.forEach((r) => {
+      const commonProgram = {
+        programId: r.idProgram ? String(r.idProgram) : undefined,
+        programAcronym: getProgAcr(r.idProgram, r.programAcronym, r.programName),
+      };
+
+      if (r.isProgramResponsible && r.idProgram) {
+        pushIfMissing("responsible", {
+          _id: String(r.idProgram),
+          scopeType: "program",
+          name: r.programName || "Programa",
+          ...commonProgram,
+        });
+      }
+
+      if (r.isProgramCoordinator && r.idProgram) {
+        pushIfMissing("coordinator", {
+          _id: String(r.idProgram),
+          scopeType: "program",
+          name: r.programName || "Programa",
+          ...commonProgram,
+        });
+      }
+
+      if (r.isProgramSupervisor && r.idProgram) {
+        pushIfMissing("supervisor", {
+          _id: String(r.idProgram),
+          scopeType: "program",
+          name: r.programName || "Programa",
+          ...commonProgram,
+        });
+      }
+
+      if (r.isDeviceResponsible && r.dispositiveId) {
+        pushIfMissing("responsible", {
+          _id: String(r.dispositiveId),
+          scopeType: "dispositive",
+          name: r.dispositiveName || "Dispositivo",
+          ...commonProgram,
+        });
+      }
+
+      if (r.isDeviceCoordinator && r.dispositiveId) {
+        pushIfMissing("coordinator", {
+          _id: String(r.dispositiveId),
+          scopeType: "dispositive",
+          name: r.dispositiveName || "Dispositivo",
+          ...commonProgram,
+        });
+      }
+
+      if (r.isDeviceSupervisor && r.dispositiveId) {
+        pushIfMissing("supervisor", {
+          _id: String(r.dispositiveId),
+          scopeType: "dispositive",
+          name: r.dispositiveName || "Dispositivo",
+          ...commonProgram,
+        });
+      }
+    });
+
+    Object.keys(next).forEach((k) => {
+      next[k].sort((a, b) => {
+        if (a.scopeType === "program" && b.scopeType !== "program") return -1;
+        if (a.scopeType !== "program" && b.scopeType === "program") return 1;
+        return (a.name || "").localeCompare(b.name || "", "es");
+      });
+    });
+
+    return next;
+  }, [getProgAcr]);
+
   const refresh = useCallback(async () => {
-  if (!user?._id) {
-    setResponsabilities([]);
-    setCoordinations([]);
-    return;
-  }
-  const token = getToken();
+    if (!user?._id) {
+      setRoleGroups({
+        responsible: [],
+        coordinator: [],
+        supervisor: [],
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       charge?.(true);
 
-      const rows = await getDispositiveResponsable({ _id: user._id }, token);
+      const rows = await getUserScopedRoles({ userId: user._id }, token);
       if (rows?.error) throw new Error(rows?.message || "No se pudo cargar.");
 
-      // Deduplicadores
-      const progSet = new Set();
-      const devRespSet = new Set();
-      const devCoordSet = new Set();
-
-      const respList = [];
-      const coordList = [];
-
-      (Array.isArray(rows) ? rows : []).forEach((r) => {
-        // Responsable de PROGRAMA
-        if (r.isProgramResponsible && r.idProgram && !progSet.has(r.idProgram)) {
-          progSet.add(r.idProgram);
-          respList.push({
-            _id: String(r.idProgram),
-            type: "program",
-            // guardamos acrónimo para render
-            programAcronym: getProgAcr(r.idProgram, r.programAcronym, r.programName),
-            name: r.programName || "Programa", // solo como fallback si hiciera falta
-          });
-        }
-
-        // Responsable de DISPOSITIVO
-        if (r.isDeviceResponsible && r.dispositiveId && !devRespSet.has(r.dispositiveId)) {
-          devRespSet.add(r.dispositiveId);
-          respList.push({
-            _id: String(r.dispositiveId),
-            type: "device",
-            name: r.dispositiveName || "Dispositivo",
-            programId: r.idProgram ? String(r.idProgram) : undefined,
-            programAcronym: getProgAcr(r.idProgram, r.programAcronym, r.programName),
-          });
-        }
-
-        // Coordinador de DISPOSITIVO
-        if (r.isDeviceCoordinator && r.dispositiveId && !devCoordSet.has(r.dispositiveId)) {
-          devCoordSet.add(r.dispositiveId);
-          coordList.push({
-            _id: String(r.dispositiveId),
-            name: r.dispositiveName || "Dispositivo",
-            programId: r.idProgram ? String(r.idProgram) : undefined,
-            programAcronym: getProgAcr(r.idProgram, r.programAcronym, r.programName),
-          });
-        }
-      });
-
-      // Orden
-      respList.sort((a, b) => (a.type === "program" && b.type !== "program" ? -1 : 0) || (a.name || "").localeCompare(b.name || "", "es"));
-      coordList.sort((a, b) => (a.programAcronym || "").localeCompare(b.programAcronym || "", "es") || (a.name || "").localeCompare(b.name || "", "es"));
-
-      setResponsabilities(respList);
-      setCoordinations(coordList);
+      setRoleGroups(normalizeRowsToGroups(Array.isArray(rows) ? rows : []));
     } catch (e) {
-      modal?.("Error", e.message || "Error al cargar responsabilidades/coord.");
-      setResponsabilities([]);
-      setCoordinations([]);
+      modal?.("Error", e.message || "Error al cargar asignaciones.");
+      setRoleGroups({
+        responsible: [],
+        coordinator: [],
+        supervisor: [],
+      });
     } finally {
       charge?.(false);
       setLoading(false);
     }
-  }, [user?._id]);
+  }, [user?._id, normalizeRowsToGroups]);
 
-useEffect(() => {
-  if (user?._id) {
-    refresh();
-  } else {
-    setResponsabilities([]);
-    setCoordinations([]);
-  }
-}, [user?._id, refresh]);
+  useEffect(() => {
+    if (user?._id) refresh();
+    else {
+      setRoleGroups({
+        responsible: [],
+        coordinator: [],
+        supervisor: [],
+      });
+    }
+  }, [user?._id, refresh]);
 
-  /* ---------------- opciones “Añadir” usando ACRÓNIMO ---------------- */
   const programOptions = useMemo(() => {
-    // (Programa) <ACRÓNIMO>
     return Object.entries(programsIdx)
       .map(([id, p]) => ({
         value: `program:${id}`,
@@ -137,85 +207,51 @@ useEffect(() => {
   }, [programsIdx]);
 
   const deviceOptions = useMemo(() => {
-    // (Dispositivo) <nombre> [<ACRÓNIMO>]
     return Object.entries(dispositiveIdx)
       .map(([did, d]) => {
         const pid = d?.program ? String(d.program) : "";
         const pacr = programsIdx[pid]?.acronym || programsIdx[pid]?.name || "";
         return {
-          value: `device:${pid}:${did}`,
+          value: `dispositive:${did}`,
           label: `(Dispositivo) ${d?.name || did}${pacr ? ` [${pacr}]` : ""}`,
-          did,
-          pid,
-          pacr,
         };
       })
-      .sort((a, b) => a.pacr.localeCompare(b.pacr, "es") || a.label.localeCompare(b.label, "es"));
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
   }, [dispositiveIdx, programsIdx]);
 
-  const buildFields = (type) => {
-    if (type === "resp") {
-      return [
-        {
-          name: "selected",
-          label: "Responsabilidad",
-          type: "select",
-          required: true,
-          options: [...programOptions, ...deviceOptions],
-        },
-      ];
-    }
-    // coord -> solo dispositivos “programId:deviceId”
-    const coordDeviceOpts = deviceOptions.map((o) => ({
-      value: `${o.pid}:${o.did}`,
-      label: o.label,
-    }));
-    return [
-      {
-        name: "selected",
-        label: "Dispositivo",
-        type: "select",
-        required: true,
-        options: [...coordDeviceOpts],
-      },
-    ];
-  };
+  const buildFields = () => [
+    {
+      name: "selected",
+      label: "Asignación",
+      type: "select",
+      required: true,
+      options: [...programOptions, ...deviceOptions],
+    },
+  ];
 
-  /* ---------------- eliminar ---------------- */
-  const handleDelete = (type, id) => setConfirm({ type, id });
+  const handleDelete = (roleKey, item) => setConfirm({ roleKey, item });
   const onCancel = () => setConfirm(null);
 
   const onConfirm = async () => {
     if (!confirm) return;
-    const { type, id } = confirm;
+
+    const { roleKey, item } = confirm;
 
     try {
       charge?.(true);
 
-      if (type === "resp") {
-        const item = responsabilities.find((r) => r._id === id);
-        if (!item) return;
+      const result = await scopedRole(
+        {
+          scopeType: item.scopeType,
+          scopeId: item._id,
+          roleType: ROLE_CONFIG[roleKey].roleType,
+          action: "remove",
+          removeUserId: user._id,
+        },
+        token
+      );
 
-        if (item.type === "program") {
-          await responsibles(
-            { type: "program", action: "remove", programId: item._id, responsibleId: user._id },
-            token
-          );
-        } else {
-          if (!item.programId) throw new Error("No se pudo resolver el programa del dispositivo.");
-          await responsibles(
-            { type: "device", action: "remove", programId: item.programId, deviceId: item._id, responsibleId: user._id },
-            token
-          );
-        }
-      } else {
-        const dev = coordinations.find((d) => d._id === id);
-        if (!dev?.programId) throw new Error("No se pudo resolver el programa del dispositivo.");
-        await coordinators(
-          { action: "remove", programId: dev.programId, deviceId: id, coordinatorId: user._id },
-          token
-        );
-      }
+      if (result?.error) throw new Error(result.message || "No se pudo eliminar.");
 
       await refresh();
       modal?.("Eliminado", "Se ha eliminado correctamente.");
@@ -227,31 +263,27 @@ useEffect(() => {
     }
   };
 
-  /* ---------------- añadir ---------------- */
-  const handleSubmitAdd = async (type, form) => {
+  const handleSubmitAdd = async (roleKey, form) => {
     try {
       charge?.(true);
 
-      if (type === "resp") {
-        const parts = String(form.selected || "").split(":");
-        if (parts[0] === "program") {
-          const programId = parts[1];
-          if (!programId) throw new Error("Seleccione un programa válido.");
-          await responsibles({ type: "program", action: "add", programId, responsible: user._id }, token);
-        } else if (parts[0] === "device") {
-          const programId = parts[1];
-          const deviceId = parts[2];
-          if (!programId || !deviceId) throw new Error("Seleccione un dispositivo válido.");
-          await responsibles({ type: "device", action: "add", programId, deviceId, responsible: user._id }, token);
-        } else {
-          throw new Error("Seleccione un programa o dispositivo válido.");
-        }
-      } else {
-        // coord -> "programId:deviceId"
-        const [programId, deviceId] = String(form.selected || "").split(":");
-        if (!programId || !deviceId) throw new Error("Seleccione un dispositivo válido.");
-        await coordinators({ action: "add", programId, deviceId, coordinators: user._id }, token);
+      const [scopeType, scopeId] = String(form.selected || "").split(":");
+      if (!scopeType || !scopeId) {
+        throw new Error("Seleccione un programa o dispositivo válido.");
       }
+
+      const result = await scopedRole(
+        {
+          scopeType,
+          scopeId,
+          roleType: ROLE_CONFIG[roleKey].roleType,
+          action: "add",
+          users: [user._id],
+        },
+        token
+      );
+
+      if (result?.error) throw new Error(result.message || "No se pudo añadir.");
 
       await refresh();
       modal?.("Añadido", "Se ha añadido correctamente.");
@@ -263,101 +295,66 @@ useEffect(() => {
     }
   };
 
-  /* ---------------- render ---------------- */
+  const renderItem = (roleKey, item) => (
+    <li key={`${roleKey}-${item.scopeType}-${item._id}`} className={styles.dispositivos}>
+      <p>
+        <span className={styles.tag}>
+          {item.scopeType === "program" ? "Programa" : "Dispositivo"}
+        </span>
+        {item.scopeType === "program" ? (
+          getProgAcr(item._id, item.programAcronym, item.name)
+        ) : (
+          <>
+            {item.name}{" "}
+            {item.programId && (
+              <small>
+                (Pertenece a: {getProgAcr(item.programId, item.programAcronym)})
+              </small>
+            )}
+          </>
+        )}
+      </p>
+
+      {canEdit && (
+        <span>
+          <FaTrashAlt onClick={() => handleDelete(roleKey, item)} />
+        </span>
+      )}
+    </li>
+  );
+
   return (
     <div className={styles.rcGrid}>
-      {/* RESPONSABILIDAD */}
-      <div className={styles.contenedor}>
-        <h2>
-          RESPONSABILIDAD
-          {canEdit && <FaSquarePlus onClick={() => setOpenModal("resp")} />}
-        </h2>
+      {Object.entries(ROLE_CONFIG).map(([roleKey, conf]) => (
+        <div className={styles.contenedor} key={roleKey}>
+          <h2>
+            {conf.title}
+            {canEdit && <FaSquarePlus onClick={() => setOpenModal(roleKey)} />}
+          </h2>
 
-        <div className={styles.contenedorBotones}>
-          {loading ? (
-            <p>Cargando…</p>
-          ) : responsabilities.length > 0 ? (
-            <ul>
-              {responsabilities.map((item) => (
-                <li key={`resp-${item.type}-${item._id}`} className={styles.dispositivos}>
-                  <p>
-                    <span className={styles.tag}>
-                      {item.type === "program" ? "Programa" : "Dispositivo"}
-                    </span>{" "}
-                    {item.type === "program"
-                      ? // Mostrar SIEMPRE el acrónimo del programa
-                        getProgAcr(item._id, item.programAcronym, item.name)
-                      : // Dispositivo + (Pertenece a: ACRÓNIMO)
-                        <>
-                          {item.name}{" "}
-                          {item.programId && (
-                            <small>
-                              (Pertenece a: {getProgAcr(item.programId, item.programAcronym)})
-                            </small>
-                          )}
-                        </>}
-                  </p>
-                  {canEdit && (
-                    <span>
-                      <FaTrashAlt onClick={() => handleDelete("resp", item._id)} />
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No es responsable de ningún programa o dispositivo</p>
-          )}
+          <div className={styles.contenedorBotones}>
+            {loading ? (
+              <p>Cargando…</p>
+            ) : roleGroups[roleKey]?.length > 0 ? (
+              <ul>{roleGroups[roleKey].map((item) => renderItem(roleKey, item))}</ul>
+            ) : (
+              <p>{conf.empty}</p>
+            )}
+          </div>
         </div>
-      </div>
+      ))}
 
-      {/* COORDINACIÓN */}
-      <div className={styles.contenedor}>
-        <h2>
-          COORDINACIÓN
-          {canEdit && <FaSquarePlus onClick={() => setOpenModal("coord")} />}
-        </h2>
-
-        <div className={styles.contenedorBotones}>
-          {loading ? (
-            <p>Cargando…</p>
-          ) : coordinations.length > 0 ? (
-            <ul>
-              {coordinations.map((device) => (
-                <li key={`coord-${device._id}`} className={styles.dispositivos}>
-                  <p>
-                    <span className={styles.tag}>Dispositivo</span> {device.name}{" "}
-                    {device.programId && (
-                      <small>(Programa: {getProgAcr(device.programId, device.programAcronym)})</small>
-                    )}
-                  </p>
-                  {canEdit && (
-                    <span>
-                      <FaTrashAlt onClick={() => handleDelete("coord", device._id)} />
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No es coordinador de ningún dispositivo</p>
-          )}
-        </div>
-      </div>
-
-      {/* Modal añadir */}
       {openModal && (
         <ModalForm
-          title={openModal === "resp" ? "Añadir Responsabilidad" : "Añadir Coordinación"}
-          message={openModal === "resp" ? "Seleccione un programa o dispositivo" : "Seleccione un dispositivo"}
-          fields={buildFields(openModal)}
+          title={ROLE_CONFIG[openModal].addTitle}
+          message={ROLE_CONFIG[openModal].addMessage}
+          fields={buildFields()}
           onSubmit={(form) => handleSubmitAdd(openModal, form)}
           onClose={() => setOpenModal(null)}
           modal={modal}
         />
       )}
 
-      {/* Modal eliminar */}
       {confirm && (
         <ModalConfirmation
           title="Eliminar asignación"

@@ -1,12 +1,18 @@
 import React, { useMemo, useState } from "react";
 import styles from "../styles/infoPrgramOrDispositive.module.css";
 import { getToken } from "../../lib/serviceToken";
-import { coordinators, responsibles } from "../../lib/data";
+import { scopedRole } from "../../lib/data";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import { FaTrash } from "react-icons/fa6";
 import { IoArrowUndo, IoRadioButtonOn } from "react-icons/io5";
 import { BsPersonFillAdd } from "react-icons/bs";
+
+const ROLE_SECTIONS = [
+  { key: "responsible", label: "Responsables", field: "responsible" },
+  { key: "coordinators", label: "Coordinadores", field: "coordinators" },
+  { key: "supervisors", label: "Supervisores", field: "supervisors" },
+];
 
 const InfoProgramOrDispositive = ({
   modal,
@@ -19,22 +25,26 @@ const InfoProgramOrDispositive = ({
   onManageCronology,
   changeActive,
   deviceWorkers,
-  onQuickEditContact 
+  onQuickEditContact,
 }) => {
   const token = getToken();
+
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addType, setAddType] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState({ show: false, type: null, personId: null });
+  const [addType, setAddType] = useState(null); // responsible | coordinators | supervisors
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    type: null,
+    personId: null,
+  });
 
-
-  //cronologia
-  // === Cronología ===
   const [showCronologyModal, setShowCronologyModal] = useState(false);
   const [editCronology, setEditCronology] = useState(null);
-  const [confirmCronology, setConfirmCronology] = useState({ show: false, cronology: null });
+  const [confirmCronology, setConfirmCronology] = useState({
+    show: false,
+    cronology: null,
+  });
 
-
-
+  const tokenScopeType = info?.type === "program" ? "program" : "dispositive";
 
   const openAddModal = (type) => {
     setAddType(type);
@@ -49,24 +59,29 @@ const InfoProgramOrDispositive = ({
       const personId = formData.person;
       if (!personId) throw new Error("Debe seleccionar una persona.");
 
-      if (addType === "coordinator") {
-        await coordinators(
-          { action: "add", deviceId: info._id, coordinators: [personId] },
-          token
-        );
-      } else {
-        await responsibles(
-          {
-            type: info.type === "program" ? "program" : "device",
-            action: "add",
-            [info.type === "program" ? "programId" : "deviceId"]: info._id,
-            responsible: [personId],
-          },
-          token
-        );
+      const res = await scopedRole(
+        {
+          scopeType: tokenScopeType,
+          scopeId: info._id,
+          roleType: addType,
+          action: "add",
+          users: [personId],
+        },
+        token
+      );
+
+      if (res?.error) {
+        throw new Error(res.message || "No se pudo añadir la persona.");
       }
 
-      modal("Actualizado", `Se ha añadido correctamente el ${addType === "responsible" ? "responsable" : "coordinador"}.`);
+      const roleLabel =
+        addType === "responsible"
+          ? "responsable"
+          : addType === "coordinators"
+            ? "coordinador"
+            : "supervisor";
+
+      modal("Actualizado", `Se ha añadido correctamente el ${roleLabel}.`);
       setShowAddModal(false);
       onSelect(info);
     } catch (e) {
@@ -80,7 +95,12 @@ const InfoProgramOrDispositive = ({
   const fieldsAddPerson = [
     {
       name: "person",
-      label: `Seleccionar ${addType === "responsible" ? "responsable" : "coordinador"}`,
+      label:
+        addType === "responsible"
+          ? "Seleccionar responsable"
+          : addType === "coordinators"
+            ? "Seleccionar coordinador"
+            : "Seleccionar supervisor",
       type: "async-search-select",
       placeholder: "Escriba al menos 3 letras...",
       required: true,
@@ -91,17 +111,13 @@ const InfoProgramOrDispositive = ({
   const dispositivos = useMemo(() => {
     if (!info || info.type !== "program") return [];
 
-    // `filter` ya devuelve un array nuevo, podemos ordenar directamente
     return Object.values(enumsData?.dispositiveIndex || {})
       .filter((d) => d.program === info._id)
       .sort((a, b) => {
         const aActive = a.active ? 1 : 0;
         const bActive = b.active ? 1 : 0;
 
-        // 1) activos primero
         if (aActive !== bActive) return bActive - aActive;
-
-        // 2) dentro de cada grupo, orden alfabético por nombre (opcional)
         return (a.name || "").localeCompare(b.name || "");
       });
   }, [info, enumsData]);
@@ -115,36 +131,46 @@ const InfoProgramOrDispositive = ({
   }
 
   const isProgram = info?.type === "program";
-  const entityId = isProgram
-  ? (typeof info?.entity === "string" ? info.entity : info?.entity?._id)
-  : (typeof info?.program?.entity === "string"
-      ? info.program.entity
-      : info?.program?.entity?._id);
 
-const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
+  const entityId = isProgram
+    ? typeof info?.entity === "string"
+      ? info.entity
+      : info?.entity?._id
+    : typeof info?.program?.entity === "string"
+      ? info.program.entity
+      : info?.program?.entity?._id;
+
+  const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
 
   const handleRemovePerson = async () => {
-    if (!info?._id || !confirmDelete.personId) return;
-    const { type, personId } = confirmDelete;
-    const isCoordinator = type === "coordinator";
+    if (!info?._id || !confirmDelete.personId || !confirmDelete.type) return;
 
     try {
       charge(true);
-      if (isCoordinator) {
-        await coordinators({ action: "remove", deviceId: info._id, coordinatorId: personId }, token);
-      } else {
-        await responsibles(
-          {
-            type: info.type === "program" ? "program" : "device",
-            action: "remove",
-            [info.type === "program" ? "programId" : "deviceId"]: info._id,
-            responsibleId: personId,
-          },
-          token
-        );
+
+      const res = await scopedRole(
+        {
+          scopeType: tokenScopeType,
+          scopeId: info._id,
+          roleType: confirmDelete.type,
+          action: "remove",
+          removeUserId: confirmDelete.personId,
+        },
+        token
+      );
+
+      if (res?.error) {
+        throw new Error(res.message || "No se pudo eliminar la persona.");
       }
 
-      modal("Actualizado", `${isCoordinator ? "Coordinador" : "Responsable"} eliminado correctamente.`);
+      const roleLabel =
+        confirmDelete.type === "responsible"
+          ? "Responsable"
+          : confirmDelete.type === "coordinators"
+            ? "Coordinador"
+            : "Supervisor";
+
+      modal("Actualizado", `${roleLabel} eliminado correctamente.`);
       setConfirmDelete({ show: false, type: null, personId: null });
       onSelect(info);
     } catch (e) {
@@ -157,14 +183,18 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
 
   return (
     <div className={styles.contenedor}>
-      {!!info && isProgram &&
+      {!!info && isProgram && (
         <div className={`${styles.fieldContainer} ${styles.fieldContainerInfo}`}>
           <h3></h3>
-          <button onClick={() => changeActive(info)} className={(info?.active) ? styles.activeDis : styles.inactiveDis}>{(info?.active) ? 'Desactivar' : 'Activar'}</button>
+          <button
+            onClick={() => changeActive(info)}
+            className={info?.active ? styles.activeDis : styles.inactiveDis}
+          >
+            {info?.active ? "Desactivar" : "Activar"}
+          </button>
         </div>
+      )}
 
-      }
-      {/* ✅ Botón para ir al programa si el info actual es un dispositivo */}
       {!isProgram && info?.program && (
         <div className={`${styles.fieldContainer} ${styles.fieldContainerInfo}`}>
           <button
@@ -173,26 +203,28 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
           >
             <IoArrowUndo />
             Info del Programa
-
           </button>
-          <button onClick={() => changeActive(info)} className={(info?.active) ? styles.activeDis : styles.inactiveDis}>{(info?.active) ? 'Desactivar' : 'Activar'}</button>
+          <button
+            onClick={() => changeActive(info)}
+            className={info?.active ? styles.activeDis : styles.inactiveDis}
+          >
+            {info?.active ? "Desactivar" : "Activar"}
+          </button>
         </div>
       )}
-      {/* Nombre */}
+
       <div className={styles.fieldContainer}>
         <label className={styles.fieldLabel}>Nombre</label>
         <p className={styles.fieldTextStatic}>{info.name || "—"}</p>
       </div>
-      {
-        isProgram && 
-          <div className={styles.fieldContainer}>
+
+      {isProgram && (
+        <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Entidad</label>
           <p className={styles.fieldTextStatic}>{entityName}</p>
         </div>
-      }
+      )}
 
-
-      {/* Acrónimo o Dirección */}
       {isProgram ? (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Acrónimo</label>
@@ -230,7 +262,6 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
         </div>
       )}
 
-      {/* Área o Provincia */}
       {isProgram ? (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Área</label>
@@ -240,7 +271,9 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Provincia</label>
           <p className={styles.fieldTextStatic}>
-            {enumsData?.provincesIndex?.[info.province]?.name || info.province || "—"}
+            {enumsData?.provincesIndex?.[info.province]?.name ||
+              info.province ||
+              "—"}
           </p>
         </div>
       )}
@@ -250,7 +283,6 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
         <p className={styles.fieldTextStatic}>{info.email || "—"}</p>
       </div>
 
-      {/* === CRONOLOGÍA === */}
       <div className={styles.fieldContainer}>
         <label className={styles.fieldLabel}>
           Cronología
@@ -270,8 +302,10 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
             {info.cronology.map((c) => (
               <li key={c._id} className={styles.listItem}>
                 <div>
-                  <strong>Inicio:</strong> {c.open ? new Date(c.open).toLocaleDateString() : "—"}
-                  <strong style={{ marginLeft: "1rem" }}>Fin:</strong> {c.closed ? new Date(c.closed).toLocaleDateString() : "—"}
+                  <strong>Inicio:</strong>{" "}
+                  {c.open ? new Date(c.open).toLocaleDateString() : "—"}
+                  <strong style={{ marginLeft: "1rem" }}>Fin:</strong>{" "}
+                  {c.closed ? new Date(c.closed).toLocaleDateString() : "—"}
                 </div>
                 <div className={styles.listItemActions}>
                   <button
@@ -285,7 +319,9 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
                   </button>
                   <FaTrash
                     className={styles.trash}
-                    onClick={() => setConfirmCronology({ show: true, cronology: c })}
+                    onClick={() =>
+                      setConfirmCronology({ show: true, cronology: c })
+                    }
                   />
                 </div>
               </li>
@@ -296,84 +332,50 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
         )}
       </div>
 
-
-      {/* Descripción / Objetivos / Perfil */}
       {isProgram && (
         <>
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Descripción</label>
-            <div className={styles.textBlock}>{info?.about?.description || "Sin descripción"}</div>
+            <div className={styles.textBlock}>
+              {info?.about?.description || "Sin descripción"}
+            </div>
           </div>
 
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Objetivos</label>
-            <div className={styles.textBlock}>{info?.about?.objectives || "Sin objetivos"}</div>
+            <div className={styles.textBlock}>
+              {info?.about?.objectives || "Sin objetivos"}
+            </div>
           </div>
 
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Perfil</label>
-            <div className={styles.textBlock}>{info?.about?.profile || "Sin perfil"}</div>
+            <div className={styles.textBlock}>
+              {info?.about?.profile || "Sin perfil"}
+            </div>
           </div>
         </>
       )}
 
-      {/* Responsables */}
-      <div className={styles.fieldContainer}>
-        <label className={styles.fieldLabel}>
-          Responsables
-          <BsPersonFillAdd onClick={() => openAddModal("responsible")} />
-
-        </label>
-
-        {info.responsible?.length > 0 ? (
-          info.responsible.map((r, i) => (
-            <div className={styles.boxPerson} key={r._id || i}>
-              <p
-                className={styles.fieldText}
-                onClick={() =>
-                  modal(
-                    `${r.firstName} ${r.lastName}`,
-                    [` Email: ${r.email || "—"}`, `Teléfono laboral: ${r.phoneJob?.number || "—"}`]
-                  )
-                }
-              >
-                {r.firstName} {r.lastName}
-              </p>
-              <FaTrash
-                className={styles.trash}
-                onClick={() =>
-                  setConfirmDelete({
-                    show: true,
-                    type: "responsible",
-                    personId: r._id,
-                  })
-                }
-              />
-            </div>
-          ))
-        ) : (
-          <p className={styles.fieldTextEmpty}>Sin responsables</p>
-        )}
-      </div>
-
-      {/* Coordinadores */}
-      {!isProgram && (
-        <div className={styles.fieldContainer}>
+      {ROLE_SECTIONS.map((section) => (
+        <div className={styles.fieldContainer} key={section.key}>
           <label className={styles.fieldLabel}>
-            Coordinadores
-            <BsPersonFillAdd onClick={() => openAddModal("coordinator")} />
-
+            {section.label}
+            <BsPersonFillAdd onClick={() => openAddModal(section.key)} />
           </label>
-
-          {info.coordinators?.length > 0 ? (
-            info.coordinators.map((r, i) => (
+          
+          {info?.[section.field]?.length > 0 ? (
+            info[section.field].map((r, i) => (
               <div className={styles.boxPerson} key={r._id || i}>
                 <p
                   className={styles.fieldText}
                   onClick={() =>
                     modal(
                       `${r.firstName} ${r.lastName}`,
-                      [` Email: ${r.email || "—"}`, `Teléfono laboral: ${r.phoneJob?.number || "—"}`]
+                      [
+                        ` Email: ${r.email || "—"}`,
+                        `Teléfono laboral: ${r.phoneJob?.number || "—"}`,
+                      ]
                     )
                   }
                 >
@@ -384,7 +386,7 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
                   onClick={() =>
                     setConfirmDelete({
                       show: true,
-                      type: "coordinator",
+                      type: section.key,
                       personId: r._id,
                     })
                   }
@@ -392,55 +394,62 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
               </div>
             ))
           ) : (
-            <p className={styles.fieldTextEmpty}>Sin coordinadores</p>
+            <p className={styles.fieldTextEmpty}>Sin {section.label.toLowerCase()}</p>
           )}
         </div>
-      )}
+      ))}
 
-      {
-        !isProgram && (deviceWorkers && deviceWorkers.length > 0)
-          ? <div className={styles.fieldContainer}>
-            <label className={styles.fieldLabel}>Lista de Trabajadores</label>
-            {deviceWorkers.map((p) => (
-              <div className={styles.boxPerson} key={p._id + p.dni}>
-                <p
-                  className={styles.fieldText}
-                  onClick={() =>
-                    modal(
-                      `${p.firstName} ${p.lastName}`,
-                      [` Email: ${p.email || "—"}`, `Teléfono laboral: ${p.phoneJob?.number || "—"}`, `Teléfono personal: ${p.phone || "—"}`]
-                    )
-                  }
-                >
-                  {p.firstName} {p.lastName}
-                </p>
-              </div>
-            ))}
-
-
-          </div>
-          : (!isProgram) && <div className={styles.fieldContainer}>
+      {!isProgram && (deviceWorkers && deviceWorkers.length > 0) ? (
+        <div className={styles.fieldContainer}>
+          <label className={styles.fieldLabel}>Lista de Trabajadores</label>
+          {deviceWorkers.map((p) => (
+            <div className={styles.boxPerson} key={p._id + p.dni}>
+              <p
+                className={styles.fieldText}
+                onClick={() =>
+                  modal(`${p.firstName} ${p.lastName}`, [
+                    ` Email: ${p.email || "—"}`,
+                    `Teléfono laboral: ${p.phoneJob?.number || "—"}`,
+                    `Teléfono personal: ${p.phone || "—"}`,
+                  ])
+                }
+              >
+                {p.firstName} {p.lastName}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        !isProgram && (
+          <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Lista de Trabajadores</label>
             <div className={styles.boxPerson}>
               <p>Este dispositivo no tiene trabajadores</p>
             </div>
           </div>
-      }
+        )
+      )}
 
-      {/* Dispositivos asociados */}
       {isProgram && (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Dispositivos asociados</label>
           {dispositivos.length > 0 ? (
             <ul className={styles.list}>
               {dispositivos.map((d) => (
-                <li key={d._id} className={styles.listItem} onClick={() => onSelect(d)}>
-
+                <li
+                  key={d._id}
+                  className={styles.listItem}
+                  onClick={() => onSelect({ ...d, type: "dispositive" })}
+                >
                   <strong>{d.name}</strong>
                   <span className={styles.iconSmall}>
-                    <IoRadioButtonOn className={(d.active) ? styles.activeDis : styles.inactiveDis} />
+                    <IoRadioButtonOn
+                      className={d.active ? styles.activeDis : styles.inactiveDis}
+                    />
                   </span>
-                  {d.address && <span className={styles.subtext}>{d.address}</span>}
+                  {d.address && (
+                    <span className={styles.subtext}>{d.address}</span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -450,31 +459,53 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
         </div>
       )}
 
-      {/* === Modal añadir persona === */}
       {showAddModal && (
         <ModalForm
-          title={`Añadir ${addType === "responsible" ? "Responsable" : "Coordinador"}`}
-          message={`Busque y seleccione el ${addType === "responsible" ? "responsable" : "coordinador"} que desea añadir.`}
+          title={`Añadir ${
+            addType === "responsible"
+              ? "Responsable"
+              : addType === "coordinators"
+                ? "Coordinador"
+                : "Supervisor"
+          }`}
+          message={`Busque y seleccione el ${
+            addType === "responsible"
+              ? "responsable"
+              : addType === "coordinators"
+                ? "coordinador"
+                : "supervisor"
+          } que desea añadir.`}
           fields={fieldsAddPerson}
           onSubmit={handleAddPerson}
           onClose={() => setShowAddModal(false)}
         />
       )}
 
-      {/* === Modal confirmar eliminación === */}
       {confirmDelete.show && (
         <ModalConfirmation
-          title={`Eliminar ${confirmDelete.type === "coordinator" ? "Coordinador" : "Responsable"}`}
-          message={`¿Seguro que deseas eliminar este ${confirmDelete.type === "coordinator" ? "coordinador" : "responsable"}?`}
+          title={`Eliminar ${
+            confirmDelete.type === "responsible"
+              ? "Responsable"
+              : confirmDelete.type === "coordinators"
+                ? "Coordinador"
+                : "Supervisor"
+          }`}
+          message={`¿Seguro que deseas eliminar este ${
+            confirmDelete.type === "responsible"
+              ? "responsable"
+              : confirmDelete.type === "coordinators"
+                ? "coordinador"
+                : "supervisor"
+          }?`}
           confirmText="Eliminar"
           cancelText="Cancelar"
           onConfirm={handleRemovePerson}
-          onCancel={() => setConfirmDelete({ show: false, type: null, personId: null })}
+          onCancel={() =>
+            setConfirmDelete({ show: false, type: null, personId: null })
+          }
         />
       )}
 
-      {/* === Modal añadir/editar cronología === */}
-      {/* === Modal añadir/editar cronología === */}
       {showCronologyModal && (
         <ModalForm
           title={`${editCronology ? "Editar" : "Añadir"} Cronología`}
@@ -499,14 +530,17 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
           ]}
           onSubmit={(formData) => {
             const type = editCronology ? "edit" : "add";
-            onManageCronology(info, { ...formData, _id: editCronology?._id }, type);
+            onManageCronology(
+              info,
+              { ...formData, _id: editCronology?._id },
+              type
+            );
             setShowCronologyModal(false);
           }}
           onClose={() => setShowCronologyModal(false)}
         />
       )}
 
-      {/* === Modal eliminar cronología === */}
       {confirmCronology.show && (
         <ModalConfirmation
           title="Eliminar registro de cronología"
@@ -514,14 +548,16 @@ const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
           confirmText="Eliminar"
           cancelText="Cancelar"
           onConfirm={() => {
-            onManageCronology(info, { _id: confirmCronology.cronology._id }, "delete");
+            onManageCronology(
+              info,
+              { _id: confirmCronology.cronology._id },
+              "delete"
+            );
             setConfirmCronology({ show: false, cronology: null });
           }}
           onCancel={() => setConfirmCronology({ show: false, cronology: null })}
         />
       )}
-
-
     </div>
   );
 };

@@ -2,66 +2,54 @@ import React, { useState, useEffect, useMemo, useCallback, startTransition } fro
 import ExcelJS from 'exceljs/dist/exceljs.min.js';
 import { saveAs } from 'file-saver';
 import styles from '../styles/ManagingLists.module.css';
-import { listsResponsiblesAndCoordinators } from '../../lib/data';
+import { listScopedRoles } from '../../lib/data';
 import { getToken } from '../../lib/serviceToken';
 
-// Opciones del selector de filtro
 // -------------------- constants --------------------
 export const LIST_OPTIONS = [
   { value: 'responsibles', label: 'Responsables' },
   { value: 'coordinators', label: 'Coordinadores' },
-  { value: 'resAndCorr', label: 'Responsables y Coordinadores' }
+  { value: 'supervisors', label: 'Supervisores' },
+  { value: 'allRoles', label: 'Todos los roles' }
 ];
 
-
-/**
- * Componente principal para gestionar y exportar listas.
- * Entorno Vite + React.
- */
 export default function ManagingLists({ enumsData, modal, charge }) {
-  const [loading, setLoading] = useState(false);   // nuevo
-  // Estado: filtro seleccionado
-  const [filter, setFilter] = useState('resAndCorr');
-  // Estado: filas de datos
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState('allRoles');
   const [rows, setRows] = useState([]);
   const [searchPD, setSearchPD] = useState('');
   const [searchNom, setSearchNom] = useState('');
-
-  const [badPD, setBadPD] = useState(false);   // flag de regex mal
+  const [badPD, setBadPD] = useState(false);
   const [badNom, setBadNom] = useState(false);
-  // Convierte wildcard sencillo a RegExp:  * → .*,  ? → .
-  // ——— util para hacer la búsqueda “sin tildes” ———
-  const stripAccents = s =>
-    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');   // quita diacríticos
 
-  // ——— comodines  →  texto-patrón de RegExp ———
+  const stripAccents = s =>
+    String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
   const wildcardToRegex = str =>
-    stripAccents(str.trim())               // ① borra acentos (y espacios extremos)
-      .replace(/[.+^${}()|[\]\\]/g, '\\$&') // ② escapa metacaracteres
-      .replace(/\*/g, '.*')                // ③ *  →  .*
-      .replace(/\?/g, '.');                // ④ ?  →  .
+    stripAccents(str.trim())
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*/g, '.*')
+      .replace(/\?/g, '.');
 
   const buildRegex = (pattern, setBadFlag) => {
-    if (!pattern) { setBadFlag(false); return null; }
+    if (!pattern) {
+      setBadFlag(false);
+      return null;
+    }
     try {
-      return new RegExp(wildcardToRegex(pattern), 'i');   // flag i = mayúsc./minúsc.
+      return new RegExp(wildcardToRegex(pattern), 'i');
     } catch {
       setBadFlag(true);
       return null;
     }
   };
-  /**
-   * Nombre completo de una persona.
-   */
+
   const fullName = r => `${r.firstName ?? ''} ${r.lastName ?? ''}`.trim();
 
-  /**
-   * Convierte ID o nombre de provincia en texto legible.
-   * Usa enumsData solo como reserva.
-   */
   const provinceName = val => {
     if (!val) return '';
     if (typeof val === 'string') return val.trim();
+
     if (enumsData?.provinces) {
       for (const p of enumsData.provinces) {
         if (p._id === val) return p.name;
@@ -69,117 +57,137 @@ export default function ManagingLists({ enumsData, modal, charge }) {
         if (sub) return `${p.name} – ${sub.name}`;
       }
     }
+
     return '';
   };
 
-  /**
-   * Carga datos desde la API según el filtro.
-   * startTransition para no bloquear la UI.
-   */
+  const getRoleLabel = row => {
+    const role = row.roleType || row.role || '';
+    const scope = row.scopeType || '';
+
+    if (role === 'responsible') {
+      return scope === 'program' ? 'Responsable programa' : 'Responsable dispositivo';
+    }
+    if (role === 'coordinator') {
+      return scope === 'program' ? 'Coordinador programa' : 'Coordinador';
+    }
+    if (role === 'supervisor') {
+      return scope === 'program' ? 'Supervisor programa' : 'Supervisor dispositivo';
+    }
+    return role || '';
+  };
+
+  const getRoleClass = row => {
+    const role = row.roleType || row.role || '';
+    if (role === 'responsible') return styles.roleR;
+    if (role === 'coordinator') return styles.roleC;
+    if (role === 'supervisor') return styles.roleS || styles.roleProgram || styles.roleC;
+    return '';
+  };
+
   const loadData = useCallback(async currentFilter => {
-    setLoading(true);    // deshabilita select y botón
-    charge(true);        // <── tu spinner global
+    setLoading(true);
+    charge(true);
 
     try {
       const token = getToken();
-      const data = await listsResponsiblesAndCoordinators(
-        token,
-        { [currentFilter]: true }
-      );
-      
+      const data = await listScopedRoles({ [currentFilter]: true }, token);
       setRows(Array.isArray(data) ? data : []);
     } catch (err) {
       modal('Error', err.message || 'No se pudo obtener la información.');
       setRows([]);
     } finally {
-      setLoading(false); // vuelve a habilitar
-      charge(false);     // <── oculta tu spinner
+      setLoading(false);
+      charge(false);
     }
   }, [charge, modal]);
 
-
-  // Carga inicial al montar
   useEffect(() => {
     loadData(filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Recarga cuando cambia filtro
   useEffect(() => {
     loadData(filter);
-  }, [filter]);
+  }, [filter, loadData]);
 
-  /**
-   * Agrupa y ordena las filas por programa.
-   */
   const grouped = useMemo(() => {
-    // compila una sola vez por render
     const rePD = buildRegex(searchPD, setBadPD);
     const reNom = buildRegex(searchNom, setBadNom);
 
     const filtered = rows.filter(r => {
-      // ───── normaliza ambos “haystack” ─────
-      const hayPD = stripAccents(`${r.program} ${r.device ?? ''}`);
+      const hayPD = stripAccents(`${r.program ?? ''} ${r.device ?? ''}`);
       const hayNom = stripAccents(fullName(r));
 
       const okPD = !rePD || rePD.test(hayPD);
       const okNom = !reNom || reNom.test(hayNom);
       return okPD && okNom;
     });
+
     return filtered.reduce((acc, r) => {
-      let grp = acc.find(x => x.program === r.program);
+      const programKey = r.program || 'Sin programa';
+      let grp = acc.find(x => x.program === programKey);
+
       if (!grp) {
-        grp = { program: r.program, programResponsibles: [], deviceRows: [] };
+        grp = {
+          program: programKey,
+          programRows: [],
+          deviceRows: [],
+        };
         acc.push(grp);
       }
-      if (r.role === 'responsible-program') grp.programResponsibles.push(r);
+
+      if (r.scopeType === 'program') grp.programRows.push(r);
       else grp.deviceRows.push(r);
+
       return acc;
     }, []);
   }, [rows, searchPD, searchNom]);
 
-  /**
-   * Exporta todas las filas en un único XLS.
-   */
   const exportFlatXLS = () => {
     if (!rows.length) {
       modal('Aviso', 'No hay datos para exportar.');
       return;
     }
+
     startTransition(async () => {
       charge(true);
       try {
         const wb = new ExcelJS.Workbook();
         const ws = wb.addWorksheet('Listado');
+
         ws.columns = [
           { header: 'Programa', key: 'program', width: 30 },
           { header: 'Dispositivo', key: 'device', width: 30 },
           { header: 'Provincia', key: 'province', width: 25 },
-          { header: 'Rol', key: 'role', width: 22 },
+          { header: 'Ámbito', key: 'scopeType', width: 18 },
+          { header: 'Rol', key: 'role', width: 24 },
           { header: 'Nombre', key: 'fullName', width: 30 },
           { header: 'Email', key: 'email', width: 30 },
           { header: 'Teléfono Laboral', key: 'phoneJobNumber', width: 22 },
           { header: 'Teléfono Extensión', key: 'phoneJobExtension', width: 22 },
         ];
+
         rows.forEach(r =>
           ws.addRow({
-            program: r.program,
+            program: r.program || '',
             device: r.device || '',
             province: provinceName(r.province),
-            role: r.role,
+            scopeType: r.scopeType === 'program' ? 'Programa' : 'Dispositivo',
+            role: getRoleLabel(r),
             fullName: fullName(r),
-            email: r.email,
+            email: r.email || '',
             phoneJobNumber: r.phoneJob?.number || '',
             phoneJobExtension: r.phoneJob?.extension || '',
           })
         );
+
         const buffer = await wb.xlsx.writeBuffer();
         saveAs(
           new Blob([buffer], {
-            type:
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           }),
-          'listado_responsables_coordinadores.xlsx'
+          'listado_roles_programas_dispositivos.xlsx'
         );
       } catch (err) {
         modal('Error', err.message || 'No se pudo generar el XLS.');
@@ -191,10 +199,11 @@ export default function ManagingLists({ enumsData, modal, charge }) {
 
   const noDisponible = 'No Disponible';
   const reAnywhere = /@engloba\.org\.es/i;
+
   return (
     <div className={styles.listContainer}>
       <div className={styles.content}>
-        <h3>Listado de Responsables / Coordinadores</h3>
+        <h3>Listado de roles</h3>
 
         <h4>Filtros:</h4>
         <div className={styles.cajaFiltros}>
@@ -202,7 +211,7 @@ export default function ManagingLists({ enumsData, modal, charge }) {
             className={styles.selector}
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            disabled={loading}           // ← deshabilita durante fetch
+            disabled={loading}
           >
             {LIST_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -213,111 +222,107 @@ export default function ManagingLists({ enumsData, modal, charge }) {
             type="text"
             placeholder="Nombre del Programa o Dispositivo"
             value={searchPD}
-            onChange={e => { setSearchPD(e.target.value); setBadPD(false); }}
+            onChange={e => {
+              setSearchPD(e.target.value);
+              setBadPD(false);
+            }}
             className={`${styles.inputSearch} ${badPD ? styles.bad : ''}`}
           />
 
           <input
             type="text"
-            placeholder="Nombre del responsable o coordinador"
+            placeholder="Nombre de la persona"
             value={searchNom}
-            onChange={e => { setSearchNom(e.target.value); setBadNom(false); }}
+            onChange={e => {
+              setSearchNom(e.target.value);
+              setBadNom(false);
+            }}
             className={`${styles.inputSearch} ${badNom ? styles.bad : ''}`}
           />
         </div>
-
 
         <div className={styles.sectionButtonExport}>
           <button
             className={styles.btnExport}
             onClick={exportFlatXLS}
-            disabled={loading || !rows.length} // no exportar mientras carga
+            disabled={loading || !rows.length}
           >
             Exportar XLS
           </button>
         </div>
 
-        {
-          grouped.length ?
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
+        {grouped.length ? (
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Programa / Dispositivo</th>
+                  <th>Provincia</th>
+                  <th>Ámbito</th>
+                  <th>Rol</th>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Teléfono Laboral</th>
+                  <th>Teléfono Extensión</th>
+                </tr>
+              </thead>
+              <tbody>
+                {grouped.map((g, i) => (
+                  <React.Fragment key={`${i}-${g.program}`}>
+                    {g.programRows.length ? (
+                      g.programRows.map((pr, j) => (
+                        <tr key={`pr-${j}-${g.program}`} className={styles.rowProgram}>
+                          <td data-label="Programa / Dispositivo">{g.program}</td>
+                          <td>{provinceName(pr.province)}</td>
+                          <td>Programa</td>
+                          <td className={getRoleClass(pr)}>{getRoleLabel(pr)}</td>
+                          <td>{fullName(pr)}</td>
+                          <td>{reAnywhere.test(pr.email) ? pr.email : 'Sin email coorporativo'}</td>
+                          <td>{pr.phoneJob?.number || noDisponible}</td>
+                          <td>{pr.phoneJob?.extension || noDisponible}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr className={styles.rowProgramSolo}>
+                        <td>{g.program}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    )}
+
+                    {g.deviceRows.map((d, j) => (
+                      <tr key={`d-${j}-${g.program}-${d.device || 'sin-dispo'}`} className={styles.rowDevice}>
+                        <td className={styles.deviceCell}>{d.device || 'Sin dispositivo'}</td>
+                        <td>{provinceName(d.province)}</td>
+                        <td>Dispositivo</td>
+                        <td className={getRoleClass(d)}>{getRoleLabel(d)}</td>
+                        <td>{fullName(d)}</td>
+                        <td>{reAnywhere.test(d.email) ? d.email : 'Sin email coorporativo'}</td>
+                        <td>{d.phoneJob?.number || noDisponible}</td>
+                        <td>{d.phoneJob?.extension || noDisponible}</td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
+
+                {!grouped.length && (
                   <tr>
-                    <th>Programa / Dispositivo</th>
-                    <th>Provincia</th>
-                    <th>Rol</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-
-                    <th>Teléfono Laboral</th>
-                    <th>Teléfono Extensión</th>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '1rem' }}>
+                      Sin datos
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {grouped.length ? (
-                    grouped.map((g, i) => (
-                      <React.Fragment key={`${i}-${g.program}`}>
-                        {/* Responsables de programa */}
-                        {g.programResponsibles.length ? (
-                          g.programResponsibles.map((pr, i) => (
-                            <tr key={`pr-${i}-${g.program}`} className={styles.rowProgram}>
-                              <td data-label="Program/Dispositivo" >{g.program}</td>
-                              <td></td>
-                              <td className={styles.roleProgram}>Responsable programa</td>
-                              <td>{fullName(pr)}</td>
-                              <td>{reAnywhere.test(pr.email) ? pr.email : 'Sin email coorporativo' }</td>
-
-                              <td>{pr.phoneJob?.number || noDisponible}</td>
-                              <td>{pr.phoneJob?.extension || noDisponible}</td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr className={styles.rowProgramSolo}>
-                            <td>{g.program}</td>
-                            <td></td>
-                            <td className={styles.roleProgram}></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                          </tr>
-                        )}
-
-                        {/* Dispositivos y coordinadores */}
-                        {g.deviceRows.map((d, j) => (
-                          <tr key={`d-${j}`} className={styles.rowDevice}>
-                            <td className={styles.deviceCell}>{d.device}</td>
-                            <td>{provinceName(d.province)}</td>
-                            <td className={(d.role === 'responsible') ? styles.roleR : styles.roleC}>
-                              {d.role === 'responsible'
-                                ? 'Responsable dispositivo'
-                                : 'Coordinador'}
-                            </td>
-                            <td>{fullName(d)}</td>
-                            <td>{reAnywhere.test(d.email) ? d.email : 'Sin email coorporativo' }</td>
-
-                            <td>{d.phoneJob?.number || noDisponible}</td>
-                            <td>{d.phoneJob?.extension || noDisponible}</td>
-                          </tr>
-                        ))}
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '1rem' }}>
-                        Sin datos
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-            </div>
-            : <p>No hay resultados</p>
-        }
-
-
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>No hay resultados</p>
+        )}
       </div>
     </div>
   );

@@ -20,8 +20,6 @@ const humanEmployment = (status) => {
   return status || '—';
 };
 
-
-
 const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const token = getToken();
   const [offers, setOffers] = useState([]);
@@ -33,37 +31,49 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const { logged } = useLogin();
   const [linkedUsers, setLinkedUsers] = useState(null);
 
-  
-const isRoot = logged?.user?.role === "root";
-const responsabilities = Array.isArray(logged?.listResponsability)
-  ? logged.listResponsability
-  : [];
+  const isRootOrGlobal =
+    logged?.user?.role === "root" || logged?.user?.role === "global";
 
-const accessFilters = useMemo(() => {
-  if (isRoot) return null;
+  const responsabilities = Array.isArray(logged?.listResponsability)
+    ? logged.listResponsability
+    : [];
 
-  const programIds = [];
-  const newDispositiveIds = [];
+  const accessFilters = useMemo(() => {
+    if (isRootOrGlobal) return null;
 
-  responsabilities.forEach((r) => {
-    if (r?.isProgramResponsible && r?.idProgram) {
-      programIds.push(String(r.idProgram));
-    }
+    const programIds = [];
+    const newDispositiveIds = [];
 
-    if ((r?.isDeviceResponsible || r?.isDeviceCoordinator) && r?.dispositiveId) {
-      newDispositiveIds.push(String(r.dispositiveId));
-    }
-  });
+    responsabilities.forEach((r) => {
+      if (
+        (r?.isProgramResponsible ||
+          r?.isProgramCoordinator ||
+          r?.isProgramSupervisor) &&
+        r?.idProgram
+      ) {
+        programIds.push(String(r.idProgram));
+      }
 
-  return {
-    programIds: [...new Set(programIds)],
-    newDispositiveIds: [...new Set(newDispositiveIds)],
-  };
-}, [isRoot, responsabilities]);
-  // ===== helpers de mapeo (NUEVOS índices) =====
+      if (
+        (r?.isDeviceResponsible ||
+          r?.isDeviceCoordinator ||
+          r?.isDeviceSupervisor) &&
+        r?.dispositiveId
+      ) {
+        newDispositiveIds.push(String(r.dispositiveId));
+      }
+    });
+
+    return {
+      programIds: [...new Set(programIds)],
+      newDispositiveIds: [...new Set(newDispositiveIds)],
+    };
+  }, [isRootOrGlobal, responsabilities]);
+
+  // ===== helpers de mapeo =====
   const jobsIndex = enumsData?.jobsIndex || {};
-  const programsIndex = enumsData?.programsIndex || {};       // claves = programId
-  const dispositiveIndex = enumsData?.dispositiveIndex || {}; // claves = dispositiveId
+  const programsIndex = enumsData?.programsIndex || {};
+  const dispositiveIndex = enumsData?.dispositiveIndex || {};
   const studiesIndex = enumsData?.studiesIndex || {};
 
   const getFunctionLabel = (o) => jobsIndex?.[o?.jobId]?.name || o?.job_title || "—";
@@ -75,14 +85,10 @@ const accessFilters = useMemo(() => {
           typeof o?.cvCount === "number" ? o.cvCount : 0
   );
 
-  const getDeviceId = (o) => {
-    return o.dispositive?.newDispositiveId || "";
-  }
+  const getDeviceId = (o) => o.dispositive?.newDispositiveId || "";
 
-  // Ahora el nombre del dispositivo sale de dispositiveIndex (no de programsIndex).
   const getDeviceName = (o) => {
     const id = getDeviceId(o);
-
     const dev = dispositiveIndex?.[id];
     return dev?.name || o?.dispositive?.name || "—";
   };
@@ -90,31 +96,31 @@ const accessFilters = useMemo(() => {
   const getCreatedDate = (o) => o?.datecreate || o?.date || o?.createdAt || null;
 
   // ===== cargar listado ACTIVO =====
-useEffect(() => {
-  (async () => {
-    charge?.(true);
+  useEffect(() => {
+    (async () => {
+      charge?.(true);
 
-    const params = { page: 1, limit: 200, active: true };
+      const params = { page: 1, limit: 200, active: true };
 
-    if (!isRoot && accessFilters) {
-      params.programIds = accessFilters.programIds;
-      params.newDispositiveIds = accessFilters.newDispositiveIds;
-    }
+      if (!isRootOrGlobal && accessFilters) {
+        params.programIds = accessFilters.programIds;
+        params.newDispositiveIds = accessFilters.newDispositiveIds;
+      }
 
-    const res = await offerList(params);
+      const res = await offerList(params);
 
-    if (res?.error) {
-      modal?.("Error", res.message || "No se pudieron cargar las ofertas.");
-    } else {
-      const docs = res?.docs || res || [];
-      const onlyActive = Array.isArray(docs) ? docs.filter((o) => o?.active !== false) : [];
-      setOffers(onlyActive);
-    }
+      if (res?.error) {
+        modal?.("Error", res.message || "No se pudieron cargar las ofertas.");
+      } else {
+        const docs = res?.docs || res || [];
+        const onlyActive = Array.isArray(docs) ? docs.filter((o) => o?.active !== false) : [];
+        setOffers(onlyActive);
+      }
 
-    charge?.(false);
-  })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [isRoot, accessFilters]);
+      charge?.(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRootOrGlobal, accessFilters]);
 
   const openLinkedHirings = async (offer) => {
     try {
@@ -152,7 +158,7 @@ useEffect(() => {
         const hiredAt = fmtDate(p.startDate);
         const statusPeriod = p.endDate ? `Fin: ${fmtDate(p.endDate)}` : 'En curso';
         const activeCompany = humanEmployment(u.employmentStatus);
-        return { name: name, dni: dni, alta: hiredAt, fin: statusPeriod, active: activeCompany };
+        return { name, dni, alta: hiredAt, fin: statusPeriod, active: activeCompany };
       });
 
       setLinkedUsers({ offer, rows });
@@ -217,7 +223,7 @@ useEffect(() => {
   const buildInfoFields = (o) => {
     const fields = [
       { name: "jobLabel", label: "Función", type: "text", defaultValue: getFunctionLabel(o), disabled: true },
-      { name: "deviceLabel", label: "Dispositivo", type: "text", defaultValue: getDeviceName(o), disabled: true, },
+      { name: "deviceLabel", label: "Dispositivo", type: "text", defaultValue: getDeviceName(o), disabled: true },
     ];
     if (o?.location) fields.push({ name: "location", label: "Ubicación", type: "text", defaultValue: o.location, disabled: true });
     fields.push({ name: "status", label: "Estado", type: "text", defaultValue: (o?.active === false ? "Cerrada" : "Activa"), disabled: true });
@@ -240,7 +246,7 @@ useEffect(() => {
   };
   const openInfo = (o) => setInfoOffer(o);
 
-  // ======== HISTÓRICO (active:false) + FILTRO Programa/Dispositivo ========
+  // ======== HISTÓRICO ========
   const [showHistory, setShowHistory] = useState(false);
   const [histItems, setHistItems] = useState([]);
   const [histPage, setHistPage] = useState(1);
@@ -248,25 +254,23 @@ useEffect(() => {
   const [histTotalPages, setHistTotalPages] = useState(1);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // Filtros SOLO histórico
   const [histFilters, setHistFilters] = useState({ programId: "", newDispositiveId: "" });
 
-  // Combobox Programa/Dispositivo (rehecho con los ÍNDICES)
   const [pdQuery, setPdQuery] = useState("");
   const [pdOpen, setPdOpen] = useState(false);
   const searchWrapRef = useRef(null);
+
   useEffect(() => {
     const onDocClick = (e) => { if (!searchWrapRef.current?.contains(e.target)) setPdOpen(false); };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
+
   const norm = (s) => (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-  // Lista aplanada de programas + dispositivos a partir de programsIndex + dispositiveIndex
   const flatProgDev = useMemo(() => {
     const items = [];
 
-    // Programas
     Object.entries(programsIndex).forEach(([pid, p]) => {
       const acr = p?.acronym || "";
       items.push({
@@ -278,7 +282,6 @@ useEffect(() => {
       });
     });
 
-    // Dispositivos
     Object.entries(dispositiveIndex).forEach(([did, d]) => {
       const prog = programsIndex?.[d?.program] || {};
       const acr = prog?.acronym || "";
@@ -296,38 +299,38 @@ useEffect(() => {
   }, [programsIndex, dispositiveIndex]);
 
   const allowedProgramDeviceOptions = useMemo(() => {
-  if (isRoot) return [];
+    if (isRootOrGlobal) return [];
 
-  const items = [];
+    const items = [];
 
-  (accessFilters?.programIds || []).forEach((programId) => {
-    const p = programsIndex?.[programId];
-    if (!p) return;
+    (accessFilters?.programIds || []).forEach((programId) => {
+      const p = programsIndex?.[programId];
+      if (!p) return;
 
-    const acr = p?.acronym || "";
-    items.push({
-      type: "program",
-      id: programId,
-      programId,
-      display: `${p?.name || programId}${acr ? ` (${acr})` : ""}`,
+      const acr = p?.acronym || "";
+      items.push({
+        type: "program",
+        id: programId,
+        programId,
+        display: `${p?.name || programId}${acr ? ` (${acr})` : ""}`,
+      });
     });
-  });
 
-  (accessFilters?.newDispositiveIds || []).forEach((deviceId) => {
-    const d = dispositiveIndex?.[deviceId];
-    if (!d) return;
+    (accessFilters?.newDispositiveIds || []).forEach((deviceId) => {
+      const d = dispositiveIndex?.[deviceId];
+      if (!d) return;
 
-    items.push({
-      type: "device",
-      id: deviceId,
-      programId: d?.program || "",
-      newDispositiveId: deviceId,
-      display: d?.name || deviceId,
+      items.push({
+        type: "device",
+        id: deviceId,
+        programId: d?.program || "",
+        newDispositiveId: deviceId,
+        display: d?.name || deviceId,
+      });
     });
-  });
 
-  return items.sort((a, b) => a.display.localeCompare(b.display, "es"));
-}, [isRoot, accessFilters, programsIndex, dispositiveIndex]);
+    return items.sort((a, b) => a.display.localeCompare(b.display, "es"));
+  }, [isRootOrGlobal, accessFilters, programsIndex, dispositiveIndex]);
 
   const pdResults = useMemo(() => {
     const q = norm(pdQuery);
@@ -349,81 +352,78 @@ useEffect(() => {
   const selectPd = (item) => {
     setPdQuery(item.display);
     setPdOpen(false);
-    // Siempre programId
     handleHistFilterChange("programId", item.programId);
-    // Si es device, guardamos dispositiveId; si es programa, vaciamos dispositiveId
     const deviceVal = item.type === "device" ? item.newDispositiveId : "";
     handleHistFilterChange("newDispositiveId", deviceVal);
     fetchHistory(1, histLimit, { programId: item.programId, newDispositiveId: deviceVal });
   };
 
-  // Fetch histórico con filtros (mantiene dispositiveId en la query)
-const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => {
-  try {
-    setLoadingHistory(true);
+  const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => {
+    try {
+      setLoadingHistory(true);
 
-    const currentFilters = {
-      programId: histFilters.programId,
-      newDispositiveId: histFilters.newDispositiveId,
-      ...(filtersArg || {}),
-    };
+      const currentFilters = {
+        programId: histFilters.programId,
+        newDispositiveId: histFilters.newDispositiveId,
+        ...(filtersArg || {}),
+      };
 
-    const limitStr = String(limitOverride);
-    const isAll = limitStr === "ALL";
+      const limitStr = String(limitOverride);
+      const isAll = limitStr === "ALL";
 
-    const params = { active: false, sort: "-createdAt" };
+      const params = { active: false, sort: "-createdAt" };
 
-    if (!isAll) {
-      params.page = page;
-      params.limit = Number(limitStr);
+      if (!isAll) {
+        params.page = page;
+        params.limit = Number(limitStr);
+      }
+
+      if (currentFilters.programId) params.programId = currentFilters.programId;
+      if (currentFilters.newDispositiveId) params.newDispositiveId = currentFilters.newDispositiveId;
+
+      if (!isRootOrGlobal && accessFilters) {
+        params.programIds = accessFilters.programIds;
+        params.newDispositiveIds = accessFilters.newDispositiveIds;
+      }
+
+      const res = await offerList(params);
+
+      const items = Array.isArray(res?.docs)
+        ? res.docs
+        : Array.isArray(res?.items)
+          ? res.items
+          : Array.isArray(res?.data)
+            ? res.data
+            : [];
+
+      const totalDocsFromServer = Number(res?.total);
+      const totalDocs = Number.isFinite(totalDocsFromServer) ? totalDocsFromServer : items.length;
+
+      const limitUsedFromServer = Number(res?.limit);
+      const limitUsed = isAll
+        ? (Number.isFinite(totalDocsFromServer) ? totalDocs : items.length)
+        : Number.isFinite(limitUsedFromServer) && limitUsedFromServer > 0
+          ? limitUsedFromServer
+          : Number(limitStr) || 10;
+
+      const srvPageFromServer = Number(res?.page);
+      const srvPage = isAll
+        ? 1
+        : Number.isFinite(srvPageFromServer) && srvPageFromServer > 0
+          ? srvPageFromServer
+          : page;
+
+      setHistItems(items);
+
+      const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalDocs / limitUsed));
+      setHistTotalPages(totalPages);
+      setHistPage(Math.min(Math.max(1, srvPage), totalPages));
+    } catch {
+      modal?.("Error", "No se pudo cargar el histórico de ofertas.");
+    } finally {
+      setLoadingHistory(false);
     }
-
-    if (currentFilters.programId) params.programId = currentFilters.programId;
-    if (currentFilters.newDispositiveId) params.newDispositiveId = currentFilters.newDispositiveId;
-
-    if (!isRoot && accessFilters) {
-      params.programIds = accessFilters.programIds;
-      params.newDispositiveIds = accessFilters.newDispositiveIds;
-    }
-
-    const res = await offerList(params);
-
-    const items = Array.isArray(res?.docs)
-      ? res.docs
-      : Array.isArray(res?.items)
-        ? res.items
-        : Array.isArray(res?.data)
-          ? res.data
-          : [];
-
-    const totalDocsFromServer = Number(res?.total);
-    const totalDocs = Number.isFinite(totalDocsFromServer) ? totalDocsFromServer : items.length;
-
-    const limitUsedFromServer = Number(res?.limit);
-    const limitUsed = isAll
-      ? (Number.isFinite(totalDocsFromServer) ? totalDocs : items.length)
-      : Number.isFinite(limitUsedFromServer) && limitUsedFromServer > 0
-        ? limitUsedFromServer
-        : Number(limitStr) || 10;
-
-    const srvPageFromServer = Number(res?.page);
-    const srvPage = isAll
-      ? 1
-      : Number.isFinite(srvPageFromServer) && srvPageFromServer > 0
-        ? srvPageFromServer
-        : page;
-
-    setHistItems(items);
-
-    const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalDocs / limitUsed));
-    setHistTotalPages(totalPages);
-    setHistPage(Math.min(Math.max(1, srvPage), totalPages));
-  } catch {
-    modal?.("Error", "No se pudo cargar el histórico de ofertas.");
-  } finally {
-    setLoadingHistory(false);
-  }
-};
+  };
 
   const toggleHistory = () => {
     setShowHistory((prev) => {
@@ -434,7 +434,7 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
   };
 
   const handleChangeHistLimit = (e) => {
-    const next = e.target.value; // "10" | "30" | "ALL"
+    const next = e.target.value;
     fetchHistory(1, next);
     setHistLimit(next);
   };
@@ -448,11 +448,7 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
       if (res?.error) throw new Error(res.message || "No se pudo reactivar la oferta.");
 
       modal?.("Oferta", "Oferta reactivada correctamente.");
-
-      // Sacarla del histórico
       setHistItems((prev) => prev.filter((o) => String(o._id || o.id) !== String(id)));
-
-      // Añadirla a activas
       setOffers((prev) => [res, ...prev]);
     } catch (e) {
       modal?.("Error", e?.message);
@@ -461,7 +457,6 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
     }
   };
 
-  // ===== render =====
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
@@ -472,7 +467,6 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
           </div>
         </div>
 
-        {/* Tabla activas */}
         <div className={styles.tableWrapper}>
           <table className={styles.table} aria-label="Tabla de ofertas activas">
             <thead>
@@ -481,7 +475,7 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
                 <th>Función</th>
                 <th>Creada</th>
                 <th title="Pública o Privada">Tipo de Oferta</th>
-                <th >Exclusiva</th>
+                <th>Exclusiva</th>
                 <th className={styles.thAcciones}>Acciones</th>
               </tr>
             </thead>
@@ -529,7 +523,6 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
           </table>
         </div>
 
-        {/* Histórico */}
         <div className={styles.historyWrapper}>
           <div className={styles.box}>
             <button className={styles.btnHistory} onClick={toggleHistory}>
@@ -538,105 +531,103 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
 
             {showHistory && (
               <div className={styles.box}>
-                {/* Filtro Programa/Dispositivo (combobox) */}
                 <div className={styles.pdGroup}>
-  <label htmlFor="histPdSearch" className={styles.pdFieldLabel}>
-    Programa o Dispositivo:
-  </label>
+                  <label htmlFor="histPdSearch" className={styles.pdFieldLabel}>
+                    Programa o Dispositivo:
+                  </label>
 
-  {isRoot ? (
-    <div ref={searchWrapRef} className={styles.pdSearchWrap}>
-      <input
-        id="histPdSearch"
-        type="text"
-        className={styles.pdSearchInput}
-        placeholder="Escribe para buscar…"
-        value={pdQuery}
-        onChange={(e) => { setPdQuery(e.target.value); setPdOpen(true); }}
-        onFocus={() => setPdOpen(true)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && pdResults[0]) {
-            e.preventDefault();
-            selectPd(pdResults[0]);
-          }
-          if (e.key === "Escape") setPdOpen(false);
-        }}
-        role="combobox"
-        aria-expanded={pdOpen}
-        aria-controls="histPdList"
-        aria-autocomplete="list"
-      />
+                  {isRootOrGlobal ? (
+                    <div ref={searchWrapRef} className={styles.pdSearchWrap}>
+                      <input
+                        id="histPdSearch"
+                        type="text"
+                        className={styles.pdSearchInput}
+                        placeholder="Escribe para buscar…"
+                        value={pdQuery}
+                        onChange={(e) => { setPdQuery(e.target.value); setPdOpen(true); }}
+                        onFocus={() => setPdOpen(true)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && pdResults[0]) {
+                            e.preventDefault();
+                            selectPd(pdResults[0]);
+                          }
+                          if (e.key === "Escape") setPdOpen(false);
+                        }}
+                        role="combobox"
+                        aria-expanded={pdOpen}
+                        aria-controls="histPdList"
+                        aria-autocomplete="list"
+                      />
 
-      {!!pdQuery && (
-        <button
-          type="button"
-          className={styles.pdClearBtn}
-          onClick={clearPd}
-          aria-label="Limpiar búsqueda"
-          title="Limpiar búsqueda"
-        >
-          ×
-        </button>
-      )}
+                      {!!pdQuery && (
+                        <button
+                          type="button"
+                          className={styles.pdClearBtn}
+                          onClick={clearPd}
+                          aria-label="Limpiar búsqueda"
+                          title="Limpiar búsqueda"
+                        >
+                          ×
+                        </button>
+                      )}
 
-      {pdOpen && pdResults.length > 0 && (
-        <ul id="histPdList" role="listbox" className={styles.pdSearchList}>
-          {pdResults.map((item, i) => (
-            <li key={`${item.type}-${item.id}`} role="option" aria-selected={i === 0}>
-              <p
-                className={styles.pdSearchItem}
-                onClick={() => selectPd(item)}
-                tabIndex={0}
-                onKeyDown={(e) => (e.key === "Enter" ? selectPd(item) : null)}
-              >
-                <span className={styles.pdBadge}>
-                  {item.type === "program" ? "Programa" : "Dispositivo"}
-                </span>
-                <span className={styles.pdLabel}>{item.display}</span>
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  ) : (
-    <select
-      id="histPdSearch"
-      className={styles.select}
-      value={
-        histFilters.newDispositiveId
-          ? `device:${histFilters.newDispositiveId}`
-          : histFilters.programId
-            ? `program:${histFilters.programId}`
-            : ""
-      }
-      onChange={(e) => {
-        const value = e.target.value;
+                      {pdOpen && pdResults.length > 0 && (
+                        <ul id="histPdList" role="listbox" className={styles.pdSearchList}>
+                          {pdResults.map((item, i) => (
+                            <li key={`${item.type}-${item.id}`} role="option" aria-selected={i === 0}>
+                              <p
+                                className={styles.pdSearchItem}
+                                onClick={() => selectPd(item)}
+                                tabIndex={0}
+                                onKeyDown={(e) => (e.key === "Enter" ? selectPd(item) : null)}
+                              >
+                                <span className={styles.pdBadge}>
+                                  {item.type === "program" ? "Programa" : "Dispositivo"}
+                                </span>
+                                <span className={styles.pdLabel}>{item.display}</span>
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ) : (
+                    <select
+                      id="histPdSearch"
+                      className={styles.select}
+                      value={
+                        histFilters.newDispositiveId
+                          ? `device:${histFilters.newDispositiveId}`
+                          : histFilters.programId
+                            ? `program:${histFilters.programId}`
+                            : ""
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
 
-        if (!value) {
-          clearPd();
-          return;
-        }
+                        if (!value) {
+                          clearPd();
+                          return;
+                        }
 
-        const [type, id] = value.split(":");
-        const item = allowedProgramDeviceOptions.find(
-          (x) => x.type === type && String(x.id) === String(id)
-        );
+                        const [type, id] = value.split(":");
+                        const item = allowedProgramDeviceOptions.find(
+                          (x) => x.type === type && String(x.id) === String(id)
+                        );
 
-        if (item) selectPd(item);
-      }}
-    >
-      <option value="">Todos los permitidos</option>
-      {allowedProgramDeviceOptions.map((item) => (
-        <option key={`${item.type}-${item.id}`} value={`${item.type}:${item.id}`}>
-          {item.type === "program" ? "Programa" : "Dispositivo"} · {item.display}
-        </option>
-      ))}
-    </select>
-  )}
-</div>
+                        if (item) selectPd(item);
+                      }}
+                    >
+                      <option value="">Todos los permitidos</option>
+                      {allowedProgramDeviceOptions.map((item) => (
+                        <option key={`${item.type}-${item.id}`} value={`${item.type}:${item.id}`}>
+                          {item.type === "program" ? "Programa" : "Dispositivo"} · {item.display}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
 
-                {/* Selector de límite */}
                 <div className={styles.box}>
                   <label htmlFor="limitHist" className={styles.pageInfo}>Por página:</label>
                   <select
@@ -667,7 +658,7 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
                         <th>Función</th>
                         <th>Cerrada/Actualizada</th>
                         <th title="Pública o Privada">Tipo de Oferta</th>
-                        <th >Exclusiva</th>
+                        <th>Exclusiva</th>
                         <th className={styles.thAcciones}>Acciones</th>
                       </tr>
                     </thead>
@@ -713,7 +704,6 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
                                 onClick={() => openLinkedHirings(o)}
                               />
 
-                              {/* 🔥 Botón para reactivar oferta */}
                               <FaLock
                                 className={styles.iconAction}
                                 title="Reactivar oferta"
@@ -729,7 +719,6 @@ const fetchHistory = async (page = 1, limitOverride = histLimit, filtersArg) => 
                     </tbody>
                   </table>
 
-                  {/* Paginación */}
                   <div className={styles.pagination} role="navigation" aria-label="Paginación histórico">
                     <button
                       type="button"

@@ -17,7 +17,7 @@ const MenuProgramsDispositive = ({
   const [expanded, setExpanded] = useState(null);
   const [query, setQuery] = useState("");
   const [selectedEntity, setSelectedEntity] = useState("all");
- 
+
   const norm = (s) =>
     (s || "")
       .toString()
@@ -30,7 +30,13 @@ const MenuProgramsDispositive = ({
 
     return new Set(
       listResponsability
-        .filter((r) => r?.isProgramResponsible && r?.idProgram)
+        .filter(
+          (r) =>
+            (r?.isProgramResponsible ||
+              r?.isProgramCoordinator ||
+              r?.isProgramSupervisor) &&
+            r?.idProgram
+        )
         .map((r) => String(r.idProgram))
     );
   }, [listResponsability]);
@@ -42,24 +48,26 @@ const MenuProgramsDispositive = ({
       listResponsability
         .filter(
           (r) =>
-            (r?.isDeviceResponsible || r?.isDeviceCoordinator) &&
+            (r?.isDeviceResponsible ||
+              r?.isDeviceCoordinator ||
+              r?.isDeviceSupervisor) &&
             r?.dispositiveId
         )
         .map((r) => String(r.dispositiveId))
     );
   }, [listResponsability]);
 
-const entityOptions = useMemo(() => {
-  return [
-    { value: "all", label: "Todas las entidades" },
-    ...Object.entries(enumsData?.entityIndex || {})
-      .map(([id, entity]) => ({
-        value: String(id),
-        label: entity?.name || id,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label, "es")),
-  ];
-}, [enumsData]);
+  const entityOptions = useMemo(() => {
+    return [
+      { value: "all", label: "Todas las entidades" },
+      ...Object.entries(entityIndex)
+        .map(([id, entity]) => ({
+          value: String(id),
+          label: entity?.name || id,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, "es")),
+    ];
+  }, [entityIndex]);
 
   const programsWithDevices = useMemo(() => {
     const q = norm(query);
@@ -74,16 +82,15 @@ const entityOptions = useMemo(() => {
     });
 
     sortedPrograms.forEach((program) => {
-        
       const programId = String(program._id);
-const programEntityId =
-  typeof program?.entity === "string"
-    ? String(program.entity)
-    : String(program?.entity?._id || "");
+      const programEntityId =
+        typeof program?.entity === "string"
+          ? String(program.entity)
+          : String(program?.entity?._id || "");
 
       if (isRoot && selectedEntity !== "all" && programEntityId !== String(selectedEntity)) {
-  return;
-}
+        return;
+      }
 
       const allDevices = Object.values(dispositiveIndex).filter(
         (d) => String(d.program) === programId
@@ -180,21 +187,22 @@ const programEntityId =
       </div>
 
       {isRoot && entityOptions.length > 1 && (
-  <div className={styles.entityFilterBox}>
-    <label htmlFor="">Selecciona entidad</label>
-    <select
-      value={selectedEntity}
-      onChange={(e) => setSelectedEntity(e.target.value)}
-      className={styles.entitySelect}
-    >
-      {entityOptions.map((entity) => (
-        <option key={entity.value} value={entity.value}>
-          {entity.label}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
+        <div className={styles.entityFilterBox}>
+          <label htmlFor="selectedEntity">Selecciona entidad</label>
+          <select
+          id='selectedEntity'
+            value={selectedEntity}
+            onChange={(e) => setSelectedEntity(e.target.value)}
+            className={styles.entitySelect}
+          >
+            {entityOptions.map((entity) => (
+              <option key={entity.value} value={entity.value}>
+                {entity.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <ul>
         {Object.values(programsWithDevices).map((program) => {

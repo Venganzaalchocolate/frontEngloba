@@ -259,3 +259,7 @@ a:hover {
 .iconTomato {
   color: tomato;
 }
+
+:root {
+  --app-fixed-header-height: 64px;
+}

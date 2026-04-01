@@ -822,7 +822,7 @@ const handleChangeStatus = async (formData) => {
               name={fieldName}
               value={datos[fieldName] || ""}
               onChange={handleChange}
-              disabled={!isEditing}
+              disabled={true}
             >
               {(enumsData?.status || []).map((value) => (
                 <option value={value} key={value}>

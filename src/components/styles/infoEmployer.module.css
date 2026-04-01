@@ -200,6 +200,23 @@ align-items: baseline;
 }
 
 .muted{ opacity:.6; }
+
+.cajaBotonesSuperiores{
+  display: flex;
+  gap: 1rem;
+  .activo{
+    background-color: var(--color-verde-hoja);
+    color: white
+  };
+  .noactivo{
+    background-color: var(--color-gris-claro);
+    color: gray
+  };
+  .enproceso{
+    background-color: cornflowerblue;
+    color: white;
+  }
+}
 /* ====== LAYOUT RESPONSIVE ====== */
 @media (min-width: 1000px) {
   .contenedor { border-radius: 1rem; }
@@ -209,6 +226,7 @@ align-items: baseline;
 select[name="fostered"], select[name='gender'] {
   flex: 0 2rem;
 }
+
 
 
 /* Desktop: grid 3 columnas exactas */

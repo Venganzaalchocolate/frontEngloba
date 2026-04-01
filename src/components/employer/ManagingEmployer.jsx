@@ -27,6 +27,7 @@ import MenuOptionsEmployee from './MenuOptionsEmployee.jsx';
 import SupervisorChangeRequests from './SupervisorChangeRequests.jsx';
 import RelocateHiringsModal from './RelocateHiringsModal.jsx';
 import perfil92 from "../../assets/perfil_92.png";
+import SesameEmployeeContext from './SesameEmployeeContext.jsx';
 
 const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, closeAction }) => {
   // =========================
@@ -38,8 +39,8 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
 
   const apafaUser =
     logged.user.apafa == false ||
-    logged.user._id == '67d80ef5f093b4a61894b881' ||
-    logged?.user?.role === 'root'
+      logged.user._id == '67d80ef5f093b4a61894b881' ||
+      logged?.user?.role === 'root'
       ? 'no'
       : 'si';
 
@@ -216,7 +217,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
 
       thumbsCacheRef.current[id] = dataUrl;
       setThumbByUserId((prev) => ({ ...prev, [id]: dataUrl }));
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   const loadThumbsForUsers = useCallback(async (usersList, signal) => {
@@ -290,7 +291,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
     if (!users?.length) return;
 
     const ac = new AbortController();
-    loadThumbsForUsers(users, ac.signal).catch(() => {});
+    loadThumbsForUsers(users, ac.signal).catch(() => { });
     return () => ac.abort();
   }, [users, logged?.isLoggedIn, loadThumbsForUsers]);
 
@@ -545,6 +546,17 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
         />
       ),
     ],
+    "controltime": [
+      (user) => (
+        <SesameEmployeeContext
+          user={user}
+          modal={modal}
+          charge={charge}
+          enumsData={enumsData}
+          changeUser={changeUserLocally}
+        />
+      )
+    ]
   };
 
   // =========================

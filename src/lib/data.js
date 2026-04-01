@@ -623,3 +623,25 @@ export const listScopedRoles = (datos, token) => fetchData('/listscopedroles', '
 export const getUserScopedRoles = (datos, token) => fetchData('/userscopedroles', 'POST', token, datos);
 export const organizationChart=(datos, token) => fetchData('/organizationchart', 'POST', token, datos);
 
+// sesame
+export const postSesameListEmployees = (datos, token) =>  fetchData("/sesameemployeelist", "POST", token, datos);
+export const postSesameGetEmployee = (datos, token) => fetchData("/sesameemployeeget", "POST", token, datos);
+export const postSesameGetEmployeeContext = (datos, token) => fetchData("/sesameemployeegetcontext", "POST", token, datos);
+export const postSesameAssignEmployeeOffice = (datos, token) => fetchData("/sesameemployeeofficeassign", "POST", token, datos);
+export const postSesameDeleteEmployeeOfficeAssignation = (datos, token) =>  fetchData("/sesameemployeeofficedelete", "POST", token, datos);
+export const postSesameAssignEmployeeOfficeRole = (datos, token) => fetchData("/sesameemployeeofficeassignrole", "POST", token, datos);
+export const postSesameDeleteEmployeeOfficeRole = (datos, token) => fetchData("/sesameemployeeofficeroledelete", "POST", token, datos);
+export const postSesameGetOfficeEmployees = (datos, token) => fetchData("/sesamegetofficeemployees", "POST", token, datos);
+export const postSesameGetDepartmentEmployees = (datos, token) => fetchData("/sesamegetdepartmentemployees", "POST", token, datos);
+export const postSesameAssignOfficeEmployee = (datos, token) => fetchData("/sesameofficeemployeeassign", "POST", token, datos);
+export const postSesameDeleteOfficeEmployee = (datos, token) => fetchData("/sesameofficeemployeedelete", "POST", token, datos);
+export const postSesameAssignDepartmentEmployee = (datos, token) => fetchData("/sesamedepartmentemployeeassign", "POST", token, datos);
+export const postSesameDeleteDepartmentEmployee = (datos, token) => fetchData("/sesamedepartmentemployeedelete", "POST", token, datos);
+export const postSesameUpdateEmployeeManagersByEmployee = (datos, token) =>  fetchData("/sesameemployeemanagersbyemployeeupdate", "POST", token, datos);
+export const searchSesameEligibleManagersByEmployee = (datos, token) =>  fetchData("/sesameeligiblemanagersbyemployee", "POST", token, datos);
+export const postSesameCreateDepartmentForUser = (datos, token) => fetchData("/sesamedepartmentcreateforuser", "POST", token, datos);
+export const postSesameDeleteDepartment = (datos, token) => fetchData("/sesamedepartmentdelete", "POST", token, datos);
+export const postSesameTransferDepartment = (datos, token) => fetchData("/sesamedepartmenttransfer", "POST", token, datos);
+export const postSesameToggleEmployeeForUser = (datos, token) => fetchData("/sesameemployeetoggleforuser", "POST", token, datos);
+export const postSesameInviteEmployeeForUser = (datos, token) => fetchData("/sesameemployeeinviteforuser", "POST", token, datos);
+export const postSesameGetOfficeManagers = (datos, token) => fetchData("/sesamegetofficemanagers", "POST", token, datos);

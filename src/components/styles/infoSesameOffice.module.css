@@ -1,0 +1,81 @@
+.contenedor {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  font-family: inherit;
+  color: #333;
+  height: fit-content;
+  margin-top: 1rem;
+  background-color: aliceblue;
+}
+
+.fieldContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.fieldLabel {
+  font-weight: 600;
+  color: var(--color-morado);
+  font-size: 0.95rem;
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+  padding: 0;
+}
+
+.fieldLabel svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.fieldText {
+  font-size: 0.95rem;
+  display: flex;
+  align-content: center;
+  gap: 1rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid transparent;
+  background-color: lightcyan;
+  border-color: var(--color-info);
+  color: var(--color-morado);
+  width: fit-content;
+}
+
+.fieldTextEmpty {
+  font-size: 0.9rem;
+  color: #777;
+  font-style: italic;
+}
+
+.fieldTextStatic {
+  background: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.boxPerson {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.trash {
+  color: tomato;
+}
+
+.contenedor button{
+  width: fit-content;
+}

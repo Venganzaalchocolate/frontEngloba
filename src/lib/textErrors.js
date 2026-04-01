@@ -78,6 +78,10 @@ export const textErrors = (tipo) => {
             return "La descripción debe tener un máximo de 200 caracteres"
         case "nameFile":
             return "El nombre del archivo debe contener como máximo 200 caracteres"
+        case "latitude":
+            return "La latitud debe ser un número entre -90 y 90.";
+        case "longitude":
+            return "La longitud debe ser un número entre -180 y 180.";
         default:
             return null;
     }

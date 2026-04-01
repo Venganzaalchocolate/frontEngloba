@@ -289,3 +289,24 @@ export function validateForm(values, schema, only = null) {
   }
   return { errors, valid: Object.keys(errors).length === 0 };
 }
+
+export const validCoordinate = (value) => {
+  if (value === undefined || value === null || String(value).trim() === "") return true;
+
+  const n = Number(String(value).replace(",", "."));
+  return Number.isFinite(n);
+};
+
+export const validLatitude = (value) => {
+  if (value === undefined || value === null || String(value).trim() === "") return true;
+
+  const n = Number(String(value).replace(",", "."));
+  return Number.isFinite(n) && n >= -90 && n <= 90;
+};
+
+export const validLongitude = (value) => {
+  if (value === undefined || value === null || String(value).trim() === "") return true;
+
+  const n = Number(String(value).replace(",", "."));
+  return Number.isFinite(n) && n >= -180 && n <= 180;
+};

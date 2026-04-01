@@ -1,12 +1,15 @@
 import React, { useMemo, useState } from "react";
 import styles from "../styles/infoPrgramOrDispositive.module.css";
 import { getToken } from "../../lib/serviceToken";
-import { scopedRole } from "../../lib/data";
+import { scopedRole, updateDispositive } from "../../lib/data";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import { FaTrash } from "react-icons/fa6";
 import { IoArrowUndo, IoRadioButtonOn } from "react-icons/io5";
 import { BsPersonFillAdd } from "react-icons/bs";
+import InfoSesameOffice from "../sesame/InfoSesameOffice";
+import { validLatitude, validLongitude } from "../../lib/valid";
+import { textErrors } from "../../lib/textErrors";
 
 const ROLE_SECTIONS = [
   { key: "responsible", label: "Responsables", field: "responsible" },
@@ -25,12 +28,13 @@ const InfoProgramOrDispositive = ({
   onManageCronology,
   changeActive,
   deviceWorkers,
-  onQuickEditContact,
+  onCreateSesameOffice
 }) => {
   const token = getToken();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addType, setAddType] = useState(null); // responsible | coordinators | supervisors
+  const [addType, setAddType] = useState(null);
+
   const [confirmDelete, setConfirmDelete] = useState({
     show: false,
     type: null,
@@ -44,12 +48,46 @@ const InfoProgramOrDispositive = ({
     cronology: null,
   });
 
+  const [quickEditField, setQuickEditField] = useState(null);
+
   const tokenScopeType = info?.type === "program" ? "program" : "dispositive";
+  const isProgram = info?.type === "program";
 
   const openAddModal = (type) => {
     setAddType(type);
     setShowAddModal(true);
   };
+
+  const dispositivos = useMemo(() => {
+    if (!info || info.type !== "program") return [];
+
+    return Object.values(enumsData?.dispositiveIndex || {})
+      .filter((d) => d.program === info._id)
+      .sort((a, b) => {
+        const aActive = a.active ? 1 : 0;
+        const bActive = b.active ? 1 : 0;
+        if (aActive !== bActive) return bActive - aActive;
+        return (a.name || "").localeCompare(b.name || "");
+      });
+  }, [info, enumsData]);
+
+  if (!info) {
+    return (
+      <div className={styles.contenedor}>
+        <p style={{ color: "#666" }}>Selecciona un programa o dispositivo.</p>
+      </div>
+    );
+  }
+
+  const entityId = isProgram
+    ? typeof info?.entity === "string"
+      ? info.entity
+      : info?.entity?._id
+    : typeof info?.program?.entity === "string"
+      ? info.program.entity
+      : info?.program?.entity?._id;
+
+  const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
 
   const handleAddPerson = async (formData) => {
     if (!info?._id || !addType) return;
@@ -70,9 +108,7 @@ const InfoProgramOrDispositive = ({
         token
       );
 
-      if (res?.error) {
-        throw new Error(res.message || "No se pudo añadir la persona.");
-      }
+      if (res?.error) throw new Error(res.message || "No se pudo añadir la persona.");
 
       const roleLabel =
         addType === "responsible"
@@ -83,64 +119,13 @@ const InfoProgramOrDispositive = ({
 
       modal("Actualizado", `Se ha añadido correctamente el ${roleLabel}.`);
       setShowAddModal(false);
-      onSelect(info);
+      onSelect({ type: info.type, _id: info._id });
     } catch (e) {
-      console.error(e);
       modal("Error", e.message || "No se pudo añadir la persona.");
     } finally {
       charge(false);
     }
   };
-
-  const fieldsAddPerson = [
-    {
-      name: "person",
-      label:
-        addType === "responsible"
-          ? "Seleccionar responsable"
-          : addType === "coordinators"
-            ? "Seleccionar coordinador"
-            : "Seleccionar supervisor",
-      type: "async-search-select",
-      placeholder: "Escriba al menos 3 letras...",
-      required: true,
-      loadOptions: searchUsers,
-    },
-  ];
-
-  const dispositivos = useMemo(() => {
-    if (!info || info.type !== "program") return [];
-
-    return Object.values(enumsData?.dispositiveIndex || {})
-      .filter((d) => d.program === info._id)
-      .sort((a, b) => {
-        const aActive = a.active ? 1 : 0;
-        const bActive = b.active ? 1 : 0;
-
-        if (aActive !== bActive) return bActive - aActive;
-        return (a.name || "").localeCompare(b.name || "");
-      });
-  }, [info, enumsData]);
-
-  if (!info) {
-    return (
-      <div className={styles.contenedor}>
-        <p style={{ color: "#666" }}>Selecciona un programa o dispositivo.</p>
-      </div>
-    );
-  }
-
-  const isProgram = info?.type === "program";
-
-  const entityId = isProgram
-    ? typeof info?.entity === "string"
-      ? info.entity
-      : info?.entity?._id
-    : typeof info?.program?.entity === "string"
-      ? info.program.entity
-      : info?.program?.entity?._id;
-
-  const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
 
   const handleRemovePerson = async () => {
     if (!info?._id || !confirmDelete.personId || !confirmDelete.type) return;
@@ -159,9 +144,7 @@ const InfoProgramOrDispositive = ({
         token
       );
 
-      if (res?.error) {
-        throw new Error(res.message || "No se pudo eliminar la persona.");
-      }
+      if (res?.error) throw new Error(res.message || "No se pudo eliminar la persona.");
 
       const roleLabel =
         confirmDelete.type === "responsible"
@@ -172,13 +155,138 @@ const InfoProgramOrDispositive = ({
 
       modal("Actualizado", `${roleLabel} eliminado correctamente.`);
       setConfirmDelete({ show: false, type: null, personId: null });
-      onSelect(info);
+      onSelect({ type: info.type, _id: info._id });
     } catch (e) {
-      console.error(e);
       modal("Error", e.message || "No se pudo eliminar la persona.");
     } finally {
       charge(false);
     }
+  };
+
+const handleQuickUpdateDispositiveField = async (formData) => {
+  if (!info?._id || isProgram || !quickEditField) return;
+
+  try {
+    charge(true);
+
+    const payload = { dispositiveId: info._id };
+
+    if (quickEditField === "address") {
+      payload.address = formData.address || "";
+    }
+
+    if (quickEditField === "phone") {
+      payload.phone = formData.phone || "";
+    }
+
+    if (quickEditField === "coordinates") {
+      const lat =
+        formData.latitude === "" || formData.latitude == null
+          ? null
+          : Number(String(formData.latitude).replace(",", ".").trim());
+
+      const lng =
+        formData.longitude === "" || formData.longitude == null
+          ? null
+          : Number(String(formData.longitude).replace(",", ".").trim());
+
+      if ((lat === null && lng !== null) || (lat !== null && lng === null)) {
+        throw new Error("Debes rellenar latitud y longitud o dejar ambas vacías.");
+      }
+
+      payload.coordinates =
+        lat === null && lng === null
+          ? null
+          : { lat, lng };
+    }
+
+    const res = await updateDispositive(payload, token);
+
+    if (res?.error) {
+      throw new Error(res.message || "No se pudo actualizar el dispositivo");
+    }
+
+    setQuickEditField(null);
+    modal("Actualizado", "Campo actualizado correctamente.");
+    onSelect({ type: "dispositive", _id: info._id });
+  } catch (error) {
+    modal("Error", error.message || "No se pudo actualizar el dispositivo");
+  } finally {
+    charge(false);
+  }
+};
+
+  const fieldsAddPerson = [
+    {
+      name: "person",
+      label:
+        addType === "responsible"
+          ? "Seleccionar responsable"
+          : addType === "coordinators"
+            ? "Seleccionar coordinador"
+            : "Seleccionar supervisor",
+      type: "async-search-select",
+      placeholder: "Escriba al menos 3 letras...",
+      required: true,
+      loadOptions: searchUsers,
+    },
+  ];
+
+  const quickEditFieldsMap = {
+    address: [
+      {
+        name: "address",
+        label: "Dirección",
+        type: "text",
+        required: false,
+        defaultValue: info.address || "",
+      },
+    ],
+    phone: [
+      {
+        name: "phone",
+        label: "Teléfono",
+        type: "text",
+        required: false,
+        defaultValue: info.phone || "",
+      },
+    ],
+coordinates: [
+  {
+    name: "latitude",
+    label: "Latitud",
+    type: "number",
+    required: false,
+    defaultValue: info?.coordinates?.lat ?? "",
+    isValid: (v) => {
+      if (v === undefined || v === null || String(v).trim() === "") return "";
+      return validLatitude(v) ? "" : textErrors("latitude");
+    },
+  },
+  {
+    name: "longitude",
+    label: "Longitud",
+    type: "number",
+    required: false,
+    defaultValue: info?.coordinates?.lng ?? "",
+    isValid: (v) => {
+      if (v === undefined || v === null || String(v).trim() === "") return "";
+      return validLongitude(v) ? "" : textErrors("longitude");
+    },
+  },
+],
+  };
+
+  const quickEditTitles = {
+    address: "Editar dirección",
+    phone: "Editar teléfono",
+    coordinates: "Editar coordenadas",
+  };
+
+  const quickEditMessages = {
+    address: "Actualiza la dirección del dispositivo.",
+    phone: "Actualiza el teléfono del centro.",
+    coordinates: "Introduce la latitud y la longitud del dispositivo.",
   };
 
   return (
@@ -237,7 +345,7 @@ const InfoProgramOrDispositive = ({
             <button
               type="button"
               className={styles.btnInlineEdit}
-              onClick={() => onQuickEditContact?.("address")}
+              onClick={() => setQuickEditField("address")}
             >
               Editar
             </button>
@@ -249,11 +357,44 @@ const InfoProgramOrDispositive = ({
       {!isProgram && (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>
+            Coordenadas
+            <button
+              type="button"
+              className={styles.btnInlineEdit}
+              onClick={() => setQuickEditField("coordinates")}
+            >
+              Editar
+            </button>
+            <button
+            type="button"
+            onClick={() =>
+              window.open(
+                "https://drive.google.com/file/d/1mNL0imnJ1b5vYk39S-p4eTV6gPibuVGS/view?usp=sharing",
+                "_blank",
+                "noopener,noreferrer"
+              )
+            }
+          >
+            ¿Cómo consigo las coordenadas?
+          </button>
+          </label>
+          <p className={styles.fieldTextStatic}>
+
+            {info?.coordinates?.lat != null && info?.coordinates?.lng != null
+              ? `${info.coordinates.lat}, ${info.coordinates.lng}`
+              : "—"}
+          </p>
+        </div>
+      )}
+
+      {!isProgram && (
+        <div className={styles.fieldContainer}>
+          <label className={styles.fieldLabel}>
             Teléfono del Centro
             <button
               type="button"
               className={styles.btnInlineEdit}
-              onClick={() => onQuickEditContact?.("phone")}
+              onClick={() => setQuickEditField("phone")}
             >
               Editar
             </button>
@@ -271,9 +412,7 @@ const InfoProgramOrDispositive = ({
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Provincia</label>
           <p className={styles.fieldTextStatic}>
-            {enumsData?.provincesIndex?.[info.province]?.name ||
-              info.province ||
-              "—"}
+            {enumsData?.provincesIndex?.[info.province]?.name || info.province || "—"}
           </p>
         </div>
       )}
@@ -302,8 +441,7 @@ const InfoProgramOrDispositive = ({
             {info.cronology.map((c) => (
               <li key={c._id} className={styles.listItem}>
                 <div>
-                  <strong>Inicio:</strong>{" "}
-                  {c.open ? new Date(c.open).toLocaleDateString() : "—"}
+                  <strong>Inicio:</strong> {c.open ? new Date(c.open).toLocaleDateString() : "—"}
                   <strong style={{ marginLeft: "1rem" }}>Fin:</strong>{" "}
                   {c.closed ? new Date(c.closed).toLocaleDateString() : "—"}
                 </div>
@@ -319,9 +457,7 @@ const InfoProgramOrDispositive = ({
                   </button>
                   <FaTrash
                     className={styles.trash}
-                    onClick={() =>
-                      setConfirmCronology({ show: true, cronology: c })
-                    }
+                    onClick={() => setConfirmCronology({ show: true, cronology: c })}
                   />
                 </div>
               </li>
@@ -336,23 +472,17 @@ const InfoProgramOrDispositive = ({
         <>
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Descripción</label>
-            <div className={styles.textBlock}>
-              {info?.about?.description || "Sin descripción"}
-            </div>
+            <div className={styles.textBlock}>{info?.about?.description || "Sin descripción"}</div>
           </div>
 
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Objetivos</label>
-            <div className={styles.textBlock}>
-              {info?.about?.objectives || "Sin objetivos"}
-            </div>
+            <div className={styles.textBlock}>{info?.about?.objectives || "Sin objetivos"}</div>
           </div>
 
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Perfil</label>
-            <div className={styles.textBlock}>
-              {info?.about?.profile || "Sin perfil"}
-            </div>
+            <div className={styles.textBlock}>{info?.about?.profile || "Sin perfil"}</div>
           </div>
         </>
       )}
@@ -363,20 +493,17 @@ const InfoProgramOrDispositive = ({
             {section.label}
             <BsPersonFillAdd onClick={() => openAddModal(section.key)} />
           </label>
-          
+
           {info?.[section.field]?.length > 0 ? (
             info[section.field].map((r, i) => (
               <div className={styles.boxPerson} key={r._id || i}>
                 <p
                   className={styles.fieldText}
                   onClick={() =>
-                    modal(
-                      `${r.firstName} ${r.lastName}`,
-                      [
-                        ` Email: ${r.email || "—"}`,
-                        `Teléfono laboral: ${r.phoneJob?.number || "—"}`,
-                      ]
-                    )
+                    modal(`${r.firstName} ${r.lastName}`, [
+                      ` Email: ${r.email || "—"}`,
+                      `Teléfono laboral: ${r.phoneJob?.number || "—"}`,
+                    ])
                   }
                 >
                   {r.firstName} {r.lastName}
@@ -399,7 +526,7 @@ const InfoProgramOrDispositive = ({
         </div>
       ))}
 
-      {!isProgram && (deviceWorkers && deviceWorkers.length > 0) ? (
+      {!isProgram && deviceWorkers?.length > 0 ? (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Lista de Trabajadores</label>
           {deviceWorkers.map((p) => (
@@ -443,13 +570,9 @@ const InfoProgramOrDispositive = ({
                 >
                   <strong>{d.name}</strong>
                   <span className={styles.iconSmall}>
-                    <IoRadioButtonOn
-                      className={d.active ? styles.activeDis : styles.inactiveDis}
-                    />
+                    <IoRadioButtonOn className={d.active ? styles.activeDis : styles.inactiveDis} />
                   </span>
-                  {d.address && (
-                    <span className={styles.subtext}>{d.address}</span>
-                  )}
+                  {d.address && <span className={styles.subtext}>{d.address}</span>}
                 </li>
               ))}
             </ul>
@@ -458,6 +581,8 @@ const InfoProgramOrDispositive = ({
           )}
         </div>
       )}
+
+      {!isProgram && <InfoSesameOffice modal={modal} charge={charge} info={info} onCreateSesameOffice={onCreateSesameOffice}/>}
 
       {showAddModal && (
         <ModalForm
@@ -500,9 +625,7 @@ const InfoProgramOrDispositive = ({
           confirmText="Eliminar"
           cancelText="Cancelar"
           onConfirm={handleRemovePerson}
-          onCancel={() =>
-            setConfirmDelete({ show: false, type: null, personId: null })
-          }
+          onCancel={() => setConfirmDelete({ show: false, type: null, personId: null })}
         />
       )}
 
@@ -530,11 +653,7 @@ const InfoProgramOrDispositive = ({
           ]}
           onSubmit={(formData) => {
             const type = editCronology ? "edit" : "add";
-            onManageCronology(
-              info,
-              { ...formData, _id: editCronology?._id },
-              type
-            );
+            onManageCronology(info, { ...formData, _id: editCronology?._id }, type);
             setShowCronologyModal(false);
           }}
           onClose={() => setShowCronologyModal(false)}
@@ -548,14 +667,21 @@ const InfoProgramOrDispositive = ({
           confirmText="Eliminar"
           cancelText="Cancelar"
           onConfirm={() => {
-            onManageCronology(
-              info,
-              { _id: confirmCronology.cronology._id },
-              "delete"
-            );
+            onManageCronology(info, { _id: confirmCronology.cronology._id }, "delete");
             setConfirmCronology({ show: false, cronology: null });
           }}
           onCancel={() => setConfirmCronology({ show: false, cronology: null })}
+        />
+      )}
+
+      {quickEditField && !isProgram && (
+        <ModalForm
+          title={quickEditTitles[quickEditField]}
+          message={quickEditMessages[quickEditField]}
+          fields={quickEditFieldsMap[quickEditField]}
+          onSubmit={handleQuickUpdateDispositiveField}
+          onClose={() => setQuickEditField(null)}
+          modal={modal}
         />
       )}
     </div>

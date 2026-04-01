@@ -1,4 +1,4 @@
-import { FaPaperPlane } from 'react-icons/fa';
+import { FaClock, FaPaperPlane } from 'react-icons/fa';
 import styles from '../styles/MenuOptionsEmployee.module.css';
 
 import { FaUser, FaUserShield, FaFileLines, FaMoneyCheckDollar, FaUmbrellaBeach, FaFileContract} from "react-icons/fa6";
@@ -12,7 +12,8 @@ const menuItems = [
   { key: "vacaciones", label: "Vacaciones", icon: <FaUmbrellaBeach /> },
   { key: "contratos", label: "Periodos de contratación", icon: <FaFileContract /> },
   { key: "preferencias", label: "Traslados Reincorporaciones", icon: <FaPaperPlane /> },
-  { key: "solicitudes", label: "Solicitudes", icon: <TbStatusChange /> }
+  { key: "solicitudes", label: "Solicitudes", icon: <TbStatusChange /> },
+  { key:'controltime', label: "Control Horario (sesame)", icon: <FaClock/>}
 ];
 
 

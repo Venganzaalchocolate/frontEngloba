@@ -1,0 +1,253 @@
+/* src/components/styles/sesameEmployeeContext.module.css */
+.contenedor {
+  --radius: 12px;
+  --pad: 16px;
+  --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  border: var(--bd);
+  background: #fff;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding-bottom: 8px;
+  font-size: 13pt;
+  color: var(--color-morado);
+  border-bottom: 1px solid var(--color-morado);
+  flex: 1;
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: var(--color-yema);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.refreshButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.summaryItem {
+  min-width: 180px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--color-gris-claro);
+  border: 1px solid color-mix(in srgb, var(--color-morado) 12%, #fff);
+}
+
+.summaryLabel {
+  font-size: 9pt;
+  font-weight: 700;
+  color: var(--color-malva);
+}
+
+.summaryValue {
+  font-size: 10.5pt;
+  color: var(--color-morado);
+  font-weight: 700;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.card {
+  flex: 1 1 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #fff);
+  background: #fff;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-morado);
+}
+
+.cardHeader h3 {
+  margin: 0;
+  font-size: 12pt;
+}
+
+.infoBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--color-gris-claro);
+}
+
+.label {
+  font-size: 9pt;
+  font-weight: 700;
+  color: var(--color-malva);
+}
+
+.value {
+  color: var(--color-morado);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.subSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subSection h4 {
+  margin: 0;
+  color: var(--color-yema);
+  font-size: 10.5pt;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-gris-claro);
+  border: 1px solid color-mix(in srgb, var(--color-morado) 10%, #fff);
+}
+
+.listItemMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.listTitle {
+  color: var(--color-morado);
+  font-weight: 700;
+}
+
+.listText {
+  color: color-mix(in srgb, var(--color-morado) 86%, #222);
+  font-size: 9.5pt;
+  word-break: break-word;
+}
+
+.badge {
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-yema) 18%, #fff);
+  color: var(--color-morado);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 8.5pt;
+  font-weight: 700;
+}
+
+.empty,
+.emptySmall {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--color-gris-claro);
+  color: var(--color-morado);
+}
+
+.empty {
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.addButton,
+.refreshButton,
+.inlineAddButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.subSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.listItemActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.iconDelete {
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .summary{
+    flex-direction: column;
+  }
+}

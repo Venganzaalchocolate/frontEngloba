@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
-
 import styles from "../styles/infoEmployer.module.css";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
@@ -12,10 +11,19 @@ import {
 } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
 import { getToken } from "../../lib/serviceToken";
-import { createChangeRequest, editUser, recreateCorporateEmail, profilePhotoSet, profilePhotoGet } from "../../lib/data";
+import {
+  createChangeRequest,
+  editUser,
+  recreateCorporateEmail,
+  profilePhotoSet,
+  profilePhotoGet,
+  postSesameInviteEmployeeForUser,
+  postSesameAssignEmployeeOffice,
+} from "../../lib/data";
 import { deepClone, formatDate } from "../../lib/utils";
 import { useLogin } from "../../hooks/useLogin";
 import ModalConfirmation from "../globals/ModalConfirmation";
+import ModalForm from "../globals/ModalForm";
 import perfil512 from "../../assets/perfil_512.png";
 import { processProfileImageSet } from "../../lib/imageProfile";
 
@@ -26,227 +34,83 @@ const InfoEmployer = ({
   changeUser,
   listResponsability,
   enumsData,
-  chargeUser = () => { },
+  chargeUser = () => {},
   soloInfo = false,
   onRequestCreated,
-  // photoThumbUrl
 }) => {
+  const { logged, changeLogged } = useLogin();
 
-const initialState = useMemo(
-  () => ({
-    ...user,
-    fostered: user.fostered ? "si" : "no",
-    apafa: user.apafa ? "si" : "no",
-    consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
-    tracking: user.tracking === true ? "si" : "no",
-  }),
-  [user]
-);
-const [originalData, setOriginalData] = useState(() => deepClone(initialState));
-const [datos, setDatos] = useState(initialState);
+  const initialState = useMemo(
+    () => ({
+      ...user,
+      fostered: user.fostered ? "si" : "no",
+      apafa: user.apafa ? "si" : "no",
+      consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
+      tracking: user.tracking === true ? "si" : "no",
+    }),
+    [user]
+  );
 
-useEffect(() => {
-  const nextState = {
-    ...user,
-    fostered: user.fostered ? "si" : "no",
-    apafa: user.apafa ? "si" : "no",
-    consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
-    tracking: user.tracking === true ? "si" : "no",
-  };
-
-  setOriginalData(deepClone(nextState));
-  setDatos(nextState);
-  setErrores({});
-  setIsEditing(false);
-}, [user]);
-
-
-
+  const [originalData, setOriginalData] = useState(() => deepClone(initialState));
+  const [datos, setDatos] = useState(initialState);
   const [isEditing, setIsEditing] = useState(false);
   const [errores, setErrores] = useState({});
-  const { logged, changeLogged } = useLogin();
   const [confirmRecreateEmail, setConfirmRecreateEmail] = useState(false);
   const [selectedStudy, setSelectedStudy] = useState("");
+  const [quickStatusTarget, setQuickStatusTarget] = useState(null);
+  const [activateSesameModal, setActivateSesameModal] = useState(false);
+  const [pendingStatusResponse, setPendingStatusResponse] = useState(null);
 
-//   //=========================================
-//   //PARTE DE PHOTOS
-//   //=========================================
-const [photoUrl, setPhotoUrl] = useState("");
-const [photoError, setPhotoError] = useState("");
-const [photoVersion, setPhotoVersion] = useState(0);
-const fileInputRef = useRef(null);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoError, setPhotoError] = useState("");
+  const [photoVersion, setPhotoVersion] = useState(0);
+  const fileInputRef = useRef(null);
 
-//abrir el edito de fotos sin restricción
-const openFilePicker = () => fileInputRef.current?.click();
-
-
-
-// InfoEmployer: SIEMPRE normal
-const loadPhoto = useCallback(async () => {
-  try {
-    if (!datos?._id) return;
-    setPhotoError("");
-
-    const token = getToken();
-    const blob = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
-
-    if (blob?.error) {
-      setPhotoUrl("");
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(blob);
-setPhotoUrl((prev) => {
-  if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-  return objectUrl;
-});
-  } catch {
-    setPhotoUrl("");
-  }
-}, [datos?._id]);
-
-useEffect(() => {
-  loadPhoto();
-}, [loadPhoto, photoVersion]);
-
-useEffect(() => {
-  return () => {
-    if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
-  };
-}, [photoUrl]);
-
-const onPickProfileImage = async (e) => {
-  const selectedFile = e.target.files?.[0];
-  if (!selectedFile) return;
-
-  setPhotoError("");
-  charge(true);
-
-  try {
-const processed = await processProfileImageSet(selectedFile, {
-  normalSize: 512,
-  thumbSize: 96,
-  mimeType: "image/jpeg",
-  normalQuality: 0.86,
-  thumbQuality: 0.8,
-});
-
-    const token = getToken();
-
-const updated = await profilePhotoSet(token, {
-  idUser: datos._id,
-  file: processed.normalFile,
-  thumb: processed.thumbFile,
-});
-
-    if (updated?.error) {
-      throw new Error(updated.message || "No se pudo subir la foto");
-    }
-
-    changeUser(updated);
-    setDatos((prev) => ({ ...prev, ...updated }));
-
-    if (logged.user?._id === updated?._id) {
-      changeLogged(updated);
-    }
-
-    if (processed.previewUrl) {
-      setPhotoUrl((prev) => {
-        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-        return processed.previewUrl;
-      });
-    }
-
-    setPhotoVersion((v) => v + 1);
-  } catch (error) {
-    setPhotoError(error.message || "Error subiendo la foto");
-  } finally {
-    charge(false);
-    e.target.value = "";
-  }
-};
-
-
-//   //=========================================
-//   //FIN PARTE DE PHOTOS
-//   //=========================================
-
-  // Supervisión / permisos
   const isSupervisor = Array.isArray(listResponsability)
     ? listResponsability.length > 0
     : Number(listResponsability) > 0;
 
   const canDirectEdit = isSupervisor || ["global", "root"].includes(logged.user.role);
 
-  // ---------- normalización de studiesIndex (soporta objeto o array)
+  const sesameOfficeOptions = useMemo(() => {
+    return Object.values(enumsData?.dispositiveIndex || {})
+      .filter((item) => !!item?.officeIdSesame && item?.active !== false)
+      .map((item) => ({
+        value: item.officeIdSesame,
+        label: `${item.name}${
+          item.program ? ` - ${enumsData?.programsIndex?.[String(item.program)]?.name || ""}` : ""
+        }`,
+      }));
+  }, [enumsData?.dispositiveIndex, enumsData?.programsIndex]);
+
   const studiesOptions = useMemo(() => {
     const idx = enumsData?.studiesIndex;
     if (!idx) return [];
 
-    // Índice como objeto { [id]: { name, isRoot?, isSub? } }
     return Object.entries(idx)
-      .filter(([, v]) => v?.isSub || !v?.isRoot) // evita raíces
-      .map(([id, v]) => ({ value: id, label: v?.name || id }));
+      .filter(([, value]) => value?.isSub || !value?.isRoot)
+      .map(([id, value]) => ({ value: id, label: value?.name || id }));
   }, [enumsData?.studiesIndex]);
 
   const availableStudiesOptions = useMemo(() => {
     const taken = new Set(Array.isArray(datos.studies) ? datos.studies : []);
-    return studiesOptions.filter((o) => !taken.has(o.value));
+    return studiesOptions.filter((option) => !taken.has(option.value));
   }, [datos.studies, studiesOptions]);
 
-  // Helper fecha -> YYYY-MM-DD
-  function toInputDate(isoString) {
-    if (!isoString) return "";
-    const d = new Date(isoString);
-    return d.toISOString().slice(0, 10);
-  }
+  const textFields = [
+    ["employmentStatus", "Estado Laboral"],
+    ["dni", "DNI"],
+    ["firstName", "Nombre"],
+    ["lastName", "Apellidos"],
+    ["birthday", "Fecha de Nacimiento"],
+    ["email", "Email Corporativo"],
+    ["email_personal", "Email Personal"],
+    ["socialSecurityNumber", "Número de Seguridad Social"],
+    ["bankAccountNumber", "Número de Cuenta Bancaria"],
+    ["phone", "Teléfono Personal"],
+    ["tracking", "Justificación"],
+  ];
 
-  // Handle change con validaciones
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const auxErrores = { ...errores };
-    const auxDatos = { ...datos };
-
-    auxErrores["mensajeError"] = null;
-
-    if (name.includes(".")) {
-      // Campos anidados (p.ej. disability.percentage)
-      const [parentKey, childKey] = name.split(".");
-      if (!auxDatos[parentKey]) auxDatos[parentKey] = {};
-      auxDatos[parentKey][childKey] = value;
-
-      if (parentKey === "disability" && childKey === "percentage") {
-        if (value === "") auxErrores[name] = null;
-        else auxErrores[name] = validNumber(value) ? null : textErrors("disPercentage");
-      } else {
-        auxErrores[name] = null;
-      }
-    } else {
-      if (name === "firstName") {
-        auxErrores[name] = validText(value, 3, 100) ? null : textErrors(name);
-      } else if (name === "email_personal") {
-        auxErrores[name] = validEmail(value) ? null : textErrors(name);
-      } else if (name === "phone") {
-        auxErrores[name] = validNumber(value) ? null : textErrors(name);
-      } else if (name === "dni") {
-        auxErrores[name] = value ? (validateDNIorNIE(value) ? null : textErrors(name)) : null;
-      } else if (name === "bankAccountNumber") {
-        auxErrores[name] = value ? (validateBankAccount(value) ? null : textErrors(name)) : null;
-      } else if (name === "phoneJobNumber") {
-        auxErrores[name] = value ? (validNumber(value) ? null : textErrors("phone")) : null;
-      } else if (name === "socialSecurityNumber") {
-        auxErrores[name] = null;
-      } else {
-        auxErrores[name] = null; // gender, fostered, apafa, tracking, etc.
-      }
-      auxDatos[name] = value;
-    }
-
-    setDatos(auxDatos);
-    setErrores(auxErrores);
-  };
-
-  // Solo estos pueden quedar vacíos al guardar
   const ALLOW_EMPTY = new Set([
     "socialSecurityNumber",
     "bankAccountNumber",
@@ -271,13 +135,166 @@ const updated = await profilePhotoSet(token, {
     "phone",
   ];
 
-  const isEmpty = (v) => v == null || String(v).trim() === "";
+useEffect(() => {
+  const nextState = {
+    ...user,
+    fostered: user.fostered ? "si" : "no",
+    apafa: user.apafa ? "si" : "no",
+    consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
+    tracking: user.tracking === true ? "si" : "no",
+  };
 
-  // Validar campos antes de guardar
+  setOriginalData(deepClone(nextState));
+  setDatos(nextState);
+  setErrores({});
+  setIsEditing(false);
+}, [user]);
+
+  // Carga la foto de perfil normal del usuario desde backend.
+  const loadPhoto = useCallback(async () => {
+    try {
+      if (!datos?._id) return;
+      setPhotoError("");
+
+      const token = getToken();
+      const blob = await profilePhotoGet(token, { idUser: datos._id, size: "normal" });
+
+      if (blob?.error) {
+        setPhotoUrl("");
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(blob);
+      setPhotoUrl((prev) => {
+        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return objectUrl;
+      });
+    } catch {
+      setPhotoUrl("");
+    }
+  }, [datos?._id]);
+
+  useEffect(() => {
+    loadPhoto();
+  }, [loadPhoto, photoVersion]);
+
+  useEffect(() => {
+    return () => {
+      if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
+    };
+  }, [photoUrl]);
+
+  // Convierte una fecha ISO a formato YYYY-MM-DD para inputs type="date".
+  function toInputDate(isoString) {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    return date.toISOString().slice(0, 10);
+  }
+
+  // Comprueba si un valor se considera vacío para validaciones.
+  function isEmpty(value) {
+    return value == null || String(value).trim() === "";
+  }
+
+  // Abre el selector nativo de archivos para cambiar la foto.
+  const openFilePicker = () => fileInputRef.current?.click();
+
+  
+
+  // Sube, procesa y actualiza la foto de perfil del usuario.
+  const onPickProfileImage = async (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    setPhotoError("");
+    charge(true);
+
+    try {
+      const processed = await processProfileImageSet(selectedFile, {
+        normalSize: 512,
+        thumbSize: 96,
+        mimeType: "image/jpeg",
+        normalQuality: 0.86,
+        thumbQuality: 0.8,
+      });
+
+      const token = getToken();
+      const updated = await profilePhotoSet(token, {
+        idUser: datos._id,
+        file: processed.normalFile,
+        thumb: processed.thumbFile,
+      });
+
+      if (updated?.error) throw new Error(updated.message || "No se pudo subir la foto");
+
+      changeUser(updated);
+      setDatos((prev) => ({ ...prev, ...updated }));
+
+      if (logged.user?._id === updated?._id) changeLogged(updated);
+
+      if (processed.previewUrl) {
+        setPhotoUrl((prev) => {
+          if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return processed.previewUrl;
+        });
+      }
+
+      setPhotoVersion((value) => value + 1);
+    } catch (error) {
+      setPhotoError(error.message || "Error subiendo la foto");
+    } finally {
+      charge(false);
+      e.target.value = "";
+    }
+  };
+
+  // Maneja cambios en inputs y selects, incluyendo campos anidados y validaciones en vivo.
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const auxErrores = { ...errores };
+    const auxDatos = { ...datos };
+
+    auxErrores.mensajeError = null;
+
+    if (name.includes(".")) {
+      const [parentKey, childKey] = name.split(".");
+      if (!auxDatos[parentKey]) auxDatos[parentKey] = {};
+      auxDatos[parentKey][childKey] = value;
+
+      if (parentKey === "disability" && childKey === "percentage") {
+        auxErrores[name] = value === "" ? null : validNumber(value) ? null : textErrors("disPercentage");
+      } else {
+        auxErrores[name] = null;
+      }
+    } else {
+      if (name === "firstName") {
+        auxErrores[name] = validText(value, 3, 100) ? null : textErrors(name);
+      } else if (name === "email_personal") {
+        auxErrores[name] = validEmail(value) ? null : textErrors(name);
+      } else if (name === "phone") {
+        auxErrores[name] = validNumber(value) ? null : textErrors(name);
+      } else if (name === "dni") {
+        auxErrores[name] = value ? (validateDNIorNIE(value) ? null : textErrors(name)) : null;
+      } else if (name === "bankAccountNumber") {
+        auxErrores[name] = value ? (validateBankAccount(value) ? null : textErrors(name)) : null;
+      } else if (name === "phoneJobNumber") {
+        auxErrores[name] = value ? (validNumber(value) ? null : textErrors("phone")) : null;
+      } else {
+        auxErrores[name] = null;
+      }
+
+      auxDatos[name] = value;
+    }
+
+    setDatos(auxDatos);
+    setErrores(auxErrores);
+  };
+
+  // Valida todos los campos requeridos antes de guardar.
   const validateFields = () => {
     const newErrors = {};
 
-    for (let key in errores) {
+    for (const key in errores) {
       if (errores[key] != null) return false;
     }
 
@@ -290,7 +307,7 @@ const updated = await profilePhotoSet(token, {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Calcular campos modificados
+  // Obtiene solo los campos modificados respecto al estado original.
   const getModifiedFields = () => {
     const changed = {};
     const fieldsToCompare = [
@@ -308,17 +325,18 @@ const updated = await profilePhotoSet(token, {
       "role",
       "birthday",
       "phone",
-      "tracking", // NUEVO
+      "tracking",
     ];
 
-    fieldsToCompare.forEach((f) => {
-      if (datos[f] !== originalData[f]) changed[f] = datos[f];
+    fieldsToCompare.forEach((field) => {
+      if (datos[field] !== originalData[field]) changed[field] = datos[field];
     });
 
     const oldP = originalData.disability?.percentage || "";
     const oldN = originalData.disability?.notes || "";
     const newP = datos.disability?.percentage || "";
     const newN = datos.disability?.notes || "";
+
     if (newP !== oldP) changed.disPercentage = newP;
     if (newN !== oldN) changed.disNotes = newN;
 
@@ -337,7 +355,7 @@ const updated = await profilePhotoSet(token, {
     return changed;
   };
 
-  // Mapeo modified -> changes (dot paths)
+  // Convierte los cambios detectados al formato de solicitudes de cambio para supervisión.
   const toChangeLines = (modified, original) => {
     const map = {
       disPercentage: "disability.percentage",
@@ -357,18 +375,17 @@ const updated = await profilePhotoSet(token, {
         else if (to === "no") to = false;
       }
 
-      const from = path.split(".").reduce((acc, k) => (acc ? acc[k] : undefined), original);
-
+      const from = path.split(".").reduce((acc, item) => (acc ? acc[item] : undefined), original);
       changes.push({ path, from, to });
     }
 
     return changes;
   };
 
+  // Activa o desactiva el modo edición.
   const handleEdit = () => setIsEditing(!isEditing);
 
-  // handleSave modificado (sin stringify)
-
+  // Guarda cambios directos o crea una solicitud de cambio si el usuario no puede editar directamente.
   const handleSave = async () => {
     if (!validateFields()) return;
 
@@ -380,48 +397,34 @@ const updated = await profilePhotoSet(token, {
 
     setIsEditing(false);
     charge(true);
-    const token = getToken();
 
     try {
+      const token = getToken();
+
       if (canDirectEdit) {
-
         const payload = { ...modifiedData, _id: originalData._id };
-
         const response = await editUser(payload, token);
 
-        if (!response.error) {
-          changeUser(response);
-          modal("Editar Usuario", "Usuario editado con éxito");
+        if (response?.error) throw new Error(response.message || "Error al editar");
 
-          if (logged.user._id === user._id) {
-            changeLogged(response);
-          }
+        changeUser(response);
+        if (logged.user._id === user._id) changeLogged(response);
 
-          chargeUser();
-        } else {
-          throw new Error(response.message || "Error al editar");
-        }
-
-      } else {
-        const changes = toChangeLines(modifiedData, originalData);
-
-        const payload = {
-          userId: originalData._id,
-          changes,
-          note: "",
-        };
-
-        const resp = await createChangeRequest(payload, token);
-
-        if (!resp.error) {
-          const created = resp?.data && resp?.data?._id ? resp.data : resp;
-          onRequestCreated?.(created);
-          modal("Solicitud enviada", "Tu supervisor revisará los cambios");
-          setDatos(deepClone(originalData));
-        } else {
-          throw new Error(resp.message || "No se pudo crear la solicitud");
-        }
+        modal("Editar Usuario", "Usuario editado con éxito");
+        chargeUser();
+        return;
       }
+
+      const changes = toChangeLines(modifiedData, originalData);
+      const payload = { userId: originalData._id, changes, note: "" };
+      const resp = await createChangeRequest(payload, token);
+
+      if (resp?.error) throw new Error(resp.message || "No se pudo crear la solicitud");
+
+      const created = resp?.data && resp?.data?._id ? resp.data : resp;
+      onRequestCreated?.(created);
+      modal("Solicitud enviada", "Tu supervisor revisará los cambios");
+      setDatos(deepClone(originalData));
     } catch (e) {
       setDatos(deepClone(originalData));
       modal("Error", e.message || "No se pudo procesar la operación");
@@ -430,80 +433,55 @@ const updated = await profilePhotoSet(token, {
     }
   };
 
-
+  // Cancela la edición y restaura los datos originales.
   const reset = () => {
     setErrores({});
     setIsEditing(false);
     setDatos(deepClone(originalData));
   };
 
-  const boton = () => {
-    if (soloInfo) return "";
-    return !isEditing ? (
-      !canDirectEdit ? (
-        <button onClick={handleEdit}>Pedir cambios</button>
-      ) : (
-        <FaEdit onClick={handleEdit} />
-      )
-    ) : (
-      <>
-        <button onClick={handleSave}>{canDirectEdit ? "Guardar" : "Enviar solicitud"}</button>
-        <button onClick={reset}>Cancelar</button>
-      </>
-    );
+  // Añade un estudio a la lista de estudios del usuario.
+  const handleAddStudy = () => {
+    if (!selectedStudy) return;
+
+    setDatos((prev) => ({
+      ...prev,
+      studies: prev.studies ? [...prev.studies, selectedStudy] : [selectedStudy],
+    }));
+
+    setSelectedStudy("");
   };
 
-  // ---------- label por id usando índice nuevo si hace falta
+  // Elimina un estudio de la lista de estudios del usuario.
+  const handleDeleteStudy = (studyToDelete) => {
+    setDatos((prev) => ({
+      ...prev,
+      studies: prev.studies.filter((study) => study !== studyToDelete),
+    }));
+  };
+
+  // Devuelve la etiqueta legible de un estudio a partir de su id.
   const getStudyLabel = useCallback(
     (id) => {
-      const byOption = studiesOptions.find((o) => o.value === id)?.label;
+      const byOption = studiesOptions.find((option) => option.value === id)?.label;
       if (byOption) return byOption;
+
       const idx = enumsData?.studiesIndex;
       if (idx && !Array.isArray(idx)) return idx?.[id]?.name || id;
+
       return id;
     },
     [studiesOptions, enumsData?.studiesIndex]
   );
 
-  // Campos de texto principales
-  const textFields = [
-    ["employmentStatus", "Estado Laboral"],
-    ["dni", "DNI"],
-    ["firstName", "Nombre"],
-    ["lastName", "Apellidos"],
-    ["birthday", "Fecha de Nacimiento"],
-    ["email", "Email Corporativo"],
-    ["email_personal", "Email Personal"],
-    ["socialSecurityNumber", "Número de Seguridad Social"],
-    ["bankAccountNumber", "Número de Cuenta Bancaria"],
-    ["phone", "Teléfono Personal"],
-    ["tracking", "Justificación"], // NUEVO
-  ];
-
-  // Estudios
-  const handleAddStudy = () => {
-    if (!selectedStudy) return;
-    setDatos((prev) => ({
-      ...prev,
-      studies: prev.studies ? [...prev.studies, selectedStudy] : [selectedStudy],
-    }));
-    setSelectedStudy("");
-  };
-
-  const handleDeleteStudy = (studyToDelete) => {
-    setDatos((prev) => ({
-      ...prev,
-      studies: prev.studies.filter((s) => s !== studyToDelete),
-    }));
-  };
-
+  // Abre la confirmación para recrear el correo corporativo.
   const recreateEmail = () => {
     if (!datos?._id) return;
     setConfirmRecreateEmail(true);
   };
 
+  // Recrea el correo corporativo del usuario en Workspace.
   const doRecreateEmail = async () => {
-
     const idUser = datos?._id;
     if (!idUser) return;
 
@@ -512,30 +490,24 @@ const updated = await profilePhotoSet(token, {
 
     try {
       const token = getToken();
-
       const resp = await recreateCorporateEmail({ userId: idUser }, token);
+
       if (resp?.error) {
-        modal('Error', "No se pudo recrear el correo");
-      } else {
-        setDatos((prev) => ({
-          ...prev,
-          email: resp.email
-        }));
-        changeUser(resp);
-
-        if (logged.user?._id === idUser) {
-          changeLogged(resp);
-        }
-
-        modal(
-          "Email recreado",
-          "Se ha generado un nuevo email corporativo. El anterior usuario de Workspace se ha eliminado."
-        );
-
-        chargeUser?.();
+        modal("Error", "No se pudo recrear el correo");
+        return;
       }
 
+      setDatos((prev) => ({ ...prev, email: resp.email }));
+      changeUser(resp);
 
+      if (logged.user?._id === idUser) changeLogged(resp);
+
+      modal(
+        "Email recreado",
+        "Se ha generado un nuevo email corporativo. El anterior usuario de Workspace se ha eliminado."
+      );
+
+      chargeUser?.();
     } catch (e) {
       modal("Error", e.message || "No se pudo recrear el email corporativo");
     } finally {
@@ -543,44 +515,215 @@ const updated = await profilePhotoSet(token, {
     }
   };
 
-  // const src = !isEditing
-  // ? (photoNormalUrl || photoThumbUrl)
-  // : (photoThumbUrl || photoNormalUrl);
+  // Cambia el estado laboral del usuario y, si pasa a activo, prepara el flujo posterior de Sesame.
+const handleChangeStatus = async (formData) => {
+  charge(true);
+
+  try {
+    const token = getToken();
+    const response = await editUser({ _id: datos._id, employmentStatus: formData.status }, token);
+
+    if (response?.error) {
+      modal("Error", response.message || "Error al cambiar el estado");
+      return;
+    }
+
+    changeUser(response);
+    setDatos((prev) => ({
+      ...prev,
+      employmentStatus: response.employmentStatus,
+      userIdSesame: response.userIdSesame || prev.userIdSesame,
+    }));
+    setOriginalData((prev) => ({
+      ...deepClone(prev),
+      employmentStatus: response.employmentStatus,
+      userIdSesame: response.userIdSesame || prev.userIdSesame,
+    }));
+
+    if (logged.user._id === user._id) changeLogged(response);
+
+    setQuickStatusTarget(null);
+
+    if (formData.status === "activo") {
+      setPendingStatusResponse(response);
+      setActivateSesameModal(true);
+      return;
+    }
+
+    chargeUser();
+    modal("Estado actualizado", "El estado laboral se ha actualizado correctamente");
+  } catch (e) {
+    modal("Error", e.message || "No se pudo cambiar el estado");
+  } finally {
+    charge(false);
+  }
+};
+
+  // Activa o crea al usuario en Sesame y lo asigna a un centro principal.
+  const handleActivateInSesame = async (formData) => {
+    try {
+      charge(true);
+      const token = getToken();
+
+      const sesameRes = await postSesameInviteEmployeeForUser({ userId: datos._id }, token);
+      if (sesameRes?.error) {
+        modal("Error", sesameRes.message || "No se pudo activar el usuario en Sesame");
+        return;
+      }
+
+      const officeRes = await postSesameAssignEmployeeOffice(
+        {
+          employeeId: datos._id,
+          officeId: formData.officeId,
+          isMainOffice: true,
+        },
+        token
+      );
+
+      if (officeRes?.error) {
+        modal("Error", officeRes.message || "El usuario se activó en Sesame, pero no se pudo asignar al centro");
+        return;
+      }
+
+      if (sesameRes?.sesameId && (!datos?.userIdSesame || String(datos.userIdSesame) !== String(sesameRes.sesameId))) {
+        const updatedUser = { ...datos, userIdSesame: sesameRes.sesameId };
+        changeUser(updatedUser);
+        setDatos(updatedUser);
+        setOriginalData((prev) => ({ ...deepClone(prev), userIdSesame: sesameRes.sesameId }));
+        if (logged.user._id === user._id) changeLogged(updatedUser);
+      }
+
+      setActivateSesameModal(false);
+      setPendingStatusResponse(null);
+      modal("Sesame", "Usuario activado en Sesame y asignado al centro correctamente");
+    } catch (e) {
+      modal("Error", e.message || "No se pudo activar en Sesame");
+    } finally {
+      charge(false);
+    }
+  };
+
+  // Cancela el modal de activación en Sesame y revierte el estado laboral al anterior.
+  const handleCancelActivateSesame = async () => {
+    try {
+      charge(true);
+      const token = getToken();
+
+      const previousStatus = originalData?.employmentStatus;
+      if (!previousStatus) {
+        setActivateSesameModal(false);
+        setPendingStatusResponse(null);
+        return;
+      }
+
+      const response = await editUser({ _id: datos._id, employmentStatus: previousStatus }, token);
+
+      if (response?.error) {
+        modal("Error", response.message || "No se pudo revertir el estado");
+        return;
+      }
+
+      changeUser(response);
+      setDatos((prev) => ({
+        ...prev,
+        employmentStatus: response.employmentStatus,
+        userIdSesame: response.userIdSesame || prev.userIdSesame,
+      }));
+      setOriginalData((prev) => ({
+        ...deepClone(prev),
+        employmentStatus: response.employmentStatus,
+        userIdSesame: response.userIdSesame || prev.userIdSesame,
+      }));
+
+      if (logged.user._id === user._id) changeLogged(response);
+
+      setActivateSesameModal(false);
+      setPendingStatusResponse(null);
+      chargeUser();
+      modal("Cambio cancelado", "Se ha restaurado el estado laboral anterior.");
+    } catch (e) {
+      modal("Error", e.message || "No se pudo revertir el estado");
+    } finally {
+      charge(false);
+    }
+  };
+
+  // Renderiza los botones superiores según el modo actual del formulario.
+  const boton = () => {
+    if (soloInfo) return "";
+
+    if (!isEditing) {
+      return !canDirectEdit ? (
+        <button onClick={handleEdit}>Pedir cambios</button>
+      ) : (
+        <FaEdit onClick={handleEdit} />
+      );
+    }
+
+    return (
+      <>
+        <button onClick={handleSave}>{canDirectEdit ? "Guardar" : "Enviar solicitud"}</button>
+        <button onClick={reset}>Cancelar</button>
+      </>
+    );
+  };
 
   return (
     <div className={styles.contenedor}>
-      <h2>INFORMACIÓN PERSONAL {boton()} {(logged.user.role === "root" || logged.user.role === "global") && (<button onClick={() => recreateEmail()}>Volver a crear el email coorporativo</button>)}</h2>
- 
-<div className={styles.photoContainer}>
-  <button
-    type="button"
-    className={styles.photoButton}
-    onClick={openFilePicker}
-    title="Cambiar foto de perfil"
-  >
-    <img
-      src={photoUrl || perfil512}
-      alt="Foto de perfil"
-      className={styles.photoNormal}
-      decoding="async"
-      onError={(e) => {
-        e.currentTarget.src = perfil512;
-      }}
-    />
-  </button>
+      <h2>
+        INFORMACIÓN PERSONAL
+        {boton()}
+        {(logged.user.role === "root" || logged.user.role === "global") && (
+          <div className={styles.cajaBotonesSuperiores}>
+            {logged.user.role === "root" && (
+              <button onClick={recreateEmail}>Volver a crear el email coorporativo</button>
+            )}
 
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept="image/jpeg,image/png,image/webp"
-    capture="user"
-    onChange={onPickProfileImage}
-    className={styles.photoFileHidden}
-  />
+            <button
+              className={
+                datos.employmentStatus === "activo"
+                  ? styles.activo
+                  : datos.employmentStatus === "en proceso de contratación"
+                  ? styles.enproceso
+                  : styles.noactivo
+              }
+              onClick={() => setQuickStatusTarget(datos.employmentStatus)}
+            >
+              Estado: {datos.employmentStatus}
+            </button>
+          </div>
+        )}
+      </h2>
 
-  {photoError && <span className={styles.errorSpan}>{photoError}</span>}
-</div>
+      <div className={styles.photoContainer}>
+        <button
+          type="button"
+          className={styles.photoButton}
+          onClick={openFilePicker}
+          title="Cambiar foto de perfil"
+        >
+          <img
+            src={photoUrl || perfil512}
+            alt="Foto de perfil"
+            className={styles.photoNormal}
+            decoding="async"
+            onError={(e) => {
+              e.currentTarget.src = perfil512;
+            }}
+          />
+        </button>
 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          capture="user"
+          onChange={onPickProfileImage}
+          className={styles.photoFileHidden}
+        />
+
+        {photoError && <span className={styles.errorSpan}>{photoError}</span>}
+      </div>
 
       {logged.user.role === "root" && (
         <div className={styles.roleContainer}>
@@ -602,7 +745,6 @@ const updated = await profilePhotoSet(token, {
         </div>
       )}
 
-      {/* Apafa */}
       <div className={styles.apafaContainer}>
         <label className={styles.apafaLabel}>Apafa</label>
         <select
@@ -618,7 +760,6 @@ const updated = await profilePhotoSet(token, {
         {errores.apafa && <span className={styles.errorSpan}>{errores.apafa}</span>}
       </div>
 
-      {/* Campos principales */}
       {textFields.map(([fieldName, label]) => {
         if (fieldName === "birthday") {
           return (
@@ -641,19 +782,15 @@ const updated = await profilePhotoSet(token, {
                   onChange={handleChange}
                 />
               )}
-              {errores[fieldName] && (
-                <span className={styles.errorSpan}>{errores[fieldName]}</span>
-              )}
+
+              {errores[fieldName] && <span className={styles.errorSpan}>{errores[fieldName]}</span>}
             </div>
           );
         }
 
-        const isRootOrGlobal =
-          logged.user.role === "global" || logged.user.role === "root";
-
+        const isRootOrGlobal = logged.user.role === "global" || logged.user.role === "root";
         let control = null;
 
-        // tracking: select si/no para global/root, resto solo lectura
         if (fieldName === "tracking") {
           if (isRootOrGlobal) {
             control = (
@@ -679,7 +816,6 @@ const updated = await profilePhotoSet(token, {
             );
           }
         } else if (fieldName === "employmentStatus" && isRootOrGlobal) {
-          // Estado laboral: solo editable para global/root
           control = (
             <select
               className={styles[fieldName]}
@@ -688,62 +824,48 @@ const updated = await profilePhotoSet(token, {
               onChange={handleChange}
               disabled={!isEditing}
             >
-              {(enumsData?.status || []).map((x) => (
-                <option value={x} key={x}>
-                  {x}
+              {(enumsData?.status || []).map((value) => (
+                <option value={value} key={value}>
+                  {value}
                 </option>
               ))}
             </select>
           );
         } else if (fieldName === "employmentStatus" && !isRootOrGlobal) {
+          control = <input className={styles[fieldName]} type="text" value={datos[fieldName] || ""} disabled />;
+        } else if (fieldName === "email") {
           control = (
             <input
               className={styles[fieldName]}
               type="text"
+              name={fieldName}
               value={datos[fieldName] || ""}
+              onChange={handleChange}
               disabled
             />
           );
         } else {
-          if (fieldName == 'email') {
-            control = (
-              <input
-                className={styles[fieldName]}
-                type="text"
-                name={fieldName}
-                value={datos[fieldName] || ""}
-                onChange={handleChange}
-                disabled={true}
-              />
-            );
-          } else {
-            // Resto de campos: input normal
-            control = (
-              <input
-                className={styles[fieldName]}
-                type="text"
-                name={fieldName}
-                value={datos[fieldName] || ""}
-                onChange={handleChange}
-                disabled={!isEditing}
-              />
-            );
-          }
-
+          control = (
+            <input
+              className={styles[fieldName]}
+              type="text"
+              name={fieldName}
+              value={datos[fieldName] || ""}
+              onChange={handleChange}
+              disabled={!isEditing}
+            />
+          );
         }
 
         return (
           <div key={fieldName} className={styles[fieldName + "Container"]}>
             <label className={styles[fieldName + "Label"]}>{label}</label>
             {control}
-            {errores[fieldName] && (
-              <span className={styles.errorSpan}>{errores[fieldName]}</span>
-            )}
+            {errores[fieldName] && <span className={styles.errorSpan}>{errores[fieldName]}</span>}
           </div>
         );
       })}
 
-      {/* Teléfono laboral y extensión */}
       <div className={styles.phoneJobContainer}>
         <label className={styles.phoneJobLabel}>Teléfono Laboral</label>
         <input
@@ -754,9 +876,7 @@ const updated = await profilePhotoSet(token, {
           onChange={handleChange}
           disabled={!isEditing}
         />
-        {errores["phoneJobNumber"] && (
-          <span className={styles.errorSpan}>{errores["phoneJobNumber"]}</span>
-        )}
+        {errores.phoneJobNumber && <span className={styles.errorSpan}>{errores.phoneJobNumber}</span>}
       </div>
 
       <div className={styles.phoneJobExtensionContainer}>
@@ -771,7 +891,6 @@ const updated = await profilePhotoSet(token, {
         />
       </div>
 
-      {/* Género */}
       <div className={styles.genderContainer}>
         <label className={styles.genderLabel}>Género</label>
         <select
@@ -787,12 +906,9 @@ const updated = await profilePhotoSet(token, {
           <option value="others">Otros</option>
           <option value="nonBinary">No binario</option>
         </select>
-        {errores.gender && (
-          <span className={styles.errorSpan}>{errores.gender}</span>
-        )}
+        {errores.gender && <span className={styles.errorSpan}>{errores.gender}</span>}
       </div>
 
-      {/* Extutelado */}
       <div className={styles.fosteredContainer}>
         <label className={styles.fosteredLabel}>Extutelado</label>
         <select
@@ -805,17 +921,12 @@ const updated = await profilePhotoSet(token, {
           <option value="si">Sí</option>
           <option value="no">No</option>
         </select>
-        {errores.fostered && (
-          <span className={styles.errorSpan}>{errores.fostered}</span>
-        )}
+        {errores.fostered && <span className={styles.errorSpan}>{errores.fostered}</span>}
       </div>
 
-      {/* Consentimiento PD (solo si es "no" o en edición) */}
       {(isEditing || (!!datos && datos.consetmentDataProtection === "no")) && (
         <div className={styles.consetmentDataProtectionContainer}>
-          <label className={styles.consetmentDataProtectionLabel}>
-            Consentimiento PD
-          </label>
+          <label className={styles.consetmentDataProtectionLabel}>Consentimiento PD</label>
           <select
             className={styles.consetmentDataProtection}
             name="consetmentDataProtection"
@@ -827,20 +938,15 @@ const updated = await profilePhotoSet(token, {
             <option value="no">No</option>
           </select>
           {errores.consetmentDataProtection && (
-            <span className={styles.errorSpan}>
-              {errores.consetmentDataProtection}
-            </span>
+            <span className={styles.errorSpan}>{errores.consetmentDataProtection}</span>
           )}
         </div>
       )}
 
-      {/* Discapacidad (solo si hay valor o en edición) */}
       {(isEditing || (datos?.disability?.percentage || 0) > 0) && (
         <>
           <div className={styles.disabilityPercentageContainer}>
-            <label className={styles.disabilityPercentageLabel}>
-              Porcentaje de Discapacidad
-            </label>
+            <label className={styles.disabilityPercentageLabel}>Porcentaje de Discapacidad</label>
             <input
               className={styles.disabilityPercentage}
               type="number"
@@ -850,16 +956,12 @@ const updated = await profilePhotoSet(token, {
               disabled={!isEditing}
             />
             {errores["disability.percentage"] && (
-              <span className={styles.errorSpan}>
-                {errores["disability.percentage"]}
-              </span>
+              <span className={styles.errorSpan}>{errores["disability.percentage"]}</span>
             )}
           </div>
 
           <div className={styles.disabilityNotesContainer}>
-            <label className={styles.disabilityNotesLabel}>
-              Notas sobre la discapacidad
-            </label>
+            <label className={styles.disabilityNotesLabel}>Notas sobre la discapacidad</label>
             <input
               className={styles.disabilityNotes}
               type="text"
@@ -869,46 +971,40 @@ const updated = await profilePhotoSet(token, {
               disabled={!isEditing}
             />
             {errores["disability.notes"] && (
-              <span className={styles.errorSpan}>
-                {errores["disability.notes"]}
-              </span>
+              <span className={styles.errorSpan}>{errores["disability.notes"]}</span>
             )}
           </div>
         </>
       )}
-      {/* Estudios */}
+
       <div className={styles.studiesContainer}>
         <label className={styles.studiesLabel}>Estudios</label>
+
         {!isEditing ? (
           datos.studies?.length ? (
-            datos.studies.map((study, i) => (
-              <p key={i} className={styles.studyItem}>
+            datos.studies.map((study, index) => (
+              <p key={index} className={styles.studyItem}>
                 {getStudyLabel(study)}
               </p>
             ))
           ) : (
-            <p className={styles.noStudies}>
-              No hay información sobre estudios
-            </p>
+            <p className={styles.noStudies}>No hay información sobre estudios</p>
           )
         ) : (
           <>
             <div className={styles.studiesList}>
-
               {datos.studies?.length ? (
-                datos.studies.map((study, i) => (
-                  <div key={i} className={styles.studyItem}>
+                datos.studies.map((study, index) => (
+                  <div key={index} className={styles.studyItem}>
                     <p>{getStudyLabel(study)}</p>
-                    <FaTrashAlt
-                      onClick={() => handleDeleteStudy(study)}
-                      className={styles.trashIcon}
-                    />
+                    <FaTrashAlt onClick={() => handleDeleteStudy(study)} className={styles.trashIcon} />
                   </div>
                 ))
               ) : (
                 <p className={styles.noStudies}>No hay estudios seleccionados</p>
               )}
             </div>
+
             <div className={styles.addStudy}>
               <select
                 className={styles.studySelect}
@@ -916,20 +1012,19 @@ const updated = await profilePhotoSet(token, {
                 onChange={(e) => setSelectedStudy(e.target.value)}
               >
                 <option value="">Añadir estudios</option>
-                {availableStudiesOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
+                {availableStudiesOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
-              <FaSquarePlus
-                onClick={handleAddStudy}
-                className={styles.plusIcon}
-              />
+
+              <FaSquarePlus onClick={handleAddStudy} className={styles.plusIcon} />
             </div>
           </>
         )}
       </div>
+
       {confirmRecreateEmail && (
         <ModalConfirmation
           title="Volver a crear el email corporativo"
@@ -939,14 +1034,53 @@ const updated = await profilePhotoSet(token, {
             "¿Quieres continuar?"
           }
           onCancel={() => setConfirmRecreateEmail(false)}
-          onConfirm={() => doRecreateEmail()}
+          onConfirm={doRecreateEmail}
           textConfirm="Sí, recrear email"
         />
       )}
 
+      {quickStatusTarget && (
+        <ModalForm
+          title="Cambiar estado laboral"
+          fields={[
+            {
+              name: "status",
+              label: "Estado",
+              type: "select",
+              required: true,
+              options: [
+                { value: "activo", label: "Activo" },
+                { value: "en proceso de contratación", label: "En proceso de contratación" },
+                { value: "ya no trabaja con nosotros", label: "Ya no trabaja con nosotros" },
+              ].filter((option) => option.value !== datos.employmentStatus),
+            },
+          ]}
+          onSubmit={handleChangeStatus}
+          onClose={() => setQuickStatusTarget(null)}
+          modal={modal}
+        />
+      )}
+
+      {activateSesameModal && (
+        <ModalForm
+          title="Activar en Sesame"
+          message="Selecciona el centro al que quieres asignar a la persona en Sesame"
+          fields={[
+            {
+              name: "officeId",
+              label: "Centro",
+              type: "select",
+              required: true,
+              options: sesameOfficeOptions,
+            },
+          ]}
+          onSubmit={handleActivateInSesame}
+          onClose={handleCancelActivateSesame}
+          modal={modal}
+        />
+      )}
     </div>
   );
-
 };
 
 export default InfoEmployer;

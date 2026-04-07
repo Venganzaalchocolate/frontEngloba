@@ -60,6 +60,7 @@ const InfoEmployer = ({
   const [quickStatusTarget, setQuickStatusTarget] = useState(null);
   const [activateSesameModal, setActivateSesameModal] = useState(false);
   const [pendingStatusResponse, setPendingStatusResponse] = useState(null);
+  const [previousEmploymentStatus, setPreviousEmploymentStatus] = useState(null);
 
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoError, setPhotoError] = useState("");
@@ -521,6 +522,8 @@ const handleChangeStatus = async (formData) => {
 
   try {
     const token = getToken();
+    const prevStatus = datos.employmentStatus;
+
     const response = await editUser({ _id: datos._id, employmentStatus: formData.status }, token);
 
     if (response?.error) {
@@ -534,21 +537,23 @@ const handleChangeStatus = async (formData) => {
       employmentStatus: response.employmentStatus,
       userIdSesame: response.userIdSesame || prev.userIdSesame,
     }));
-    setOriginalData((prev) => ({
-      ...deepClone(prev),
-      employmentStatus: response.employmentStatus,
-      userIdSesame: response.userIdSesame || prev.userIdSesame,
-    }));
 
     if (logged.user._id === user._id) changeLogged(response);
 
     setQuickStatusTarget(null);
 
     if (formData.status === "activo") {
+      setPreviousEmploymentStatus(prevStatus);
       setPendingStatusResponse(response);
       setActivateSesameModal(true);
       return;
     }
+
+    setOriginalData((prev) => ({
+      ...deepClone(prev),
+      employmentStatus: response.employmentStatus,
+      userIdSesame: response.userIdSesame || prev.userIdSesame,
+    }));
 
     chargeUser();
     modal("Estado actualizado", "El estado laboral se ha actualizado correctamente");
@@ -589,7 +594,12 @@ const handleChangeStatus = async (formData) => {
         const updatedUser = { ...datos, userIdSesame: sesameRes.sesameId };
         changeUser(updatedUser);
         setDatos(updatedUser);
-        setOriginalData((prev) => ({ ...deepClone(prev), userIdSesame: sesameRes.sesameId }));
+        setOriginalData((prev) => ({
+          ...deepClone(prev),
+          employmentStatus: "activo",
+          userIdSesame: sesameRes?.sesameId || prev.userIdSesame,
+        }));
+        setPreviousEmploymentStatus(null);
         if (logged.user._id === user._id) changeLogged(updatedUser);
       }
 
@@ -604,49 +614,51 @@ const handleChangeStatus = async (formData) => {
   };
 
   // Cancela el modal de activación en Sesame y revierte el estado laboral al anterior.
-  const handleCancelActivateSesame = async () => {
-    try {
-      charge(true);
-      const token = getToken();
+const handleCancelActivateSesame = async () => {
+  try {
+    charge(true);
+    const token = getToken();
 
-      const previousStatus = originalData?.employmentStatus;
-      if (!previousStatus) {
-        setActivateSesameModal(false);
-        setPendingStatusResponse(null);
-        return;
-      }
-
-      const response = await editUser({ _id: datos._id, employmentStatus: previousStatus }, token);
-
-      if (response?.error) {
-        modal("Error", response.message || "No se pudo revertir el estado");
-        return;
-      }
-
-      changeUser(response);
-      setDatos((prev) => ({
-        ...prev,
-        employmentStatus: response.employmentStatus,
-        userIdSesame: response.userIdSesame || prev.userIdSesame,
-      }));
-      setOriginalData((prev) => ({
-        ...deepClone(prev),
-        employmentStatus: response.employmentStatus,
-        userIdSesame: response.userIdSesame || prev.userIdSesame,
-      }));
-
-      if (logged.user._id === user._id) changeLogged(response);
-
+    const previousStatus = previousEmploymentStatus;
+    if (!previousStatus) {
       setActivateSesameModal(false);
       setPendingStatusResponse(null);
-      chargeUser();
-      modal("Cambio cancelado", "Se ha restaurado el estado laboral anterior.");
-    } catch (e) {
-      modal("Error", e.message || "No se pudo revertir el estado");
-    } finally {
-      charge(false);
+      return;
     }
-  };
+
+    const response = await editUser({ _id: datos._id, employmentStatus: previousStatus }, token);
+
+    if (response?.error) {
+      modal("Error", response.message || "No se pudo revertir el estado");
+      return;
+    }
+
+    changeUser(response);
+    setDatos((prev) => ({
+      ...prev,
+      employmentStatus: response.employmentStatus,
+      userIdSesame: response.userIdSesame || prev.userIdSesame,
+    }));
+
+    setOriginalData((prev) => ({
+      ...deepClone(prev),
+      employmentStatus: response.employmentStatus,
+      userIdSesame: response.userIdSesame || prev.userIdSesame,
+    }));
+
+    if (logged.user._id === user._id) changeLogged(response);
+
+    setPreviousEmploymentStatus(null);
+    setActivateSesameModal(false);
+    setPendingStatusResponse(null);
+    chargeUser();
+    modal("Cambio cancelado", "Se ha restaurado el estado laboral anterior.");
+  } catch (e) {
+    modal("Error", e.message || "No se pudo revertir el estado");
+  } finally {
+    charge(false);
+  }
+};
 
   // Renderiza los botones superiores según el modo actual del formulario.
   const boton = () => {

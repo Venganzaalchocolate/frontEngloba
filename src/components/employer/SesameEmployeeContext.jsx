@@ -246,10 +246,10 @@ export default function SesameEmployeeContext({
     }
   };
 
-useEffect(() => {
-  loadContext();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [employeeId, user?.userIdSesame]);
+  useEffect(() => {
+    loadContext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeId, user?.userIdSesame]);
 
 
 
@@ -341,60 +341,60 @@ useEffect(() => {
       ? "Inactivar"
       : "Activar";
 
-const handleToggleSesameEmployee = async () => {
-  try {
-    charge(true);
-    const token = getToken();
+  const handleToggleSesameEmployee = async () => {
+    try {
+      charge(true);
+      const token = getToken();
 
-    const res = await postSesameToggleEmployeeForUser({ userId: employeeId }, token);
+      const res = await postSesameToggleEmployeeForUser({ userId: employeeId }, token);
 
-    if (res?.error) throw new Error(res.message || "No se pudo cambiar el estado en Sesame");
+      if (res?.error) throw new Error(res.message || "No se pudo cambiar el estado en Sesame");
 
-    if (res?.sesameId && (!user?.userIdSesame || String(user.userIdSesame) !== String(res.sesameId))) {
-      changeUser?.({ ...user, userIdSesame: res.sesameId });
+      if (res?.sesameId && (!user?.userIdSesame || String(user.userIdSesame) !== String(res.sesameId))) {
+        changeUser?.({ ...user, userIdSesame: res.sesameId });
+      }
+
+      await loadContext();
+
+      const action = res?.action || "";
+      const message =
+        action === "created"
+          ? "El usuario se ha creado en Sesame correctamente."
+          : action === "enabled"
+            ? "El usuario se ha activado en Sesame correctamente."
+            : action === "disabled"
+              ? "El usuario se ha inactivado en Sesame correctamente."
+              : "La operación se ha realizado correctamente.";
+
+      modal("Sesame", message);
+    } catch (error) {
+      modal("Error", error.message || "No se pudo cambiar el estado en Sesame");
+    } finally {
+      charge(false);
     }
-
-    await loadContext();
-
-    const action = res?.action || "";
-    const message =
-      action === "created"
-        ? "El usuario se ha creado en Sesame correctamente."
-        : action === "enabled"
-          ? "El usuario se ha activado en Sesame correctamente."
-          : action === "disabled"
-            ? "El usuario se ha inactivado en Sesame correctamente."
-            : "La operación se ha realizado correctamente.";
-
-    modal("Sesame", message);
-  } catch (error) {
-    modal("Error", error.message || "No se pudo cambiar el estado en Sesame");
-  } finally {
-    charge(false);
-  }
-};
+  };
 
   const handleInviteSesameEmployee = async () => {
-  try {
-    charge(true);
-    const token = getToken();
+    try {
+      charge(true);
+      const token = getToken();
 
-    const res = await postSesameInviteEmployeeForUser({ userId: employeeId }, token);
+      const res = await postSesameInviteEmployeeForUser({ userId: employeeId }, token);
 
-    if (res?.error) throw new Error(res.message || "No se pudo enviar la invitación");
+      if (res?.error) throw new Error(res.message || "No se pudo enviar la invitación");
 
-    if (res?.sesameId && (!user?.userIdSesame || String(user.userIdSesame) !== String(res.sesameId))) {
-      changeUser?.({ ...user, userIdSesame: res.sesameId });
+      if (res?.sesameId && (!user?.userIdSesame || String(user.userIdSesame) !== String(res.sesameId))) {
+        changeUser?.({ ...user, userIdSesame: res.sesameId });
+      }
+
+      await loadContext();
+      modal("Invitación enviada", "La invitación de Sesame se ha enviado correctamente.");
+    } catch (error) {
+      modal("Error", error.message || "No se pudo enviar la invitación");
+    } finally {
+      charge(false);
     }
-
-    await loadContext();
-    modal("Invitación enviada", "La invitación de Sesame se ha enviado correctamente.");
-  } catch (error) {
-    modal("Error", error.message || "No se pudo enviar la invitación");
-  } finally {
-    charge(false);
-  }
-};
+  };
 
   const handleDeleteOfficeAssignation = (item) => {
     if (!item?.id || !user?._id) {
@@ -917,31 +917,35 @@ const handleToggleSesameEmployee = async () => {
         <div className={styles.header}>
           <h2>CONTEXTO SESAME</h2>
 
-          <div className={styles.headerActions}>
-            <button
-              type="button"
-              className={styles.inlineAddButton}
-              onClick={handleToggleSesameEmployee}
-              disabled={!employeeId || loadingLocal}
-              title={sesameActionLabel}
-            >
-              <FaSquarePlus />
-              {sesameActionLabel}
-            </button>
-            {contextData?.employee?.status=='active' &&
-            <button
-              type="button"
-              className={styles.inlineAddButton}
-              onClick={handleInviteSesameEmployee}
-              disabled={!employeeId || loadingLocal}
-              title="Enviar invitación"
-            >
-              <FaExchangeAlt />
-              Enviar invitación
-            </button>
-            }
-            
-          </div>
+          {
+            user.employmentStatus == 'activo' &&
+            <div className={styles.headerActions}>
+              <button
+                type="button"
+                className={styles.inlineAddButton}
+                onClick={handleToggleSesameEmployee}
+                disabled={!employeeId || loadingLocal}
+                title={sesameActionLabel}
+              >
+                <FaSquarePlus />
+                {sesameActionLabel}
+              </button>
+              {contextData?.employee?.status == 'active' &&
+                <button
+                  type="button"
+                  className={styles.inlineAddButton}
+                  onClick={handleInviteSesameEmployee}
+                  disabled={!employeeId || loadingLocal}
+                  title="Enviar invitación"
+                >
+                  <FaExchangeAlt />
+                  Enviar invitación
+                </button>
+              }
+
+            </div>
+          }
+
         </div>
 
         {!hasSesameLinked && (
@@ -977,52 +981,211 @@ const handleToggleSesameEmployee = async () => {
               </div>
             </div>
 
-            {contextData?.employee?.status=='active' && 
-            <div className={styles.grid}>
-              <section className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <FaBuilding />
-                  <h3>Centro principal de fichaje</h3>
-                </div>
-
-                {office ? (
-                  <div className={styles.infoBlock}>
-                    <div className={styles.row}>
-                      <span className={styles.label}>Nombre</span>
-                      <span className={styles.value}>{safeText(office.name)}</span>
-                    </div>
-                    <div className={styles.row}>
-                      <span className={styles.label}>Zona horaria</span>
-                      <span className={styles.value}>
-                        {safeText(office.defaultEmployeesDateTimeZone)}
-                      </span>
-                    </div>
-                    <div className={styles.row}>
-                      <span className={styles.label}>Oficina principal</span>
-                      <span className={styles.value}>
-                        {office.isMainOffice ? "Sí" : "No"}
-                      </span>
-                    </div>
-                    <div className={styles.row}>
-                      <span className={styles.label}>Eliminada en Sesame</span>
-                      <span className={styles.value}>
-                        {office.isDeleted ? "Sí" : "No"}
-                      </span>
-                    </div>
+            {contextData?.employee?.status == 'active' &&
+              <div className={styles.grid}>
+                <section className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <FaBuilding />
+                    <h3>Centro principal de fichaje</h3>
                   </div>
-                ) : (
-                  <div className={styles.emptySmall}>
-                    No hay centro principal asignado.
-                  </div>
-                )}
 
-                <div className={styles.subSection}>
-                  <div className={styles.subSectionHeader}>
-                    <h4>Otras asignaciones de centro</h4>
+                  {office ? (
+                    <div className={styles.infoBlock}>
+                      <div className={styles.row}>
+                        <span className={styles.label}>Nombre</span>
+                        <span className={styles.value}>{safeText(office.name)}</span>
+                      </div>
+                      <div className={styles.row}>
+                        <span className={styles.label}>Zona horaria</span>
+                        <span className={styles.value}>
+                          {safeText(office.defaultEmployeesDateTimeZone)}
+                        </span>
+                      </div>
+                      <div className={styles.row}>
+                        <span className={styles.label}>Oficina principal</span>
+                        <span className={styles.value}>
+                          {office.isMainOffice ? "Sí" : "No"}
+                        </span>
+                      </div>
+                      <div className={styles.row}>
+                        <span className={styles.label}>Eliminada en Sesame</span>
+                        <span className={styles.value}>
+                          {office.isDeleted ? "Sí" : "No"}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.emptySmall}>
+                      No hay centro principal asignado.
+                    </div>
+                  )}
+
+                  <div className={styles.subSection}>
+                    <div className={styles.subSectionHeader}>
+                      <h4>Otras asignaciones de centro</h4>
+                      <button
+                        type="button"
+                        className={styles.inlineAddButton}
+                        onClick={() => setShowAddOfficeModal(true)}
+                        disabled={loadingLocal}
+                      >
+                        <FaSquarePlus />
+                        Añadir
+                      </button>
+                    </div>
+
+                    {officeAssignations.length > 0 ? (
+                      <div className={styles.list}>
+                        {officeAssignations.map((item) => (
+                          <div
+                            key={item.assignationId || item.id}
+                            className={styles.listItem}
+                          >
+                            <div className={styles.listItemMain}>
+                              <span className={styles.listTitle}>
+                                {safeText(item.name)}
+                              </span>
+                            </div>
+
+                            <div className={styles.listItemActions}>
+                              <span className={styles.badge}>
+                                {item.isMainOffice ? "Principal" : "Secundaria"}
+                              </span>
+
+                              <FaTrashAlt
+                                className={styles.iconDelete}
+                                title="Quitar centro"
+                                onClick={() => handleDeleteOfficeAssignation(item)}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={styles.emptySmall}>
+                        No hay más asignaciones de centro.
+                      </div>
+                    )}
+                  </div>
+                </section>
+                <section className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <FaBuilding />
+                    <h3>Departamentos a los que pertenece</h3>
+                  </div>
+
+                  {departmentAssignations.length > 0 ? (
+                    <div className={styles.list}>
+                      {departmentAssignations.map((item) => (
+                        <div
+                          key={item.assignationId || item.id}
+                          className={styles.listItem}
+                        >
+                          <div className={styles.listItemMain}>
+                            <span className={styles.listTitle}>
+                              {safeText(item.name, item.id)}
+                            </span>
+                          </div>
+
+                          <div className={styles.listItemActions}>
+                            <span className={styles.badge}>Pertenece</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.emptySmall}>
+                      No pertenece a ningún departamento.
+                    </div>
+                  )}
+                </section>
+
+                <section className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <FaUserClock />
+                    <h3>Responsables de vacaciones</h3>
                     <button
                       type="button"
                       className={styles.inlineAddButton}
-                      onClick={() => setShowAddOfficeModal(true)}
+                      onClick={openChangeManagersModalForCurrentEmployee}
+                    >
+                      <FaExchangeAlt />
+                      Cambiar
+                    </button>
+                  </div>
+
+                  {absencesManagers.length > 0 ? (
+                    <div className={styles.list}>
+                      {absencesManagers.map((manager) => (
+                        <div key={manager.id} className={styles.listItem}>
+                          <div className={styles.listItemMain}>
+                            <span className={styles.listTitle}>
+                              {buildFullName(manager)}
+                            </span>
+                            <span className={styles.listText}>
+                              {safeText(manager.email)}
+                            </span>
+                          </div>
+                          <span className={styles.badge}>
+                            {safeText(manager.workStatus, "—")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.emptySmall}>
+                      No hay responsables de vacaciones asignados.
+                    </div>
+                  )}
+                </section>
+
+                <section className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <FaUserTie />
+                    <h3>Responsables de fichajes e incidencias</h3>
+                    <button
+                      type="button"
+                      className={styles.inlineAddButton}
+                      onClick={openChangeManagersModalForCurrentEmployee}
+                    >
+                      <FaExchangeAlt />
+                      Cambiar
+                    </button>
+                  </div>
+
+                  {checksManagers.length > 0 ? (
+                    <div className={styles.list}>
+                      {checksManagers.map((manager) => (
+                        <div key={manager.id} className={styles.listItem}>
+                          <div className={styles.listItemMain}>
+                            <span className={styles.listTitle}>
+                              {buildFullName(manager)}
+                            </span>
+                            <span className={styles.listText}>
+                              {safeText(manager.email)}
+                            </span>
+                          </div>
+                          <span className={styles.badge}>
+                            {safeText(manager.workStatus, "—")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.emptySmall}>
+                      No hay responsables de fichajes asignados.
+                    </div>
+                  )}
+                </section>
+
+                <section className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <FaBullseye />
+                    <h3>Centros que gestiona</h3>
+                    <button
+                      type="button"
+                      className={styles.addButton}
+                      onClick={() => setShowAddManagedOfficeModal(true)}
                       disabled={loadingLocal}
                     >
                       <FaSquarePlus />
@@ -1030,385 +1193,63 @@ const handleToggleSesameEmployee = async () => {
                     </button>
                   </div>
 
-                  {officeAssignations.length > 0 ? (
+                  {managedOffices.length > 0 ? (
                     <div className={styles.list}>
-                      {officeAssignations.map((item) => (
-                        <div
-                          key={item.assignationId || item.id}
-                          className={styles.listItem}
-                        >
+                      {managedOfficesResolved.map((item) => (
+                        <div key={item.id} className={styles.listItem}>
                           <div className={styles.listItemMain}>
                             <span className={styles.listTitle}>
-                              {safeText(item.name)}
-                            </span>
-                          </div>
-
-                          <div className={styles.listItemActions}>
-                            <span className={styles.badge}>
-                              {item.isMainOffice ? "Principal" : "Secundaria"}
-                            </span>
-
-                            <FaTrashAlt
-                              className={styles.iconDelete}
-                              title="Quitar centro"
-                              onClick={() => handleDeleteOfficeAssignation(item)}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className={styles.emptySmall}>
-                      No hay más asignaciones de centro.
-                    </div>
-                  )}
-                </div>
-              </section>
-              <section className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <FaBuilding />
-                  <h3>Departamentos a los que pertenece</h3>
-                </div>
-
-                {departmentAssignations.length > 0 ? (
-                  <div className={styles.list}>
-                    {departmentAssignations.map((item) => (
-                      <div
-                        key={item.assignationId || item.id}
-                        className={styles.listItem}
-                      >
-                        <div className={styles.listItemMain}>
-                          <span className={styles.listTitle}>
-                            {safeText(item.name, item.id)}
-                          </span>
-                        </div>
-
-                        <div className={styles.listItemActions}>
-                          <span className={styles.badge}>Pertenece</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.emptySmall}>
-                    No pertenece a ningún departamento.
-                  </div>
-                )}
-              </section>
-
-              <section className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <FaUserClock />
-                  <h3>Responsables de vacaciones</h3>
-                  <button
-                    type="button"
-                    className={styles.inlineAddButton}
-                    onClick={openChangeManagersModalForCurrentEmployee}
-                  >
-                    <FaExchangeAlt />
-                    Cambiar
-                  </button>
-                </div>
-
-                {absencesManagers.length > 0 ? (
-                  <div className={styles.list}>
-                    {absencesManagers.map((manager) => (
-                      <div key={manager.id} className={styles.listItem}>
-                        <div className={styles.listItemMain}>
-                          <span className={styles.listTitle}>
-                            {buildFullName(manager)}
-                          </span>
-                          <span className={styles.listText}>
-                            {safeText(manager.email)}
-                          </span>
-                        </div>
-                        <span className={styles.badge}>
-                          {safeText(manager.workStatus, "—")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.emptySmall}>
-                    No hay responsables de vacaciones asignados.
-                  </div>
-                )}
-              </section>
-
-              <section className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <FaUserTie />
-                  <h3>Responsables de fichajes e incidencias</h3>
-                  <button
-                    type="button"
-                    className={styles.inlineAddButton}
-                    onClick={openChangeManagersModalForCurrentEmployee}
-                  >
-                    <FaExchangeAlt />
-                    Cambiar
-                  </button>
-                </div>
-
-                {checksManagers.length > 0 ? (
-                  <div className={styles.list}>
-                    {checksManagers.map((manager) => (
-                      <div key={manager.id} className={styles.listItem}>
-                        <div className={styles.listItemMain}>
-                          <span className={styles.listTitle}>
-                            {buildFullName(manager)}
-                          </span>
-                          <span className={styles.listText}>
-                            {safeText(manager.email)}
-                          </span>
-                        </div>
-                        <span className={styles.badge}>
-                          {safeText(manager.workStatus, "—")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.emptySmall}>
-                    No hay responsables de fichajes asignados.
-                  </div>
-                )}
-              </section>
-
-              <section className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <FaBullseye />
-                  <h3>Centros que gestiona</h3>
-                  <button
-                    type="button"
-                    className={styles.addButton}
-                    onClick={() => setShowAddManagedOfficeModal(true)}
-                    disabled={loadingLocal}
-                  >
-                    <FaSquarePlus />
-                    Añadir
-                  </button>
-                </div>
-
-                {managedOffices.length > 0 ? (
-                  <div className={styles.list}>
-                    {managedOfficesResolved.map((item) => (
-                      <div key={item.id} className={styles.listItem}>
-                        <div className={styles.listItemMain}>
-                          <span className={styles.listTitle}>
-                            {safeText(item.dispositive?.name)}
-                          </span>
-                          <span className={styles.listText}>
-                            Rol: {safeText(item.role?.name)}
-                          </span>
-                          <span className={styles.listText}>
-                            Programa: {safeText(item.program?.name)}
-                          </span>
-                          <span className={styles.listText}>
-                            Provincia: {safeText(item.province?.name)}
-                          </span>
-
-                          <div className={styles.listItemActions}>
-                            <button
-                              type="button"
-                              className={styles.inlineAddButton}
-                              onClick={() =>
-                                openWorkersSection({
-                                  type: "office",
-                                  id: item.affectedEntityId,
-                                  title: `Trabajadores de ${safeText(item.dispositive?.name)}`,
-                                })
-                              }
-                            >
-                              Ver trabajadores
-                            </button>
-
-                            <button
-                              type="button"
-                              className={styles.inlineAddButton}
-                              onClick={() =>
-                                openAddWorkerModal({
-                                  type: "office",
-                                  id: item.affectedEntityId,
-                                  title: `Añadir trabajador a ${safeText(item.dispositive?.name)}`,
-                                })
-                              }
-                            >
-                              <FaUserPlus />
-                              Añadir trabajador
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className={styles.listItemActions}>
-                          <span className={styles.badge}>Gestiona</span>
-
-                          <FaTrashAlt
-                            className={styles.iconDelete}
-                            title="Quitar rol de responsable de centro"
-                            onClick={() => handleDeleteManagedOfficeRole(item)}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.emptySmall}>
-                    No gestiona ningún centro.
-                  </div>
-                )}
-              </section>
-
-              <section className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <FaBullseye />
-                  <h3>Departamentos que gestiona</h3>
-
-                  {managedDepartmentsResolved.length === 0 && (
-                    <button
-                      type="button"
-                      className={styles.addButton}
-                      onClick={handleCreateDepartment}
-                      disabled={loadingLocal}
-                    >
-                      <FaSquarePlus />
-                      Crear departamento
-                    </button>
-                  )}
-                </div>
-
-                {managedDepartmentsResolved.length > 0 ? (
-                  <div className={styles.list}>
-                    {managedDepartmentsResolved.map((item) => (
-                      <div key={item.id} className={styles.listItem}>
-
-                        <div className={styles.listItemMain}>
-                          <span className={styles.listTitle}>
-                            {safeText(item.name, item.affectedEntityId)}
-                          </span>
-                          <span className={styles.listText}>
-                            Rol: {safeText(item.role?.name)}
-                          </span>
-                          <span className={styles.listText}>
-                            DepartmentId: {safeText(item.affectedEntityId)}
-                          </span>
-
-                          <div className={styles.listItemActions}>
-                            <button
-                              type="button"
-                              className={styles.inlineAddButton}
-                              onClick={() =>
-                                openWorkersSection({
-                                  type: "department",
-                                  id: item.affectedEntityId,
-                                  title: `Trabajadores del departamento ${safeText(
-                                    item.name,
-                                    item.affectedEntityId
-                                  )}`,
-                                })
-                              }
-                            >
-                              Ver trabajadores
-                            </button>
-
-                            <button
-                              type="button"
-                              className={styles.inlineAddButton}
-                              onClick={() =>
-                                openAddWorkerModal({
-                                  type: "department",
-                                  id: item.affectedEntityId,
-                                  title: `Añadir trabajador al departamento ${safeText(
-                                    item.name,
-                                    item.affectedEntityId
-                                  )}`,
-                                })
-                              }
-                            >
-                              <FaUserPlus />
-                              Añadir trabajador
-                            </button>
-
-                            <button
-                              type="button"
-                              className={styles.inlineAddButton}
-                              onClick={() => openTransferDepartmentModal(item)}
-                            >
-                              <FaExchangeAlt />
-                              Trasladar
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className={styles.listItemActions}>
-                          <span className={styles.badge}>Gestiona</span>
-
-                          <FaTrashAlt
-                            className={styles.iconDelete}
-                            title="Eliminar departamento"
-                            onClick={() => handleDeleteDepartment(item)}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.emptySmall}>
-                    No gestiona ningún departamento.
-                  </div>
-                )}
-              </section>
-
-              {viewWorkersCtx && (
-                <section className={styles.card}>
-                  <div className={styles.cardHeader}>
-                    <FaUserTie />
-                    <h3>{safeText(viewWorkersData.title, "Trabajadores")}</h3>
-
-                    <button
-                      type="button"
-                      className={styles.refreshButton}
-                      onClick={closeWorkersSection}
-                    >
-                      Cerrar
-                    </button>
-                  </div>
-
-                  {viewWorkersData.loading ? (
-                    <div className={styles.emptySmall}>Cargando trabajadores...</div>
-                  ) : viewWorkersData.employees.length > 0 ? (
-                    <div className={styles.list}>
-                      {viewWorkersData.employees.map((employee) => (
-                        <div
-                          key={employee.employeeId || employee.id}
-                          className={styles.listItem}
-                        >
-                          <div className={styles.listItemMain}>
-                            <span className={styles.listTitle}>
-                              {safeText(employee.fullName)}
+                              {safeText(item.dispositive?.name)}
                             </span>
                             <span className={styles.listText}>
-                              {safeText(employee.email)}
+                              Rol: {safeText(item.role?.name)}
                             </span>
+                            <span className={styles.listText}>
+                              Programa: {safeText(item.program?.name)}
+                            </span>
+                            <span className={styles.listText}>
+                              Provincia: {safeText(item.province?.name)}
+                            </span>
+
+                            <div className={styles.listItemActions}>
+                              <button
+                                type="button"
+                                className={styles.inlineAddButton}
+                                onClick={() =>
+                                  openWorkersSection({
+                                    type: "office",
+                                    id: item.affectedEntityId,
+                                    title: `Trabajadores de ${safeText(item.dispositive?.name)}`,
+                                  })
+                                }
+                              >
+                                Ver trabajadores
+                              </button>
+
+                              <button
+                                type="button"
+                                className={styles.inlineAddButton}
+                                onClick={() =>
+                                  openAddWorkerModal({
+                                    type: "office",
+                                    id: item.affectedEntityId,
+                                    title: `Añadir trabajador a ${safeText(item.dispositive?.name)}`,
+                                  })
+                                }
+                              >
+                                <FaUserPlus />
+                                Añadir trabajador
+                              </button>
+                            </div>
                           </div>
 
                           <div className={styles.listItemActions}>
-                            {employee.isMainOffice && (
-                              <span className={styles.badge}>Principal</span>
-                            )}
-
-                            <button
-                              type="button"
-                              className={styles.inlineAddButton}
-                              onClick={() => openChangeManagersModal(employee)}
-                            >
-                              <FaExchangeAlt />
-                              Cambiar responsables
-                            </button>
+                            <span className={styles.badge}>Gestiona</span>
 
                             <FaTrashAlt
                               className={styles.iconDelete}
-                              title={`Quitar trabajador de ${viewWorkersCtx?.type === "office" ? "centro" : "departamento"}`}
-                              onClick={() => handleDeleteWorker(employee)}
+                              title="Quitar rol de responsable de centro"
+                              onClick={() => handleDeleteManagedOfficeRole(item)}
                             />
                           </div>
                         </div>
@@ -1416,12 +1257,175 @@ const handleToggleSesameEmployee = async () => {
                     </div>
                   ) : (
                     <div className={styles.emptySmall}>
-                      No hay trabajadores asociados.
+                      No gestiona ningún centro.
                     </div>
                   )}
                 </section>
-              )}
-            </div>
+
+                <section className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <FaBullseye />
+                    <h3>Departamentos que gestiona</h3>
+
+                    {managedDepartmentsResolved.length === 0 && (
+                      <button
+                        type="button"
+                        className={styles.addButton}
+                        onClick={handleCreateDepartment}
+                        disabled={loadingLocal}
+                      >
+                        <FaSquarePlus />
+                        Crear departamento
+                      </button>
+                    )}
+                  </div>
+
+                  {managedDepartmentsResolved.length > 0 ? (
+                    <div className={styles.list}>
+                      {managedDepartmentsResolved.map((item) => (
+                        <div key={item.id} className={styles.listItem}>
+
+                          <div className={styles.listItemMain}>
+                            <span className={styles.listTitle}>
+                              {safeText(item.name, item.affectedEntityId)}
+                            </span>
+                            <span className={styles.listText}>
+                              Rol: {safeText(item.role?.name)}
+                            </span>
+                            <span className={styles.listText}>
+                              DepartmentId: {safeText(item.affectedEntityId)}
+                            </span>
+
+                            <div className={styles.listItemActions}>
+                              <button
+                                type="button"
+                                className={styles.inlineAddButton}
+                                onClick={() =>
+                                  openWorkersSection({
+                                    type: "department",
+                                    id: item.affectedEntityId,
+                                    title: `Trabajadores del departamento ${safeText(
+                                      item.name,
+                                      item.affectedEntityId
+                                    )}`,
+                                  })
+                                }
+                              >
+                                Ver trabajadores
+                              </button>
+
+                              <button
+                                type="button"
+                                className={styles.inlineAddButton}
+                                onClick={() =>
+                                  openAddWorkerModal({
+                                    type: "department",
+                                    id: item.affectedEntityId,
+                                    title: `Añadir trabajador al departamento ${safeText(
+                                      item.name,
+                                      item.affectedEntityId
+                                    )}`,
+                                  })
+                                }
+                              >
+                                <FaUserPlus />
+                                Añadir trabajador
+                              </button>
+
+                              <button
+                                type="button"
+                                className={styles.inlineAddButton}
+                                onClick={() => openTransferDepartmentModal(item)}
+                              >
+                                <FaExchangeAlt />
+                                Trasladar
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className={styles.listItemActions}>
+                            <span className={styles.badge}>Gestiona</span>
+
+                            <FaTrashAlt
+                              className={styles.iconDelete}
+                              title="Eliminar departamento"
+                              onClick={() => handleDeleteDepartment(item)}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.emptySmall}>
+                      No gestiona ningún departamento.
+                    </div>
+                  )}
+                </section>
+
+                {viewWorkersCtx && (
+                  <section className={styles.card}>
+                    <div className={styles.cardHeader}>
+                      <FaUserTie />
+                      <h3>{safeText(viewWorkersData.title, "Trabajadores")}</h3>
+
+                      <button
+                        type="button"
+                        className={styles.refreshButton}
+                        onClick={closeWorkersSection}
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+
+                    {viewWorkersData.loading ? (
+                      <div className={styles.emptySmall}>Cargando trabajadores...</div>
+                    ) : viewWorkersData.employees.length > 0 ? (
+                      <div className={styles.list}>
+                        {viewWorkersData.employees.map((employee) => (
+                          <div
+                            key={employee.employeeId || employee.id}
+                            className={styles.listItem}
+                          >
+                            <div className={styles.listItemMain}>
+                              <span className={styles.listTitle}>
+                                {safeText(employee.fullName)}
+                              </span>
+                              <span className={styles.listText}>
+                                {safeText(employee.email)}
+                              </span>
+                            </div>
+
+                            <div className={styles.listItemActions}>
+                              {employee.isMainOffice && (
+                                <span className={styles.badge}>Principal</span>
+                              )}
+
+                              <button
+                                type="button"
+                                className={styles.inlineAddButton}
+                                onClick={() => openChangeManagersModal(employee)}
+                              >
+                                <FaExchangeAlt />
+                                Cambiar responsables
+                              </button>
+
+                              <FaTrashAlt
+                                className={styles.iconDelete}
+                                title={`Quitar trabajador de ${viewWorkersCtx?.type === "office" ? "centro" : "departamento"}`}
+                                onClick={() => handleDeleteWorker(employee)}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={styles.emptySmall}>
+                        No hay trabajadores asociados.
+                      </div>
+                    )}
+                  </section>
+                )}
+              </div>
             }
           </>)}
       </div>

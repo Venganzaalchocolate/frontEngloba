@@ -32,7 +32,7 @@ const ManagingProgramsDispositive = ({
 }) => {
   const token = getToken();
   const { logged } = useLogin();
-  const isRootOrGlobal = logged?.user?.role === "root";
+  const isRootOrGlobal = logged?.user?.role === "root" || logged?.user?.role === "global";
 
   const [select, setSelect] = useState(null);
   const [infoSelect, setInfoSelect] = useState(null);

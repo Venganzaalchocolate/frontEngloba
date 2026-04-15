@@ -22,12 +22,13 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     { key: 'lists', label: 'Listín de contacto', icon: FaRegAddressBook, accent: '#64748b' },
     //volunteer
     { key: 'volunteer', label: 'Voluntariado', icon: MdOutlineVolunteerActivism, accent: '#ffb5de' },
+    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'}
   ];
 
   const rootOnly = [
     { key: 'root',       label: 'Panel Root',              icon: FaToolbox,        accent: '#d946ef' },
     { key: 'permissions',       label: 'Permisos',              icon: FaLock ,        accent: '#4ade80' },
-    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'}
+
     // { key: 'workspace',  label: 'Gestión de Workspace',    icon: FaUserCog,        accent: '#4ade80' },
   ];
 

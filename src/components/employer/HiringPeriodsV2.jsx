@@ -1,5 +1,5 @@
 // src/components/employer/HiringPeriodsV2.jsx
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import styles from '../styles/hiringperiods.module.css';
 import { FaTrashAlt, FaEdit, FaInfoCircle } from "react-icons/fa";
 import { FaSquarePlus } from "react-icons/fa6";
@@ -45,7 +45,8 @@ export default function HiringPeriodsV2({
 }) {
   const token = getToken();
   const { logged } = useLogin();
-  const canEdit = logged?.user?.role === 'global' || logged?.user?.role === 'root';
+  const canEdit = true;
+  const canDelete = logged?.user?.role !== 'root' || logged?.user?.role === 'global';
 
   // Acepta user.status o user.employmentStatus
   const statusField = (user?.employmentStatus ?? user?.status) || '';
@@ -64,9 +65,8 @@ export default function HiringPeriodsV2({
   const [showInfoModal, setShowInfoModal] = useState(false);
 
   // Leaves por periodo (clave: String(periodId))
-  const [openLeaves, setOpenLeaves] = useState({});
-  const [leavesLoading, setLeavesLoading] = useState({});
   const [leavesByPeriod, setLeavesByPeriod] = useState({});
+const [leavesLoading, setLeavesLoading] = useState({});
   const [createLeaveCtx, setCreateLeaveCtx] = useState(null);   // { periodId }
   const [editLeave, setEditLeave] = useState(null);             // { ...leave, periodId }
   const [closeLeaveCtx, setCloseLeaveCtx] = useState(null);     // { leaveId }
@@ -99,6 +99,39 @@ export default function HiringPeriodsV2({
     fetchHiring();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id]);
+
+  const requestedLeavesRef = useRef(new Set());
+
+useEffect(() => {
+  const missingPeriodIds = periods
+    .map(p => String(p._id))
+    .filter(pid => !requestedLeavesRef.current.has(pid));
+
+  if (!missingPeriodIds.length) return;
+
+  const loadAllLeaves = async () => {
+    for (const pid of missingPeriodIds) {
+      requestedLeavesRef.current.add(pid);
+
+      try {
+        setLeavesLoading(prev => ({ ...prev, [pid]: true }));
+
+        const res = await leaveList({ periodId: pid, page: 1, limit: 200 }, token);
+        if (res?.error) throw new Error(res.message || 'No se pudieron cargar las bajas/excedencias');
+
+        const docs = (res.docs || []).map(l => ({ ...l, periodId: pid }));
+        setLeavesByPeriod(prev => ({ ...prev, [pid]: docs }));
+      } catch (e) {
+        requestedLeavesRef.current.delete(pid);
+        modal?.('Error', e.message || 'No se pudieron cargar las bajas/excedencias');
+      } finally {
+        setLeavesLoading(prev => ({ ...prev, [pid]: false }));
+      }
+    }
+  };
+
+  loadAllLeaves();
+}, [periods]);
 
   /* -------------------- helpers nombres/ids -------------------- */
   const getProgramById = (id) => enumsData?.programsIndex?.[id] || null;
@@ -459,10 +492,6 @@ export default function HiringPeriodsV2({
         const { [targetId]: _omit, ...rest } = prev;
         return rest;
       });
-      setOpenLeaves(prev => {
-        const { [targetId]: _omit, ...rest } = prev;
-        return rest;
-      });
       setLeavesLoading(prev => {
         const { [targetId]: _omit, ...rest } = prev;
         return rest;
@@ -492,25 +521,6 @@ export default function HiringPeriodsV2({
     setShowInfoModal(true);
   };
 
-  /* -------------------- bajas: carga perezosa -------------------- */
-  const toggleLeaves = (rawPeriodId) => {
-    const periodId = String(rawPeriodId);
-    setOpenLeaves(prev => {
-      const willOpen = !prev[periodId];
-      if (willOpen && !leavesByPeriod[periodId]) {
-        setLeavesLoading(s => ({ ...s, [periodId]: true }));
-        leaveList({ periodId, page: 1, limit: 200 }, token)
-          .then(res => {
-            if (res?.error) throw new Error(res.message);
-            const docs = (res.docs || []).map(l => ({ ...l, periodId }));
-            setLeavesByPeriod(b => ({ ...b, [periodId]: docs }));
-          })
-          .catch(e => modal?.('Error', e.message || 'No se pudieron cargar las bajas/excedencias'))
-          .finally(() => setLeavesLoading(s => ({ ...s, [periodId]: false })));
-      }
-      return { ...prev, [periodId]: willOpen };
-    });
-  };
 
   /* -------------------- crear / editar / cerrar baja -------------------- */
   const createLeaveFields = [
@@ -951,59 +961,62 @@ export default function HiringPeriodsV2({
   };
 
   /* -------------------- render -------------------- */
-  return (
-    <div className={styles.contenedor}>
-      <h2>
-        PERIODOS DE CONTRATACIÓN
-        {canEdit && <FaSquarePlus title="Añadir periodo" onClick={openCreateHiring} />}
-        <button onClick={handleAdd} style={{ cursor: 'pointer' }}>
-          Crear solicitud de traslado
-        </button>
-      </h2>
+return (
+  <div className={styles.contenedor}>
+    <h2>
+      PERIODOS DE CONTRATACIÓN
+      {canDelete && <FaSquarePlus title="Añadir periodo" onClick={openCreateHiring} />}
+      <button onClick={handleAdd} style={{ cursor: 'pointer' }}>
+        Crear solicitud de traslado
+      </button>
+    </h2>
 
-      {currentPeriods.length === 0 && <p>No hay periodos de contratación activos.</p>}
+    {currentPeriods.length === 0 && <p>No hay periodos de contratación activos.</p>}
 
-      {currentPeriods.map(hp => {
-        const pid = String(hp._id);
+    {currentPeriods.map(hp => {
+      const pid = String(hp._id);
 
-        return (
-          <article
-            key={pid}
-            className={`${styles.cardPrincipal} ${
-              hp.reason?.replacement ? styles.cardReplacement : ''
-            }`}
-          >
-            <header className={styles.cardHeader}>
-              <div className={styles.headerMain}>
-                <h3 className={styles.cardTitle}>
-                  {hp.reason?.replacement
-                    ? 'Periodo de sustitución'
-                    : 'Periodo de contratación (actual)'}
-                </h3>
-                {hp?.replacement && (
-                  <button
-                    className={styles.linkButton}
-                    onClick={() => openInfoSustitucion(hp)}
-                  >
-                    Ver información de sustitución
-                  </button>
-                )}
-              </div>
-              {canEdit && isPeriodOpen(hp) && (
-                <nav className={styles.headerActions} aria-label="Acciones del periodo">
-                  <button
-                    disabled={isBusy}
-                    onClick={() => setCloseHiringCtx({ hiringId: pid })}
-                  >
-                    Cerrar periodo
-                  </button>
-                  <FaEdit
-                    role="button"
-                    tabIndex={0}
-                    title="Editar periodo"
-                    className={styles.iconAction}
-                    onClick={() => openEditHiring(hp)}
-                  />
+      return (
+        <article
+          key={pid}
+          className={`${styles.cardPrincipal} ${hp.reason?.replacement ? styles.cardReplacement : ''}`}
+        >
+          <header className={styles.cardHeader}>
+            <div className={styles.headerMain}>
+              <h3 className={styles.cardTitle}>
+                {hp.reason?.replacement
+                  ? 'Periodo de sustitución'
+                  : 'Periodo de contratación (actual)'}
+              </h3>
+
+              {hp?.replacement && (
+                <button
+                  className={styles.linkButton}
+                  onClick={() => openInfoSustitucion(hp)}
+                >
+                  Ver información de sustitución
+                </button>
+              )}
+            </div>
+
+            {canDelete && isPeriodOpen(hp) && (
+              <nav className={styles.headerActions} aria-label="Acciones del periodo">
+                <button
+                  disabled={isBusy}
+                  onClick={() => setCloseHiringCtx({ hiringId: pid })}
+                >
+                  Cerrar periodo
+                </button>
+
+                <FaEdit
+                  role="button"
+                  tabIndex={0}
+                  title="Editar periodo"
+                  className={styles.iconAction}
+                  onClick={() => openEditHiring(hp)}
+                />
+
+                {canDelete && (
                   <FaTrashAlt
                     role="button"
                     tabIndex={0}
@@ -1011,525 +1024,461 @@ export default function HiringPeriodsV2({
                     className={styles.iconActionDanger}
                     onClick={() => setConfirmDeleteHiringId(pid)}
                   />
-                </nav>
-              )}
-            </header>
-
-            <section className={styles.meta} aria-label="Información del periodo">
-              <dl className={styles.metaGrid}>
-                <div>
-                  <dt>Inicio</dt>
-                  <dd className={styles.mono}>{fmt(hp.startDate)}</dd>
-                </div>
-                <div>
-                  <dt>Fin</dt>
-                  <dd className={styles.mono}>{fmt(hp.endDate)}</dd>
-                </div>
-                <div>
-                  <dt>Dispositivo</dt>
-                  <dd>{getDeviceName(hp.dispositiveId)}</dd>
-                </div>
-                <div>
-                  <dt>Jornada</dt>
-                  <dd>{hp.workShift?.type || '—'}</dd>
-                </div>
-                <div>
-                  <dt>Puesto</dt>
-                  <dd>{getPositionName(hp.position)}</dd>
-                </div>
-              </dl>
-            </section>
-
-            <section className={styles.leaves} aria-label="Bajas o excedencias">
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '0.5rem',
-                  alignItems: 'center',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                {openLeaves[pid] && (
-                  <h4 className={styles.tituloBajas}>BAJAS O EXCEDENCIAS</h4>
                 )}
-                <button
-                  className={styles.buttonBajas}
-                  onClick={() => toggleLeaves(pid)}
-                >
-                  {openLeaves[pid]
-                    ? 'Ocultar'
-                    : 'Mostrar Bajas y Excedencias'}
-                </button>
-                {openLeaves[pid] && (
-                  <button
-                    className={styles.buttonBajas}
-                    onClick={() => setCreateLeaveCtx({ periodId: pid })}
-                  >
-                    Añadir baja/excedencia
-                  </button>
-                )}
+              </nav>
+            )}
+          </header>
+
+          <section className={styles.meta} aria-label="Información del periodo">
+            <dl className={styles.metaGrid}>
+              <div>
+                <dt>Inicio</dt>
+                <dd className={styles.mono}>{fmt(hp.startDate)}</dd>
               </div>
+              <div>
+                <dt>Fin</dt>
+                <dd className={styles.mono}>{fmt(hp.endDate)}</dd>
+              </div>
+              <div>
+                <dt>Dispositivo</dt>
+                <dd>{getDeviceName(hp.dispositiveId)}</dd>
+              </div>
+              <div>
+                <dt>Jornada</dt>
+                <dd>{hp.workShift?.type || '—'}</dd>
+              </div>
+              <div>
+                <dt>Puesto</dt>
+                <dd>{getPositionName(hp.position)}</dd>
+              </div>
+            </dl>
+          </section>
 
-              {openLeaves[pid] && (
-                <>
-                  {leavesLoading[pid] && <p>Cargando…</p>}
-                  {!leavesLoading[pid] && (
-                    <ul className={styles.leafList}>
-                      <li className={styles.leafHeader} aria-hidden="true">
-                        <span>Inicio</span>
-                        <span>Prevista</span>
-                        <span>Fin</span>
-                        <span>Descripción</span>
-                        <span>Acciones</span>
-                      </li>
+          <section className={styles.leaves} aria-label="Bajas o excedencias">
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.5rem',
+                alignItems: 'center',
+                marginBottom: '0.5rem',
+              }}
+            >
+              <h4 className={styles.tituloBajas}>BAJAS O EXCEDENCIAS</h4>
 
-                      {(leavesByPeriod[pid] || []).map(leave => {
-                        const isOpenLeave =
-                          leave.active !== false && !leave.actualEndLeaveDate;
-                        return (
-                          <li className={styles.leafRow} key={leave._id}>
-                            <span className={`${styles.leafCell} ${styles.mono}`}>
-                              {fmt(leave.startLeaveDate)}
-                            </span>
-                            <span className={`${styles.leafCell} ${styles.mono}`}>
-                              {fmt(leave.expectedEndLeaveDate)}
-                            </span>
-                            <span className={`${styles.leafCell} ${styles.mono}`}>
-                              {fmt(leave.actualEndLeaveDate)}
-                            </span>
-                            <span className={styles.leafCell}>
-                              {getLeaveTypeName(leave.leaveType)}
-                            </span>
-                            <span
-                              className={`${styles.leafCell} ${styles.leafActions}`}
-                            >
-                              <>
-                                {isOpenLeave && (
-                                  <button
-                                    disabled={isBusy}
-                                    onClick={() =>
-                                      setCloseLeaveCtx({ leaveId: leave._id })
-                                    }
-                                  >
-                                    Finalizar
-                                  </button>
-                                )}
-                                {isOpenLeave &&
-                                  isExcedenciaVoluntaria(leave.leaveType) && (
-                                    <button
-                                      title="Reincorporación"
-                                      disabled={isBusy}
-                                      onClick={() =>
-                                        openRejoinModal(pid, leave)
-                                      }
-                                    >
-                                      Reincorporación
-                                    </button>
-                                  )}
-                                <FaEdit
-                                  role="button"
-                                  tabIndex={0}
-                                  title="Editar baja/excedencia"
-                                  className={styles.iconAction}
-                                  onClick={() =>
-                                    setEditLeave({ ...leave, periodId: pid })
-                                  }
-                                />
-                                {canEdit && (
-                                  <FaTrashAlt
-                                    role="button"
-                                    tabIndex={0}
-                                    title="Eliminar baja/excedencia"
-                                    className={styles.iconActionDanger}
-                                    onClick={() =>
-                                      handleHardDeleteLeave({
-                                        ...leave,
-                                        periodId: pid,
-                                      })
-                                    }
-                                  />
-                                )}
-                              </>
-                            </span>
-                          </li>
-                        );
-                      })}
+              <button
+                className={styles.buttonBajas}
+                onClick={() => setCreateLeaveCtx({ periodId: pid })}
+              >
+                Añadir baja/excedencia
+              </button>
+            </div>
 
-                      {(leavesByPeriod[pid]?.length ?? 0) === 0 && (
-                        <li className={styles.leafRow}>
-                          <span>No hay bajas o excedencias</span>
-                        </li>
-                      )}
-                    </ul>
-                  )}
-                </>
-              )}
-            </section>
-          </article>
-        );
-      })}
+            {leavesLoading[pid] && <p>Cargando…</p>}
 
-      {pastPeriods.length > 0 && (
-        <div className={styles.pastWrapper}>
-          <button
-            className={styles.togglePast}
-            aria-expanded={showPast}
-            onClick={() => setShowPast(v => !v)}
-          >
-            {showPast
-              ? 'Ocultar periodos anteriores'
-              : `Mostrar periodos anteriores (${pastPeriods.length})`}
-          </button>
+            {!leavesLoading[pid] && (
+              <ul className={styles.leafList}>
+                <li className={styles.leafHeader} aria-hidden="true">
+                  <span>Inicio</span>
+                  <span>Prevista</span>
+                  <span>Fin</span>
+                  <span>Descripción</span>
+                  <span>Acciones</span>
+                </li>
 
-          <div
-            className={`${styles.pastPanel} ${
-              showPast ? styles.pastOpen : ''
-            }`}
-            role="region"
-            aria-label="Periodos anteriores"
-          >
-            {showPast &&
-              pastPeriods.map(hp => {
-                const pid = String(hp._id);
-                return (
-                  <article
-                    key={pid}
-                    className={`${styles.card} ${
-                      hp.reason?.replacement ? styles.cardReplacement : ''
-                    }`}
-                  >
-                    <header className={styles.cardHeader}>
-                      <div className={styles.headerMain}>
-                        <h3 className={styles.cardTitle}>
-                          {hp.reason?.replacement
-                            ? 'Periodo de sustitución'
-                            : 'Periodo de contratación (anterior)'}
-                        </h3>
-                        {hp.reason?.replacement && (
-                          <FaInfoCircle
-                            className={styles.iconAction}
-                            onClick={() => openInfoSustitucion(hp)}
-                          />
+                {(leavesByPeriod[pid] || []).map(leave => {
+                  const isOpenLeave = leave.active !== false && !leave.actualEndLeaveDate;
+
+                  return (
+                    <li className={styles.leafRow} key={leave._id}>
+                      <span className={`${styles.leafCell} ${styles.mono}`}>
+                        {fmt(leave.startLeaveDate)}
+                      </span>
+
+                      <span className={`${styles.leafCell} ${styles.mono}`}>
+                        {fmt(leave.expectedEndLeaveDate)}
+                      </span>
+
+                      <span className={`${styles.leafCell} ${styles.mono}`}>
+                        {fmt(leave.actualEndLeaveDate)}
+                      </span>
+
+                      <span className={styles.leafCell}>
+                        {getLeaveTypeName(leave.leaveType)}
+                      </span>
+
+                      <span className={`${styles.leafCell} ${styles.leafActions}`}>
+                        {isOpenLeave && (
+                          <button
+                            disabled={isBusy}
+                            onClick={() => setCloseLeaveCtx({ leaveId: leave._id })}
+                          >
+                            Finalizar
+                          </button>
                         )}
-                      </div>
-                      {canEdit && (
-                        <nav
-                          className={styles.headerActions}
-                          aria-label="Acciones del periodo"
-                        >
-                          <FaEdit
+
+                        {isOpenLeave && isExcedenciaVoluntaria(leave.leaveType) && (
+                          <button
+                            title="Reincorporación"
+                            disabled={isBusy}
+                            onClick={() => openRejoinModal(pid, leave)}
+                          >
+                            Reincorporación
+                          </button>
+                        )}
+
+                        <FaEdit
+                          role="button"
+                          tabIndex={0}
+                          title="Editar baja/excedencia"
+                          className={styles.iconAction}
+                          onClick={() => setEditLeave({ ...leave, periodId: pid })}
+                        />
+
+                        {canDelete && (
+                          <FaTrashAlt
                             role="button"
                             tabIndex={0}
-                            title="Editar periodo"
-                            className={styles.iconAction}
-                            onClick={() => setEditHiring(hp)}
+                            title="Eliminar baja/excedencia"
+                            className={styles.iconActionDanger}
+                            onClick={() => handleHardDeleteLeave({ ...leave, periodId: pid })}
                           />
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+
+                {(leavesByPeriod[pid]?.length ?? 0) === 0 && (
+                  <li className={styles.leafRow}>
+                    <span>No hay bajas o excedencias</span>
+                  </li>
+                )}
+              </ul>
+            )}
+          </section>
+        </article>
+      );
+    })}
+
+    {pastPeriods.length > 0 && (
+      <div className={styles.pastWrapper}>
+        <button
+          className={styles.togglePast}
+          aria-expanded={showPast}
+          onClick={() => setShowPast(v => !v)}
+        >
+          {showPast
+            ? 'Ocultar periodos anteriores'
+            : `Mostrar periodos anteriores (${pastPeriods.length})`}
+        </button>
+
+        <div
+          className={`${styles.pastPanel} ${showPast ? styles.pastOpen : ''}`}
+          role="region"
+          aria-label="Periodos anteriores"
+        >
+          {showPast &&
+            pastPeriods.map(hp => {
+              const pid = String(hp._id);
+
+              return (
+                <article
+                  key={pid}
+                  className={`${styles.card} ${hp.reason?.replacement ? styles.cardReplacement : ''}`}
+                >
+                  <header className={styles.cardHeader}>
+                    <div className={styles.headerMain}>
+                      <h3 className={styles.cardTitle}>
+                        {hp.reason?.replacement
+                          ? 'Periodo de sustitución'
+                          : 'Periodo de contratación (anterior)'}
+                      </h3>
+
+                      {hp.reason?.replacement && (
+                        <FaInfoCircle
+                          className={styles.iconAction}
+                          onClick={() => openInfoSustitucion(hp)}
+                        />
+                      )}
+                    </div>
+
+                    {canEdit && (
+                      <nav className={styles.headerActions} aria-label="Acciones del periodo">
+                        <FaEdit
+                          role="button"
+                          tabIndex={0}
+                          title="Editar periodo"
+                          className={styles.iconAction}
+                          onClick={() => setEditHiring(hp)}
+                        />
+
+                        {canDelete && (
                           <FaTrashAlt
                             role="button"
                             tabIndex={0}
                             title="Eliminar periodo"
                             className={styles.iconActionDanger}
-                            onClick={() =>
-                              setConfirmDeleteHiringId(pid)
-                            }
+                            onClick={() => setConfirmDeleteHiringId(pid)}
                           />
-                        </nav>
-                      )}
-                    </header>
-
-                    <section
-                      className={styles.meta}
-                      aria-label="Información del periodo"
-                    >
-                      <dl className={styles.metaGrid}>
-                        <div>
-                          <dt>Inicio</dt>
-                          <dd className={styles.mono}>{fmt(hp.startDate)}</dd>
-                        </div>
-                        <div>
-                          <dt>Fin</dt>
-                          <dd className={styles.mono}>{fmt(hp.endDate)}</dd>
-                        </div>
-                        <div>
-                          <dt>Dispositivo</dt>
-                          <dd>{getDeviceName(hp.dispositiveId)}</dd>
-                        </div>
-                        <div>
-                          <dt>Jornada</dt>
-                          <dd>{hp.workShift?.type || '—'}</dd>
-                        </div>
-                        <div>
-                          <dt>Puesto</dt>
-                          <dd>{getPositionName(hp.position)}</dd>
-                        </div>
-                      </dl>
-                    </section>
-
-                    <section
-                      className={styles.leaves}
-                      aria-label="Bajas o excedencias"
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: '0.5rem',
-                          alignItems: 'center',
-                          marginBottom: '0.5rem',
-                        }}
-                      >
-                        {openLeaves[pid] && (
-                          <h4 className={styles.tituloBajas}>
-                            BAJAS O EXCEDENCIAS
-                          </h4>
                         )}
-                        <button
-                          className={styles.buttonBajas}
-                          onClick={() => toggleLeaves(pid)}
-                        >
-                          {openLeaves[pid]
-                            ? 'Ocultar'
-                            : 'Mostrar Bajas y Excedencias'}
-                        </button>
+                      </nav>
+                    )}
+                  </header>
+
+                  <section className={styles.meta} aria-label="Información del periodo">
+                    <dl className={styles.metaGrid}>
+                      <div>
+                        <dt>Inicio</dt>
+                        <dd className={styles.mono}>{fmt(hp.startDate)}</dd>
                       </div>
-                      {openLeaves[pid] && (
-                        <>
-                          {leavesLoading[pid] && <p>Cargando…</p>}
-                          {!leavesLoading[pid] && (
-                            <ul className={styles.leafList}>
-                              <li
-                                className={styles.leafHeader}
-                                aria-hidden="true"
-                              >
-                                <span>Inicio</span>
-                                <span>Prevista</span>
-                                <span>Fin</span>
-                                <span>Descripción</span>
-                                <span>Acciones</span>
-                              </li>
-                              {(leavesByPeriod[pid] || []).map(leave => (
-                                <li
-                                  className={styles.leafRow}
-                                  key={leave._id}
-                                >
-                                  <span
-                                    className={`${styles.leafCell} ${styles.mono}`}
-                                  >
-                                    {fmt(leave.startLeaveDate)}
-                                  </span>
-                                  <span
-                                    className={`${styles.leafCell} ${styles.mono}`}
-                                  >
-                                    {fmt(leave.expectedEndLeaveDate)}
-                                  </span>
-                                  <span
-                                    className={`${styles.leafCell} ${styles.mono}`}
-                                  >
-                                    {fmt(leave.actualEndLeaveDate)}
-                                  </span>
-                                  <span className={styles.leafCell}>
-                                    {getLeaveTypeName(leave.leaveType)}
-                                  </span>
-                                  <span
-                                    className={`${styles.leafCell} ${styles.leafActions}`}
-                                  >
-                                    <>
-                                      <FaEdit
-                                        role="button"
-                                        tabIndex={0}
-                                        title="Editar baja/excedencia"
-                                        className={styles.iconAction}
-                                        onClick={() =>
-                                          setEditLeave({
-                                            ...leave,
-                                            periodId: pid,
-                                          })
-                                        }
-                                      />
-                                      <FaTrashAlt
-                                        role="button"
-                                        tabIndex={0}
-                                        title="Eliminar baja/excedencia"
-                                        className={styles.iconActionDanger}
-                                        onClick={() =>
-                                          handleHardDeleteLeave({
-                                            ...leave,
-                                            periodId: pid,
-                                          })
-                                        }
-                                      />
-                                    </>
-                                  </span>
-                                </li>
-                              ))}
-                              {(leavesByPeriod[pid]?.length ?? 0) === 0 && (
-                                <li className={styles.leafRow}>
-                                  <span>No hay bajas o excedencias</span>
-                                </li>
+                      <div>
+                        <dt>Fin</dt>
+                        <dd className={styles.mono}>{fmt(hp.endDate)}</dd>
+                      </div>
+                      <div>
+                        <dt>Dispositivo</dt>
+                        <dd>{getDeviceName(hp.dispositiveId)}</dd>
+                      </div>
+                      <div>
+                        <dt>Jornada</dt>
+                        <dd>{hp.workShift?.type || '—'}</dd>
+                      </div>
+                      <div>
+                        <dt>Puesto</dt>
+                        <dd>{getPositionName(hp.position)}</dd>
+                      </div>
+                    </dl>
+                  </section>
+
+                  <section className={styles.leaves} aria-label="Bajas o excedencias">
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '0.5rem',
+                        alignItems: 'center',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      <h4 className={styles.tituloBajas}>BAJAS O EXCEDENCIAS</h4>
+                    </div>
+
+                    {leavesLoading[pid] && <p>Cargando…</p>}
+
+                    {!leavesLoading[pid] && (
+                      <ul className={styles.leafList}>
+                        <li className={styles.leafHeader} aria-hidden="true">
+                          <span>Inicio</span>
+                          <span>Prevista</span>
+                          <span>Fin</span>
+                          <span>Descripción</span>
+                          <span>Acciones</span>
+                        </li>
+
+                        {(leavesByPeriod[pid] || []).map(leave => (
+                          <li className={styles.leafRow} key={leave._id}>
+                            <span className={`${styles.leafCell} ${styles.mono}`}>
+                              {fmt(leave.startLeaveDate)}
+                            </span>
+
+                            <span className={`${styles.leafCell} ${styles.mono}`}>
+                              {fmt(leave.expectedEndLeaveDate)}
+                            </span>
+
+                            <span className={`${styles.leafCell} ${styles.mono}`}>
+                              {fmt(leave.actualEndLeaveDate)}
+                            </span>
+
+                            <span className={styles.leafCell}>
+                              {getLeaveTypeName(leave.leaveType)}
+                            </span>
+
+                            <span className={`${styles.leafCell} ${styles.leafActions}`}>
+                              <FaEdit
+                                role="button"
+                                tabIndex={0}
+                                title="Editar baja/excedencia"
+                                className={styles.iconAction}
+                                onClick={() => setEditLeave({ ...leave, periodId: pid })}
+                              />
+
+                              {canDelete && (
+                                <FaTrashAlt
+                                  role="button"
+                                  tabIndex={0}
+                                  title="Eliminar baja/excedencia"
+                                  className={styles.iconActionDanger}
+                                  onClick={() => handleHardDeleteLeave({ ...leave, periodId: pid })}
+                                />
                               )}
-                            </ul>
-                          )}
-                        </>
-                      )}
-                    </section>
-                  </article>
-                );
-              })}
-          </div>
+                            </span>
+                          </li>
+                        ))}
+
+                        {(leavesByPeriod[pid]?.length ?? 0) === 0 && (
+                          <li className={styles.leafRow}>
+                            <span>No hay bajas o excedencias</span>
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </section>
+                </article>
+              );
+            })}
         </div>
-      )}
+      </div>
+    )}
 
-      {/* --------- Modales --------- */}
+    {showCreateHiring && (
+      <ModalForm
+        title="Añadir Periodo de Contratación"
+        message="Completa los siguientes campos"
+        fields={createHiringFields}
+        onSubmit={handleCreateHiring}
+        onClose={() => setShowCreateHiring(false)}
+        modal={modal}
+      />
+    )}
 
-      {showCreateHiring && (
-        <ModalForm
-          title="Añadir Periodo de Contratación"
-          message="Completa los siguientes campos"
-          fields={createHiringFields}
-          onSubmit={handleCreateHiring}
-          onClose={() => setShowCreateHiring(false)}
-          modal={modal}
-        />
-      )}
+    {editHiring && (
+      <ModalForm
+        title="Editar Periodo de Contratación"
+        message="Modifica los campos necesarios"
+        fields={editHiringFields}
+        onSubmit={handleUpdateHiring}
+        onClose={() => setEditHiring(null)}
+        modal={modal}
+      />
+    )}
 
-      {editHiring && (
-        <ModalForm
-          title="Editar Periodo de Contratación"
-          message="Modifica los campos necesarios"
-          fields={editHiringFields}
-          onSubmit={handleUpdateHiring}
-          onClose={() => setEditHiring(null)}
-          modal={modal}
-        />
-      )}
+    {closeHiringCtx && (
+      <ModalForm
+        title="Cerrar periodo de contratación"
+        message="Selecciona la fecha de fin del periodo."
+        fields={[
+          {
+            name: 'closeDate',
+            label: 'Fecha',
+            type: 'date',
+            required: true,
+            defaultValue: todayYMD(),
+          },
+        ]}
+        onSubmit={handleCloseHiring}
+        onClose={() => setCloseHiringCtx(null)}
+        modal={modal}
+      />
+    )}
 
-      {closeHiringCtx && (
-        <ModalForm
-          title="Cerrar periodo de contratación"
-          message="Selecciona la fecha de fin del periodo."
-          fields={[
-            {
-              name: 'closeDate',
-              label: 'Fecha',
-              type: 'date',
-              required: true,
-              defaultValue: todayYMD(),
-            },
-          ]}
-          onSubmit={handleCloseHiring}
-          onClose={() => setCloseHiringCtx(null)}
-          modal={modal}
-        />
-      )}
+    {confirmDeleteHiringId && (
+      <ModalConfirmation
+        title="Eliminar periodo"
+        message="¿Seguro que deseas eliminar PERMANENTEMENTE este periodo? (también se borrarán sus bajas)."
+        onConfirm={doHardDeleteHiring}
+        onCancel={() => setConfirmDeleteHiringId(null)}
+      />
+    )}
 
-      {confirmDeleteHiringId && (
-        <ModalConfirmation
-          title="Eliminar periodo"
-          message="¿Seguro que deseas eliminar PERMANENTEMENTE este periodo? (también se borrarán sus bajas)."
-          onConfirm={doHardDeleteHiring}
-          onCancel={() => setConfirmDeleteHiringId(null)}
-        />
-      )}
+    {showInfoModal && infoLeaveData && (
+      <ModalForm
+        title="Información"
+        message="Datos del periodo de baja/excedencia del trabajador sustituido"
+        fields={[
+          { name: 'name', label: 'Nombre', defaultValue: infoLeaveData.name || '', disabled: true },
+          { name: 'dni', label: 'DNI', defaultValue: infoLeaveData.dni || '', disabled: true },
+          { name: 'startLeaveDate', label: 'Inicio', defaultValue: infoLeaveData.startLeaveDate || '—', disabled: true },
+          { name: 'expectedEndLeaveDate', label: 'Fin previsto', defaultValue: infoLeaveData.expectedEndLeaveDate || '—', disabled: true },
+          { name: 'reason', label: 'Motivo', defaultValue: infoLeaveData.reason || '—', disabled: true },
+          { name: 'fin', label: 'Terminada', defaultValue: infoLeaveData.fin || 'no', disabled: true },
+        ]}
+        onSubmit={() => setShowInfoModal(false)}
+        onClose={() => setShowInfoModal(false)}
+        modal={modal}
+      />
+    )}
 
-      {showInfoModal && infoLeaveData && (
-        <ModalForm
-          title="Información"
-          message="Datos del periodo de baja/excedencia del trabajador sustituido"
-          fields={[
-            { name: 'name', label: 'Nombre', defaultValue: infoLeaveData.name || '', disabled: true },
-            { name: 'dni', label: 'DNI', defaultValue: infoLeaveData.dni || '', disabled: true },
-            { name: 'startLeaveDate', label: 'Inicio', defaultValue: infoLeaveData.startLeaveDate || '—', disabled: true },
-            { name: 'expectedEndLeaveDate', label: 'Fin previsto', defaultValue: infoLeaveData.expectedEndLeaveDate || '—', disabled: true },
-            { name: 'reason', label: 'Motivo', defaultValue: infoLeaveData.reason || '—', disabled: true },
-            { name: 'fin', label: 'Terminada', defaultValue: infoLeaveData.fin || 'no', disabled: true },
-          ]}
-          onSubmit={() => setShowInfoModal(false)}
-          onClose={() => setShowInfoModal(false)}
-          modal={modal}
-        />
-      )}
+    {createLeaveCtx && (
+      <ModalForm
+        title="Añadir Baja/Excedencia"
+        message="Completa los siguientes campos"
+        fields={createLeaveFields}
+        onSubmit={handleCreateLeave}
+        onClose={() => setCreateLeaveCtx(null)}
+        modal={modal}
+      />
+    )}
 
-      {createLeaveCtx && (
-        <ModalForm
-          title="Añadir Baja/Excedencia"
-          message="Completa los siguientes campos"
-          fields={createLeaveFields}
-          onSubmit={handleCreateLeave}
-          onClose={() => setCreateLeaveCtx(null)}
-          modal={modal}
-        />
-      )}
+    {editLeave && (
+      <ModalForm
+        title="Editar Baja/Excedencia"
+        message="Modifica los campos necesarios"
+        fields={editLeaveFields}
+        onSubmit={handleUpdateLeave}
+        onClose={() => setEditLeave(null)}
+        modal={modal}
+      />
+    )}
 
-      {editLeave && (
-        <ModalForm
-          title="Editar Baja/Excedencia"
-          message="Modifica los campos necesarios"
-          fields={editLeaveFields}
-          onSubmit={handleUpdateLeave}
-          onClose={() => setEditLeave(null)}
-          modal={modal}
-        />
-      )}
+    {closeLeaveCtx && (
+      <ModalForm
+        title="Cerrar baja/excedencia"
+        message="Selecciona la fecha de fin real."
+        fields={[
+          {
+            name: 'closeDate',
+            label: 'Fecha',
+            type: 'date',
+            required: true,
+            defaultValue: todayYMD(),
+          },
+        ]}
+        onSubmit={handleCloseLeave}
+        onClose={() => setCloseLeaveCtx(null)}
+        modal={modal}
+      />
+    )}
 
-      {closeLeaveCtx && (
-        <ModalForm
-          title="Cerrar baja/excedencia"
-          message="Selecciona la fecha de fin real."
-          fields={[
-            {
-              name: 'closeDate',
-              label: 'Fecha',
-              type: 'date',
-              required: true,
-              defaultValue: todayYMD(),
-            },
-          ]}
-          onSubmit={handleCloseLeave}
-          onClose={() => setCloseLeaveCtx(null)}
-          modal={modal}
-        />
-      )}
+    {rejoinCtx && (
+      <ModalForm
+        title="Reincorporación por excedencia voluntaria"
+        message="Indique la fecha de reincorporación."
+        fields={[
+          {
+            name: 'rejoinDate',
+            label: 'Fecha de reincorporación',
+            type: 'date',
+            required: true,
+            defaultValue: todayYMD(),
+          },
+        ]}
+        onSubmit={handleRejoinSubmit}
+        onClose={() => setRejoinCtx(null)}
+        modal={modal}
+      />
+    )}
 
-      {rejoinCtx && (
-        <ModalForm
-          title="Reincorporación por excedencia voluntaria"
-          message="Indique la fecha de reincorporación."
-          fields={[
-            {
-              name: 'rejoinDate',
-              label: 'Fecha de reincorporación',
-              type: 'date',
-              required: true,
-              defaultValue: todayYMD(),
-            },
-          ]}
-          onSubmit={handleRejoinSubmit}
-          onClose={() => setRejoinCtx(null)}
-          modal={modal}
-        />
-      )}
+    {rejoinConfirm && (
+      <ModalConfirmation
+        title="Confirmar reincorporación"
+        message={rejoinConfirm.message}
+        onConfirm={doConfirmRejoin}
+        onCancel={() => setRejoinConfirm(null)}
+      />
+    )}
 
-      {rejoinConfirm && (
-        <ModalConfirmation
-          title="Confirmar reincorporación"
-          message={rejoinConfirm.message}
-          onConfirm={doConfirmRejoin}
-          onCancel={() => setRejoinConfirm(null)}
-        />
-      )}
-
-      {openModalPreferents && (
-        <ModalForm
-          key="add"
-          title="Añadir Solicitud de Traslado"
-          message="Seleccione cargos y provincias"
-          fields={buildFieldsPreferents()}
-          onSubmit={handleSubmitPref}
-          onClose={() => {
-            setOpenModalPreferents(false);
-          }}
-          modal={modal}
-        />
-      )}
-    </div>
-  );
+    {openModalPreferents && (
+      <ModalForm
+        key="add"
+        title="Añadir Solicitud de Traslado"
+        message="Seleccione cargos y provincias"
+        fields={buildFieldsPreferents()}
+        onSubmit={handleSubmitPref}
+        onClose={() => {
+          setOpenModalPreferents(false);
+        }}
+        modal={modal}
+      />
+    )}
+  </div>
+);
 }

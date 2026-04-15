@@ -207,6 +207,7 @@ export default function SesameEmployeeContext({
   ]);
 
   const managedDepartmentsResolved = useMemo(() => {
+    
     return managedDepartments.map((item) => ({
       ...item,
       name:

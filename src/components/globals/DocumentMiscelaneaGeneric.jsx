@@ -7,7 +7,9 @@ import {
   deleteFileDrive,
   createChangeRequest,
   downloadZipFiles,
-  listFile
+  listFile,
+  documentationAuditCanSign,
+  documentationAuditRegisterDownload 
 } from "../../lib/data";
 
 import ModalForm from "./ModalForm";
@@ -25,6 +27,7 @@ import styles from "../styles/documentMiscelanea.module.css";
 
 import { BsCheckCircleFill } from "react-icons/bs";
 import { MdWarningAmber } from "react-icons/md";
+import OfficialDocSignDigital from "./OfficialDocSignDigital";
 /**
  * @param {Object} props
  * @param {Object} props.data - El objeto user, program o device
@@ -59,25 +62,25 @@ const DocumentMiscelaneaGeneric = ({
 
     const fetchFiles = async () => {
 
-        charge?.(true);
-        const token = getToken();
-        const res = await listFile(
-          { originModel: modelName, idModel: data._id },
-          token
-        );
+      charge?.(true);
+      const token = getToken();
+      const res = await listFile(
+        { originModel: modelName, idModel: data._id },
+        token
+      );
 
-        
 
-        if(res.error){
+
+      if (res.error) {
         charge?.(false);
         modal?.("Error", "No se pudieron cargar los documentos.");
-        if (isMounted) setNormalizedFiles([]);  
-        } else{
-          const items = res?.items || res || [];
-          if (!isMounted) return;
-          setNormalizedFiles(transformFiles(items));
-          charge?.(false);
-        } 
+        if (isMounted) setNormalizedFiles([]);
+      } else {
+        const items = res?.items || res || [];
+        if (!isMounted) return;
+        setNormalizedFiles(transformFiles(items));
+        charge?.(false);
+      }
     };
 
     fetchFiles();
@@ -90,6 +93,35 @@ const DocumentMiscelaneaGeneric = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formConfig, setFormConfig] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ open: false, file: null });
+
+  // FIRMA DE RICIBIS
+  const [signRecibiDoc, setSignRecibiDoc] = useState(null);
+
+const handleSignRecibi = async (doc) => {
+  try {
+    charge?.(true);
+    const token = getToken();
+    const result = await documentationAuditCanSign({ userId: data._id, documentationId: doc._id }, token);
+    if (!result || result.error) {
+      modal?.("Error", result?.message || "No se pudo comprobar si puedes firmar el recibí.");
+      return;
+    }
+    if (!result.canSign) {
+      modal?.("Descarga obligatoria", "Antes de firmar el recibí debes descargar primero el documento oficial.");
+      return;
+    }
+    setSignRecibiDoc(doc);
+  } catch (error) {
+    modal?.("Error", error?.message || "No se pudo comprobar si puedes firmar el recibí.");
+  } finally {
+    charge?.(false);
+  }
+};
+
+  const afterSignRecibi = (updatedUser) => {
+    if (updatedUser) syncFromParent(updatedUser);
+    setSignRecibiDoc(null);
+  };
 
   const [isGeneratingZip, setIsGeneratingZip] = useState(false);
   const abortZipRef = useRef(null);
@@ -105,7 +137,7 @@ const DocumentMiscelaneaGeneric = ({
     setIsGeneratingZip(false);
   };
 
-    // Extrae la lista de Filedrive desde el "padre" devuelto por el back
+  // Extrae la lista de Filedrive desde el "padre" devuelto por el back
   const syncFromParent = useCallback(
     (parent) => {
       if (!parent) {
@@ -194,42 +226,55 @@ const DocumentMiscelaneaGeneric = ({
   // ==================================================
   // ============== DESCARGA DE ARCHIVO ===============
   // ==================================================
-  const handleDownloadFile = async (docOrFalse, fileObj, model=false) => {
-    if (!fileObj?.idDrive) {
-      modal("Error", "No se ha encontrado el ID del archivo.");
-      return;
-    }
-    try {
-      charge(true);
-      const token = getToken();
-      const response = await getFileDrive({ idFile: fileObj.idDrive }, token);
-      if (!response?.url) {
-        modal("Error", "No se pudo descargar el archivo (URL no disponible).");
+ const handleDownloadFile = async (docOrFalse, fileObj, model = false) => {
+  if (!fileObj?._id && !fileObj?.idDrive) {
+    modal("Error", "No se ha encontrado el identificador del archivo.");
+    return;
+  }
+  try {
+    charge(true);
+    const token = getToken();
+
+    if (model && docOrFalse?._id && docOrFalse?.requiresSignature && docOrFalse?.modeloPDF) {
+      const audit = await documentationAuditRegisterDownload({
+        userId: data._id,
+        documentationId: docOrFalse._id,
+        driveId: docOrFalse.modeloPDF,
+      }, token);
+      if (audit?.error) {
+        modal("Error", audit.message || "No se pudo registrar la descarga del documento.");
         return;
       }
-      const link = document.createElement("a");
-      link.href = response.url;
-      // Nombre: <DocLabel>-<Nombre_Apellidos>.pdf
-      let finalName = ''
-      if(!model){
+    }
+
+    const response = await getFileDrive({ idFile: fileObj._id || fileObj.idDrive }, token);
+    if (!response?.url) {
+      modal("Error", "No se pudo descargar el archivo (URL no disponible).");
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = response.url;
+
+    let finalName = "";
+    if (!model) {
       const nameFileAux = !docOrFalse ? compact(fileObj.fileLabel) : compact(docOrFalse.name);
       const nameUserAux = compact(data.firstName);
       const lastUserAux = compact(data.lastName);
       finalName = `${nameFileAux}-${nameUserAux}_${lastUserAux}`;
-      } else if(model){
-        finalName=`modelo_${docOrFalse}`
-      }
-      
-
-      link.download = `${finalName}.pdf`;
-      link.click();
-      URL.revokeObjectURL(response.url);
-    } catch (err) {
-      modal("Error", "No se pudo descargar el archivo.");
-    } finally {
-      charge(false);
+    } else {
+      finalName = `modelo_${compact(docOrFalse?.name || "documento")}`;
     }
-  };
+
+    link.download = `${finalName}.pdf`;
+    link.click();
+    URL.revokeObjectURL(response.url);
+  } catch (err) {
+    modal("Error", "No se pudo descargar el archivo.");
+  } finally {
+    charge(false);
+  }
+};
 
   // ==================================================
   // ============== ELIMINAR ARCHIVO ==================
@@ -776,13 +821,13 @@ const DocumentMiscelaneaGeneric = ({
       a.href = url;
       let baseName = "documentacion";
 
-if (data?.firstName && data?.lastName && data?.dni) {
-  baseName = `${sanitize(data.firstName)}_${sanitize(data.lastName)}_${sanitize(data.dni)}`;
-} else if (data?.name) {
-  baseName = sanitize(data.name);
-}
+      if (data?.firstName && data?.lastName && data?.dni) {
+        baseName = `${sanitize(data.firstName)}_${sanitize(data.lastName)}_${sanitize(data.dni)}`;
+      } else if (data?.name) {
+        baseName = sanitize(data.name);
+      }
 
-const nameZip = `${baseName}_documentacion.zip`;
+      const nameZip = `${baseName}_documentacion.zip`;
       a.download = nameZip;
       a.click();
       URL.revokeObjectURL(url);
@@ -820,7 +865,7 @@ const nameZip = `${baseName}_documentacion.zip`;
             <h4 className={styles.categoryTitle}>{category}</h4>
 
             {docsArray.map(({ doc, files }) => {
-            
+
               const renewal = getRenewalInfo(files, doc.duration || 365); // ← 365 días por defecto
 
               return (
@@ -829,6 +874,10 @@ const nameZip = `${baseName}_documentacion.zip`;
                   className={doc.model === "antiguomodelo" ? styles.officialDocGroupUser : styles.officialDocGroup}
                 >
                   <div className={styles.docHeader}>
+                    {doc.requiresSignature 
+                    ?
+                    <label className={styles.docLabeluploadButton}>{doc.name} </label>
+                    :
                     <label
                       className={styles.docLabeluploadButton}
                       onClick={
@@ -844,9 +893,28 @@ const nameZip = `${baseName}_documentacion.zip`;
                     >
                       {doc.name} <AiOutlineCloudUpload />
                     </label>
-                      {
-                        doc.modeloPDF && <button onClick={()=>{handleDownloadFile(doc.name, {idDrive:doc.modeloPDF}, true)}}>Descargar Modelo</button>
-                      }
+                  }
+                    
+                    {
+                      doc.modeloPDF && <button onClick={() => { handleDownloadFile(doc, { idDrive: doc.modeloPDF }, true) }}>{doc.requiresSignature ? 'Descargar' : 'Descargar Modelo'}</button>
+                    }
+                    {/* FIRMAR RECIBÍ OFICIAL */}
+                    {doc.requiresSignature && (
+                      <button
+                        type="button"
+                        className={styles.signRecibiBtn}
+                        onClick={() => {
+                          if (!doc.modeloPDF) {
+                            modal?.("Modelo no disponible", "Este documento requiere firma, pero aún no tiene un modelo PDF asociado.");
+                            return;
+                          }
+                          handleSignRecibi(doc);
+                        }}
+                        title={`Firmar recibí de ${doc.name}`}
+                      >
+                        Firmar recibí
+                      </button>
+                    )}
                     {/* Indicador de fecha */}
                     {doc.date && renewal && renewal.lastDate && (
                       <div
@@ -985,6 +1053,18 @@ const nameZip = `${baseName}_documentacion.zip`;
           textConfirm="Cancelar"
           onConfirm={cancelZipGeneration}
           deleteCancel={true}   // solo botón 'Cancelar'
+        />
+      )}
+
+      {/* FIRMAR RECIBÍ */}
+      {signRecibiDoc && (
+        <OfficialDocSignDigital
+          user={data}
+          documentation={signRecibiDoc}
+          charge={charge}
+          modal={modal}
+          onClose={() => setSignRecibiDoc(null)}
+          onSigned={afterSignRecibi}
         />
       )}
     </div>

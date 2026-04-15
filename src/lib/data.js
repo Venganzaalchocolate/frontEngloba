@@ -645,3 +645,11 @@ export const postSesameTransferDepartment = (datos, token) => fetchData("/sesame
 export const postSesameToggleEmployeeForUser = (datos, token) => fetchData("/sesameemployeetoggleforuser", "POST", token, datos);
 export const postSesameInviteEmployeeForUser = (datos, token) => fetchData("/sesameemployeeinviteforuser", "POST", token, datos);
 export const postSesameGetOfficeManagers = (datos, token) => fetchData("/sesamegetofficemanagers", "POST", token, datos);
+
+// documentation audit
+export const documentationAuditGet = (datos, token) => fetchData('/documentationauditget', 'POST', token, datos);
+export const documentationAuditUserList = (datos, token) => fetchData('/documentationaudituserlist', 'POST', token, datos);
+export const documentationAuditRegisterDownload = (datos, token) => fetchData('/documentationauditdownload', 'POST', token, datos);
+export const documentationAuditRegisterSignRequest = (datos, token) => fetchData('/documentationauditsignrequest', 'POST', token, datos);
+export const documentationAuditRegisterSignComplete = (datos, token) => fetchData('/documentationauditsigncomplete', 'POST', token, datos);
+export const documentationAuditCanSign = (datos, token) => fetchData('/documentationauditcansign', 'POST', token, datos);

@@ -46,7 +46,7 @@ export default function HiringPeriodsV2({
   const token = getToken();
   const { logged } = useLogin();
   const canEdit = true;
-  const canDelete = logged?.user?.role !== 'root' || logged?.user?.role === 'global';
+  const canDelete = logged?.user?.role === 'root' || logged?.user?.role === 'global';
 
   // Acepta user.status o user.employmentStatus
   const statusField = (user?.employmentStatus ?? user?.status) || '';

@@ -28,6 +28,7 @@ import styles from "../styles/documentMiscelanea.module.css";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { MdWarningAmber } from "react-icons/md";
 import OfficialDocSignDigital from "./OfficialDocSignDigital";
+import { useLogin } from "../../hooks/useLogin";
 /**
  * @param {Object} props
  * @param {Object} props.data - El objeto user, program o device
@@ -49,9 +50,10 @@ const DocumentMiscelaneaGeneric = ({
   authorized = false,
   onRequestCreated = () => { },
 }) => {
+
   // 1) Archivos normalizados del modelo
   const [normalizedFiles, setNormalizedFiles] = useState([]);
-
+const { logged } = useLogin();
   useEffect(() => {
     if (!data?._id || !modelName) {
       setNormalizedFiles([]);
@@ -899,7 +901,7 @@ const handleSignRecibi = async (doc) => {
                       doc.modeloPDF && <button onClick={() => { handleDownloadFile(doc, { idDrive: doc.modeloPDF }, true) }}>{doc.requiresSignature ? 'Descargar' : 'Descargar Modelo'}</button>
                     }
                     {/* FIRMAR RECIBÍ OFICIAL */}
-                    {doc.requiresSignature && (
+                    {doc.requiresSignature && data?._id==logged.user._id && (
                       <button
                         type="button"
                         className={styles.signRecibiBtn}

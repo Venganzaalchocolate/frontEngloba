@@ -32,7 +32,7 @@ const ManagingProgramsDispositive = ({
 }) => {
   const token = getToken();
   const { logged } = useLogin();
-  const isRootOrGlobal = logged?.user?.role === "root" || logged?.user?.role === "global";
+  const isRootOrGlobal = logged?.user?.role === "root" || logged?.user?.role === "global" || logged?.user?.role === "rrhh";
 
   const [select, setSelect] = useState(null);
   const [infoSelect, setInfoSelect] = useState(null);
@@ -938,7 +938,7 @@ const buildCoordinatesFromForm = (formData) => {
         <div className={styles.titulo}>
           <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
 
-          {isRootOrGlobal && (
+          {(logged.user.role=='global' ||  logged.user.role=='root')&& (
             <div className={styles.botones}>
               <button className={styles.btnAdd} onClick={() => setShowProgramForm(true)}>
                 + Añadir Programa <FaFolderOpen />
@@ -949,9 +949,12 @@ const buildCoordinatesFromForm = (formData) => {
               <button className={styles.btnEdit} onClick={openEdit}>
                 Editar <FaEdit />
               </button>
+              {logged.user.role=='root' &&
               <button className={styles.btnDelete} onClick={openDelete}>
                 Eliminar <FaTrashAlt />
               </button>
+              }
+              
             </div>
           )}
         </div>

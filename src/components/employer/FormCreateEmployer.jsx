@@ -187,7 +187,7 @@ const FormCreateEmployer = ({
         placeholder:
           "Busca y añade 1 o varias opciones (puedes pulsar enter o hacer click)",
       },
-
+//
       ...(logged.user.role === "root"
         ? [
             {
@@ -202,7 +202,7 @@ const FormCreateEmployer = ({
                 { value: "global", label: "Global" },
                 { value: "auditor", label: "Auditor" },
                 { value: "employee", label: "Employer" },
-                { value: "responsable", label: "Responsable" },
+                { value: "rrhh", label: "Recursos Humanos" },
               ],
             },
           ]

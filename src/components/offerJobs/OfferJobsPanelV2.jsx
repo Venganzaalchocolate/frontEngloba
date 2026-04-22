@@ -32,7 +32,7 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
   const [linkedUsers, setLinkedUsers] = useState(null);
 
   const isRootOrGlobal =
-    logged?.user?.role === "root" || logged?.user?.role === "global";
+    logged?.user?.role === "root" || logged?.user?.role === "global" || logged?.user?.role === "rrhh" || logged?.user?.role === "auditor";
 
   const responsabilities = Array.isArray(logged?.listResponsability)
     ? logged.listResponsability

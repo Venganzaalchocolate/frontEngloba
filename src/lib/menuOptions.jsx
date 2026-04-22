@@ -12,33 +12,52 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     { key: 'myself',     label: 'Mis datos',               icon: FaUserAlt,        accent: '#0ea5e9' },
   ];
 
-  const global = [
+  const rrhh=[
+    { key: 'cv',         label: 'Solicitudes de empleo',   icon: FaClipboardList,  accent: '#10b981' },
+    { key: 'employer',   label: 'Gestionar empleados',     icon: FaUsers,          accent: '#8b5cf6' },
+    { key: 'offersJobs', label: 'Gestionar ofertas',       icon: FaBriefcase,      accent: '#f59e0b' },
+    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'},
+    { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
+    { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
+  ]
+
+  const resp=[
     { key: 'employer',   label: 'Gestionar empleados',     icon: FaUsers,          accent: '#8b5cf6' },
     { key: 'cv',         label: 'Solicitudes de empleo',   icon: FaClipboardList,  accent: '#10b981' },
     { key: 'offersJobs', label: 'Gestionar ofertas',       icon: FaBriefcase,      accent: '#f59e0b' },
     { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
-    { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
     { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
-    { key: 'lists', label: 'Listín de contacto', icon: FaRegAddressBook, accent: '#64748b' },
-    //volunteer
     { key: 'volunteer', label: 'Voluntariado', icon: MdOutlineVolunteerActivism, accent: '#ffb5de' },
     { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'}
+  ]
+
+  const auditor=[
+    { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
+    { key: 'employer',   label: 'Gestionar empleados',     icon: FaUsers,          accent: '#8b5cf6' },
+    { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
+    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'}
+  ]
+
+  const global = [
+    { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
   ];
 
   const rootOnly = [
     { key: 'root',       label: 'Panel Root',              icon: FaToolbox,        accent: '#d946ef' },
-    { key: 'permissions',       label: 'Permisos',              icon: FaLock ,        accent: '#4ade80' },
 
     // { key: 'workspace',  label: 'Gestión de Workspace',    icon: FaUserCog,        accent: '#4ade80' },
   ];
 
-  if (role === 'root')   return [...global, ...rootOnly, ...base];
-  if (role === 'global') return [...global, ...base];
+  if (role === 'root')   return [...resp,...global,  ...rootOnly, ...base];
+  if (role === 'global') return [...resp,...global,  ...base];
+  if (role=='rrhh') return [...rrhh,...base]
+if (role=='auditor') return [...auditor,...base]
+
 
   const hasResp = Array.isArray(listResponsability)
     ? listResponsability.length > 0
     : !!(listResponsability && listResponsability.length > 0);
 
-  return hasResp ? [...base, ...global] : base;
+  return hasResp ? [...base, ...resp] : base;
 }
 

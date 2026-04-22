@@ -10,6 +10,7 @@ import { BsPersonFillAdd } from "react-icons/bs";
 import InfoSesameOffice from "../sesame/InfoSesameOffice";
 import { validLatitude, validLongitude } from "../../lib/valid";
 import { textErrors } from "../../lib/textErrors";
+import { useLogin } from "../../hooks/useLogin";
 
 const ROLE_SECTIONS = [
   { key: "responsible", label: "Responsables", field: "responsible" },
@@ -34,7 +35,7 @@ const InfoProgramOrDispositive = ({
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState(null);
-
+  const { logged } = useLogin();
   const [confirmDelete, setConfirmDelete] = useState({
     show: false,
     type: null,
@@ -163,58 +164,58 @@ const InfoProgramOrDispositive = ({
     }
   };
 
-const handleQuickUpdateDispositiveField = async (formData) => {
-  if (!info?._id || isProgram || !quickEditField) return;
+  const handleQuickUpdateDispositiveField = async (formData) => {
+    if (!info?._id || isProgram || !quickEditField) return;
 
-  try {
-    charge(true);
+    try {
+      charge(true);
 
-    const payload = { dispositiveId: info._id };
+      const payload = { dispositiveId: info._id };
 
-    if (quickEditField === "address") {
-      payload.address = formData.address || "";
-    }
-
-    if (quickEditField === "phone") {
-      payload.phone = formData.phone || "";
-    }
-
-    if (quickEditField === "coordinates") {
-      const lat =
-        formData.latitude === "" || formData.latitude == null
-          ? null
-          : Number(String(formData.latitude).replace(",", ".").trim());
-
-      const lng =
-        formData.longitude === "" || formData.longitude == null
-          ? null
-          : Number(String(formData.longitude).replace(",", ".").trim());
-
-      if ((lat === null && lng !== null) || (lat !== null && lng === null)) {
-        throw new Error("Debes rellenar latitud y longitud o dejar ambas vacías.");
+      if (quickEditField === "address") {
+        payload.address = formData.address || "";
       }
 
-      payload.coordinates =
-        lat === null && lng === null
-          ? null
-          : { lat, lng };
+      if (quickEditField === "phone") {
+        payload.phone = formData.phone || "";
+      }
+
+      if (quickEditField === "coordinates") {
+        const lat =
+          formData.latitude === "" || formData.latitude == null
+            ? null
+            : Number(String(formData.latitude).replace(",", ".").trim());
+
+        const lng =
+          formData.longitude === "" || formData.longitude == null
+            ? null
+            : Number(String(formData.longitude).replace(",", ".").trim());
+
+        if ((lat === null && lng !== null) || (lat !== null && lng === null)) {
+          throw new Error("Debes rellenar latitud y longitud o dejar ambas vacías.");
+        }
+
+        payload.coordinates =
+          lat === null && lng === null
+            ? null
+            : { lat, lng };
+      }
+
+      const res = await updateDispositive(payload, token);
+
+      if (res?.error) {
+        throw new Error(res.message || "No se pudo actualizar el dispositivo");
+      }
+
+      setQuickEditField(null);
+      modal("Actualizado", "Campo actualizado correctamente.");
+      onSelect({ type: "dispositive", _id: info._id });
+    } catch (error) {
+      modal("Error", error.message || "No se pudo actualizar el dispositivo");
+    } finally {
+      charge(false);
     }
-
-    const res = await updateDispositive(payload, token);
-
-    if (res?.error) {
-      throw new Error(res.message || "No se pudo actualizar el dispositivo");
-    }
-
-    setQuickEditField(null);
-    modal("Actualizado", "Campo actualizado correctamente.");
-    onSelect({ type: "dispositive", _id: info._id });
-  } catch (error) {
-    modal("Error", error.message || "No se pudo actualizar el dispositivo");
-  } finally {
-    charge(false);
-  }
-};
+  };
 
   const fieldsAddPerson = [
     {
@@ -251,30 +252,30 @@ const handleQuickUpdateDispositiveField = async (formData) => {
         defaultValue: info.phone || "",
       },
     ],
-coordinates: [
-  {
-    name: "latitude",
-    label: "Latitud",
-    type: "number",
-    required: false,
-    defaultValue: info?.coordinates?.lat ?? "",
-    isValid: (v) => {
-      if (v === undefined || v === null || String(v).trim() === "") return "";
-      return validLatitude(v) ? "" : textErrors("latitude");
-    },
-  },
-  {
-    name: "longitude",
-    label: "Longitud",
-    type: "number",
-    required: false,
-    defaultValue: info?.coordinates?.lng ?? "",
-    isValid: (v) => {
-      if (v === undefined || v === null || String(v).trim() === "") return "";
-      return validLongitude(v) ? "" : textErrors("longitude");
-    },
-  },
-],
+    coordinates: [
+      {
+        name: "latitude",
+        label: "Latitud",
+        type: "number",
+        required: false,
+        defaultValue: info?.coordinates?.lat ?? "",
+        isValid: (v) => {
+          if (v === undefined || v === null || String(v).trim() === "") return "";
+          return validLatitude(v) ? "" : textErrors("latitude");
+        },
+      },
+      {
+        name: "longitude",
+        label: "Longitud",
+        type: "number",
+        required: false,
+        defaultValue: info?.coordinates?.lng ?? "",
+        isValid: (v) => {
+          if (v === undefined || v === null || String(v).trim() === "") return "";
+          return validLongitude(v) ? "" : textErrors("longitude");
+        },
+      },
+    ],
   };
 
   const quickEditTitles = {
@@ -366,17 +367,17 @@ coordinates: [
               Editar
             </button>
             <button
-            type="button"
-            onClick={() =>
-              window.open(
-                "https://drive.google.com/file/d/1mNL0imnJ1b5vYk39S-p4eTV6gPibuVGS/view?usp=sharing",
-                "_blank",
-                "noopener,noreferrer"
-              )
-            }
-          >
-            ¿Cómo consigo las coordenadas?
-          </button>
+              type="button"
+              onClick={() =>
+                window.open(
+                  "https://drive.google.com/file/d/1mNL0imnJ1b5vYk39S-p4eTV6gPibuVGS/view?usp=sharing",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
+            >
+              ¿Cómo consigo las coordenadas?
+            </button>
           </label>
           <p className={styles.fieldTextStatic}>
 
@@ -455,10 +456,13 @@ coordinates: [
                   >
                     Editar
                   </button>
+
                   <FaTrash
                     className={styles.trash}
                     onClick={() => setConfirmCronology({ show: true, cronology: c })}
                   />
+
+
                 </div>
               </li>
             ))}
@@ -491,7 +495,7 @@ coordinates: [
         <div className={styles.fieldContainer} key={section.key}>
           <label className={styles.fieldLabel}>
             {section.label}
-            <BsPersonFillAdd onClick={() => openAddModal(section.key)} />
+            {logged.user.role == 'root' && <BsPersonFillAdd onClick={() => openAddModal(section.key)} />}
           </label>
 
           {info?.[section.field]?.length > 0 ? (
@@ -508,16 +512,18 @@ coordinates: [
                 >
                   {r.firstName} {r.lastName}
                 </p>
-                <FaTrash
-                  className={styles.trash}
-                  onClick={() =>
-                    setConfirmDelete({
-                      show: true,
-                      type: section.key,
-                      personId: r._id,
-                    })
-                  }
-                />
+                {logged.user.role == 'root' &&
+                  <FaTrash
+                    className={styles.trash}
+                    onClick={() =>
+                      setConfirmDelete({
+                        show: true,
+                        type: section.key,
+                        personId: r._id,
+                      })
+                    }
+                  />
+                }
               </div>
             ))
           ) : (
@@ -582,24 +588,22 @@ coordinates: [
         </div>
       )}
 
-      {!isProgram && <InfoSesameOffice modal={modal} charge={charge} info={info} onCreateSesameOffice={onCreateSesameOffice}/>}
+      {!isProgram && <InfoSesameOffice modal={modal} charge={charge} info={info} onCreateSesameOffice={onCreateSesameOffice} />}
 
       {showAddModal && (
         <ModalForm
-          title={`Añadir ${
-            addType === "responsible"
-              ? "Responsable"
-              : addType === "coordinators"
-                ? "Coordinador"
-                : "Supervisor"
-          }`}
-          message={`Busque y seleccione el ${
-            addType === "responsible"
-              ? "responsable"
-              : addType === "coordinators"
-                ? "coordinador"
-                : "supervisor"
-          } que desea añadir.`}
+          title={`Añadir ${addType === "responsible"
+            ? "Responsable"
+            : addType === "coordinators"
+              ? "Coordinador"
+              : "Supervisor"
+            }`}
+          message={`Busque y seleccione el ${addType === "responsible"
+            ? "responsable"
+            : addType === "coordinators"
+              ? "coordinador"
+              : "supervisor"
+            } que desea añadir.`}
           fields={fieldsAddPerson}
           onSubmit={handleAddPerson}
           onClose={() => setShowAddModal(false)}
@@ -608,20 +612,18 @@ coordinates: [
 
       {confirmDelete.show && (
         <ModalConfirmation
-          title={`Eliminar ${
-            confirmDelete.type === "responsible"
-              ? "Responsable"
-              : confirmDelete.type === "coordinators"
-                ? "Coordinador"
-                : "Supervisor"
-          }`}
-          message={`¿Seguro que deseas eliminar este ${
-            confirmDelete.type === "responsible"
-              ? "responsable"
-              : confirmDelete.type === "coordinators"
-                ? "coordinador"
-                : "supervisor"
-          }?`}
+          title={`Eliminar ${confirmDelete.type === "responsible"
+            ? "Responsable"
+            : confirmDelete.type === "coordinators"
+              ? "Coordinador"
+              : "Supervisor"
+            }`}
+          message={`¿Seguro que deseas eliminar este ${confirmDelete.type === "responsible"
+            ? "responsable"
+            : confirmDelete.type === "coordinators"
+              ? "coordinador"
+              : "supervisor"
+            }?`}
           confirmText="Eliminar"
           cancelText="Cancelar"
           onConfirm={handleRemovePerson}

@@ -27,12 +27,10 @@ const ManagingEmployer = React.lazy(() => import("../employer/ManagingEmployer")
 const PanelRoot = React.lazy(() => import("../root/panelRoot"));
 const ManagingMySelf = React.lazy(() => import("../myself/ManagingMySelf"));
 const ManagingAuditors = React.lazy(() => import("../audits/ManagingAuditors"));
-const ManagingLists = React.lazy(() => import("../lists/ManagingLists"));
 const ManagingWorkspace = React.lazy(() => import("../woprkspace/Managingworkspace"));
 const FormCreateEmployer = React.lazy(() => import("../employer/FormCreateEmployer"));
-const ManagingProgramsDispositive=React.lazy(() => import("../programsanddispositives/ManagingProgramsDispositive"));
-const ManagingVolunteers=React.lazy(() => import("../volunteer/ManagingVolunteers"));
-const ManagingPermissions=React.lazy(() => import("../permissions/ManagingPermissions"));
+const ManagingProgramsDispositive = React.lazy(() => import("../programsanddispositives/ManagingProgramsDispositive"));
+const ManagingVolunteers = React.lazy(() => import("../volunteer/ManagingVolunteers"));
 const OrganizationChart = React.lazy(() => import("./OrganizationChart"));
 
 /* === Tile reutilizable (card clickable con icono y texto) ===
@@ -147,8 +145,8 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
   };
 
 
-    
-  
+
+
 
   // === Render de módulos ===
   if (MenuWorker != null) {
@@ -232,14 +230,6 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
             charge={(x) => charge(x)}
           />
         )}
-        {MenuWorker === "lists" && (
-          <ManagingLists
-            listResponsability={listResponsability}
-            enumsData={enumsEmployer}
-            modal={(title, message) => modal(title, message)}
-            charge={(x) => charge(x)}
-          />
-        )}
         {MenuWorker === "workspace" && (
           <ManagingWorkspace
             listResponsability={listResponsability}
@@ -255,19 +245,12 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
             charge={(x) => charge(x)}
           />
         )}
-        {MenuWorker === "permissions" && (
-          <ManagingPermissions
-            enumsData={enumsEmployer}
+        {MenuWorker === "organizationChart" && (
+          <OrganizationChart
             modal={(title, message) => modal(title, message)}
             charge={(x) => charge(x)}
           />
         )}
-        {MenuWorker === "organizationChart" && (
-  <OrganizationChart
-    modal={(title, message) => modal(title, message)}
-    charge={(x) => charge(x)}
-  />
-)}
       </Suspense>
     );
   }
@@ -277,7 +260,7 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
     <div className={styles.contenedor} id={styles.contenedorWorkerMenu}>
       <div className={styles.menuHeader}>
         <h2>
-          {logged.user.gender=='female'?'Bienvenida':'Bienvenido'}, <span className={styles.name}>{logged.user.firstName}</span>
+          {logged.user.gender == 'female' ? 'Bienvenida' : 'Bienvenido'}, <span className={styles.name}>{logged.user.firstName}</span>
         </h2>
         <p className={styles.subtitle}>¿Qué quieres hacer hoy?</p>
       </div>

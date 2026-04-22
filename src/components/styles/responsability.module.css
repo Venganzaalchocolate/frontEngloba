@@ -164,3 +164,252 @@
     margin-top: 0;
   }
 }
+
+
+/* ===== Bloques principales ===== */
+.blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.mainBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 14px;
+  background: color-mix(in srgb, #fff 92%, var(--color-morado) 8%);
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  box-shadow: 0 6px 18px rgba(0,0,0,.05);
+}
+
+.blockHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blockHeader h1 {
+  margin: 0;
+  font-size: 14pt;
+  color: var(--color-morado);
+}
+
+.blockHeader p {
+  margin: 0;
+  color: color-mix(in srgb, var(--color-morado) 72%, #666);
+  font-size: 10.5pt;
+}
+
+/* ===== Grid interna de cada bloque ===== */
+.groupGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 720px) {
+  .groupGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .groupGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ===== Contenedor común ===== */
+.contenedor {
+  --radius: 12px;
+  --pad: 16px;
+  --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
+  --shadow: 0 6px 18px rgba(0,0,0,.06);
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  border: var(--bd);
+  background: #fff;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.contenedor > h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  font-size: 13pt;
+  color: var(--color-morado);
+  border-bottom: 1px solid var(--color-morado);
+}
+
+.contenedor > h2 svg {
+  cursor: pointer;
+  transition: transform .15s ease, color .15s ease, opacity .15s ease;
+  opacity: .95;
+}
+
+.contenedor > h2 svg:hover {
+  color: var(--color-chicle);
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+/* ===== Lista ===== */
+.contenedorBotones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contenedorBotones ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+/* ===== Tarjetas ===== */
+.dispositivos {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  box-shadow: 0 3px 10px rgba(0,0,0,.04);
+}
+
+.dispositivos p {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+  font-weight: 600;
+}
+
+.dispositivos p small {
+  font-weight: 500;
+  color: var(--color-malva);
+}
+
+.itemTitle {
+  display: inline-block;
+}
+
+.dispositivos > span {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dispositivos svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  cursor: pointer;
+  opacity: .9;
+  transition: transform .12s ease, color .12s ease, opacity .12s ease;
+  color: color-mix(in srgb, #d9534f 85%, #000);
+}
+
+.dispositivos svg:hover {
+  color: #d9534f;
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+.contenedorBotones > p {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: color-mix(in srgb, var(--color-morado) 70%, #666);
+  background: #fff;
+  border: 1px dashed color-mix(in srgb, var(--color-morado) 25%, #fff);
+}
+
+/* ===== Chips ===== */
+.tag {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f6f6fe;
+  color: var(--color-morado);
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
+  font-weight: 700;
+  letter-spacing: .02em;
+  margin-right: 8px;
+}
+
+.ruleScope {
+  font-weight: 700;
+  color: var(--color-morado);
+}
+
+/* ===== Reglas ===== */
+.ruleBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ruleHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ruleFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.ruleField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-morado) 4%, #fff);
+  border: 1px solid color-mix(in srgb, var(--color-morado) 12%, #fff);
+}
+
+.ruleField span {
+  font-size: 9pt;
+  color: var(--color-malva);
+}
+
+.ruleField strong {
+  font-size: 10pt;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+}
+
+.ruleNote {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-chicle) 10%, #fff);
+  border: 1px solid color-mix(in srgb, var(--color-chicle) 20%, #fff);
+  color: color-mix(in srgb, var(--color-morado) 88%, #222);
+  font-size: 10pt;
+}
+
+.description{
+  font-size: 8pt;
+  margin-top: -14px;
+  font-style: italic;
+}

@@ -35,7 +35,9 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
   // =========================
   const { logged } = useLogin();
   const isRootOrGlobal =
-    logged?.user?.role === 'root' || logged?.user?.role === 'global';
+    logged?.user?.role === 'root' || logged?.user?.role === 'global' || logged?.user?.role === 'rrhh';
+
+
 
   const apafaUser =
     logged.user.apafa == false ||
@@ -74,6 +76,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
     phone: '',
     apafa: apafaUser,
     status: 'total',
+    role:''
   });
   const debouncedFilters = useDebounce(filters, 300);
 
@@ -114,43 +117,144 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
     []
   );
 
-  const getResponsibilityOptions = useCallback(() => {
-    const options = [];
-    const seen = new Set();
+const getResponsibilityOptions = useCallback(() => {
+  const provinceOnlyGroups = new Map();
+  const provinceProgramGroups = new Map();
+  const deviceMap = new Map();
+  const programMap = new Map();
 
-    listResponsability.forEach((item) => {
-      const programId = item?.idProgram ? String(item.idProgram) : '';
-      const dispositiveId = item?.dispositiveId ? String(item.dispositiveId) : '';
+  listResponsability.forEach((item) => {
+    const programId = item?.idProgram ? String(item.idProgram) : '';
+    const dispositiveId = item?.dispositiveId ? String(item.dispositiveId) : '';
+    const device = enumsData?.dispositiveIndex?.[dispositiveId];
+    const provinceId = device?.province ? String(device.province) : '';
 
-      if (hasProgramAccess(item) && programId) {
-        const key = `program:${programId}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          options.push({
-            label: `(Programa) ${item.programAcronym || item.programName || 'Programa'}`,
-            value: JSON.stringify({ type: "program", programId }),
-          });
-        }
+    if (hasProgramAccess(item) && programId && !programMap.has(programId)) {
+      programMap.set(programId, {
+        label: `(Programa) ${item.programAcronym || item.programName || 'Programa'}`,
+        value: JSON.stringify({ type: 'program', programId }),
+      });
+    }
+
+    if (hasDeviceAccess(item) && dispositiveId && !deviceMap.has(dispositiveId)) {
+      deviceMap.set(dispositiveId, {
+        label: `(Dispositivo) ${item.dispositiveName}${item.programAcronym || item.programName ? ` [${item.programAcronym || item.programName}]` : ''}`,
+        value: JSON.stringify({
+          type: 'device',
+          programId,
+          deviceId: dispositiveId,
+        }),
+        sortName: item.dispositiveName || '',
+      });
+    }
+
+    if (hasDeviceAccess(item) && provinceId && dispositiveId) {
+      if (!provinceOnlyGroups.has(provinceId)) {
+        provinceOnlyGroups.set(provinceId, {
+          provinceId,
+          deviceIds: [],
+        });
       }
+      const group = provinceOnlyGroups.get(provinceId);
+      if (!group.deviceIds.includes(dispositiveId)) group.deviceIds.push(dispositiveId);
+    }
 
-      if (hasDeviceAccess(item) && dispositiveId) {
-        const key = `device:${dispositiveId}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          options.push({
-            label: `(Dispositivo) ${item.dispositiveName}${item.programAcronym || item.programName ? ` [${item.programAcronym || item.programName}]` : ''}`,
-            value: JSON.stringify({
-              type: "device",
-              programId,
-              deviceId: dispositiveId,
-            }),
-          });
-        }
+    if (hasDeviceAccess(item) && programId && provinceId && dispositiveId) {
+      const key = `${programId}:${provinceId}`;
+      if (!provinceProgramGroups.has(key)) {
+        provinceProgramGroups.set(key, {
+          programId,
+          provinceId,
+          programName: item.programName || '',
+          programAcronym: item.programAcronym || '',
+          deviceIds: [],
+        });
       }
+      const group = provinceProgramGroups.get(key);
+      if (!group.deviceIds.includes(dispositiveId)) group.deviceIds.push(dispositiveId);
+    }
+  });
+
+  const provinceOnlyOptions = [...provinceOnlyGroups.values()]
+    .filter(group => group.deviceIds.length > 1)
+    .map(group => ({
+      label: `(Provincia) ${enumsData?.provincesIndex?.[group.provinceId]?.name || 'Provincia'} (${group.deviceIds.length} dispositivos)`,
+      value: JSON.stringify({
+        type: 'province',
+        provinceId: group.provinceId,
+      }),
+      sortProvince: enumsData?.provincesIndex?.[group.provinceId]?.name || '',
+    }))
+    .sort((a, b) => a.sortProvince.localeCompare(b.sortProvince, 'es'));
+
+  const provinceProgramOptions = [...provinceProgramGroups.values()]
+    .filter(group => group.deviceIds.length > 1)
+    .map(group => ({
+      label: `(Provincia+Programa) ${group.programAcronym || group.programName} - ${enumsData?.provincesIndex?.[group.provinceId]?.name || 'Provincia'} (${group.deviceIds.length} dispositivos)`,
+      value: JSON.stringify({
+        type: 'device-group',
+        programId: group.programId,
+        provinceId: group.provinceId,
+      }),
+      sortProgram: group.programAcronym || group.programName || '',
+      sortProvince: enumsData?.provincesIndex?.[group.provinceId]?.name || '',
+    }))
+    .sort((a, b) => {
+      const byProvince = a.sortProvince.localeCompare(b.sortProvince, 'es');
+      if (byProvince !== 0) return byProvince;
+      return a.sortProgram.localeCompare(b.sortProgram, 'es');
     });
 
-    return options;
-  }, [listResponsability, hasProgramAccess, hasDeviceAccess]);
+  const deviceOptions = [...deviceMap.values()]
+    .sort((a, b) => a.sortName.localeCompare(b.sortName, 'es'))
+    .map(({ sortName, ...opt }) => opt);
+
+  const programOptions = [...programMap.values()]
+    .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+
+  return [
+    ...provinceOnlyOptions,
+    ...provinceProgramOptions,
+    ...deviceOptions,
+    ...programOptions,
+  ];
+}, [listResponsability, hasProgramAccess, hasDeviceAccess, enumsData?.dispositiveIndex, enumsData?.provincesIndex]);
+
+const scopedDeviceOptions = useMemo(() => {
+  if (!selectedResponsibility) return [];
+
+  try {
+    const parsed = JSON.parse(selectedResponsibility);
+
+    if (parsed.type === 'program' && parsed.programId) {
+      return Object.entries(enumsData?.dispositiveIndex || {})
+        .filter(([, d]) => String(d?.program || '') === String(parsed.programId))
+        .map(([id, d]) => ({ value: id, label: d?.name || 'Dispositivo' }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+    }
+
+    if (parsed.type === 'device-group' && parsed.programId && parsed.provinceId) {
+      return Object.entries(enumsData?.dispositiveIndex || {})
+        .filter(([, d]) =>
+          String(d?.program || '') === String(parsed.programId) &&
+          String(d?.province || '') === String(parsed.provinceId)
+        )
+        .map(([id, d]) => ({ value: id, label: d?.name || 'Dispositivo' }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+    }
+
+    if (parsed.type === 'province' && parsed.provinceId) {
+      return Object.entries(enumsData?.dispositiveIndex || {})
+        .filter(([, d]) => String(d?.province || '') === String(parsed.provinceId))
+        .map(([id, d]) => ({ value: id, label: d?.name || 'Dispositivo' }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+    }
+
+    return [];
+  } catch {
+    return [];
+  }
+}, [selectedResponsibility, enumsData?.dispositiveIndex]);
 
   // =========================
   // LOADERS
@@ -174,12 +278,20 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
 
         const resp = JSON.parse(selectedResponsibility);
 
-        if (resp.type === "program") {
-          auxFilters.programId = resp.programId;
-        } else if (resp.type === "device") {
-          auxFilters.programId = resp.programId;
-          auxFilters.dispositive = resp.deviceId;
-        }
+if (resp.type === 'program') {
+  auxFilters.programId = resp.programId;
+  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
+} else if (resp.type === 'device') {
+  auxFilters.programId = resp.programId;
+  auxFilters.dispositive = resp.deviceId;
+} else if (resp.type === 'device-group') {
+  auxFilters.programId = resp.programId;
+  auxFilters.provinces = resp.provinceId;
+  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
+} else if (resp.type === 'province') {
+  auxFilters.provinces = resp.provinceId;
+  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
+}
       }
 
       const data = await getusers(page, limit, auxFilters, token);
@@ -319,12 +431,23 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
   // =========================
   // HANDLERS
   // =========================
-  const handleSelectResponsibility = (e) => {
-    const value = e.target.value || null;
-    setSelectedResponsibility(value);
-    setPage(1);
-    setUserSelected(null);
-  };
+const handleSelectResponsibility = (e) => {
+  const value = e.target.value || null;
+  setSelectedResponsibility(value);
+  setPage(1);
+  setUserSelected(null);
+
+  try {
+    const parsed = value ? JSON.parse(value) : null;
+    if (
+      parsed?.type === 'program' ||
+      parsed?.type === 'device-group' ||
+      parsed?.type === 'province'
+    ) {
+      setFilters((prev) => prev.dispositive ? { ...prev, dispositive: '' } : prev);
+    }
+  } catch {}
+};
 
   const handlePageChange = useCallback((newPage) => setPage(newPage), []);
   const handleLimitChange = useCallback((event) => {
@@ -358,6 +481,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
       provinces: '',
       apafa: apafaUser,
       position: '',
+      role:''
     });
   }, [apafaUser]);
 
@@ -673,7 +797,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
           <div className={styles.titulo}>
             <div>
               <h2>GESTIÓN DE EMPLEADOS</h2>
-              {isRootOrGlobal && <FaSquarePlus onClick={openModal} />}
+              {(logged.user.role == 'rrhh' || logged.user.role == 'root') && <FaSquarePlus onClick={openModal} />}
               <TbFileTypeXml onClick={openXlsForm} />
 
               {!!userXLS && (
@@ -685,7 +809,7 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
                 />
               )}
 
-              {isRootOrGlobal && (
+              {(logged.user.role == 'rrhh' || logged.user.role == 'root') && (
                 <RiUserSharedFill
                   onClick={() => setIsRelocateOpen(true)}
                   style={{ cursor: "pointer", marginLeft: "10px" }}
@@ -717,29 +841,10 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
               )}
             </div>
 
-            {isRootOrGlobal ? (
-              <div className={styles.paginacion}>
-                <div>
-                  <label htmlFor="limit">Usuarios por página:</label>
-                  <select id="limit" value={limit} onChange={handleLimitChange}>
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                  </select>
-                </div>
 
-                <div>
-                  <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
-                    {'<'}
-                  </button>
-                  <span>Página {page}</span>
-                  <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
-                    {'>'}
-                  </button>
-                </div>
-              </div>
-            ) : (
+
+
+            {!isRootOrGlobal && (
               <div className={styles.cajaSeleccionActiva}>
                 <h4>Activo</h4>
                 <select onChange={handleSelectResponsibility} value={selectedResponsibility || ""}>
@@ -767,9 +872,31 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
                 enums={enumsData}
                 handleFilterChange={handleFilterChange}
                 resetFilters={resetFilters}
-                setFilters={setFilters}
+                scopedDeviceOptions={scopedDeviceOptions}
+                selectedResponsibility={selectedResponsibility}
               />
             )}
+            <div className={styles.paginacion}>
+              <div>
+                <label htmlFor="limit">Usuarios por página:</label>
+                <select id="limit" value={limit} onChange={handleLimitChange}>
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              <div>
+                <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
+                  {'<'}
+                </button>
+                <span>Página {page}</span>
+                <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
+                  {'>'}
+                </button>
+              </div>
+            </div>
 
             <div className={styles.containerTableContainer}>
               <div>

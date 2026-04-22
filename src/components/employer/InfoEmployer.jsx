@@ -71,7 +71,7 @@ const InfoEmployer = ({
     ? listResponsability.length > 0
     : Number(listResponsability) > 0;
 
-  const canDirectEdit = isSupervisor || ["global", "root"].includes(logged.user.role);
+  const canDirectEdit = isSupervisor || ["global", "root", "rrhh"].includes(logged.user.role);
 
   const sesameOfficeOptions = useMemo(() => {
     return Object.values(enumsData?.dispositiveIndex || {})
@@ -685,7 +685,7 @@ const handleCancelActivateSesame = async () => {
       <h2>
         INFORMACIÓN PERSONAL
         {boton()}
-        {(logged.user.role === "root" || logged.user.role === "global") && (
+        {(logged.user.role === "root" || logged.user.role === "rrhh") && (
           <div className={styles.cajaBotonesSuperiores}>
             {logged.user.role === "root" && (
               <button onClick={recreateEmail}>Volver a crear el email coorporativo</button>
@@ -751,7 +751,7 @@ const handleCancelActivateSesame = async () => {
             <option value="root">Root</option>
             <option value="global">Global</option>
             <option value="employee">Empleado</option>
-            <option value="responsable">Responsable</option>
+            <option value="rrhh">Recursos Humanos</option>
             <option value="auditor">Auditor</option>
           </select>
         </div>
@@ -800,7 +800,7 @@ const handleCancelActivateSesame = async () => {
           );
         }
 
-        const isRootOrGlobal = logged.user.role === "global" || logged.user.role === "root";
+        const isRootOrGlobal = logged.user.role === "global" || logged.user.role === "root" || logged.user.role === "rrhh";
         let control = null;
 
         if (fieldName === "tracking") {
@@ -827,23 +827,7 @@ const handleCancelActivateSesame = async () => {
               />
             );
           }
-        } else if (fieldName === "employmentStatus" && isRootOrGlobal) {
-          control = (
-            <select
-              className={styles[fieldName]}
-              name={fieldName}
-              value={datos[fieldName] || ""}
-              onChange={handleChange}
-              disabled={true}
-            >
-              {(enumsData?.status || []).map((value) => (
-                <option value={value} key={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          );
-        } else if (fieldName === "employmentStatus" && !isRootOrGlobal) {
+        } else if (fieldName === "employmentStatus") {
           control = <input className={styles[fieldName]} type="text" value={datos[fieldName] || ""} disabled />;
         } else if (fieldName === "email") {
           control = (

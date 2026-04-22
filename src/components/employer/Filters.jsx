@@ -1,3 +1,4 @@
+import { useLogin } from '../../hooks/useLogin';
 import styles from '../styles/ManagingEmployer.module.css';
 import { useMemo, useState, useRef, useEffect } from 'react';
 
@@ -16,8 +17,11 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
   const deviceSearchWrapRef = useRef(null);
   const respSearchWrapRef = useRef(null);
 
+  const { logged } = useLogin();
+
   // Cerrar dropdowns al clicar fuera
   useEffect(() => {
+
     const onDocClick = (e) => {
       if (!programSearchWrapRef.current?.contains(e.target)) setPdOpen(false);
       if (!deviceSearchWrapRef.current?.contains(e.target)) setDdOpen(false);
@@ -230,7 +234,7 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
       .filter(Boolean);
   }, [listResponsability, enumsEmployer?.dispositiveIndex, enumsEmployer?.programsIndex]);
 
-    // Sincronizar inputs de Programa / Dispositivo / Responsabilidades
+  // Sincronizar inputs de Programa / Dispositivo / Responsabilidades
   // a partir de los filtros actuales
   useEffect(() => {
     // --- Programa ---
@@ -664,6 +668,18 @@ const Filters = ({ filters, enums: enumsEmployer, handleFilterChange, resetFilte
           </select>
         </div>
       </div>
+
+      {logged.user.role == 'root' && <div>
+        <label htmlFor="role">Rol</label>
+        <select id="role" name="role" onChange={handleFilterChange} value={filters.role || ''}>
+          <option value="">Selecciona una opción</option>
+          <option value="global">Global</option>
+          <option value="root">Root</option>
+          <option value="rrhh">RRHH</option>
+          <option value="employee">Empleado</option>
+          <option value="auditor">Auditor</option>
+        </select>
+      </div>}
 
       {/* Reset */}
       <div>

@@ -46,7 +46,7 @@ export default function HiringPeriodsV2({
   const token = getToken();
   const { logged } = useLogin();
   const canEdit = true;
-  const canDelete = logged?.user?.role === 'root' || logged?.user?.role === 'global';
+  const canDelete = logged?.user?.role === 'root' || logged?.user?.role === 'rrhh';
 
   // Acepta user.status o user.employmentStatus
   const statusField = (user?.employmentStatus ?? user?.status) || '';
@@ -77,9 +77,6 @@ const [leavesLoading, setLeavesLoading] = useState({});
 
   const [openModalPreferents, setOpenModalPreferents] = useState(false);
 
-  const canEditLeaveEndDate =
-    logged?.user?.role === 'root' &&
-    logged?.user?._id === '6790e50a1c4635cb35cc176f';
 
   /* -------------------- cargar periodos -------------------- */
   useEffect(() => {
@@ -583,23 +580,14 @@ useEffect(() => {
         ? new Date(editLeave.expectedEndLeaveDate).toISOString().split('T')[0]
         : ''
     },
-    canEditLeaveEndDate
-      ? {
-          name: 'actualEndLeaveDate',
-          label: 'Fecha Real de Fin',
-          type: 'date',
-          defaultValue: editLeave.actualEndLeaveDate
-            ? new Date(editLeave.actualEndLeaveDate).toISOString().split('T')[0]
-            : ''
-        }
-      : {
+{
           name: 'actualEndLeaveDate',
           label: 'Fecha Real de Fin',
           type: 'date',
           defaultValue: editLeave.actualEndLeaveDate
             ? new Date(editLeave.actualEndLeaveDate).toISOString().split('T')[0]
             : '',
-          disabled: true,
+          disabled: !canDelete,
         },
     {
       name: 'leaveType',
@@ -715,7 +703,6 @@ useEffect(() => {
         actualEndLeaveDate: form.actualEndLeaveDate || undefined,
         leaveType: form.leaveType || undefined,
       };
-      if (!canEditLeaveEndDate) delete patch.actualEndLeaveDate;
 
       const updated = await leaveUpdate(patch, token);
       if (updated?.error) throw new Error(updated.message || 'No se pudo actualizar la baja/excedencia');

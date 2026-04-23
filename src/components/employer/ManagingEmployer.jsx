@@ -117,6 +117,44 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
     []
   );
 
+const getAllowedDispositiveIdsByResponsibility = useCallback((selectedValue) => {
+  if (!selectedValue) return [];
+
+  try {
+    const parsed = JSON.parse(selectedValue);
+    const ids = new Set();
+
+    listResponsability.forEach((item) => {
+      if (!hasDeviceAccess(item)) return;
+
+      const dispositiveId = item?.dispositiveId ? String(item.dispositiveId) : '';
+      if (!dispositiveId) return;
+
+      const device = enumsData?.dispositiveIndex?.[dispositiveId];
+      if (!device) return;
+
+      const itemProgramId = item?.idProgram ? String(item.idProgram) : '';
+      const itemProvinceId = device?.province ? String(device.province) : '';
+
+      if (parsed.type === 'province' && itemProvinceId === String(parsed.provinceId)) {
+        ids.add(dispositiveId);
+      }
+
+      if (
+        parsed.type === 'device-group' &&
+        itemProgramId === String(parsed.programId) &&
+        itemProvinceId === String(parsed.provinceId)
+      ) {
+        ids.add(dispositiveId);
+      }
+    });
+
+    return [...ids];
+  } catch {
+    return [];
+  }
+}, [listResponsability, hasDeviceAccess, enumsData?.dispositiveIndex]);
+
 const getResponsibilityOptions = useCallback(() => {
   const provinceOnlyGroups = new Map();
   const provinceProgramGroups = new Map();
@@ -225,95 +263,129 @@ const scopedDeviceOptions = useMemo(() => {
 
   try {
     const parsed = JSON.parse(selectedResponsibility);
+    const allowedDevicesMap = new Map();
 
-    if (parsed.type === 'program' && parsed.programId) {
-      return Object.entries(enumsData?.dispositiveIndex || {})
-        .filter(([, d]) => String(d?.program || '') === String(parsed.programId))
-        .map(([id, d]) => ({ value: id, label: d?.name || 'Dispositivo' }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'es'));
-    }
+    listResponsability.forEach((item) => {
+      if (!hasDeviceAccess(item)) return;
 
-    if (parsed.type === 'device-group' && parsed.programId && parsed.provinceId) {
-      return Object.entries(enumsData?.dispositiveIndex || {})
-        .filter(([, d]) =>
-          String(d?.program || '') === String(parsed.programId) &&
-          String(d?.province || '') === String(parsed.provinceId)
-        )
-        .map(([id, d]) => ({ value: id, label: d?.name || 'Dispositivo' }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'es'));
-    }
+      const dispositiveId = item?.dispositiveId ? String(item.dispositiveId) : '';
+      if (!dispositiveId) return;
 
-    if (parsed.type === 'province' && parsed.provinceId) {
-      return Object.entries(enumsData?.dispositiveIndex || {})
-        .filter(([, d]) => String(d?.province || '') === String(parsed.provinceId))
-        .map(([id, d]) => ({ value: id, label: d?.name || 'Dispositivo' }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'es'));
-    }
+      const device = enumsData?.dispositiveIndex?.[dispositiveId];
+      if (!device) return;
 
-    return [];
+      const itemProgramId = item?.idProgram ? String(item.idProgram) : '';
+      const itemProvinceId = device?.province ? String(device.province) : '';
+
+      if (
+        parsed.type === 'program' &&
+        itemProgramId === String(parsed.programId)
+      ) {
+        allowedDevicesMap.set(dispositiveId, {
+          value: dispositiveId,
+          label: device?.name || item?.dispositiveName || 'Dispositivo',
+        });
+      }
+
+      if (
+        parsed.type === 'device-group' &&
+        itemProgramId === String(parsed.programId) &&
+        itemProvinceId === String(parsed.provinceId)
+      ) {
+        allowedDevicesMap.set(dispositiveId, {
+          value: dispositiveId,
+          label: device?.name || item?.dispositiveName || 'Dispositivo',
+        });
+      }
+
+      if (
+        parsed.type === 'province' &&
+        itemProvinceId === String(parsed.provinceId)
+      ) {
+        allowedDevicesMap.set(dispositiveId, {
+          value: dispositiveId,
+          label: device?.name || item?.dispositiveName || 'Dispositivo',
+        });
+      }
+    });
+
+    return [...allowedDevicesMap.values()].sort((a, b) =>
+      a.label.localeCompare(b.label, 'es')
+    );
   } catch {
     return [];
   }
-}, [selectedResponsibility, enumsData?.dispositiveIndex]);
+}, [
+  selectedResponsibility,
+  listResponsability,
+  hasDeviceAccess,
+  enumsData?.dispositiveIndex
+]);
 
   // =========================
   // LOADERS
   // =========================
-  const loadUsers = useCallback(async (showLoader = false) => {
-    if (showLoader) charge(true);
+const loadUsers = useCallback(async (showLoader = false) => {
+  if (showLoader) charge(true);
 
-    try {
-      const token = getToken();
-      let auxFilters = { ...debouncedFilters };
+  try {
+    const token = getToken();
+    let auxFilters = { ...debouncedFilters };
 
-      for (let key in auxFilters) {
-        if (auxFilters[key] === "") delete auxFilters[key];
+    for (let key in auxFilters) {
+      if (auxFilters[key] === "") delete auxFilters[key];
+    }
+
+    if (!isRootOrGlobal) {
+      if (!selectedResponsibility) {
+        if (showLoader) charge(false);
+        return;
       }
 
-      if (!isRootOrGlobal) {
-        if (!selectedResponsibility) {
-          if (showLoader) charge(false);
-          return;
-        }
+      const resp = JSON.parse(selectedResponsibility);
 
-        const resp = JSON.parse(selectedResponsibility);
-
-if (resp.type === 'program') {
+      if (resp.type === 'program') {
   auxFilters.programId = resp.programId;
   if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
 } else if (resp.type === 'device') {
-  auxFilters.programId = resp.programId;
   auxFilters.dispositive = resp.deviceId;
 } else if (resp.type === 'device-group') {
-  auxFilters.programId = resp.programId;
-  auxFilters.provinces = resp.provinceId;
+  auxFilters.allowedDispositiveIds = getAllowedDispositiveIdsByResponsibility(selectedResponsibility);
   if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
 } else if (resp.type === 'province') {
-  auxFilters.provinces = resp.provinceId;
+  auxFilters.allowedDispositiveIds = getAllowedDispositiveIdsByResponsibility(selectedResponsibility);
   if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
 }
-      }
-
-      const data = await getusers(page, limit, auxFilters, token);
-
-      const normalizedUsers = (data.users || []).map((user) => ({
-        ...user,
-        firstName: capitalizeWords(user.firstName),
-        lastName: capitalizeWords(user.lastName),
-      }));
-
-      if (data.error) {
-        modal("Error", data.message);
-      } else {
-        setUsers(normalizedUsers);
-        setTotalPages(data.totalPages || 0);
-      }
-    } catch (error) {
-      modal('Error', error.message || 'Ocurrió un error inesperado.');
-    } finally {
-      if (showLoader) charge(false);
     }
-  }, [debouncedFilters, isRootOrGlobal, limit, page, selectedResponsibility, charge, modal]);
+
+    const data = await getusers(page, limit, auxFilters, token);
+
+    const normalizedUsers = (data.users || []).map((user) => ({
+      ...user,
+      firstName: capitalizeWords(user.firstName),
+      lastName: capitalizeWords(user.lastName),
+    }));
+
+    if (data.error) {
+      modal("Error", data.message);
+    } else {
+      setUsers(normalizedUsers);
+      setTotalPages(data.totalPages || 0);
+    }
+  } catch (error) {
+    modal('Error', error.message || 'Ocurrió un error inesperado.');
+  } finally {
+    if (showLoader) charge(false);
+  }
+}, [
+  debouncedFilters,
+  isRootOrGlobal,
+  limit,
+  page,
+  selectedResponsibility,
+  filters.dispositive,
+  getAllowedDispositiveIdsByResponsibility
+]);
 
   const refreshThumbForUser = useCallback(async (userId) => {
     try {
@@ -527,36 +599,42 @@ const handleSelectResponsibility = (e) => {
   // =========================
   // XLS
   // =========================
-  const getUserNotLimit = async () => {
-    try {
-      charge(true);
-      const token = getToken();
-      let auxFilters = { ...debouncedFilters };
+ const getUserNotLimit = async () => {
+  try {
+    charge(true);
+    const token = getToken();
+    let auxFilters = { ...debouncedFilters };
 
-      for (let key in auxFilters) {
-        if (auxFilters[key] === "") delete auxFilters[key];
-      }
-
-      if (!!selectedResponsibility) {
-        const resp = JSON.parse(selectedResponsibility);
-        if (resp.type === "program") {
-          auxFilters.programId = resp.programId;
-        } else if (resp.type === "device") {
-          auxFilters.programId = resp.programId;
-          auxFilters.dispositive = resp.deviceId;
-        }
-      }
-
-      const data = await getusersnotlimit(auxFilters, token);
-      if (!data?.users?.length) throw new Error("No se recibieron datos de usuarios");
-
-      return data.users;
-    } catch (err) {
-      modal("Error", "Error al obtener usuarios o generar Excel");
-    } finally {
-      charge(false);
+    for (let key in auxFilters) {
+      if (auxFilters[key] === "") delete auxFilters[key];
     }
-  };
+
+    if (!isRootOrGlobal && selectedResponsibility) {
+      const resp = JSON.parse(selectedResponsibility);
+
+      if (resp.type === 'program') {
+  auxFilters.programId = resp.programId;
+  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
+} else if (resp.type === 'device') {
+  auxFilters.dispositive = resp.deviceId;
+} else if (resp.type === 'device-group') {
+  auxFilters.allowedDispositiveIds = getAllowedDispositiveIdsByResponsibility(selectedResponsibility);
+  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
+} else if (resp.type === 'province') {
+  auxFilters.allowedDispositiveIds = getAllowedDispositiveIdsByResponsibility(selectedResponsibility);
+  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
+}
+    }
+
+    const data = await getusersnotlimit(auxFilters, token);
+    if (!data?.users?.length) throw new Error("No se recibieron datos de usuarios");
+    return data.users;
+  } catch (err) {
+    modal("Error", "Error al obtener usuarios o generar Excel");
+  } finally {
+    charge(false);
+  }
+};
 
   const openXlsForm = async () => {
     const userAll = await getUserNotLimit();

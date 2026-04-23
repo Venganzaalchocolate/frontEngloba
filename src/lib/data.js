@@ -350,6 +350,8 @@ export const auditPayrolls= (datos, token) => fetchData('/auditpayrolls', 'POST'
 //estadisticas
 export const currentHeadcountStats = (datos, token) => fetchData('/currentheadcountstats', 'POST', token, datos);
 export const getUserCvStats=(datos, token)=>fetchData('/getusercvstats','POST', token, datos);
+export const getLeavesStats=(datos, token)=>fetchData('/getleavesstats','POST', token, datos);
+
 
 //workspace
 export const wsInfoGroup = (datos, token) => fetchData('/infogroupws', 'POST', token, datos);

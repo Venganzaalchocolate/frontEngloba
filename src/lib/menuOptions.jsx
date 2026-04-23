@@ -35,7 +35,8 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
     { key: 'employer',   label: 'Gestionar empleados',     icon: FaUsers,          accent: '#8b5cf6' },
     { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
-    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'}
+    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'},
+    { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
   ]
 
   const global = [

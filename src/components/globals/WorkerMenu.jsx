@@ -13,6 +13,8 @@ import { useLogin } from "../../hooks/useLogin";
 import { getDataEmployer } from "../../lib/data";
 import { getMenuOptions } from "../../lib/menuOptions";
 import Spinnning from "./Spinning";
+import ProgramsVisualMap from "../visualMap/ProgramsVisualMap";
+import ManagingWorkplaces from "../workplaces/ManagingWorkplaces";
 
 
 
@@ -251,6 +253,21 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
             charge={(x) => charge(x)}
           />
         )}
+        {MenuWorker === "visualMap" && (
+          <ProgramsVisualMap
+            enumsData={enumsEmployer}
+            charge={(x) => charge(x)}
+          />
+        )}
+        {
+          MenuWorker === 'workplace' && (
+            <ManagingWorkplaces
+              enumsData={enumsEmployer}
+              modal={(title, message) => modal(title, message)}
+              charge={(x) => charge(x)}
+            />
+          )
+        }
       </Suspense>
     );
   }

@@ -20,8 +20,6 @@ import {
 } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import ProgramTabs from "./ProgramTabs";
-import { textErrors } from "../../lib/textErrors";
-import { validNumber, validLatitude, validLongitude } from "../../lib/valid";
 
 const ManagingProgramsDispositive = ({
   modal,
@@ -32,55 +30,34 @@ const ManagingProgramsDispositive = ({
 }) => {
   const token = getToken();
   const { logged } = useLogin();
-  const isRootOrGlobal = logged?.user?.role === "root" || logged?.user?.role === "global" || logged?.user?.role === "rrhh";
+
+  const isRootOrGlobal =
+    logged?.user?.role === "root" ||
+    logged?.user?.role === "global" ||
+    logged?.user?.role === "rrhh";
 
   const [select, setSelect] = useState(null);
   const [infoSelect, setInfoSelect] = useState(null);
+
   const [showProgramForm, setShowProgramForm] = useState(false);
   const [showDeviceForm, setShowDeviceForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSelectModal, setShowSelectModal] = useState(false);
+
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionType, setActionType] = useState(null);
+
   const [deviceWorkers, setDeviceWorkers] = useState([]);
+
   const [showQuickContactForm, setShowQuickContactForm] = useState(false);
   const [quickContactTarget, setQuickContactTarget] = useState(null);
-  const [showCreateSesameOfficeForm, setShowCreateSesameOfficeForm] = useState(false);
-const [createSesameOfficeTarget, setCreateSesameOfficeTarget] = useState(null);
-
-const hasValidCoordinates = (device) => {
-  const lat = device?.coordinates?.lat;
-  const lng = device?.coordinates?.lng;
-
-  return Number.isFinite(Number(lat)) && Number.isFinite(Number(lng));
-};
-
-const hasAddress = (device) => {
-  return !!String(device?.address || "").trim();
-};
 
   const normalizeEntity = (res, type) => {
     const payload = res && typeof res === "object" && "data" in res ? res.data : res;
     return { ...(payload || {}), type };
   };
-
-const buildCoordinatesFromForm = (formData) => {
-  const rawLat = formData?.latitude;
-  const rawLng = formData?.longitude;
-
-  const hasLat = rawLat !== undefined && rawLat !== null && String(rawLat).trim() !== "";
-  const hasLng = rawLng !== undefined && rawLng !== null && String(rawLng).trim() !== "";
-
-  if (!hasLat && !hasLng) return null;
-  if (!hasLat || !hasLng) return null;
-
-  return {
-    lat: Number(String(rawLat).replace(",", ".")),
-    lng: Number(String(rawLng).replace(",", ".")),
-  };
-};
 
   const info = async (x) => {
     if (!x) return;
@@ -101,8 +78,7 @@ const buildCoordinatesFromForm = (formData) => {
       return;
     }
 
-    const dataWithType = normalizeEntity(res, x.type);
-    setInfoSelect(dataWithType);
+    setInfoSelect(normalizeEntity(res, x.type));
     charge(false);
   };
 
@@ -110,6 +86,7 @@ const buildCoordinatesFromForm = (formData) => {
     if (!dispositiveId) return;
 
     charge(true);
+
     try {
       const res = await getusers(1, 200, { dispositive: dispositiveId }, token);
       const payload = res && typeof res === "object" && "data" in res ? res.data : res;
@@ -154,82 +131,43 @@ const buildCoordinatesFromForm = (formData) => {
 
     const firstProgramId = Object.keys(enumsData.programsIndex)[0];
     if (firstProgramId) onSelect({ type: "program", _id: firstProgramId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listResponsability, enumsData, select]);
-
-  const handleCreateSesameOffice = async (device) => {
-  if (!device?._id) return;
-
-  const hasAllData = hasAddress(device) && hasValidCoordinates(device);
-
-  if (hasAllData) {
-    charge(true);
-
-    try {
-      const res = await updateDispositive(
-        {
-          dispositiveId: device._id,
-          address: device.address,
-          coordinates: {
-            lat: Number(device.coordinates.lat),
-            lng: Number(device.coordinates.lng),
-          },
-        },
-        token
-      );
-
-      if (!res || res.error) {
-        modal("Error", res?.message || "No se pudo crear el centro en Sesame.");
-        return;
-      }
-
-      await chargeEnums();
-      await info({ type: "dispositive", _id: device._id });
-      modal("Centro creado", "El centro de Sesame se ha creado correctamente.");
-    } finally {
-      charge(false);
-    }
-
-    return;
-  }
-
-  setCreateSesameOfficeTarget(device);
-  setShowCreateSesameOfficeForm(true);
-};
 
   const handleQuickUpdateDispositiveField = async (formData) => {
     if (!infoSelect?._id || infoSelect?.type !== "dispositive" || !quickContactTarget?.field) return;
 
     charge(true);
 
-    try {
-      const field = quickContactTarget.field;
-      const value = formData?.[field] ?? "";
+    const field = quickContactTarget.field;
+    const value = formData?.[field] ?? "";
 
-      const payload = {
+    const res = await updateDispositive(
+      {
         dispositiveId: infoSelect._id,
         [field]: value,
-      };
+      },
+      token
+    );
 
-      const res = await updateDispositive(payload, token);
-
-      if (!res || res.error) {
-        modal("Error", res?.message || "No se pudo actualizar el campo.");
-        return;
-      }
-
-      await chargeEnums();
-      await info({ type: "dispositive", _id: infoSelect._id });
-
-      modal("Actualización correcta", `${quickContactTarget.label} actualizado correctamente.`);
-      setShowQuickContactForm(false);
-      setQuickContactTarget(null);
-    } finally {
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo actualizar el campo.");
       charge(false);
+      return;
     }
+
+    await chargeEnums();
+    await info({ type: "dispositive", _id: infoSelect._id });
+
+    modal("Actualización correcta", `${quickContactTarget.label} actualizado correctamente.`);
+    setShowQuickContactForm(false);
+    setQuickContactTarget(null);
+    charge(false);
   };
 
   const programsOptions = useMemo(() => {
     const idx = enumsData?.programsIndex || {};
+
     return Object.entries(idx)
       .map(([id, p]) => ({
         value: id,
@@ -241,6 +179,7 @@ const buildCoordinatesFromForm = (formData) => {
 
   const provinceOptions = useMemo(() => {
     const idx = enumsData?.provincesIndex || {};
+
     return Object.entries(idx)
       .map(([id, p]) => ({ value: id, label: p?.name || id }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
@@ -248,6 +187,7 @@ const buildCoordinatesFromForm = (formData) => {
 
   const entityOptions = useMemo(() => {
     const idx = enumsData?.entityIndex || {};
+
     return Object.entries(idx)
       .map(([id, p]) => ({ value: id, label: p?.name || id }))
       .sort((a, b) => a.label.localeCompare(b.label, "es"));
@@ -295,68 +235,51 @@ const buildCoordinatesFromForm = (formData) => {
   ];
 
   const deviceFields = [
-  {
-    name: "program",
-    label: "Programa vinculado",
-    type: "select",
-    options: [{ value: "", label: "— Ninguno —" }, ...programsOptions],
-  },
-  { name: "name", label: "Nombre del Dispositivo", type: "text", required: true },
-  { name: "address", label: "Dirección", type: "text" },
-  { name: "phone", label: "Teléfono", type: "text" },
-  {
-    name: "createSesameOffice",
-    label: "¿Crear centro en Sesame?",
-    type: "select",
-    required: true,
-    options: [
-      { value: true, label: "Sí" },
-      { value: false, label: "No" },
-    ],
-    defaultValue: true,
-  },
-  {
-    name: "latitude",
-    label: "Latitud",
-    type: "text",
-    required: false,
-    isValid: (v, formData) => {
-      const wantsSesame = formData?.createSesameOffice === true || formData?.createSesameOffice === "true";
-      if (!wantsSesame && (v === undefined || v === null || String(v).trim() === "")) return "";
-      if (wantsSesame && (v === undefined || v === null || String(v).trim() === "")) return "La latitud es obligatoria si vas a crear el centro en Sesame.";
-      return validLatitude(v) ? "" : textErrors("latitude");
+    {
+      name: "program",
+      label: "Programa vinculado",
+      type: "select",
+      options: [{ value: "", label: "— Ninguno —" }, ...programsOptions],
     },
-  },
-  {
-    name: "longitude",
-    label: "Longitud",
-    type: "text",
-    required: false,
-    isValid: (v, formData) => {
-      const wantsSesame = formData?.createSesameOffice === true || formData?.createSesameOffice === "true";
-      if (!wantsSesame && (v === undefined || v === null || String(v).trim() === "")) return "";
-      if (wantsSesame && (v === undefined || v === null || String(v).trim() === "")) return "La longitud es obligatoria si vas a crear el centro en Sesame.";
-      return validLongitude(v) ? "" : textErrors("longitude");
+    {
+      name: "name",
+      label: "Nombre del Dispositivo",
+      type: "text",
+      required: true,
     },
-  },
-  {
-    name: "province",
-    label: "Provincia",
-    type: "select",
-    required: true,
-    options: [{ value: "", label: "Seleccione provincia" }, ...provinceOptions],
-  },
-  {
-    name: "active",
-    label: "Activo",
-    type: "select",
-    options: [
-      { value: true, label: "Sí" },
-      { value: false, label: "No" },
-    ],
-    defaultValue: true,
-  },
-];
+    {
+      name: "address",
+      label: "Dirección",
+      type: "text",
+    },
+    {
+      name: "email",
+      label: "Email de grupo",
+      type: "text",
+    },
+    {
+      name: "phone",
+      label: "Teléfono",
+      type: "text",
+    },
+    {
+      name: "province",
+      label: "Provincia",
+      type: "select",
+      required: true,
+      options: [{ value: "", label: "Seleccione provincia" }, ...provinceOptions],
+    },
+    {
+      name: "active",
+      label: "Activo",
+      type: "select",
+      options: [
+        { value: true, label: "Sí" },
+        { value: false, label: "No" },
+      ],
+      defaultValue: true,
+    },
+  ];
 
   const selectFields = [
     {
@@ -386,6 +309,7 @@ const buildCoordinatesFromForm = (formData) => {
 
     if (type === "add") {
       const tempId = `temp-${Date.now()}`;
+
       newCronology.push({
         _id: tempId,
         open: formData.open || null,
@@ -393,7 +317,9 @@ const buildCoordinatesFromForm = (formData) => {
       });
     } else if (type === "edit") {
       newCronology = newCronology.map((c) =>
-        c._id === formData._id ? { ...c, open: formData.open || null, closed: formData.closed || null } : c
+        c._id === formData._id
+          ? { ...c, open: formData.open || null, closed: formData.closed || null }
+          : c
       );
     } else if (type === "delete") {
       newCronology = newCronology.filter((c) => c._id !== formData._id);
@@ -431,8 +357,7 @@ const buildCoordinatesFromForm = (formData) => {
       return;
     }
 
-    const fresh = normalizeEntity(freshRes, infoItem.type);
-    setInfoSelect(fresh);
+    setInfoSelect(normalizeEntity(freshRes, infoItem.type));
 
     modal(
       "Actualizado",
@@ -462,6 +387,7 @@ const buildCoordinatesFromForm = (formData) => {
     };
 
     charge(true);
+
     const res = await createProgram(payload, token);
 
     if (!res || res.error) {
@@ -476,62 +402,53 @@ const buildCoordinatesFromForm = (formData) => {
     charge(false);
   };
 
- const handleCreateDevice = async (formData) => {
-  const selected = programsOptions.find((p) => p.value === formData.program);
-  const acronym = selected?.acronym || "";
-  const finalName = (() => {
-    if (!acronym) return formData.name;
-    const regex = new RegExp(`^${acronym}\\b`, "i");
-    return regex.test(formData.name.trim()) ? formData.name.trim() : `${acronym} ${formData.name.trim()}`;
-  })();
+  const handleCreateDevice = async (formData) => {
+    const selectedProgram = programsOptions.find((p) => p.value === formData.program);
+    const acronym = selectedProgram?.acronym || "";
 
-  const createSesameOffice =
-    formData.createSesameOffice === true || formData.createSesameOffice === "true";
+    const finalName = (() => {
+      if (!acronym) return formData.name;
+      const regex = new RegExp(`^${acronym}\\b`, "i");
 
-  const coordinates = buildCoordinatesFromForm(formData);
+      return regex.test(formData.name.trim())
+        ? formData.name.trim()
+        : `${acronym} ${formData.name.trim()}`;
+    })();
 
-  if (createSesameOffice) {
-    if (!formData.address || !String(formData.address).trim()) {
-      modal("Error", "La dirección es obligatoria si quieres crear el centro en Sesame.");
+    const payload = {
+      name: finalName.trim(),
+      active: formData.active === true || formData.active === "true",
+      address: formData.address || "",
+      email: formData.email || "",
+      phone: formData.phone || "",
+      province: formData.province || null,
+      program: formData.program || null,
+      responsible: [],
+      coordinators: [],
+      supervisors: [],
+      userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
+    };
+
+    charge(true);
+
+    const res = await createDispositive(payload, token);
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo crear el dispositivo.");
+      charge(false);
       return;
     }
 
-    if (!coordinates) {
-      modal("Error", "Debes indicar latitud y longitud válidas si quieres crear el centro en Sesame.");
-      return;
-    }
-  }
+await chargeEnums();
 
-  const payload = {
-    name: finalName.trim(),
-    active: formData.active === true || formData.active === "true",
-    address: formData.address || "",
-    email: formData.email || "",
-    phone: formData.phone || "",
-    province: formData.province || null,
-    program: formData.program || null,
-    coordinates,
-    createSesameOffice,
-    responsible: [],
-    coordinators: [],
-    supervisors: [],
-    userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
+if (res?.dispositive?._id) {
+  onSelect({ type: "dispositive", _id: res.dispositive._id });
+}
+
+modal("Dispositivo creado", `${payload.name} creado correctamente`);
+setShowDeviceForm(false);
+charge(false);
   };
-
-  charge(true);
-  const res = await createDispositive(payload, token);
-
-  if (!res || res.error) {
-    modal("Error", res?.message || "No se pudo crear el dispositivo.");
-    charge(false);
-    return;
-  }
-
-  await chargeEnums();
-  modal("Dispositivo creado", `${payload.name} creado correctamente`);
-  setShowDeviceForm(false);
-  charge(false);
-};
 
   const handleEdit = async (formData) => {
     if (!editTarget?._id || !editTarget.type) return;
@@ -545,7 +462,10 @@ const buildCoordinatesFromForm = (formData) => {
       const update = {};
 
       const newEntity = formData.entity || null;
-      const oldEntity = typeof original.entity === "string" ? original.entity : original.entity?._id || null;
+      const oldEntity =
+        typeof original.entity === "string"
+          ? original.entity
+          : original.entity?._id || null;
 
       const newName = formData.name?.trim() || "";
       const oldName = original.name || "";
@@ -607,33 +527,16 @@ const buildCoordinatesFromForm = (formData) => {
       const oldPhone = original.phone || "";
 
       const newProvince = formData.province || null;
-      const oldProvince = typeof original.province === "string" ? original.province : original.province?._id || null;
+      const oldProvince =
+        typeof original.province === "string"
+          ? original.province
+          : original.province?._id || null;
 
       const newProgram = formData.program || null;
-      const oldProgram = typeof original.program === "string" ? original.program : original.program?._id || null;
-
-      const newCoordinates = buildCoordinatesFromForm(formData);
-      const oldCoordinates = original.coordinates || null;
-
-      const oldLatitude =
-        oldCoordinates?.latitude !== undefined && oldCoordinates?.latitude !== null
-          ? Number(oldCoordinates.latitude)
-          : null;
-
-      const oldLongitude =
-        oldCoordinates?.longitude !== undefined && oldCoordinates?.longitude !== null
-          ? Number(oldCoordinates.longitude)
-          : null;
-
-      const newLatitude =
-        newCoordinates?.latitude !== undefined && newCoordinates?.latitude !== null
-          ? Number(newCoordinates.latitude)
-          : null;
-
-      const newLongitude =
-        newCoordinates?.longitude !== undefined && newCoordinates?.longitude !== null
-          ? Number(newCoordinates.longitude)
-          : null;
+      const oldProgram =
+        typeof original.program === "string"
+          ? original.program
+          : original.program?._id || null;
 
       if (newName !== oldName) update.name = newName;
       if (newActive !== oldActive) update.active = newActive;
@@ -642,7 +545,6 @@ const buildCoordinatesFromForm = (formData) => {
       if (newPhone !== oldPhone) update.phone = newPhone;
       if (newProvince !== oldProvince) update.province = newProvince;
       if (newProgram !== oldProgram) update.program = newProgram;
-      if (newLatitude !== oldLatitude || newLongitude !== oldLongitude) update.coordinates = newCoordinates;
 
       if (Object.keys(update).length === 0) {
         modal("Sin cambios", "No has modificado ningún campo del dispositivo.");
@@ -661,6 +563,7 @@ const buildCoordinatesFromForm = (formData) => {
 
     await chargeEnums();
     await info({ type: editTarget.type, _id: editTarget._id });
+
     setShowEditForm(false);
     modal("Actualización correcta", "Se ha actualizado el elemento.");
     charge(false);
@@ -671,9 +574,10 @@ const buildCoordinatesFromForm = (formData) => {
 
     charge(true);
 
-    let res;
-    if (deleteTarget.type === "program") res = await deleteProgram({ id: deleteTarget._id }, token);
-    else res = await deleteDispositive({ dispositiveId: deleteTarget._id }, token);
+    const res =
+      deleteTarget.type === "program"
+        ? await deleteProgram({ id: deleteTarget._id }, token)
+        : await deleteDispositive({ dispositiveId: deleteTarget._id }, token);
 
     if (!res || res.error) {
       modal("Error", res?.message || "No se pudo eliminar.");
@@ -682,14 +586,50 @@ const buildCoordinatesFromForm = (formData) => {
     }
 
     await chargeEnums();
+
     modal("Eliminado", "El registro se ha eliminado correctamente.");
     setShowDeleteConfirm(false);
     setInfoSelect(null);
     charge(false);
   };
 
+  const buildFieldsWithValues = (data) => {
+    if (data.type === "program") {
+      return programFields.map((f) => ({
+        ...f,
+        defaultValue:
+          f.name === "entity"
+            ? data.entity || ""
+            : f.name === "area"
+              ? data.area
+              : f.name === "active"
+                ? Boolean(data.active)
+                : f.name === "description"
+                  ? data.about?.description || ""
+                  : f.name === "objectives"
+                    ? data.about?.objectives || ""
+                    : f.name === "profile"
+                      ? data.about?.profile || ""
+                      : data[f.name] ?? f.defaultValue ?? "",
+      }));
+    }
+
+    return deviceFields.map((f) => ({
+      ...f,
+      defaultValue:
+        f.name === "program"
+          ? data.program?._id || data.program || ""
+          : f.name === "province"
+            ? data.province?._id || data.province || ""
+            : f.name === "active"
+              ? Boolean(data.active)
+              : data[f.name] ?? f.defaultValue ?? "",
+    }));
+  };
+
   const handleSelectForAction = async (formData) => {
     let parsed;
+
     try {
       parsed = JSON.parse(formData.item);
     } catch {
@@ -704,9 +644,10 @@ const buildCoordinatesFromForm = (formData) => {
 
     charge(true);
 
-    let res;
-    if (parsed.type === "program") res = await getProgramId({ programId: parsed._id }, token);
-    else res = await getDispositiveId({ dispositiveId: parsed._id }, token);
+    const res =
+      parsed.type === "program"
+        ? await getProgramId({ programId: parsed._id }, token)
+        : await getDispositiveId({ dispositiveId: parsed._id }, token);
 
     if (!res || res.error) {
       modal("Error", res?.message || "No se pudo cargar el elemento.");
@@ -717,44 +658,11 @@ const buildCoordinatesFromForm = (formData) => {
     const data = normalizeEntity(res, parsed.type);
 
     if (actionType === "edit") {
-      const fieldsWithValues =
-        data.type === "program"
-          ? programFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "entity"
-                  ? data.entity || ""
-                  : f.name === "area"
-                    ? data.area
-                    : f.name === "active"
-                      ? Boolean(data.active)
-                      : f.name === "description"
-                        ? data.about?.description || ""
-                        : f.name === "objectives"
-                          ? data.about?.objectives || ""
-                          : f.name === "profile"
-                            ? data.about?.profile || ""
-                            : data[f.name] ?? f.defaultValue ?? "",
-            }))
-          : deviceFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "program"
-                  ? data.program?._id || data.program || ""
-                  : f.name === "province"
-                    ? data.province?._id || data.province || ""
-                    : f.name === "active"
-                      ? Boolean(data.active)
-                      : f.name === "latitude"
-                        ? data.coordinates?.latitude ?? ""
-                        : f.name === "longitude"
-                          ? data.coordinates?.longitude ?? ""
-                          : data[f.name] ?? f.defaultValue ?? "",
-            }));
-
-      setEditTarget({ ...data, fieldsWithValues });
+      setEditTarget({ ...data, fieldsWithValues: buildFieldsWithValues(data) });
       setShowEditForm(true);
-    } else if (actionType === "delete") {
+    }
+
+    if (actionType === "delete") {
       setDeleteTarget(data);
       setShowDeleteConfirm(true);
     }
@@ -764,63 +672,28 @@ const buildCoordinatesFromForm = (formData) => {
   };
 
   const openEdit = () => {
-    const openFormWithData = (data) => {
-      if (!data) return;
-
-      const fieldsWithValues =
-        data.type === "program"
-          ? programFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "entity"
-                  ? data.entity || ""
-                  : f.name === "area"
-                    ? data.area
-                    : f.name === "active"
-                      ? Boolean(data.active)
-                      : f.name === "description"
-                        ? data.about?.description || ""
-                        : f.name === "objectives"
-                          ? data.about?.objectives || ""
-                          : f.name === "profile"
-                            ? data.about?.profile || ""
-                            : data[f.name] ?? f.defaultValue ?? "",
-            }))
-          : deviceFields.map((f) => ({
-              ...f,
-              defaultValue:
-                f.name === "program"
-                  ? data.program?._id || data.program || ""
-                  : f.name === "province"
-                    ? data.province?._id || data.province || ""
-                    : f.name === "active"
-                      ? Boolean(data.active)
-                      : f.name === "latitude"
-                        ? data.coordinates?.latitude ?? ""
-                        : f.name === "longitude"
-                          ? data.coordinates?.longitude ?? ""
-                          : data[f.name] ?? f.defaultValue ?? "",
-            }));
-
-      setEditTarget({ ...data, fieldsWithValues });
+    if (infoSelect) {
+      setEditTarget({
+        ...infoSelect,
+        fieldsWithValues: buildFieldsWithValues(infoSelect),
+      });
       setShowEditForm(true);
-    };
-
-    if (infoSelect) openFormWithData(infoSelect);
-    else {
-      setActionType("edit");
-      setShowSelectModal(true);
+      return;
     }
+
+    setActionType("edit");
+    setShowSelectModal(true);
   };
 
   const openDelete = () => {
     if (infoSelect) {
       setDeleteTarget(infoSelect);
       setShowDeleteConfirm(true);
-    } else {
-      setActionType("delete");
-      setShowSelectModal(true);
+      return;
     }
+
+    setActionType("delete");
+    setShowSelectModal(true);
   };
 
   const searchUsers = async (query) => {
@@ -849,19 +722,23 @@ const buildCoordinatesFromForm = (formData) => {
 
     if (isProgram) {
       const originalActive = Boolean(item.active);
-
       const programRes = await updateProgram({ id: item._id, active: nextActive }, token);
 
       if (!programRes || programRes.error) {
         error = true;
         message = programRes?.message || "No se pudo actualizar el programa.";
       } else if (!nextActive) {
-        const allDevices = Object.values(enumsData?.dispositiveIndex || {}).filter((d) => d.program === item._id);
+        const allDevices = Object.values(enumsData?.dispositiveIndex || {}).filter(
+          (d) => d.program === item._id
+        );
+
         const previouslyActiveDevices = allDevices.filter((d) => d.active);
 
         if (previouslyActiveDevices.length > 0) {
           const results = await Promise.all(
-            previouslyActiveDevices.map((d) => updateDispositive({ dispositiveId: d._id, active: false }, token))
+            previouslyActiveDevices.map((d) =>
+              updateDispositive({ dispositiveId: d._id, active: false }, token)
+            )
           );
 
           const failing = results.map((r, idx) => ({ r, idx })).filter((x) => x.r?.error);
@@ -876,7 +753,9 @@ const buildCoordinatesFromForm = (formData) => {
 
             if (succeededDevices.length > 0) {
               await Promise.all(
-                succeededDevices.map((d) => updateDispositive({ dispositiveId: d._id, active: true }, token))
+                succeededDevices.map((d) =>
+                  updateDispositive({ dispositiveId: d._id, active: true }, token)
+                )
               );
             }
           }
@@ -886,19 +765,12 @@ const buildCoordinatesFromForm = (formData) => {
       const programId = typeof item.program === "string" ? item.program : item.program?._id;
       const programIsActive = programId && enumsData?.programsIndex?.[programId]?.active;
 
-      if (nextActive) {
-        if (!programIsActive) {
-          error = true;
-          message = "No se puede activar un dispositivo si el programa asociado está desactivado.";
-        } else {
-          const res = await updateDispositive({ dispositiveId: item._id, active: nextActive }, token);
-          if (!res || res.error) {
-            error = true;
-            message = res?.message || "No se pudo actualizar el dispositivo.";
-          }
-        }
+      if (nextActive && !programIsActive) {
+        error = true;
+        message = "No se puede activar un dispositivo si el programa asociado está desactivado.";
       } else {
         const res = await updateDispositive({ dispositiveId: item._id, active: nextActive }, token);
+
         if (!res || res.error) {
           error = true;
           message = res?.message || "No se pudo actualizar el dispositivo.";
@@ -923,12 +795,14 @@ const buildCoordinatesFromForm = (formData) => {
     const labelMap = {
       address: "Dirección",
       phone: "Teléfono del centro",
+      email: "Email de grupo",
     };
 
     setQuickContactTarget({
       field,
       label: labelMap[field] || field,
     });
+
     setShowQuickContactForm(true);
   };
 
@@ -938,23 +812,25 @@ const buildCoordinatesFromForm = (formData) => {
         <div className={styles.titulo}>
           <h2>GESTIÓN DE PROGRAMAS Y DISPOSITIVOS</h2>
 
-          {(logged.user.role=='global' ||  logged.user.role=='root')&& (
+          {(logged.user.role === "global" || logged.user.role === "root") && (
             <div className={styles.botones}>
               <button className={styles.btnAdd} onClick={() => setShowProgramForm(true)}>
                 + Añadir Programa <FaFolderOpen />
               </button>
+
               <button className={styles.btnAdd} onClick={() => setShowDeviceForm(true)}>
                 + Añadir Dispositivo <RiBuilding2Line />
               </button>
+
               <button className={styles.btnEdit} onClick={openEdit}>
                 Editar <FaEdit />
               </button>
-              {logged.user.role=='root' &&
-              <button className={styles.btnDelete} onClick={openDelete}>
-                Eliminar <FaTrashAlt />
-              </button>
-              }
-              
+
+              {logged.user.role === "root" && (
+                <button className={styles.btnDelete} onClick={openDelete}>
+                  Eliminar <FaTrashAlt />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -983,7 +859,6 @@ const buildCoordinatesFromForm = (formData) => {
             changeActive={handleToggleActive}
             deviceWorkers={deviceWorkers}
             onQuickEditContact={(field) => quickContactForm(field)}
-            onCreateSesameOffice={handleCreateSesameOffice}
           />
         </div>
       </div>
@@ -1020,7 +895,9 @@ const buildCoordinatesFromForm = (formData) => {
       {showDeleteConfirm && (
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Seguro que deseas eliminar este ${deleteTarget?.type === "program" ? "programa" : "dispositivo"}?`}
+          message={`¿Seguro que deseas eliminar este ${
+            deleteTarget?.type === "program" ? "programa" : "dispositivo"
+          }?`}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteConfirm(false)}
         />
@@ -1047,12 +924,6 @@ const buildCoordinatesFromForm = (formData) => {
               type: "text",
               required: false,
               defaultValue: infoSelect?.[quickContactTarget.field] || "",
-              ...(quickContactTarget.field === "phone" && {
-                isValid: (v) => {
-                  if (v === undefined || v === null || String(v).trim() === "") return "";
-                  return validNumber(v) ? "" : textErrors("phone");
-                },
-              }),
             },
           ]}
           onSubmit={handleQuickUpdateDispositiveField}
@@ -1062,83 +933,6 @@ const buildCoordinatesFromForm = (formData) => {
           }}
         />
       )}
-      {showCreateSesameOfficeForm && createSesameOfficeTarget && (
-  <ModalForm
-    title="Crear centro en Sesame"
-    message="Para crear el centro en Sesame necesitas dirección, latitud y longitud."
-    fields={[
-      {
-        name: "address",
-        label: "Dirección",
-        type: "text",
-        required: true,
-        defaultValue: createSesameOfficeTarget?.address || "",
-      },
-      {
-        name: "latitude",
-        label: "Latitud",
-        type: "text",
-        required: true,
-        defaultValue: createSesameOfficeTarget?.coordinates?.lat ?? "",
-        isValid: (v) => {
-          if (v === undefined || v === null || String(v).trim() === "") {
-            return "La latitud es obligatoria.";
-          }
-          return validLatitude(v) ? "" : textErrors("latitude");
-        },
-      },
-      {
-        name: "longitude",
-        label: "Longitud",
-        type: "text",
-        required: true,
-        defaultValue: createSesameOfficeTarget?.coordinates?.lng ?? "",
-        isValid: (v) => {
-          if (v === undefined || v === null || String(v).trim() === "") {
-            return "La longitud es obligatoria.";
-          }
-          return validLongitude(v) ? "" : textErrors("longitude");
-        },
-      },
-    ]}
-    onSubmit={async (formData) => {
-      charge(true);
-
-      try {
-        const res = await updateDispositive(
-          {
-            dispositiveId: createSesameOfficeTarget._id,
-            address: formData.address || "",
-            coordinates: {
-              lat: Number(String(formData.latitude).replace(",", ".")),
-              lng: Number(String(formData.longitude).replace(",", ".")),
-            },
-          },
-          token
-        );
-
-        if (!res || res.error) {
-          modal("Error", res?.message || "No se pudo crear el centro en Sesame.");
-          return;
-        }
-
-        await chargeEnums();
-        await info({ type: "dispositive", _id: createSesameOfficeTarget._id });
-
-        modal("Centro creado", "El centro de Sesame se ha creado correctamente.");
-        setShowCreateSesameOfficeForm(false);
-        setCreateSesameOfficeTarget(null);
-      } finally {
-        charge(false);
-      }
-    }}
-    onClose={() => {
-      setShowCreateSesameOfficeForm(false);
-      setCreateSesameOfficeTarget(null);
-    }}
-    modal={modal}
-  />
-)}
     </div>
   );
 };

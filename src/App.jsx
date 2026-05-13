@@ -15,6 +15,7 @@ import { MenuWorkerProvider } from './context/MenuWorkerProvider.jsx'
 import { OfferProvider } from './context/OfferProvider.jsx';
 import FormJobUp from './components/globals/FormJobUp.jsx';
 import FormVolunteerUp from './components/volunteer/FormVolunteerUp.jsx';
+import ProgramsVisualMap from './components/visualMap/ProgramsVisualMap.jsx';
 
 
 
@@ -74,6 +75,8 @@ function App() {
           <Route path="/trabajaconnosotros" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
           <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
           <Route path="/formulariovoluntariado" element={<FormVolunteerUp modal={changeModal} charge={setCharge} />} />
+           <Route path="/mapaengloba" element={<ProgramsVisualMap charge={setCharge} />} />
+          
           <Route path="/*" element={<NotFound />} />
         </Routes>
         {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}
@@ -98,6 +101,7 @@ function App() {
             <Route path="/trabajaconnosotros" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
             <Route path="/trabajaconnosotros/:id" element={<FormJobUp modal={changeModal} charge={setCharge} />} />
             <Route path="/formulariovoluntariado" element={<FormVolunteerUp modal={changeModal} charge={setCharge} />} />
+            <Route path="/mapaengloba" element={<ProgramsVisualMap charge={setCharge} />} />
           </Routes>
           {modal.open && <Modal data={modal} closeModal={() => setModal({ open: false })} />}
           {charge && <Spinnning status={charge} />}

@@ -104,6 +104,8 @@ export const changeData = (token, datos) => {
   const body = shouldUseFormData(datos) ? toFormData(datos) : datos;
   return fetchData('/changedata', 'PUT', token, body);
 };
+export const getProgramsAndDispositiveEnums = () => fetchData('/programasdispositiveenums', 'GET');
+
 
 export const createData = (token, datos) => {
   const body = shouldUseFormData(datos) ? toFormData(datos) : datos;
@@ -579,6 +581,10 @@ export const postSesameTransferDepartment = (datos, token) => fetchData("/sesame
 export const postSesameToggleEmployeeForUser = (datos, token) => fetchData("/sesameemployeetoggleforuser", "POST", token, datos);
 export const postSesameInviteEmployeeForUser = (datos, token) => fetchData("/sesameemployeeinviteforuser", "POST", token, datos);
 export const postSesameGetOfficeManagers = (datos, token) => fetchData("/sesamegetofficemanagers", "POST", token, datos);
+export const assignDispositiveDepartmentAdminToUser=(datos, token) => fetchData("/assigndispositivedepartmentadmintouser", "POST", token, datos);
+export const postSesameRemoveDepartmentAdminRoleFromUser=(datos, token) => fetchData("/postsesameremovedepartmentadminrolefromuser", "POST", token, datos);
+export const postSesameAssignEmployeeToDispositiveScopes = async (datos, token) => { return fetchData("/assignemployeetodispositivescopes", "POST", token, datos);
+};
 
 // documentation audit
 export const documentationAuditGet = (datos, token) => fetchData('/documentationauditget', 'POST', token, datos);
@@ -587,3 +593,13 @@ export const documentationAuditRegisterDownload = (datos, token) => fetchData('/
 export const documentationAuditRegisterSignRequest = (datos, token) => fetchData('/documentationauditsignrequest', 'POST', token, datos);
 export const documentationAuditRegisterSignComplete = (datos, token) => fetchData('/documentationauditsigncomplete', 'POST', token, datos);
 export const documentationAuditCanSign = (datos, token) => fetchData('/documentationauditcansign', 'POST', token, datos);
+
+// workplace
+export const createWorkplace = (datos, token) => fetchData('/workplacecreate', 'POST', token, datos);
+export const listWorkplaces = (datos, token) => fetchData('/workplacelist', 'POST', token, datos);
+export const getWorkplaceId = (datos, token) => fetchData('/workplaceget', 'POST', token, datos);
+export const updateWorkplace = (datos, token) => fetchData('/workplaceupdate', 'POST', token, datos);
+export const deleteWorkplace = (datos, token) => fetchData('/workplacedelete', 'POST', token, datos);
+export const addWorkplaceToDispositive = (datos, token) => fetchData('/workplaceaddtodispositive', 'POST', token, datos);
+export const removeWorkplaceFromDispositive = (datos, token) => fetchData('/workplaceremovefromdispositive', 'POST', token, datos);
+export const listDispositivesByWorkplace = (datos, token) => fetchData('/workplacedispositives', 'POST', token, datos);

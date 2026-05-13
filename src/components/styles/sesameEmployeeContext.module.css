@@ -246,8 +246,104 @@
   cursor: pointer;
 }
 
+.managedDevices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.devicePill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-malva);
+  color: var(--color-morado);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.assignmentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.assignmentBlock + .assignmentBlock {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
 @media (max-width: 720px) {
   .summary{
     flex-direction: column;
   }
+}
+
+.assignmentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  width: 100%;
+}
+
+.assignmentBlock + .assignmentBlock {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(58, 72, 145, 0.12);
+}
+
+.assignmentHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.assignmentTitle {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #26347a;
+  line-height: 1.2;
+}
+
+.assignmentProgram {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0.25rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(58, 72, 145, 0.08);
+  color: #4652a3;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.assignmentInfo {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.assignmentRow {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.assignmentLabel {
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #7077a8;
+}
+
+.assignmentValue {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #253069;
+  line-height: 1.35;
 }

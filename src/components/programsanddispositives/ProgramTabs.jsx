@@ -16,7 +16,7 @@ const ProgramTabs = ({
   changeActive,
   deviceWorkers,
   onQuickEditContact,
-  onCreateSesameOffice
+
 }) => {
   const [activeTab, setActiveTab] = useState("info"); // "info" | "docs" | "workspace"
 
@@ -67,7 +67,6 @@ const ProgramTabs = ({
             changeActive={changeActive}
             deviceWorkers={deviceWorkers}
             onQuickEditContact={onQuickEditContact}
-            onCreateSesameOffice={onCreateSesameOffice}
           />
         )}
 

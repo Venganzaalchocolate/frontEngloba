@@ -1,0 +1,549 @@
+.contenedor {
+  display: flex;
+  flex-direction: row;
+  flex: 1 100%;
+  background-color: var(--color-morado);
+  gap: 1rem;
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background-color: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  flex-wrap: wrap;
+  color: var(--color-morado);
+}
+
+/* ===== TÍTULO ===== */
+
+.titulo {
+  display: flex;
+  flex-direction: column;
+}
+
+.titulo > div {
+  display: flex;
+}
+
+.titulo > div > h2 {
+  padding: 0.5rem 2rem 0 1rem;
+  border-left: 10px solid var(--color-morado);
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 1rem;
+}
+
+.titulo svg {
+  width: 3rem;
+  height: 3rem;
+  justify-content: end;
+  align-self: flex-end;
+  cursor: pointer;
+}
+
+/* ===== PAGINACIÓN ===== */
+
+.paginacion {
+  display: flex;
+  flex: 1;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  align-items: center;
+  flex-direction: column;
+}
+
+.paginacion > div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paginacion label {
+  color: var(--color-morado);
+  display: flex;
+  align-self: auto;
+}
+
+.paginacion select {
+  flex: 0 2rem;
+}
+
+/* ===== CONTENEDOR GENERAL ===== */
+
+.caja {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.containerTableContainer {
+  display: flex;
+  flex: 1 100%;
+  flex-direction: column;
+  font-size: 12pt;
+}
+
+.containerEmployer {
+  display: flex;
+  flex: 100%;
+  align-items: center;
+}
+
+.containerEmployer > div:nth-child(1) {
+  flex: 1;
+}
+
+.containerEmployer > :nth-child(2) {
+  width: 2rem;
+}
+
+/* ===== TABLA / FILAS ===== */
+
+.tableContainer {
+  color: var(--color-morado);
+  flex: 1;
+  border: 1px solid var(--color-morado);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 0.2rem 0;
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.tableContainer:hover {
+  transform: scale(1.01);
+  background-color: var(--color-malva);
+  border-color: transparent;
+}
+
+.cabeceraTabla {
+  font-weight: bold;
+  background-color: var(--color-morado);
+  color: white;
+  transition: none;
+  cursor: default;
+}
+
+.cabeceraTabla:hover {
+  transform: none;
+  background-color: var(--color-morado);
+  border: 1px solid var(--color-morado);
+}
+
+.tableCell,
+.tableCellStatus {
+  background: transparent;
+  display: flex;
+  flex: 1;
+  align-self: center;
+}
+
+.tableCellStatus > p {
+  display: flex;
+  align-items: center;
+}
+
+.bajaVoluntario {
+  opacity: 0.65;
+}
+
+.bajaVoluntario > .tableCell,
+.bajaVoluntario > .tableCellStatus {
+  color: grey;
+}
+
+/* ===== FILTROS ===== */
+
+.contenedorfiltro {
+  display: flex;
+  flex-wrap: wrap;
+  background-color: var(--color-malva);
+  padding: 1rem;
+  border-radius: 1rem;
+  gap: 1rem;
+  align-items: flex-end;
+  flex: 1 100%;
+  margin: 1rem 0;
+}
+
+.contenedorfiltro h3 {
+  flex: 1 100%;
+}
+
+.contenedorfiltro button {
+  color: var(--color-yema);
+  background-color: var(--color-morado);
+}
+
+.contenedorfiltro button:hover {
+  background-color: var(--color-yema);
+  color: var(--color-morado);
+}
+
+.contenedorfiltro div {
+  display: flex;
+  flex-direction: column;
+}
+
+.contenedorfiltro > .contenedorfiltroOpciones {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.contenedorfiltroOpciones label {
+  color: var(--color-morado);
+}
+
+.contenedorfiltroOpciones input,
+.contenedorfiltroOpciones select {
+  border: 1px solid var(--color-morado);
+  border-radius: 0.5rem;
+}
+
+/* ===== PANEL EXPANDIDO ===== */
+
+.contenedorEmployer {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  flex-direction: column;
+background-color: var(--color-gris-claro);
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+.contenedorEmployerButtonVolun {
+  display: flex;
+  flex: 1 100%;
+  flex-direction: row;
+  justify-content: end;
+  gap: 1rem;
+  background-color: aliceblue;
+  padding: 0.5rem;
+  border: solid 1px cornflowerblue;
+  border-radius: 1rem;
+}
+
+/* ===== BLOQUES INTERNOS DEL CENTRO ===== */
+
+.workplacePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+  background-color: white;
+  border: 1px solid var(--color-malva);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.workplacePanel h2 {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--color-morado);
+  margin: 0 0 0.5rem 0;
+}
+
+.workplacePanel svg {
+  cursor: pointer;
+}
+
+.workplaceGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.workplaceField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.workplaceField label {
+  font-weight: bold;
+  color: var(--color-morado);
+}
+
+.workplaceField input {
+  border: 1px solid var(--color-malva);
+  border-radius: 0.5rem;
+  padding: 0.6rem;
+  background-color: #f7f7fb;
+  color: var(--color-morado);
+}
+
+/* ===== DISPOSITIVOS ASIGNADOS ===== */
+
+.assignedList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.assignedItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--color-malva);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+}
+
+.assignedInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.assignedName {
+  font-weight: bold;
+  color: var(--color-morado);
+  margin: 0;
+}
+
+.assignedSub {
+  font-size: 0.9rem;
+  opacity: 0.75;
+  margin: 0;
+}
+
+.assignedActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.emptyMessage {
+  opacity: 0.7;
+  margin: 0;
+}
+
+/* ===== SECCIONES ===== */
+
+.sectionDivider {
+  height: 1px;
+  background-color: var(--color-malva);
+  margin: 1rem 0;
+}
+
+.sectionTitle {
+  padding-top: 1rem;
+  color: var(--color-morado);
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (min-width: 721px) {
+  .contenedor {
+    padding: 1rem 2rem;
+  }
+
+  .contenedorEmployer {
+    display: flex;
+  flex-wrap: wrap;
+  background-color: var(--color-gris-claro);
+  padding: 1rem;
+  border-radius: 1rem;
+  }
+
+  .workplaceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assignedItem {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 1080px) {
+  .containerEmployer {
+    flex-direction: row;
+  }
+
+  .titulo {
+    flex-direction: row;
+  }
+
+  .paginacion {
+    flex-direction: row;
+  }
+
+  .tableContainer {
+    flex-direction: row;
+  }
+
+  .tableCell {
+    display: flex;
+    flex: 0 15rem;
+    align-self: center;
+  }
+
+  .tableCellStatus {
+    flex: 1;
+    display: flex;
+    align-self: center;
+  }
+}
+
+
+.workplaceSubPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--color-malva);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.workplaceSubPanel h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--color-morado);
+}
+
+.panelHeaderActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sesameBox {
+  background: white;
+  border: 1px solid var(--color-morado);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.sesameBox p {
+  margin: 0.25rem 0;
+}
+
+.workplaceSesamePanel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: var(--color-morado);
+}
+
+.workplaceSesamePanel h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+  padding: 0.25rem 0 0.75rem;
+  font-size: 1.35rem;
+  color: var(--color-morado);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-morado) 18%, white);
+}
+
+.workplaceInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+}
+
+.workplaceInfoItem {
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, white);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.workplaceInfoItem label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--color-morado);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.15rem;
+  text-transform: uppercase;
+}
+
+.workplaceInfoItem p {
+  margin: 0;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.workplaceSection {
+  border: 1px solid color-mix(in srgb, var(--color-morado) 18%, white);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--color-malva) 35%, white);
+  padding: 1rem;
+}
+
+.workplaceSection h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.9rem;
+  color: var(--color-morado);
+  font-size: 1.05rem;
+}
+
+.sesameOfficeBox {
+  background: white;
+  border: 1px solid var(--color-morado);
+  border-radius: 0.8rem;
+  padding: 1rem;
+}
+
+.workerList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.workerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: white;
+  border-radius: 0.8rem;
+  padding: 0.8rem;
+}
+
+.workerItem p {
+  margin: 0;
+}
+
+.workerName {
+  color: var(--color-morado);
+  font-weight: 800;
+}
+
+.workerEmail {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.workerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

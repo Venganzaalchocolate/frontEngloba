@@ -17,8 +17,7 @@ import {
   recreateCorporateEmail,
   profilePhotoSet,
   profilePhotoGet,
-  postSesameInviteEmployeeForUser,
-  postSesameAssignEmployeeOffice,
+  postSesameAssignEmployeeToDispositiveScopes,
 } from "../../lib/data";
 import { deepClone, formatDate } from "../../lib/utils";
 import { useLogin } from "../../hooks/useLogin";
@@ -51,6 +50,8 @@ const InfoEmployer = ({
     [user]
   );
 
+
+
   const [originalData, setOriginalData] = useState(() => deepClone(initialState));
   const [datos, setDatos] = useState(initialState);
   const [isEditing, setIsEditing] = useState(false);
@@ -61,6 +62,9 @@ const InfoEmployer = ({
   const [activateSesameModal, setActivateSesameModal] = useState(false);
   const [pendingStatusResponse, setPendingStatusResponse] = useState(null);
   const [previousEmploymentStatus, setPreviousEmploymentStatus] = useState(null);
+
+const [pendingSesameDispositiveId, setPendingSesameDispositiveId] = useState(null);
+const [selectSesameWorkplaceModal, setSelectSesameWorkplaceModal] = useState(false);
 
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoError, setPhotoError] = useState("");
@@ -73,16 +77,6 @@ const InfoEmployer = ({
 
   const canDirectEdit = isSupervisor || ["global", "root", "rrhh"].includes(logged.user.role);
 
-  const sesameOfficeOptions = useMemo(() => {
-    return Object.values(enumsData?.dispositiveIndex || {})
-      .filter((item) => !!item?.officeIdSesame && item?.active !== false)
-      .map((item) => ({
-        value: item.officeIdSesame,
-        label: `${item.name}${
-          item.program ? ` - ${enumsData?.programsIndex?.[String(item.program)]?.name || ""}` : ""
-        }`,
-      }));
-  }, [enumsData?.dispositiveIndex, enumsData?.programsIndex]);
 
   const studiesOptions = useMemo(() => {
     const idx = enumsData?.studiesIndex;
@@ -184,6 +178,46 @@ useEffect(() => {
       if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
     };
   }, [photoUrl]);
+
+const sesameDispositiveOptions = useMemo(() => {
+  return Object.values(enumsData?.dispositiveIndex || {})
+    .filter((item) => item?.active !== false)
+    .filter((item) => !!item?.departamentSesame)
+    .filter((item) => {
+      const workplaces = Array.isArray(item?.workplaces) ? item.workplaces : [];
+      return workplaces.some((workplace) => workplace?.active !== false && !!workplace?.officeIdSesame);
+    })
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es"))
+    .map((item) => ({
+      value: String(item._id),
+      label: `${item.name}${
+        item.program ? ` - ${enumsData?.programsIndex?.[String(item.program)]?.name || ""}` : ""
+      }`,
+    }));
+}, [enumsData?.dispositiveIndex, enumsData?.programsIndex]);
+
+const getDispositiveWorkplacesWithOffice = useCallback(
+  (dispositiveId) => {
+    const dispositive = enumsData?.dispositiveIndex?.[String(dispositiveId)] || null;
+    const workplaces = Array.isArray(dispositive?.workplaces) ? dispositive.workplaces : [];
+
+    return workplaces
+      .filter((workplace) => workplace?.active !== false)
+      .filter((workplace) => !!workplace?.officeIdSesame);
+  },
+  [enumsData?.dispositiveIndex]
+);
+
+const sesameWorkplaceOptions = useMemo(() => {
+  if (!pendingSesameDispositiveId) return [];
+
+  return getDispositiveWorkplacesWithOffice(pendingSesameDispositiveId)
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es"))
+    .map((workplace) => ({
+      value: String(workplace._id),
+      label: workplace.name || "Centro de trabajo sin nombre",
+    }));
+}, [pendingSesameDispositiveId, getDispositiveWorkplacesWithOffice]);
 
   // Convierte una fecha ISO a formato YYYY-MM-DD para inputs type="date".
   function toInputDate(isoString) {
@@ -565,53 +599,109 @@ const handleChangeStatus = async (formData) => {
 };
 
   // Activa o crea al usuario en Sesame y lo asigna a un centro principal.
-  const handleActivateInSesame = async (formData) => {
-    try {
-      charge(true);
-      const token = getToken();
+const completeSesameActivation = async ({ dispositiveId, workplaceId = null }) => {
+  const token = getToken();
 
-      const sesameRes = await postSesameInviteEmployeeForUser({ userId: datos._id }, token);
-      if (sesameRes?.error) {
-        modal("Error", sesameRes.message || "No se pudo activar el usuario en Sesame");
-        return;
-      }
+  const scopeRes = await postSesameAssignEmployeeToDispositiveScopes(
+    {
+      userId: datos._id,
+      dispositiveId,
+      workplaceId,
+      isMainOffice: true,
+    },
+    token
+  );
 
-      const officeRes = await postSesameAssignEmployeeOffice(
-        {
-          employeeId: datos._id,
-          officeId: formData.officeId,
-          isMainOffice: true,
-        },
-        token
-      );
+  if (scopeRes?.error) {
+    modal(
+      "Error",
+      scopeRes.message || "No se pudo activar el usuario en Sesame y asignarlo al departamento/oficina"
+    );
+    return false;
+  }
 
-      if (officeRes?.error) {
-        modal("Error", officeRes.message || "El usuario se activó en Sesame, pero no se pudo asignar al centro");
-        return;
-      }
+  if (scopeRes?.sesameId && (!datos?.userIdSesame || String(datos.userIdSesame) !== String(scopeRes.sesameId))) {
+    const updatedUser = { ...datos, userIdSesame: scopeRes.sesameId };
 
-      if (sesameRes?.sesameId && (!datos?.userIdSesame || String(datos.userIdSesame) !== String(sesameRes.sesameId))) {
-        const updatedUser = { ...datos, userIdSesame: sesameRes.sesameId };
-        changeUser(updatedUser);
-        setDatos(updatedUser);
-        setOriginalData((prev) => ({
-          ...deepClone(prev),
-          employmentStatus: "activo",
-          userIdSesame: sesameRes?.sesameId || prev.userIdSesame,
-        }));
-        setPreviousEmploymentStatus(null);
-        if (logged.user._id === user._id) changeLogged(updatedUser);
-      }
+    changeUser(updatedUser);
+    setDatos(updatedUser);
 
-      setActivateSesameModal(false);
-      setPendingStatusResponse(null);
-      modal("Sesame", "Usuario activado en Sesame y asignado al centro correctamente");
-    } catch (e) {
-      modal("Error", e.message || "No se pudo activar en Sesame");
-    } finally {
-      charge(false);
+    if (logged.user._id === user._id) changeLogged(updatedUser);
+  }
+
+  setOriginalData((prev) => ({
+    ...deepClone(prev),
+    employmentStatus: "activo",
+    userIdSesame: scopeRes?.sesameId || datos?.userIdSesame || prev.userIdSesame,
+  }));
+
+  setPreviousEmploymentStatus(null);
+  setActivateSesameModal(false);
+  setPendingStatusResponse(null);
+  setPendingSesameDispositiveId(null);
+  setSelectSesameWorkplaceModal(false);
+
+  chargeUser();
+  modal("Sesame", "Usuario activado en Sesame y asignado al departamento y oficina correctamente");
+
+  return true;
+};
+
+const handleActivateInSesame = async (formData) => {
+  try {
+    const dispositiveId = formData?.dispositiveId;
+
+    if (!dispositiveId) {
+      modal("Error", "Debes seleccionar un dispositivo");
+      return;
     }
-  };
+
+    const workplaces = getDispositiveWorkplacesWithOffice(dispositiveId);
+
+    if (!workplaces.length) {
+      modal("Error", "El dispositivo seleccionado no tiene oficinas Sesame asociadas");
+      return;
+    }
+
+    if (workplaces.length > 1) {
+  setPendingSesameDispositiveId(dispositiveId);
+  setActivateSesameModal(false);
+  setSelectSesameWorkplaceModal(true);
+  return;
+}
+
+    charge(true);
+
+    await completeSesameActivation({
+      dispositiveId,
+      workplaceId: workplaces[0]._id,
+    });
+  } catch (e) {
+    modal("Error", e.message || "No se pudo activar en Sesame");
+  } finally {
+    charge(false);
+  }
+};
+
+const handleSelectSesameWorkplace = async (formData) => {
+  try {
+    if (!pendingSesameDispositiveId || !formData?.workplaceId) {
+      modal("Error", "Debes seleccionar un centro de trabajo");
+      return;
+    }
+
+    charge(true);
+
+    await completeSesameActivation({
+      dispositiveId: pendingSesameDispositiveId,
+      workplaceId: formData.workplaceId,
+    });
+  } catch (e) {
+    modal("Error", e.message || "No se pudo activar en Sesame");
+  } finally {
+    charge(false);
+  }
+};
 
   // Cancela el modal de activación en Sesame y revierte el estado laboral al anterior.
 const handleCancelActivateSesame = async () => {
@@ -620,11 +710,13 @@ const handleCancelActivateSesame = async () => {
     const token = getToken();
 
     const previousStatus = previousEmploymentStatus;
-    if (!previousStatus) {
-      setActivateSesameModal(false);
-      setPendingStatusResponse(null);
-      return;
-    }
+if (!previousStatus) {
+  setActivateSesameModal(false);
+  setPendingStatusResponse(null);
+  setPendingSesameDispositiveId(null);
+  setSelectSesameWorkplaceModal(false);
+  return;
+}
 
     const response = await editUser({ _id: datos._id, employmentStatus: previousStatus }, token);
 
@@ -648,11 +740,13 @@ const handleCancelActivateSesame = async () => {
 
     if (logged.user._id === user._id) changeLogged(response);
 
-    setPreviousEmploymentStatus(null);
-    setActivateSesameModal(false);
-    setPendingStatusResponse(null);
-    chargeUser();
-    modal("Cambio cancelado", "Se ha restaurado el estado laboral anterior.");
+setPreviousEmploymentStatus(null);
+setActivateSesameModal(false);
+setPendingStatusResponse(null);
+setPendingSesameDispositiveId(null);
+setSelectSesameWorkplaceModal(false);
+chargeUser();
+modal("Cambio cancelado", "Se ha restaurado el estado laboral anterior.");
   } catch (e) {
     modal("Error", e.message || "No se pudo revertir el estado");
   } finally {
@@ -1058,23 +1152,41 @@ const handleCancelActivateSesame = async () => {
       )}
 
       {activateSesameModal && (
-        <ModalForm
-          title="Activar en Sesame"
-          message="Selecciona el centro al que quieres asignar a la persona en Sesame"
-          fields={[
-            {
-              name: "officeId",
-              label: "Centro",
-              type: "select",
-              required: true,
-              options: sesameOfficeOptions,
-            },
-          ]}
-          onSubmit={handleActivateInSesame}
-          onClose={handleCancelActivateSesame}
-          modal={modal}
-        />
-      )}
+  <ModalForm
+    title="Activar en Sesame"
+    message="Selecciona el dispositivo al que quieres asignar a la persona en Sesame"
+    fields={[
+      {
+        name: "dispositiveId",
+        label: "Dispositivo",
+        type: "select",
+        required: true,
+        options: sesameDispositiveOptions,
+      },
+    ]}
+    onSubmit={handleActivateInSesame}
+    onClose={handleCancelActivateSesame}
+    modal={modal}
+  />
+)}
+{selectSesameWorkplaceModal && (
+  <ModalForm
+    title="Seleccionar centro de trabajo"
+    message="Este dispositivo tiene varias oficinas Sesame asociadas. Selecciona a cuál debe asignarse como oficina principal."
+    fields={[
+      {
+        name: "workplaceId",
+        label: "Centro de trabajo",
+        type: "select",
+        required: true,
+        options: sesameWorkplaceOptions,
+      },
+    ]}
+    onSubmit={handleSelectSesameWorkplace}
+    onClose={handleCancelActivateSesame}
+    modal={modal}
+  />
+)}
     </div>
   );
 };

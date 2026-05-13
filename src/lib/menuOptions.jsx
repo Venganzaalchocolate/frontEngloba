@@ -1,5 +1,5 @@
 import { FaUserAlt, FaUserCog } from "react-icons/fa";
-import { FaBriefcase, FaChartLine, FaClipboardList, FaPuzzlePiece, FaRegAddressBook, FaToolbox, FaUsers, FaUserShield, FaLock  } from "react-icons/fa6";
+import { FaBriefcase, FaChartLine, FaClipboardList, FaPuzzlePiece, FaRegAddressBook, FaToolbox, FaUsers, FaUserShield, FaLock, FaSitemap, FaHouse  } from "react-icons/fa6";
 import { MdOutlineVolunteerActivism } from "react-icons/md";
 
 import { FaHubspot } from "react-icons/fa";
@@ -10,6 +10,7 @@ import { FaHubspot } from "react-icons/fa";
 export function getMenuOptions({ role, listResponsability = null } = {}) {
   const base = [
     { key: 'myself',     label: 'Mis datos',               icon: FaUserAlt,        accent: '#0ea5e9' },
+    { key: 'visualMap',  label: 'Mapa Visual',             icon:FaSitemap,         accent:'#632be3'},
   ];
 
   const rrhh=[
@@ -37,14 +38,17 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
     { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'},
     { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
+    { key: 'workplace', label: 'Centro de Trabajo',        icon: FaHouse,           accent:'#bde15a'}
   ]
 
   const global = [
     { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
+    { key: 'workplace', label: 'Centro de Trabajo',        icon: FaHouse,           accent:'#bde15a'}
   ];
 
   const rootOnly = [
     { key: 'root',       label: 'Panel Root',              icon: FaToolbox,        accent: '#d946ef' },
+    
 
     // { key: 'workspace',  label: 'Gestión de Workspace',    icon: FaUserCog,        accent: '#4ade80' },
   ];

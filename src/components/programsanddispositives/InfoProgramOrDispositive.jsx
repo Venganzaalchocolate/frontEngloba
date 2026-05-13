@@ -1,16 +1,26 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styles from "../styles/infoPrgramOrDispositive.module.css";
 import { getToken } from "../../lib/serviceToken";
-import { scopedRole, updateDispositive } from "../../lib/data";
 import ModalForm from "../globals/ModalForm";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import { FaTrash } from "react-icons/fa6";
 import { IoArrowUndo, IoRadioButtonOn } from "react-icons/io5";
 import { BsPersonFillAdd } from "react-icons/bs";
-import InfoSesameOffice from "../sesame/InfoSesameOffice";
-import { validLatitude, validLongitude } from "../../lib/valid";
-import { textErrors } from "../../lib/textErrors";
 import { useLogin } from "../../hooks/useLogin";
+
+import {
+  scopedRole,
+  updateDispositive,
+  getWorkplaceId,
+  updateWorkplace,
+  listWorkplaces,
+  addWorkplaceToDispositive,
+  removeWorkplaceFromDispositive,
+} from "../../lib/data";
+
+import InfoWorkplace from "../workplaces/InfoWorkplace";
+import WorkplaceDispositivesPanel from "../workplaces/WorkplaceDispositivesPanel";
+import InfoSesameOffice from "../sesame/InfoSesameOffice";
 
 const ROLE_SECTIONS = [
   { key: "responsible", label: "Responsables", field: "responsible" },
@@ -21,7 +31,6 @@ const ROLE_SECTIONS = [
 const InfoProgramOrDispositive = ({
   modal,
   charge,
-  listResponsability,
   enumsData,
   info,
   onSelect,
@@ -29,13 +38,18 @@ const InfoProgramOrDispositive = ({
   onManageCronology,
   changeActive,
   deviceWorkers,
-  onCreateSesameOffice
 }) => {
-  const token = getToken();
+  const { logged } = useLogin();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState(null);
-  const { logged } = useLogin();
+  const [quickEditField, setQuickEditField] = useState(null);
+
+  const [selectedWorkplaceId, setSelectedWorkplaceId] = useState(null);
+  const [selectedWorkplace, setSelectedWorkplace] = useState(null);
+  const [showAddWorkplaceModal, setShowAddWorkplaceModal] = useState(false);
+  const [confirmRemoveWorkplace, setConfirmRemoveWorkplace] = useState(null);
+
   const [confirmDelete, setConfirmDelete] = useState({
     show: false,
     type: null,
@@ -49,15 +63,8 @@ const InfoProgramOrDispositive = ({
     cronology: null,
   });
 
-  const [quickEditField, setQuickEditField] = useState(null);
-
-  const tokenScopeType = info?.type === "program" ? "program" : "dispositive";
   const isProgram = info?.type === "program";
-
-  const openAddModal = (type) => {
-    setAddType(type);
-    setShowAddModal(true);
-  };
+  const tokenScopeType = isProgram ? "program" : "dispositive";
 
   const dispositivos = useMemo(() => {
     if (!info || info.type !== "program") return [];
@@ -68,17 +75,28 @@ const InfoProgramOrDispositive = ({
         const aActive = a.active ? 1 : 0;
         const bActive = b.active ? 1 : 0;
         if (aActive !== bActive) return bActive - aActive;
-        return (a.name || "").localeCompare(b.name || "");
+        return (a.name || "").localeCompare(b.name || "", "es");
       });
   }, [info, enumsData]);
 
-  if (!info) {
-    return (
-      <div className={styles.contenedor}>
-        <p style={{ color: "#666" }}>Selecciona un programa o dispositivo.</p>
-      </div>
+  const workplaces = useMemo(() => {
+    if (isProgram) return [];
+    return Array.isArray(info?.workplaces) ? info.workplaces : [];
+  }, [info, isProgram]);
+
+  const assignedWorkplaceIds = useMemo(() => {
+    return new Set(
+      workplaces
+        .map((workplace) => typeof workplace === "string" ? workplace : workplace?._id)
+        .filter(Boolean)
+        .map(String)
     );
-  }
+  }, [workplaces]);
+
+  useEffect(() => {
+    setSelectedWorkplaceId(null);
+    setSelectedWorkplace(null);
+  }, [info?._id, info?.type]);
 
   const entityId = isProgram
     ? typeof info?.entity === "string"
@@ -90,131 +108,230 @@ const InfoProgramOrDispositive = ({
 
   const entityName = enumsData?.entityIndex?.[entityId]?.name || "—";
 
+  const provinceName = isProgram
+    ? "—"
+    : typeof info?.province === "object"
+      ? info.province?.name || "—"
+      : enumsData?.provincesIndex?.[info?.province]?.name || info?.province || "—";
+
+  const openAddModal = (type) => {
+    setAddType(type);
+    setShowAddModal(true);
+  };
+
+  const syncWorkplace = (doc) => {
+    if (!doc?._id) return;
+
+    setSelectedWorkplace((prev) => {
+      if (!prev || String(prev._id) !== String(doc._id)) return prev;
+      return { ...prev, ...doc };
+    });
+  };
+
+  const handleCreateSesameOffice = async (doc) => {
+    if (!doc?._id) return;
+
+    const hasCoordinates =
+      Number.isFinite(Number(doc?.coordinates?.lat)) &&
+      Number.isFinite(Number(doc?.coordinates?.lng));
+
+    if (!doc.address || !hasCoordinates) {
+      modal(
+        "Faltan datos",
+        "Para crear la oficina en Sesame el centro de trabajo necesita dirección, latitud y longitud."
+      );
+      return;
+    }
+
+    charge(true);
+
+    const res = await updateWorkplace(
+      {
+        workplaceId: doc._id,
+        createSesameOffice: true,
+      },
+      getToken()
+    );
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo crear la oficina en Sesame.");
+      charge(false);
+      return;
+    }
+
+    syncWorkplace(res);
+    await refreshSelectedWorkplace();
+    await onSelect({ type: "dispositive", _id: info._id });
+
+    modal("Sesame", "Oficina creada correctamente en Sesame.");
+    charge(false);
+  };
+
+  const toggleWorkplace = async (workplaceId) => {
+    if (!workplaceId) return;
+
+    if (String(selectedWorkplaceId) === String(workplaceId)) {
+      setSelectedWorkplaceId(null);
+      setSelectedWorkplace(null);
+      return;
+    }
+
+    charge(true);
+
+    const res = await getWorkplaceId({ workplaceId }, getToken());
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo cargar el centro de trabajo.");
+      charge(false);
+      return;
+    }
+
+    setSelectedWorkplaceId(workplaceId);
+    setSelectedWorkplace(res);
+    charge(false);
+  };
+
   const handleAddPerson = async (formData) => {
     if (!info?._id || !addType) return;
 
-    try {
-      charge(true);
-      const personId = formData.person;
-      if (!personId) throw new Error("Debe seleccionar una persona.");
+    charge(true);
 
-      const res = await scopedRole(
-        {
-          scopeType: tokenScopeType,
-          scopeId: info._id,
-          roleType: addType,
-          action: "add",
-          users: [personId],
-        },
-        token
-      );
+    const personId = formData.person;
 
-      if (res?.error) throw new Error(res.message || "No se pudo añadir la persona.");
-
-      const roleLabel =
-        addType === "responsible"
-          ? "responsable"
-          : addType === "coordinators"
-            ? "coordinador"
-            : "supervisor";
-
-      modal("Actualizado", `Se ha añadido correctamente el ${roleLabel}.`);
-      setShowAddModal(false);
-      onSelect({ type: info.type, _id: info._id });
-    } catch (e) {
-      modal("Error", e.message || "No se pudo añadir la persona.");
-    } finally {
+    if (!personId) {
+      modal("Error", "Debe seleccionar una persona.");
       charge(false);
+      return;
     }
+
+    const res = await scopedRole(
+      {
+        scopeType: tokenScopeType,
+        scopeId: info._id,
+        roleType: addType,
+        action: "add",
+        users: [personId],
+      },
+      getToken()
+    );
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo añadir la persona.");
+      charge(false);
+      return;
+    }
+
+    const roleLabel =
+      addType === "responsible"
+        ? "responsable"
+        : addType === "coordinators"
+          ? "coordinador"
+          : "supervisor";
+
+    modal("Actualizado", `Se ha añadido correctamente el ${roleLabel}.`);
+    setShowAddModal(false);
+    onSelect({ type: info.type, _id: info._id });
+    charge(false);
   };
 
   const handleRemovePerson = async () => {
     if (!info?._id || !confirmDelete.personId || !confirmDelete.type) return;
 
-    try {
-      charge(true);
+    charge(true);
 
-      const res = await scopedRole(
-        {
-          scopeType: tokenScopeType,
-          scopeId: info._id,
-          roleType: confirmDelete.type,
-          action: "remove",
-          removeUserId: confirmDelete.personId,
-        },
-        token
-      );
+    const res = await scopedRole(
+      {
+        scopeType: tokenScopeType,
+        scopeId: info._id,
+        roleType: confirmDelete.type,
+        action: "remove",
+        removeUserId: confirmDelete.personId,
+      },
+      getToken()
+    );
 
-      if (res?.error) throw new Error(res.message || "No se pudo eliminar la persona.");
-
-      const roleLabel =
-        confirmDelete.type === "responsible"
-          ? "Responsable"
-          : confirmDelete.type === "coordinators"
-            ? "Coordinador"
-            : "Supervisor";
-
-      modal("Actualizado", `${roleLabel} eliminado correctamente.`);
-      setConfirmDelete({ show: false, type: null, personId: null });
-      onSelect({ type: info.type, _id: info._id });
-    } catch (e) {
-      modal("Error", e.message || "No se pudo eliminar la persona.");
-    } finally {
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo eliminar la persona.");
       charge(false);
+      return;
     }
+
+    const roleLabel =
+      confirmDelete.type === "responsible"
+        ? "Responsable"
+        : confirmDelete.type === "coordinators"
+          ? "Coordinador"
+          : "Supervisor";
+
+    modal("Actualizado", `${roleLabel} eliminado correctamente.`);
+    setConfirmDelete({ show: false, type: null, personId: null });
+    onSelect({ type: info.type, _id: info._id });
+    charge(false);
+  };
+
+  const refreshSelectedWorkplace = async () => {
+    if (!selectedWorkplaceId) return;
+
+    charge(true);
+
+    const res = await getWorkplaceId({ workplaceId: selectedWorkplaceId }, getToken());
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo refrescar el centro de trabajo.");
+      charge(false);
+      return;
+    }
+
+    setSelectedWorkplace(res);
+    charge(false);
   };
 
   const handleQuickUpdateDispositiveField = async (formData) => {
     if (!info?._id || isProgram || !quickEditField) return;
 
-    try {
-      charge(true);
+    charge(true);
 
-      const payload = { dispositiveId: info._id };
+    const payload = { dispositiveId: info._id };
 
-      if (quickEditField === "address") {
-        payload.address = formData.address || "";
-      }
+    if (quickEditField === "address") payload.address = formData.address || "";
+    if (quickEditField === "phone") payload.phone = formData.phone || "";
+    if (quickEditField === "email") payload.email = formData.email || "";
 
-      if (quickEditField === "phone") {
-        payload.phone = formData.phone || "";
-      }
+    const res = await updateDispositive(payload, getToken());
 
-      if (quickEditField === "coordinates") {
-        const lat =
-          formData.latitude === "" || formData.latitude == null
-            ? null
-            : Number(String(formData.latitude).replace(",", ".").trim());
-
-        const lng =
-          formData.longitude === "" || formData.longitude == null
-            ? null
-            : Number(String(formData.longitude).replace(",", ".").trim());
-
-        if ((lat === null && lng !== null) || (lat !== null && lng === null)) {
-          throw new Error("Debes rellenar latitud y longitud o dejar ambas vacías.");
-        }
-
-        payload.coordinates =
-          lat === null && lng === null
-            ? null
-            : { lat, lng };
-      }
-
-      const res = await updateDispositive(payload, token);
-
-      if (res?.error) {
-        throw new Error(res.message || "No se pudo actualizar el dispositivo");
-      }
-
-      setQuickEditField(null);
-      modal("Actualizado", "Campo actualizado correctamente.");
-      onSelect({ type: "dispositive", _id: info._id });
-    } catch (error) {
-      modal("Error", error.message || "No se pudo actualizar el dispositivo");
-    } finally {
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo actualizar el dispositivo.");
       charge(false);
+      return;
     }
+
+    setQuickEditField(null);
+    modal("Actualizado", "Campo actualizado correctamente.");
+    onSelect({ type: "dispositive", _id: info._id });
+    charge(false);
+  };
+
+  const handleCreateDispositiveDepartment = async () => {
+    if (!info?._id || isProgram) return;
+
+    charge(true);
+
+    const res = await updateDispositive(
+      {
+        dispositiveId: info._id,
+      },
+      getToken()
+    );
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo crear el departamento Sesame.");
+      charge(false);
+      return;
+    }
+
+    modal("Sesame", "Departamento Sesame creado y asociado correctamente.");
+    onSelect({ type: "dispositive", _id: info._id });
+    charge(false);
   };
 
   const fieldsAddPerson = [
@@ -240,7 +357,7 @@ const InfoProgramOrDispositive = ({
         label: "Dirección",
         type: "text",
         required: false,
-        defaultValue: info.address || "",
+        defaultValue: info?.address || "",
       },
     ],
     phone: [
@@ -249,31 +366,16 @@ const InfoProgramOrDispositive = ({
         label: "Teléfono",
         type: "text",
         required: false,
-        defaultValue: info.phone || "",
+        defaultValue: info?.phone || "",
       },
     ],
-    coordinates: [
+    email: [
       {
-        name: "latitude",
-        label: "Latitud",
-        type: "number",
+        name: "email",
+        label: "Email de grupo",
+        type: "text",
         required: false,
-        defaultValue: info?.coordinates?.lat ?? "",
-        isValid: (v) => {
-          if (v === undefined || v === null || String(v).trim() === "") return "";
-          return validLatitude(v) ? "" : textErrors("latitude");
-        },
-      },
-      {
-        name: "longitude",
-        label: "Longitud",
-        type: "number",
-        required: false,
-        defaultValue: info?.coordinates?.lng ?? "",
-        isValid: (v) => {
-          if (v === undefined || v === null || String(v).trim() === "") return "";
-          return validLongitude(v) ? "" : textErrors("longitude");
-        },
+        defaultValue: info?.email || "",
       },
     ],
   };
@@ -281,13 +383,119 @@ const InfoProgramOrDispositive = ({
   const quickEditTitles = {
     address: "Editar dirección",
     phone: "Editar teléfono",
-    coordinates: "Editar coordenadas",
+    email: "Editar email de grupo",
   };
 
   const quickEditMessages = {
     address: "Actualiza la dirección del dispositivo.",
     phone: "Actualiza el teléfono del centro.",
-    coordinates: "Introduce la latitud y la longitud del dispositivo.",
+    email: "Actualiza el email de grupo del dispositivo.",
+  };
+
+  if (!info) {
+    return (
+      <div className={styles.contenedor}>
+        <p style={{ color: "#666" }}>Selecciona un programa o dispositivo.</p>
+      </div>
+    );
+  }
+
+  const searchWorkplaces = async (query) => {
+    const q = String(query || "").trim();
+
+    if (q.length < 3) return [];
+
+    const res = await listWorkplaces(
+      {
+        q,
+        active: true,
+        page: 1,
+        limit: 50,
+      },
+      getToken()
+    );
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudieron buscar centros de trabajo.");
+      return [];
+    }
+
+    const items = Array.isArray(res.items) ? res.items : [];
+
+    return items
+      .filter((workplace) => !assignedWorkplaceIds.has(String(workplace._id)))
+      .map((workplace) => ({
+        value: workplace._id,
+        label: [
+          workplace.name || "Centro sin nombre",
+          workplace.province?.name || "",
+          workplace.officeIdSesame ? "Oficina Sesame" : "Sin oficina Sesame",
+        ].filter(Boolean).join(" · "),
+      }));
+  };
+
+  const handleAddWorkplaceToDispositive = async (formData) => {
+    if (!info?._id || isProgram || !formData?.workplaceId) {
+      modal("Error", "Debes seleccionar un centro de trabajo.");
+      return;
+    }
+
+    charge(true);
+
+    const res = await addWorkplaceToDispositive(
+      {
+        dispositiveId: info._id,
+        workplaceId: formData.workplaceId,
+      },
+      getToken()
+    );
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo asignar el centro de trabajo.");
+      charge(false);
+      return;
+    }
+
+    setShowAddWorkplaceModal(false);
+    setSelectedWorkplaceId(null);
+    setSelectedWorkplace(null);
+
+    await onSelect({ type: "dispositive", _id: info._id });
+
+    modal("Centros de trabajo", "Centro de trabajo asignado correctamente.");
+    charge(false);
+  };
+
+  const handleRemoveWorkplaceFromDispositive = async () => {
+    if (!info?._id || isProgram || !confirmRemoveWorkplace?._id) return;
+
+    charge(true);
+
+    const res = await removeWorkplaceFromDispositive(
+      {
+        dispositiveId: info._id,
+        workplaceId: confirmRemoveWorkplace._id,
+      },
+      getToken()
+    );
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo desasignar el centro de trabajo.");
+      charge(false);
+      return;
+    }
+
+    setConfirmRemoveWorkplace(null);
+
+    if (String(selectedWorkplaceId) === String(confirmRemoveWorkplace._id)) {
+      setSelectedWorkplaceId(null);
+      setSelectedWorkplace(null);
+    }
+
+    await onSelect({ type: "dispositive", _id: info._id });
+
+    modal("Centros de trabajo", "Centro de trabajo desasignado correctamente.");
+    charge(false);
   };
 
   return (
@@ -313,6 +521,7 @@ const InfoProgramOrDispositive = ({
             <IoArrowUndo />
             Info del Programa
           </button>
+
           <button
             onClick={() => changeActive(info)}
             className={info?.active ? styles.activeDis : styles.inactiveDis}
@@ -326,6 +535,36 @@ const InfoProgramOrDispositive = ({
         <label className={styles.fieldLabel}>Nombre</label>
         <p className={styles.fieldTextStatic}>{info.name || "—"}</p>
       </div>
+
+      {!isProgram && (
+        <div className={styles.fieldContainer}>
+          <label className={styles.fieldLabel}>
+            Departamento Sesame asociado
+
+            {!info?.departamentSesame && (
+              <button
+                type="button"
+                className={styles.btnInlineEdit}
+                onClick={handleCreateDispositiveDepartment}
+              >
+                Crear
+              </button>
+            )}
+          </label>
+
+          {info?.departamentSesame ? (
+            <>
+              <p className={styles.fieldTextStatic}>
+                {info.name || "Departamento del dispositivo"}
+              </p>
+            </>
+          ) : (
+            <p className={styles.fieldTextEmpty}>
+              Sin departamento Sesame asociado
+            </p>
+          )}
+        </div>
+      )}
 
       {isProgram && (
         <div className={styles.fieldContainer}>
@@ -358,39 +597,6 @@ const InfoProgramOrDispositive = ({
       {!isProgram && (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>
-            Coordenadas
-            <button
-              type="button"
-              className={styles.btnInlineEdit}
-              onClick={() => setQuickEditField("coordinates")}
-            >
-              Editar
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                window.open(
-                  "https://drive.google.com/file/d/1mNL0imnJ1b5vYk39S-p4eTV6gPibuVGS/view?usp=sharing",
-                  "_blank",
-                  "noopener,noreferrer"
-                )
-              }
-            >
-              ¿Cómo consigo las coordenadas?
-            </button>
-          </label>
-          <p className={styles.fieldTextStatic}>
-
-            {info?.coordinates?.lat != null && info?.coordinates?.lng != null
-              ? `${info.coordinates.lat}, ${info.coordinates.lng}`
-              : "—"}
-          </p>
-        </div>
-      )}
-
-      {!isProgram && (
-        <div className={styles.fieldContainer}>
-          <label className={styles.fieldLabel}>
             Teléfono del Centro
             <button
               type="button"
@@ -412,14 +618,23 @@ const InfoProgramOrDispositive = ({
       ) : (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Provincia</label>
-          <p className={styles.fieldTextStatic}>
-            {enumsData?.provincesIndex?.[info.province]?.name || info.province || "—"}
-          </p>
+          <p className={styles.fieldTextStatic}>{provinceName}</p>
         </div>
       )}
 
       <div className={styles.fieldContainer}>
-        <label className={styles.fieldLabel}>Email de grupo</label>
+        <label className={styles.fieldLabel}>
+          Email de grupo
+          {!isProgram && (
+            <button
+              type="button"
+              className={styles.btnInlineEdit}
+              onClick={() => setQuickEditField("email")}
+            >
+              Editar
+            </button>
+          )}
+        </label>
         <p className={styles.fieldTextStatic}>{info.email || "—"}</p>
       </div>
 
@@ -442,10 +657,12 @@ const InfoProgramOrDispositive = ({
             {info.cronology.map((c) => (
               <li key={c._id} className={styles.listItem}>
                 <div>
-                  <strong>Inicio:</strong> {c.open ? new Date(c.open).toLocaleDateString() : "—"}
+                  <strong>Inicio:</strong>{" "}
+                  {c.open ? new Date(c.open).toLocaleDateString() : "—"}
                   <strong style={{ marginLeft: "1rem" }}>Fin:</strong>{" "}
                   {c.closed ? new Date(c.closed).toLocaleDateString() : "—"}
                 </div>
+
                 <div className={styles.listItemActions}>
                   <button
                     className={styles.btnTiny}
@@ -461,8 +678,6 @@ const InfoProgramOrDispositive = ({
                     className={styles.trash}
                     onClick={() => setConfirmCronology({ show: true, cronology: c })}
                   />
-
-
                 </div>
               </li>
             ))}
@@ -476,17 +691,23 @@ const InfoProgramOrDispositive = ({
         <>
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Descripción</label>
-            <div className={styles.textBlock}>{info?.about?.description || "Sin descripción"}</div>
+            <div className={styles.textBlock}>
+              {info?.about?.description || "Sin descripción"}
+            </div>
           </div>
 
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Objetivos</label>
-            <div className={styles.textBlock}>{info?.about?.objectives || "Sin objetivos"}</div>
+            <div className={styles.textBlock}>
+              {info?.about?.objectives || "Sin objetivos"}
+            </div>
           </div>
 
           <div className={styles.fieldContainer}>
             <label className={styles.fieldLabel}>Perfil</label>
-            <div className={styles.textBlock}>{info?.about?.profile || "Sin perfil"}</div>
+            <div className={styles.textBlock}>
+              {info?.about?.profile || "Sin perfil"}
+            </div>
           </div>
         </>
       )}
@@ -495,7 +716,9 @@ const InfoProgramOrDispositive = ({
         <div className={styles.fieldContainer} key={section.key}>
           <label className={styles.fieldLabel}>
             {section.label}
-            {logged.user.role == 'root' && <BsPersonFillAdd onClick={() => openAddModal(section.key)} />}
+            {logged.user.role === "root" && (
+              <BsPersonFillAdd onClick={() => openAddModal(section.key)} />
+            )}
           </label>
 
           {info?.[section.field]?.length > 0 ? (
@@ -512,7 +735,8 @@ const InfoProgramOrDispositive = ({
                 >
                   {r.firstName} {r.lastName}
                 </p>
-                {logged.user.role == 'root' &&
+
+                {logged.user.role === "root" && (
                   <FaTrash
                     className={styles.trash}
                     onClick={() =>
@@ -523,11 +747,13 @@ const InfoProgramOrDispositive = ({
                       })
                     }
                   />
-                }
+                )}
               </div>
             ))
           ) : (
-            <p className={styles.fieldTextEmpty}>Sin {section.label.toLowerCase()}</p>
+            <p className={styles.fieldTextEmpty}>
+              Sin {section.label.toLowerCase()}
+            </p>
           )}
         </div>
       ))}
@@ -535,6 +761,7 @@ const InfoProgramOrDispositive = ({
       {!isProgram && deviceWorkers?.length > 0 ? (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Lista de Trabajadores</label>
+
           {deviceWorkers.map((p) => (
             <div className={styles.boxPerson} key={p._id + p.dni}>
               <p
@@ -566,6 +793,7 @@ const InfoProgramOrDispositive = ({
       {isProgram && (
         <div className={styles.fieldContainer}>
           <label className={styles.fieldLabel}>Dispositivos asociados</label>
+
           {dispositivos.length > 0 ? (
             <ul className={styles.list}>
               {dispositivos.map((d) => (
@@ -576,7 +804,9 @@ const InfoProgramOrDispositive = ({
                 >
                   <strong>{d.name}</strong>
                   <span className={styles.iconSmall}>
-                    <IoRadioButtonOn className={d.active ? styles.activeDis : styles.inactiveDis} />
+                    <IoRadioButtonOn
+                      className={d.active ? styles.activeDis : styles.inactiveDis}
+                    />
                   </span>
                   {d.address && <span className={styles.subtext}>{d.address}</span>}
                 </li>
@@ -588,7 +818,134 @@ const InfoProgramOrDispositive = ({
         </div>
       )}
 
-      {!isProgram && <InfoSesameOffice modal={modal} charge={charge} info={info} onCreateSesameOffice={onCreateSesameOffice} />}
+      {!isProgram && (
+        <div className={styles.fieldContainer}>
+          <label className={styles.fieldLabel}>
+            Centros de trabajo asociados
+
+            <button
+              type="button"
+              className={styles.btnInlineEdit}
+              onClick={() => setShowAddWorkplaceModal(true)}
+            >
+              Asignar
+            </button>
+          </label>
+
+          {workplaces.length > 0 ? (
+            <>
+              <ul className={styles.list}>
+                {workplaces.map((workplace) => {
+                  const workplaceId =
+                    typeof workplace === "string" ? workplace : workplace?._id;
+
+                  const isSelected =
+                    selectedWorkplaceId &&
+                    String(selectedWorkplaceId) === String(workplaceId);
+
+                  return (
+                    <li key={workplaceId} className={styles.listItem}>
+                      <div
+                        className={styles.listItemMain}
+                        onClick={() => toggleWorkplace(workplaceId)}
+                      >
+                        <strong>
+                          {typeof workplace === "object"
+                            ? workplace.name || "Centro de trabajo"
+                            : "Centro de trabajo"}
+                        </strong>
+
+                        {typeof workplace === "object" && workplace.address && (
+                          <span className={styles.subtext}>{workplace.address}</span>
+                        )}
+
+                        {typeof workplace === "object" && workplace.officeIdSesame && (
+                          <span className={styles.subtext}>Oficina Sesame vinculada</span>
+                        )}
+
+                        <span className={styles.subtext}>
+                          {isSelected ? "Ocultar gestión" : "Ver gestión"}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="tomato"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmRemoveWorkplace({
+                            _id: workplaceId,
+                            name: typeof workplace === "object" ? workplace.name : "Centro de trabajo",
+                          });
+                        }}
+                      >
+                        Desasignar
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {selectedWorkplace &&
+                workplaces.some((workplace) => {
+                  const workplaceId = typeof workplace === "string" ? workplace : workplace?._id;
+                  return String(workplaceId) === String(selectedWorkplaceId);
+                }) && (
+                  <div className={styles.workplaceExpandedBox}>
+                    <InfoWorkplace
+                      doc={selectedWorkplace}
+                      modal={modal}
+                      charge={charge}
+                      enumsData={enumsData}
+                      onDocUpdated={syncWorkplace}
+                      canEdit={false}
+                    />
+
+                    <WorkplaceDispositivesPanel
+                      doc={selectedWorkplace}
+                      modal={modal}
+                      charge={charge}
+                      enumsData={enumsData}
+                      onChanged={refreshSelectedWorkplace}
+                      soloInfo={true}
+                    />
+
+                    <InfoSesameOffice
+                      workplace={selectedWorkplace}
+                      modal={modal}
+                      charge={charge}
+                      onCreateSesameOffice={handleCreateSesameOffice}
+                    />
+                  </div>
+                )}
+            </>
+          ) : (
+            <p className={styles.fieldTextEmpty}>
+              Este dispositivo no tiene centros de trabajo asociados.
+            </p>
+          )}
+        </div>
+      )}
+
+      {showAddWorkplaceModal && !isProgram && (
+        <ModalForm
+          title="Asignar centro de trabajo"
+          message="Busca y selecciona el centro de trabajo que quieres vincular a este dispositivo."
+          fields={[
+            {
+              name: "workplaceId",
+              label: "Centro de trabajo",
+              type: "async-search-select",
+              placeholder: "Escribe al menos 3 letras...",
+              required: true,
+              loadOptions: searchWorkplaces,
+            },
+          ]}
+          onSubmit={handleAddWorkplaceToDispositive}
+          onClose={() => setShowAddWorkplaceModal(false)}
+          modal={modal}
+        />
+      )}
 
       {showAddModal && (
         <ModalForm
@@ -686,7 +1043,19 @@ const InfoProgramOrDispositive = ({
           modal={modal}
         />
       )}
+      {confirmRemoveWorkplace && !isProgram && (
+        <ModalConfirmation
+          title="Desasignar centro de trabajo"
+          message={`¿Seguro que quieres desasignar "${confirmRemoveWorkplace.name}" de este dispositivo?`}
+          onConfirm={handleRemoveWorkplaceFromDispositive}
+          onCancel={() => setConfirmRemoveWorkplace(null)}
+        />
+      )}
+
+
     </div>
+
+
   );
 };
 

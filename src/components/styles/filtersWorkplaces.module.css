@@ -1,0 +1,173 @@
+/* src/components/styles/filtersWorkplaces.module.css */
+
+.contenedorfiltro {
+  display: flex;
+  flex-wrap: wrap;
+  background-color: var(--color-malva);
+  padding: 1rem;
+  border-radius: 1rem;
+  gap: 1rem;
+  align-items: flex-end;
+  flex: 1 100%;
+  margin: 1rem 0;
+}
+
+.contenedorfiltroOpciones {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  flex: 1;
+  align-items: flex-end;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1 1 220px;
+  min-width: 210px;
+  max-width: 320px;
+}
+
+.filterFull {
+  flex: 2 1 300px;
+  max-width: 420px;
+}
+
+.filterField label {
+  color: var(--color-morado);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.filterField input,
+.filterField select {
+  width: 100%;
+  border: 1px solid var(--color-morado);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  color: var(--color-morado);
+  background-color: white;
+  min-height: 2.4rem;
+  box-sizing: border-box;
+}
+
+.filterField input:focus,
+.filterField select:focus {
+  outline: 2px solid color-mix(in srgb, var(--color-morado) 25%, transparent);
+  border-color: var(--color-morado);
+}
+
+.filterActions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.filterActions button {
+  color: var(--color-yema);
+  background-color: var(--color-morado);
+}
+
+.filterActions button:hover {
+  background-color: var(--color-yema);
+  color: var(--color-morado);
+}
+
+/* ===== TYPEAHEAD PROGRAMA / DISPOSITIVO ===== */
+
+.pdSearchWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.pdSearchInput {
+  width: 100%;
+  padding-right: 2rem !important;
+}
+
+.pdClearBtn {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-morado);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+  z-index: 2;
+}
+
+.pdClearBtn:hover {
+  opacity: 1;
+  color: var(--color-chicle);
+}
+
+.pdSearchList {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+  background: white;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 25%, white);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  z-index: 9999;
+}
+
+.pdSearchList li {
+  margin: 0;
+  padding: 0;
+}
+
+.pdSearchItem {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+}
+
+.pdSearchItem:hover,
+.pdSearchItem:focus {
+  background-color: color-mix(in srgb, var(--color-malva) 55%, white);
+}
+
+.pdLabel {
+  color: var(--color-morado);
+  font-weight: 800;
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.pdLabelName {
+  color: var(--color-malva-oscuro);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  opacity: 0.9;
+}
+
+@media (min-width: 721px) {
+  .filterField {
+    flex: 1 1 220px;
+  }
+
+  .filterFull {
+    flex: 2 1 320px;
+  }
+}

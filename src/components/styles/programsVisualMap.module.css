@@ -1,0 +1,594 @@
+.contenedor {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+    box-sizing: border-box;
+    background: #f2f3fb;
+    border-radius: 18px;
+    font-family: 'Inter Tight', Arial, sans-serif;
+}
+
+/* ===== Acciones ===== */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+.actions button {
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 14px;
+    background: #4F529F;
+    color: white;
+    font-size: .78rem;
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+}
+
+.actions button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: #42458f;
+    box-shadow: 0 8px 20px rgba(79, 82, 159, .20);
+}
+
+.actions button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+/* ===== Lámina principal ===== */
+
+.sheet {
+    --cover-size: clamp(120px, 14vw, 155px);
+    --sheet-padding-inline: clamp(20px, 3vw, 38px);
+    --sheet-padding-block: clamp(18px, 2vw, 24px);
+
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    color: #121212;
+    box-sizing: border-box;
+    overflow: visible;
+    box-shadow: 0 18px 55px rgba(0, 0, 0, .12);
+}
+
+.sheetLandscape {
+    aspect-ratio: 1.414 / 1;
+    min-height: 600px;
+}
+
+.sheetExport {
+    width: 1123px;
+    min-height: 794px;
+    height: auto;
+    aspect-ratio: auto;
+    box-shadow: none;
+
+    --cover-size: 150px;
+    --sheet-padding-inline: 34px;
+    --sheet-padding-block: 20px;
+}
+
+/* ===== Cabecera ===== */
+
+.cover {
+    position: relative;
+    flex: 0 0 var(--cover-size);
+    overflow: hidden;
+    background-color: #4F529F;
+    background-image: var(--cover-image);
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
+.coverOverlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, .46), rgba(0, 0, 0, .08) 55%, rgba(0, 0, 0, .28)),
+        rgba(79, 82, 159, .08);
+}
+
+.coverTitle {
+    position: absolute;
+    inset-block-start: clamp(28px, 3vw, 36px);
+    inset-inline-start: clamp(28px, 3.6vw, 46px);
+    display: flex;
+    align-items: center;
+    gap: clamp(12px, 1.8vw, 18px);
+    color: white;
+    text-transform: uppercase;
+}
+
+.coverTitle > span {
+    display: block;
+    inline-size: clamp(9px, 1vw, 13px);
+    block-size: clamp(52px, 6vw, 68px);
+    background: #ffffff;
+}
+
+.coverTitle p {
+    margin: 0;
+    font-size: clamp(1.45rem, 2.6vw, 2rem);
+    line-height: 1;
+    font-weight: 300;
+    letter-spacing: .02em;
+}
+
+.coverStats {
+    position: absolute;
+    inset-block-start: clamp(28px, 3vw, 34px);
+    inset-inline-end: clamp(24px, 3vw, 42px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    color: white;
+}
+
+.coverStatsMain,
+.coverStatsSecondary {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 15px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .26);
+    backdrop-filter: blur(8px);
+}
+
+.coverStatsSecondary {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, .18);
+}
+
+.coverStatsSecondary strong {
+    font-size: clamp(1rem, 1.7vw, 1.25rem);
+}
+
+.coverStatsSecondary span {
+    font-size: .68rem;
+}
+
+.coverStats strong {
+    font-size: 1rem;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.coverStats span {
+    font-size: .78rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: .08em;
+}
+
+.coverStats small {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .20);
+    font-size: .72rem;
+}
+
+/* ===== Columnas de áreas ===== */
+
+.areaColumns {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0;
+    padding: var(--sheet-padding-block) var(--sheet-padding-inline) 16px;
+    box-sizing: border-box;
+}
+
+.areaBlock {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0 clamp(10px, 1.1vw, 16px) 12px;
+    box-sizing: border-box;
+}
+
+.areaBlock + .areaBlock {
+    border-left: 1px solid rgba(0, 0, 0, .16);
+}
+
+/* ===== Logo área ===== */
+
+.areaLogoBox {
+    flex: 0 0 54px;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow: visible;
+    margin-bottom: 4px;
+}
+
+.areaLogoBox img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+}
+
+/* ===== Programas ===== */
+
+.programsList {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.programWrapper {
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    transition: background .2s ease;
+}
+
+.programWrapperOpen {
+    background: var(--area-soft);
+}
+
+.programItem {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 13px minmax(0, 1fr) auto;
+    gap: 4px;
+    align-items: start;
+    padding: 2px 4px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    text-align: left;
+    cursor: default;
+    break-inside: avoid;
+    font-family: inherit;
+}
+
+.programItemClickable {
+    cursor: pointer;
+}
+
+.programItemClickable:hover {
+    background: rgba(0, 0, 0, .035);
+}
+
+.programItem:disabled {
+    opacity: 1;
+}
+
+.triangle {
+    color: var(--area-color);
+    font-size: .7rem;
+    line-height: 1.25rem;
+    transition: transform .22s ease;
+}
+
+.triangleOpen {
+    transform: rotate(90deg);
+}
+
+.programItem p {
+    margin: 0;
+    color: #101010;
+    font-size: clamp(.66rem, .72vw, .75rem);
+    line-height: 1.16;
+    font-weight: 500;
+}
+
+.programItem strong {
+    color: var(--area-color);
+    font-size: clamp(.68rem, .75vw, .78rem);
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.programItem em {
+    min-inline-size: 20px;
+    block-size: 20px;
+    display: inline-grid;
+    place-items: center;
+    margin-top: -1px;
+    border-radius: 999px;
+    background: var(--area-color);
+    color: white;
+    font-size: .62rem;
+    line-height: 1;
+    font-style: normal;
+    font-weight: 900;
+}
+
+/* ===== Dispositivos desplegables ===== */
+
+.dispositivesPanel {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-4px);
+    transition:
+        max-height .28s ease,
+        opacity .22s ease,
+        transform .24s ease;
+}
+
+.dispositivesPanelOpen {
+    max-height: 900px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dispositivesList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 4px 7px 21px;
+}
+
+.dispositiveItem {
+    display: grid;
+    grid-template-columns: 8px minmax(0, 1fr);
+    gap: 6px;
+    align-items: start;
+}
+
+.dispositiveItem > span {
+    inline-size: 6px;
+    block-size: 6px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: var(--area-color);
+    opacity: .55;
+}
+
+.dispositiveItem p {
+    margin: 0;
+    color: #343434;
+    font-size: .64rem;
+    line-height: 1.15;
+    font-weight: 650;
+}
+
+.dispositiveItem small {
+    display: block;
+    margin-top: 1px;
+    color: #777;
+    font-size: .58rem;
+    font-weight: 600;
+}
+
+/* ===== Barra inferior por área ===== */
+
+.areaFooterBar {
+    flex: 0 0 auto;
+    inline-size: 100%;
+    block-size: 12px;
+    margin-top: auto;
+    background: var(--area-color);
+}
+
+/* ===== Footer lámina ===== */
+
+.sheetFooter {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 0 var(--sheet-padding-inline) 16px;
+    color: #6a6d96;
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+.sheetFooter > span {
+    display: flex;
+    align-items: center;
+}
+
+/* ===== Export oculto ===== */
+
+.exportHidden {
+    position: fixed;
+    top: 0;
+    left: -10000px;
+    width: 1123px;
+    height: auto;
+    overflow: visible;
+    pointer-events: none;
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 1300px) {
+    .sheetLandscape {
+        min-height: 600px;
+    }
+
+    .areaColumns {
+        padding: 18px 24px 14px;
+    }
+
+    .areaBlock {
+        padding: 0 10px 10px;
+    }
+
+    .areaLogoBox {
+        flex-basis: 44px;
+        margin-bottom: 2px;
+    }
+
+    .programItem p {
+        font-size: .68rem;
+    }
+
+    .programItem strong {
+        font-size: .7rem;
+    }
+
+    .dispositiveItem p {
+        font-size: .62rem;
+    }
+}
+
+@media (max-width: 980px) {
+    .sheetLandscape {
+        aspect-ratio: auto;
+        min-height: auto;
+    }
+
+    .cover {
+        flex-basis: 150px;
+    }
+
+    .areaColumns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+        padding: 24px;
+    }
+
+    .areaBlock {
+        border-left: 0 !important;
+        padding: 0 0 12px;
+    }
+
+    .areaLogoBox {
+        flex-basis: 58px;
+        margin-bottom: 8px;
+    }
+
+    .programItem p {
+        font-size: .82rem;
+    }
+
+    .programItem strong {
+        font-size: .84rem;
+    }
+
+    .dispositiveItem p {
+        font-size: .74rem;
+    }
+}
+
+@media (max-width: 620px) {
+    .contenedor {
+        padding: 10px;
+    }
+
+    .coverTitle {
+        inset-inline-start: 24px;
+        inset-block-start: 32px;
+    }
+
+    .coverStats {
+        display: none;
+    }
+
+    .areaColumns {
+        grid-template-columns: 1fr;
+        padding: 22px;
+    }
+
+    .areaLogoBox {
+        flex-basis: 62px;
+        margin-bottom: 8px;
+    }
+
+    .programItem {
+        grid-template-columns: 13px minmax(0, 1fr) auto;
+    }
+
+    .sheetFooter {
+        flex-direction: column;
+        padding: 0 22px 16px;
+    }
+}
+
+/* ===== Exportación: siempre horizontal y estable ===== */
+
+.exportHidden .sheetExport {
+    width: 1123px;
+    min-height: 794px;
+    height: auto;
+    aspect-ratio: auto;
+    box-shadow: none;
+
+    --cover-size: 150px;
+    --sheet-padding-inline: 34px;
+    --sheet-padding-block: 20px;
+}
+
+.exportHidden .sheetExport .cover {
+    flex-basis: 150px;
+    background-size: cover;
+    background-position: center 38%;
+}
+
+.exportHidden .sheetExport .areaColumns {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0;
+    padding: 18px 34px 16px;
+}
+
+.exportHidden .sheetExport .areaBlock {
+    padding: 0 12px 12px;
+}
+
+.exportHidden .sheetExport .areaBlock + .areaBlock {
+    border-left: 1px solid rgba(0, 0, 0, .16);
+}
+
+.exportHidden .sheetExport .areaLogoBox {
+    flex: 0 0 48px;
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow: visible;
+    margin: 0 0 4px;
+}
+
+.exportHidden .sheetExport .areaLogoBox img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+}
+
+.exportHidden .sheetExport .programItem p {
+    font-size: .68rem;
+}
+
+.exportHidden .sheetExport .programItem strong {
+    font-size: .7rem;
+}
+
+.exportHidden .sheetExport .dispositiveItem p {
+    font-size: .62rem;
+}
+
+.exportHidden .sheetExport .sheetFooter {
+    flex-direction: row;
+    padding: 0 34px 16px;
+}
+
+.footerLogo {
+    display: block;
+    width: auto;
+    height: 60px;
+    object-fit: contain;
+}
+.exportHidden .sheetExport .footerLogo {
+    height: 60px;
+    width: auto;
+}

@@ -1,43 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import ModalForm from "../globals/ModalForm";
 import { getToken } from "../../lib/serviceToken";
 import { buildModalFormOptionsFromIndex } from "../../lib/utils";
-
-const FormSesameOfficeAssignation = (props) => {
-  return (
-    <FormSesameOfficeAction
-      {...props}
-      title="Añadir centro de fichaje"
-      message="Selecciona el dispositivo que quieres asignar como centro de fichaje en Sesame."
-      extraFields={[
-        {
-          name: "isMainOffice",
-          label: "Centro principal",
-          type: "select",
-          required: true,
-          defaultValue: "false",
-          options: [
-            { value: "false", label: "No" },
-            { value: "true", label: "Sí" },
-          ],
-        },
-      ]}
-      submitSuccessMessage="El centro de fichaje se ha asignado correctamente"
-      submitAction={({ employeeId, officeId, formData, token }) =>
-        postSesameAssignEmployeeOffice(
-          {
-            employeeId,
-            officeId,
-            isMainOffice: formData.isMainOffice === "true",
-          },
-          token
-        )
-      }
-    />
-  );
-};
-
-
+import { getDispositiveId } from "../../lib/data";
 
 const FormSesameOfficeAction = ({
   title = "Acción sobre centro Sesame",
@@ -52,52 +17,55 @@ const FormSesameOfficeAction = ({
   submitSuccessMessage = "Acción realizada correctamente",
   extraFields = [],
 }) => {
-  const deviceOptions = useMemo(() => {
-    const options =
-      buildModalFormOptionsFromIndex(enumsData?.dispositiveIndex, {
-        onlyActive: true,
-      }) || [];
+  const [pendingData, setPendingData] = useState(null);
 
-    return options.filter((opt) => {
-      const dispositive = enumsData?.dispositiveIndex?.[opt.value];
-      return !!dispositive?.officeIdSesame;
-    });
+  const deviceOptions = useMemo(() => {
+    return buildModalFormOptionsFromIndex(enumsData?.dispositiveIndex, {
+      onlyActive: true,
+    }) || [];
   }, [enumsData?.dispositiveIndex]);
 
-  const fields = useMemo(() => {
-    return [
-      {
-        name: "dispositiveId",
-        label: "Dispositivo",
-        type: "select",
-        required: true,
-        defaultValue: "",
-        options: deviceOptions,
-        isValid: (v) => (!!v ? "" : "Debes seleccionar un dispositivo"),
-      },
-      ...extraFields,
-    ];
-  }, [deviceOptions, extraFields]);
+  const fields = useMemo(() => [
+    {
+      name: "dispositiveId",
+      label: "Dispositivo",
+      type: "select",
+      required: true,
+      defaultValue: "",
+      options: [{ value: "", label: "Seleccione dispositivo" }, ...deviceOptions],
+      isValid: (v) => (!!v ? "" : "Debes seleccionar un dispositivo"),
+    },
+    ...extraFields,
+  ], [deviceOptions, extraFields]);
 
-  const handleSubmit = async (formData) => {
+  const workplaceFields = useMemo(() => [
+    {
+      name: "workplaceId",
+      label: "Centro de trabajo / oficina Sesame",
+      type: "select",
+      required: true,
+      defaultValue: "",
+      options: [
+        { value: "", label: "Seleccione centro de trabajo" },
+        ...(pendingData?.workplaces || []).map((workplace) => ({
+          value: workplace._id,
+          label: `${workplace.name || "Centro de trabajo"}${workplace.address ? ` · ${workplace.address}` : ""}`,
+        })),
+      ],
+      isValid: (v) => (!!v ? "" : "Debes seleccionar un centro de trabajo"),
+    },
+  ], [pendingData]);
+
+  const runSubmitAction = async ({ formData, selectedDispositive, selectedWorkplace }) => {
     const employeeId = user?._id || "";
+
     if (!employeeId) {
       modal("Error", "No se ha encontrado el usuario");
       return;
     }
 
-    const selectedDispositive =
-      enumsData?.dispositiveIndex?.[formData.dispositiveId] || null;
-
-    if (!selectedDispositive) {
-      modal("Error", "No se encontró el dispositivo seleccionado");
-      return;
-    }
-
-    const officeId = selectedDispositive.officeIdSesame || "";
-
-    if (!officeId) {
-      modal("Error", "El dispositivo seleccionado no tiene officeIdSesame");
+    if (!selectedWorkplace?.officeIdSesame) {
+      modal("Error", "El centro de trabajo seleccionado no tiene oficina Sesame enlazada");
       return;
     }
 
@@ -108,30 +76,115 @@ const FormSesameOfficeAction = ({
 
     charge(true);
 
-    try {
-      const token = getToken();
+    const res = await submitAction({
+      employeeId,
+      officeId: selectedWorkplace.officeIdSesame,
+      workplace: selectedWorkplace,
+      formData,
+      token: getToken(),
+      selectedDispositive,
+    });
 
-      const res = await submitAction({
-        employeeId,
-        officeId,
-        formData,
-        token,
-        selectedDispositive,
-      });
-
-      if (res?.error) {
-        throw new Error(res.message || "No se pudo completar la acción");
-      }
-
-      modal("Sesame", submitSuccessMessage);
-      closeModal();
-      onSaved(res);
-    } catch (error) {
-      modal("Error", error.message || "No se pudo completar la acción");
-    } finally {
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo completar la acción");
       charge(false);
+      return;
     }
+
+    modal("Sesame", submitSuccessMessage);
+    closeModal();
+    onSaved(res);
+    charge(false);
   };
+
+  const handleSubmit = async (formData) => {
+    const employeeId = user?._id || "";
+
+    if (!employeeId) {
+      modal("Error", "No se ha encontrado el usuario");
+      return;
+    }
+
+    if (!formData?.dispositiveId) {
+      modal("Error", "Debes seleccionar un dispositivo");
+      return;
+    }
+
+    charge(true);
+
+    const res = await getDispositiveId(
+      { dispositiveId: formData.dispositiveId },
+      getToken()
+    );
+
+    if (!res || res.error) {
+      modal("Error", res?.message || "No se pudo cargar el dispositivo");
+      charge(false);
+      return;
+    }
+
+    const selectedDispositive = res;
+    const workplaces = Array.isArray(selectedDispositive?.workplaces)
+      ? selectedDispositive.workplaces.filter((workplace) => !!workplace?.officeIdSesame)
+      : [];
+
+    if (!workplaces.length) {
+      modal(
+        "Sin oficina Sesame",
+        "Este dispositivo no tiene ningún centro de trabajo asociado con oficina Sesame enlazada."
+      );
+      charge(false);
+      return;
+    }
+
+    if (workplaces.length === 1) {
+      charge(false);
+      await runSubmitAction({
+        formData,
+        selectedDispositive,
+        selectedWorkplace: workplaces[0],
+      });
+      return;
+    }
+
+    setPendingData({
+      formData,
+      selectedDispositive,
+      workplaces,
+    });
+
+    charge(false);
+  };
+
+  const handleWorkplaceSubmit = async (values) => {
+    const selectedWorkplace = pendingData?.workplaces?.find(
+      (workplace) => String(workplace._id) === String(values.workplaceId)
+    );
+
+    if (!selectedWorkplace) {
+      modal("Error", "No se encontró el centro de trabajo seleccionado");
+      return;
+    }
+
+    await runSubmitAction({
+      formData: pendingData.formData,
+      selectedDispositive: pendingData.selectedDispositive,
+      selectedWorkplace,
+    });
+  };
+
+  if (pendingData) {
+    return (
+      <ModalForm
+        title="Seleccionar oficina Sesame"
+        message="Este dispositivo tiene varios centros de trabajo asociados. Elige cuál quieres usar para esta acción."
+        fields={workplaceFields}
+        onSubmit={handleWorkplaceSubmit}
+        onClose={() => setPendingData(null)}
+        modal={modal}
+      />
+    );
+  }
 
   return (
     <ModalForm

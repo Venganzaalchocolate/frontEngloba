@@ -27,7 +27,8 @@ import MenuOptionsEmployee from './MenuOptionsEmployee.jsx';
 import SupervisorChangeRequests from './SupervisorChangeRequests.jsx';
 import RelocateHiringsModal from './RelocateHiringsModal.jsx';
 import perfil92 from "../../assets/perfil_92.png";
-import SesameEmployeeContext from './SesameEmployeeContext.jsx';
+import SesameEmployeeContext from '../sesame/SesameEmployeeContext.jsx';
+
 
 const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, closeAction }) => {
   // =========================

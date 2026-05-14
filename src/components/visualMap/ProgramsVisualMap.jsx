@@ -11,43 +11,50 @@ const AREA_CONFIG = {
         label: 'Infancia y juventud',
         logo: '/img/logo_infancia_y_juventud.png',
         color: '#BEC3F4',
-        soft: '#F3F4FF'
+        soft: '#F3F4FF',
+        contactEmail: 'infanciayjuventud@engloba.org.es'
     },
     igualdad: {
         label: 'Igualdad',
         logo: '/img/logo_igualdad.png',
         color: '#4F529F',
-        soft: '#E7E8F6'
+        soft: '#E7E8F6',
+        contactEmail: 'igualdad@engloba.org.es'
     },
     'personas con discapacidad': {
         label: 'Personas con discapacidad',
         logo: '/img/logo_personas_con_discapacidad.png',
         color: '#F5B136',
-        soft: '#FFF4D8'
+        soft: '#FFF4D8',
+        contactEmail: 'discapacidad@engloba.org.es'
     },
     'desarrollo comunitario': {
         label: 'Desarrollo comunitario',
         logo: '/img/logo_desarrollo_comunitario.png',
         color: '#F3853A',
-        soft: '#FFF0E7'
+        soft: '#FFF0E7',
+        contactEmail: 'desarrollocomunitario@engloba.org.es'
     },
     migraciones: {
         label: 'Migraciones',
         logo: '/img/logo_migraciones.png',
         color: '#19A8C2',
-        soft: '#E6F8FB'
+        soft: '#E6F8FB',
+        contactEmail: 'migraciones@engloba.org.es'
     },
     mayores: {
         label: 'Mayores',
         logo: '/img/logo_mayores.png',
         color: '#94AA51',
-        soft: '#F0F4E4'
+        soft: '#F0F4E4',
+        contactEmail: 'mayores@engloba.org.es'
     },
     lgtbiq: {
         label: 'LGTBIQ+',
         logo: '/img/logo_lgtbiq.png',
         color: '#E08FA7',
-        soft: '#FCEAF0'
+        soft: '#FCEAF0',
+        contactEmail: 'lgtbq@engloba.org.es'
     }
 };
 
@@ -121,7 +128,6 @@ const preloadImage = (src) => {
         }
 
         const image = new Image();
-
         image.onload = resolve;
         image.onerror = resolve;
         image.src = src;
@@ -134,7 +140,8 @@ const preloadImages = async (sources = []) => {
 };
 
 export default function ProgramsVisualMap({ enumsData, charge }) {
-    const landscapeRef = useRef(null);
+    const visibleRef = useRef(null);
+    const exportRef = useRef(null);
 
     const [openProgramId, setOpenProgramId] = useState(null);
     const [imagesReady, setImagesReady] = useState(false);
@@ -156,10 +163,7 @@ export default function ProgramsVisualMap({ enumsData, charge }) {
 
             try {
                 const result = await getProgramsAndDispositiveEnums();
-
-                if (mounted) {
-                    setMapEnumsData(result);
-                }
+                if (mounted) setMapEnumsData(result);
             } catch (error) {
                 console.error('Error cargando programas y dispositivos:', error);
             } finally {
@@ -172,7 +176,7 @@ export default function ProgramsVisualMap({ enumsData, charge }) {
         return () => {
             mounted = false;
         };
-    }, [enumsData]);
+    }, [enumsData, charge]);
 
     const dispositivesByProgram = useMemo(() => {
         const dispositives = getIndexArray(data?.dispositiveIndex)
@@ -281,29 +285,40 @@ export default function ProgramsVisualMap({ enumsData, charge }) {
         charge(!data || !imagesReady || exporting);
 
         return () => charge(false);
-    }, [data, imagesReady, exporting]);
+    }, [data, imagesReady, exporting, charge]);
 
-    const exportImage = async (ref, fileName = 'programas-activos-horizontal.png') => {
-        if (!ref.current || !data || !imagesReady || exporting) return;
+    const exportImage = async (fileName = 'programas-activos-horizontal.jpg') => {
+        if (!visibleRef.current || !exportRef.current || !data || !imagesReady || exporting) return;
 
         try {
             setExporting(true);
 
-            const element = ref.current;
+            const visibleElement = visibleRef.current;
+            const exportElement = exportRef.current;
 
-            const canvas = await html2canvas(element, {
+            const visibleRect = visibleElement.getBoundingClientRect();
+            const visibleWidth = Math.round(visibleRect.width);
+
+            exportElement.style.width = `${visibleWidth}px`;
+            exportElement.style.height = 'auto';
+            exportElement.style.minHeight = '0';
+
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+
+            const canvas = await html2canvas(exportElement, {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 scrollX: 0,
                 scrollY: 0,
-                width: element.scrollWidth,
-                height: element.scrollHeight,
-                windowWidth: element.scrollWidth,
-                windowHeight: element.scrollHeight
+                width: exportElement.scrollWidth,
+                height: exportElement.scrollHeight,
+                windowWidth: exportElement.scrollWidth,
+                windowHeight: exportElement.scrollHeight,
             });
 
-            const image = canvas.toDataURL('image/png');
+            const image = canvas.toDataURL('image/jpeg', 0.95);
 
             const link = document.createElement('a');
             link.href = image;
@@ -321,7 +336,7 @@ export default function ProgramsVisualMap({ enumsData, charge }) {
             <div className={styles.actions}>
                 <button
                     type="button"
-                    onClick={() => exportImage(landscapeRef, 'programas-activos-horizontal.png')}
+                    onClick={() => exportImage('programas-activos-horizontal.jpg')}
                     disabled={!data || !imagesReady || exporting}
                 >
                     {!data && 'Cargando datos...'}
@@ -333,6 +348,7 @@ export default function ProgramsVisualMap({ enumsData, charge }) {
 
             {data && imagesReady && (
                 <ProgramsInfographicView
+                    refProp={visibleRef}
                     areas={groupedAreas}
                     totalPrograms={totalPrograms}
                     totalDispositives={totalDispositives}
@@ -344,7 +360,7 @@ export default function ProgramsVisualMap({ enumsData, charge }) {
             {data && imagesReady && (
                 <div className={styles.exportHidden}>
                     <ProgramsInfographicView
-                        refProp={landscapeRef}
+                        refProp={exportRef}
                         areas={groupedAreas}
                         totalPrograms={totalPrograms}
                         totalDispositives={totalDispositives}
@@ -419,6 +435,17 @@ function ProgramsInfographicView({
                         <div className={styles.areaLogoBox}>
                             <img src={area.logo} alt={area.label} />
                         </div>
+
+                        {area.contactEmail && (
+                            <a
+                                href={`mailto:${area.contactEmail}`}
+                                className={styles.areaEmail}
+                                style={{ '--area-email-bg': area.color }}
+                                title={`Contactar con ${area.label}`}
+                            >
+                                <strong>{area.contactEmail}</strong>
+                            </a>
+                        )}
 
                         <div className={styles.programsList}>
                             {area.programs.map((program) => {

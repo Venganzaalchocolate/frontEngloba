@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import styles from "../styles/menuStart.module.css";
 import { LuLogIn, LuBriefcase, LuListChecks, LuMail, LuLoader, } from "react-icons/lu";
 import { MdOutlineVolunteerActivism } from "react-icons/md";
+import { BiSolidMapAlt } from "react-icons/bi";
 
 // hooks y librerías que ya usas en Login
 import { useLogin } from "../../hooks/useLogin";
@@ -275,6 +276,12 @@ const login = async () => {
               <Link to="/formulariovoluntariado" className={styles.menuItem}>
                 <span className={styles.menuText}>
                   <MdOutlineVolunteerActivism className={styles.icon} /> Formulario Voluntariado
+                </span>
+              </Link>
+
+              <Link to="/mapaengloba" className={styles.menuItem}>
+                <span className={styles.menuText}>
+                  <BiSolidMapAlt className={styles.icon} /> Programas Engloba
                 </span>
               </Link>
 

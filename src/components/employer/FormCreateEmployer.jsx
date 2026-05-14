@@ -20,11 +20,11 @@ const FormCreateEmployer = ({
   modal,
   charge,
   closeModal,
-  chargeUser = () => {},
+  chargeUser = () => { },
   enumsData = null,
   user = null,
   lockedFields = [],
-  chargeOffers = () => {},
+  chargeOffers = () => { },
   selectedResponsibility = null, // string JSON con { deviceId } (opcional)
   offerId = null,
   changeUser,
@@ -62,6 +62,10 @@ const FormCreateEmployer = ({
       lastName: formData.lastName || "",
       phone: formData.phone,
       birthday: formData.birthday,
+      drivingLicenceIssueDate:
+        formData.hasDrivingLicenceCar === "si"
+          ? formData.drivingLicenceIssueDate
+          : null,
       gender: formData.gender,
       fostered: formData.fostered || "no",
       apafa: formData.apafa || "no",
@@ -72,7 +76,7 @@ const FormCreateEmployer = ({
       phoneJobNumber: formData.phoneJobNumber,
       phoneJobExtension: formData.phoneJobExtension,
       studies: Array.isArray(formData.studies) ? formData.studies : [],
-//
+      //
       // Primer periodo de contratación
       hiringPeriods: [
         {
@@ -99,10 +103,10 @@ const FormCreateEmployer = ({
       closeModal();
       chargeUser();
       changeUser(res);
-      
+
     }
   };
-//quitar traking
+  //quitar traking
 
   /** Confirmación de desactivar oferta previa (si existe) */
   const handleConfirmOfferChange = async (formData, deactivate) => {
@@ -146,7 +150,7 @@ const FormCreateEmployer = ({
       }
     }
 
-   
+
     return [
       // Datos personales
       {
@@ -183,45 +187,45 @@ const FormCreateEmployer = ({
         type: "multiChips",
         required: true,
         defaultValue: user?.studiesId || [],
-        options:  buildModalFormOptionsFromIndex(enumsData.studiesIndex),
+        options: buildModalFormOptionsFromIndex(enumsData.studiesIndex),
         placeholder:
           "Busca y añade 1 o varias opciones (puedes pulsar enter o hacer click)",
       },
-//
+      //
       ...(logged.user.role === "root"
         ? [
-            {
-              name: "role",
-              label: "Rol",
-              type: "select",
-              required: true,
-              defaultValue: user?.role || "employee",
-              disabled: lockedFields.includes("role"),
-              options: [
-                { value: "root", label: "Root" },
-                { value: "global", label: "Global" },
-                { value: "auditor", label: "Auditor" },
-                { value: "employee", label: "Employer" },
-                { value: "rrhh", label: "Recursos Humanos" },
-              ],
-            },
-          ]
+          {
+            name: "role",
+            label: "Rol",
+            type: "select",
+            required: true,
+            defaultValue: user?.role || "employee",
+            disabled: lockedFields.includes("role"),
+            options: [
+              { value: "root", label: "Root" },
+              { value: "global", label: "Global" },
+              { value: "auditor", label: "Auditor" },
+              { value: "employee", label: "Employer" },
+              { value: "rrhh", label: "Recursos Humanos" },
+            ],
+          },
+        ]
         : []),
       ...(logged.user.role === "root" || logged.user.apafa
         ? [
-            {
-              name: "apafa",
-              label: "Es de APAFA?",
-              type: "select",
-              required: true,
-              defaultValue: user?.apafa ? "si" : "no",
-              disabled: lockedFields.includes("apafa"),
-              options: [
-                { value: "si", label: "Sí" },
-                { value: "no", label: "No" },
-              ],
-            },
-          ]
+          {
+            name: "apafa",
+            label: "Es de APAFA?",
+            type: "select",
+            required: true,
+            defaultValue: user?.apafa ? "si" : "no",
+            disabled: lockedFields.includes("apafa"),
+            options: [
+              { value: "si", label: "Sí" },
+              { value: "no", label: "No" },
+            ],
+          },
+        ]
         : []),
       {
         name: "dni",
@@ -262,6 +266,27 @@ const FormCreateEmployer = ({
         label: "Extensión",
         type: "text",
         defaultValue: user?.phoneJob?.extension || "",
+      },
+      {
+        name: "hasDrivingLicenceCar",
+        label: "Carnet de conducir Coche",
+        type: "select",
+        required: true,
+        defaultValue: user?.drivingLicenceIssueDate ? "si" : "no",
+        options: [
+          { value: "si", label: "Sí" },
+          { value: "no", label: "No" },
+        ],
+      },
+      {
+        name: "drivingLicenceIssueDate",
+        label: "Fecha de Expedición",
+        type: "date",
+        required: true,
+        defaultValue: user?.drivingLicenceIssueDate
+          ? new Date(user.drivingLicenceIssueDate).toISOString().slice(0, 10)
+          : "",
+        showIf: (formData) => formData.hasDrivingLicenceCar === "si",
       },
       {
         name: "gender",
@@ -324,9 +349,9 @@ const FormCreateEmployer = ({
         required: true,
         defaultValue: hPeriod.dispositiveId || selectedDeviceId || "",
         disabled: lockedFields.includes("dispositiveId"),
-         options: buildModalFormOptionsFromIndex(enumsData.dispositiveIndex, {
-        onlyActive: true,
-    }),
+        options: buildModalFormOptionsFromIndex(enumsData.dispositiveIndex, {
+          onlyActive: true,
+        }),
       },
       {
         name: "workShift",
@@ -347,7 +372,7 @@ const FormCreateEmployer = ({
         required: true,
         defaultValue: hPeriod.position || "",
         disabled: lockedFields.includes("position"),
-         options: buildModalFormOptionsFromIndex(enumsData.jobsIndex),
+        options: buildModalFormOptionsFromIndex(enumsData.jobsIndex),
       },
       {
         name: "reason",

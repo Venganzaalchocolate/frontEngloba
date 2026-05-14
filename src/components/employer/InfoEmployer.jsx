@@ -26,6 +26,13 @@ import ModalForm from "../globals/ModalForm";
 import perfil512 from "../../assets/perfil_512.png";
 import { processProfileImageSet } from "../../lib/imageProfile";
 
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
 const InfoEmployer = ({
   user,
   modal,
@@ -40,15 +47,17 @@ const InfoEmployer = ({
   const { logged, changeLogged } = useLogin();
 
   const initialState = useMemo(
-    () => ({
-      ...user,
-      fostered: user.fostered ? "si" : "no",
-      apafa: user.apafa ? "si" : "no",
-      consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
-      tracking: user.tracking === true ? "si" : "no",
-    }),
-    [user]
-  );
+  () => ({
+    ...user,
+    fostered: user.fostered ? "si" : "no",
+    apafa: user.apafa ? "si" : "no",
+    consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
+    tracking: user.tracking === true ? "si" : "no",
+    hasDrivingLicenceCar: user.drivingLicenceIssueDate ? "si" : "no",
+    drivingLicenceIssueDate: toDateInputValue(user.drivingLicenceIssueDate),
+  }),
+  [user]
+);
 
 
 
@@ -93,18 +102,20 @@ const [selectSesameWorkplaceModal, setSelectSesameWorkplaceModal] = useState(fal
   }, [datos.studies, studiesOptions]);
 
   const textFields = [
-    ["employmentStatus", "Estado Laboral"],
-    ["dni", "DNI"],
-    ["firstName", "Nombre"],
-    ["lastName", "Apellidos"],
-    ["birthday", "Fecha de Nacimiento"],
-    ["email", "Email Corporativo"],
-    ["email_personal", "Email Personal"],
-    ["socialSecurityNumber", "Número de Seguridad Social"],
-    ["bankAccountNumber", "Número de Cuenta Bancaria"],
-    ["phone", "Teléfono Personal"],
-    ["tracking", "Justificación"],
-  ];
+  ["employmentStatus", "Estado Laboral"],
+  ["dni", "DNI"],
+  ["firstName", "Nombre"],
+  ["lastName", "Apellidos"],
+  ["birthday", "Fecha de Nacimiento"],
+  ["email", "Email Corporativo"],
+  ["email_personal", "Email Personal"],
+  ["socialSecurityNumber", "Número de Seguridad Social"],
+  ["bankAccountNumber", "Número de Cuenta Bancaria"],
+  ["phone", "Teléfono Personal"],
+  ["hasDrivingLicenceCar", "Carnet de conducir Coche"],
+  ["drivingLicenceIssueDate", "Fecha de Expedición"],
+  ["tracking", "Justificación"],
+];
 
   const ALLOW_EMPTY = new Set([
     "socialSecurityNumber",
@@ -132,12 +143,14 @@ const [selectSesameWorkplaceModal, setSelectSesameWorkplaceModal] = useState(fal
 
 useEffect(() => {
   const nextState = {
-    ...user,
-    fostered: user.fostered ? "si" : "no",
-    apafa: user.apafa ? "si" : "no",
-    consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
-    tracking: user.tracking === true ? "si" : "no",
-  };
+  ...user,
+  fostered: user.fostered ? "si" : "no",
+  apafa: user.apafa ? "si" : "no",
+  consetmentDataProtection: user.consetmentDataProtection ? "si" : "no",
+  tracking: user.tracking === true ? "si" : "no",
+  hasDrivingLicenceCar: user.drivingLicenceIssueDate ? "si" : "no",
+  drivingLicenceIssueDate: toDateInputValue(user.drivingLicenceIssueDate),
+};
 
   setOriginalData(deepClone(nextState));
   setDatos(nextState);
@@ -314,11 +327,16 @@ const sesameWorkplaceOptions = useMemo(() => {
         auxErrores[name] = value ? (validateBankAccount(value) ? null : textErrors(name)) : null;
       } else if (name === "phoneJobNumber") {
         auxErrores[name] = value ? (validNumber(value) ? null : textErrors("phone")) : null;
+      } else if (name === "hasDrivingLicenceCar" && value === "no") {
+        auxDatos.drivingLicenceIssueDate = "";
+        auxErrores.drivingLicenceIssueDate = null;
       } else {
         auxErrores[name] = null;
       }
 
       auxDatos[name] = value;
+
+      
     }
 
     setDatos(auxDatos);
@@ -336,6 +354,10 @@ const sesameWorkplaceOptions = useMemo(() => {
     for (const field of REQUIRED_TOP) {
       if (ALLOW_EMPTY.has(field)) continue;
       if (isEmpty(datos[field])) newErrors[field] = textErrors(field) || "Campo requerido.";
+    }
+
+    if (datos.hasDrivingLicenceCar === "si" && isEmpty(datos.drivingLicenceIssueDate)) {
+      newErrors.drivingLicenceIssueDate = "La fecha de expedición es obligatoria.";
     }
 
     setErrores(newErrors);
@@ -361,11 +383,16 @@ const sesameWorkplaceOptions = useMemo(() => {
       "birthday",
       "phone",
       "tracking",
+      "drivingLicenceIssueDate"
     ];
 
     fieldsToCompare.forEach((field) => {
-      if (datos[field] !== originalData[field]) changed[field] = datos[field];
-    });
+  if (datos[field] !== originalData[field]) changed[field] = datos[field];
+});
+
+if (datos.hasDrivingLicenceCar === "no" && originalData.drivingLicenceIssueDate) {
+  changed.drivingLicenceIssueDate = null;
+}
 
     const oldP = originalData.disability?.percentage || "";
     const oldN = originalData.disability?.notes || "";
@@ -754,6 +781,8 @@ modal("Cambio cancelado", "Se ha restaurado el estado laboral anterior.");
   }
 };
 
+
+
   // Renderiza los botones superiores según el modo actual del formulario.
   const boton = () => {
     if (soloInfo) return "";
@@ -867,37 +896,54 @@ modal("Cambio cancelado", "Se ha restaurado el estado laboral anterior.");
       </div>
 
       {textFields.map(([fieldName, label]) => {
-        if (fieldName === "birthday") {
-          return (
-            <div key={fieldName} className={styles[fieldName + "Container"]}>
-              <label className={styles[fieldName + "Label"]}>{label}</label>
+        if (fieldName === "birthday" || fieldName === "drivingLicenceIssueDate") {
+  if (fieldName === "drivingLicenceIssueDate" && datos.hasDrivingLicenceCar !== "si") {
+    return null;
+  }
 
-              {!isEditing ? (
-                <input
-                  className={styles[fieldName]}
-                  type="text"
-                  value={datos[fieldName] ? formatDate(datos[fieldName]) : ""}
-                  disabled
-                />
-              ) : (
-                <input
-                  className={styles[fieldName]}
-                  type="date"
-                  name={fieldName}
-                  value={toInputDate(datos[fieldName])}
-                  onChange={handleChange}
-                />
-              )}
+  return (
+    <div key={fieldName} className={styles[fieldName + "Container"]}>
+      <label className={styles[fieldName + "Label"]}>{label}</label>
 
-              {errores[fieldName] && <span className={styles.errorSpan}>{errores[fieldName]}</span>}
-            </div>
-          );
-        }
+      {!isEditing ? (
+        <input
+          className={styles[fieldName]}
+          type="text"
+          value={datos[fieldName] ? formatDate(datos[fieldName]) : ""}
+          disabled
+        />
+      ) : (
+        <input
+          className={styles[fieldName]}
+          type="date"
+          name={fieldName}
+          value={toInputDate(datos[fieldName])}
+          onChange={handleChange}
+        />
+      )}
+
+      {errores[fieldName] && <span className={styles.errorSpan}>{errores[fieldName]}</span>}
+    </div>
+  );
+}
 
         const isRootOrGlobal = logged.user.role === "global" || logged.user.role === "root" || logged.user.role === "rrhh";
         let control = null;
 
-        if (fieldName === "tracking") {
+        if (fieldName === "hasDrivingLicenceCar") {
+  control = (
+    <select
+      className={styles[fieldName]}
+      name="hasDrivingLicenceCar"
+      value={datos.hasDrivingLicenceCar || "no"}
+      onChange={handleChange}
+      disabled={!isEditing}
+    >
+      <option value="si">Sí</option>
+      <option value="no">No</option>
+    </select>
+  );
+} else if (fieldName === "tracking") {
           if (isRootOrGlobal) {
             control = (
               <select
@@ -980,6 +1026,8 @@ modal("Cambio cancelado", "Se ha restaurado el estado laboral anterior.");
           disabled={!isEditing}
         />
       </div>
+
+      
 
       <div className={styles.genderContainer}>
         <label className={styles.genderLabel}>Género</label>

@@ -194,9 +194,8 @@ export default function SesameEmployeeContext({
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es"))
       .map((item) => ({
         value: String(item._id),
-        label: `${item.name || "Dispositivo sin nombre"}${
-          item.program ? ` - ${enumsData?.programsIndex?.[String(item.program)]?.name || ""}` : ""
-        }`,
+        label: `${item.name || "Dispositivo sin nombre"}${item.program ? ` - ${enumsData?.programsIndex?.[String(item.program)]?.name || ""}` : ""
+          }`,
       }));
   }, [enumsData?.dispositiveIndex, enumsData?.programsIndex]);
 
@@ -491,13 +490,13 @@ export default function SesameEmployeeContext({
     charge(false);
   };
 
-  const openWorkersSection = async ({ type, id, title }) => {
+  const openWorkersSection = async ({ type, id, title, canManageWorkers = true  }) => {
     if (!id) {
       modal("Error", "No se encontró el identificador");
       return;
     }
 
-    setViewWorkersCtx({ type, id, title });
+    setViewWorkersCtx({ type, id, title, canManageWorkers });
     setViewWorkersData({ loading: true, title, employees: [] });
     charge(true);
 
@@ -777,6 +776,18 @@ export default function SesameEmployeeContext({
     charge(false);
   };
 
+  const managedDepartmentsSorted = useMemo(() => {
+  return [...managedDepartmentsResolved].sort((a, b) => {
+    const aIsPersonal = String(a.name || "").trim().toLowerCase() === personalDepartmentName;
+    const bIsPersonal = String(b.name || "").trim().toLowerCase() === personalDepartmentName;
+
+    if (aIsPersonal && !bIsPersonal) return -1;
+    if (!aIsPersonal && bIsPersonal) return 1;
+
+    return String(a.name || "").localeCompare(String(b.name || ""), "es");
+  });
+}, [managedDepartmentsResolved, personalDepartmentName]);
+
   return (
     <>
       {showAddOfficeModal && (
@@ -958,58 +969,58 @@ export default function SesameEmployeeContext({
                         {item.linkedDispositives?.length > 0 ? (
                           item.linkedDispositives.map((device) => (
                             <div key={device.dispositiveId} className={styles.assignmentBlock}>
-  <div className={styles.assignmentHeader}>
-    <div>
-      <span className={styles.assignmentTitle}>
-        {safeText(device.dispositiveName)}
-      </span>
+                              <div className={styles.assignmentHeader}>
+                                <div>
+                                  <span className={styles.assignmentTitle}>
+                                    {safeText(device.dispositiveName)}
+                                  </span>
 
-      {device.programName && (
-        <span className={styles.assignmentProgram}>
-          Programa {device.programName}
-        </span>
-      )}
-    </div>
-  </div>
+                                  {device.programName && (
+                                    <span className={styles.assignmentProgram}>
+                                      Programa {device.programName}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
 
-  <div className={styles.assignmentInfo}>
-    <div className={styles.assignmentRow}>
-      <span className={styles.assignmentLabel}>Oficina de fichaje</span>
-      <span className={styles.assignmentValue}>{safeText(item.name)}</span>
-    </div>
+                              <div className={styles.assignmentInfo}>
+                                <div className={styles.assignmentRow}>
+                                  <span className={styles.assignmentLabel}>Oficina de fichaje</span>
+                                  <span className={styles.assignmentValue}>{safeText(item.name)}</span>
+                                </div>
 
-    {item.address && (
-      <div className={styles.assignmentRow}>
-        <span className={styles.assignmentLabel}>Dirección</span>
-        <span className={styles.assignmentValue}>{safeText(item.address)}</span>
-      </div>
-    )}
-  </div>
-</div>
+                                {item.address && (
+                                  <div className={styles.assignmentRow}>
+                                    <span className={styles.assignmentLabel}>Dirección</span>
+                                    <span className={styles.assignmentValue}>{safeText(item.address)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           ))
                         ) : (
                           <div className={styles.assignmentBlock}>
-  <div className={styles.assignmentHeader}>
-    <div>
-      <span className={styles.assignmentTitle}>Departamento no identificado</span>
-      <span className={styles.assignmentProgram}>Revisar vinculación con dispositivo</span>
-    </div>
-  </div>
+                            <div className={styles.assignmentHeader}>
+                              <div>
+                                <span className={styles.assignmentTitle}>Departamento no identificado</span>
+                                <span className={styles.assignmentProgram}>Revisar vinculación con dispositivo</span>
+                              </div>
+                            </div>
 
-  <div className={styles.assignmentInfo}>
-    <div className={styles.assignmentRow}>
-      <span className={styles.assignmentLabel}>Oficina de fichaje</span>
-      <span className={styles.assignmentValue}>{safeText(item.name)}</span>
-    </div>
+                            <div className={styles.assignmentInfo}>
+                              <div className={styles.assignmentRow}>
+                                <span className={styles.assignmentLabel}>Oficina de fichaje</span>
+                                <span className={styles.assignmentValue}>{safeText(item.name)}</span>
+                              </div>
 
-    {item.address && (
-      <div className={styles.assignmentRow}>
-        <span className={styles.assignmentLabel}>Dirección</span>
-        <span className={styles.assignmentValue}>{safeText(item.address)}</span>
-      </div>
-    )}
-  </div>
-</div>
+                              {item.address && (
+                                <div className={styles.assignmentRow}>
+                                  <span className={styles.assignmentLabel}>Dirección</span>
+                                  <span className={styles.assignmentValue}>{safeText(item.address)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
 
@@ -1110,9 +1121,9 @@ export default function SesameEmployeeContext({
                 </div>
               </div>
 
-              {managedDepartmentsResolved.length > 0 ? (
+              {managedDepartmentsSorted.length > 0 ? (
                 <div className={styles.list}>
-                  {managedDepartmentsResolved.map((item) => {
+                  {managedDepartmentsSorted.map((item) => {
                     const isPersonalDepartment = String(item.name || "")
                       .trim()
                       .toLowerCase() === personalDepartmentName;
@@ -1123,36 +1134,41 @@ export default function SesameEmployeeContext({
                           <span className={styles.listTitle}>{safeText(item.name, item.affectedEntityId)}</span>
                           <span className={styles.listText}>Rol: {safeText(item.role?.name)}</span>
 
-                          <div className={styles.listItemActions}>
-                            <button
-                              type="button"
-                              className={styles.inlineAddButton}
-                              onClick={() =>
-                                openWorkersSection({
-                                  type: "department",
-                                  id: item.affectedEntityId,
-                                  title: `Trabajadores del departamento ${safeText(item.name, item.affectedEntityId)}`,
-                                })
-                              }
-                            >
-                              Ver trabajadores
-                            </button>
+                          
+<div className={styles.listItemActions}>
+  <button
+    type="button"
+    className={styles.inlineAddButton}
+    onClick={() =>
+      openWorkersSection({
+        type: "department",
+        id: item.affectedEntityId,
+        title: `Trabajadores del departamento ${safeText(item.name, item.affectedEntityId)}`,
+        canManageWorkers: isPersonalDepartment,
+      })
+    }
+  >
+    Ver trabajadores
+  </button>
 
-                            <button
-                              type="button"
-                              className={styles.inlineAddButton}
-                              onClick={() =>
-                                openAddWorkerModal({
-                                  type: "department",
-                                  id: item.affectedEntityId,
-                                  title: `Añadir trabajador al departamento ${safeText(item.name, item.affectedEntityId)}`,
-                                })
-                              }
-                            >
-                              <FaUserPlus />
-                              Añadir trabajador
-                            </button>
-                          </div>
+  {isPersonalDepartment && (
+    <button
+      type="button"
+      className={styles.inlineAddButton}
+      onClick={() =>
+        openAddWorkerModal({
+          type: "department",
+          id: item.affectedEntityId,
+          title: `Añadir trabajador al departamento ${safeText(item.name, item.affectedEntityId)}`,
+        })
+      }
+    >
+      <FaUserPlus />
+      Añadir trabajador
+    </button>
+  )}
+</div>
+                         
                         </div>
 
                         <div className={styles.listItemActions}>
@@ -1198,20 +1214,24 @@ export default function SesameEmployeeContext({
                         <div className={styles.listItemActions}>
                           {employee.isMainOffice && <span className={styles.badge}>Principal</span>}
 
-                          <button
-                            type="button"
-                            className={styles.inlineAddButton}
-                            onClick={() => openChangeManagersModal(employee)}
-                          >
-                            <FaExchangeAlt />
-                            Cambiar responsables
-                          </button>
+                          {viewWorkersCtx?.canManageWorkers !== false && (
+  <>
+    <button
+      type="button"
+      className={styles.inlineAddButton}
+      onClick={() => openChangeManagersModal(employee)}
+    >
+      <FaExchangeAlt />
+      Cambiar responsables
+    </button>
 
-                          <FaTrashAlt
-                            className={styles.iconDelete}
-                            title={`Quitar trabajador de ${viewWorkersCtx?.type === "office" ? "centro" : "departamento"}`}
-                            onClick={() => handleDeleteWorker(employee)}
-                          />
+    <FaTrashAlt
+      className={styles.iconDelete}
+      title={`Quitar trabajador de ${viewWorkersCtx?.type === "office" ? "centro" : "departamento"}`}
+      onClick={() => handleDeleteWorker(employee)}
+    />
+  </>
+)}
                         </div>
                       </div>
                     ))}

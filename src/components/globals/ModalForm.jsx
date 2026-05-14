@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "../styles/modalForm.module.css";
 import MultiSelectChips from "./MultiSelectChips";
 import AsyncSearchSelect from "./AsyncSearchSelect";
@@ -17,6 +17,8 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
   const CAPS_MIN_RATIO = 0.75;     // 75% o más del texto en mayúsculas
   const CAPS_MIN_LEN = 8;       // evalúa a partir de 12 letras escritas
   const CAPS_COOLDOWN_MS = 15000;   // no avisar más de 1 vez/15s por campo
+
+
 
   // Detecta si el texto “grita”
   const shouldWarnCaps = (text) => {
@@ -52,26 +54,43 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
     }, {})
   );
 
+    //campos visibles o no como el boleano del carnet de conducir
+const isFieldVisible = useCallback((field, data = formData) => {
+  if (typeof field.showIf !== "function") return true;
+
+  try {
+    return !!field.showIf(data);
+  } catch {
+    return false;
+  }
+}, [formData]);
+
   const [errors, setErrors] = useState({});
   const [isValidForm, setIsValidForm] = useState(false);
 
   // Efecto para calcular la validez global del formulario
   useEffect(() => {
-    const hasErrors = Object.values(errors).some(
-      (err) => err !== null && err !== ""
-    );
+    const hasErrors = fields.some((field) => {
+  if (!isFieldVisible(field, formData)) return false;
+  const err = errors[field.name];
+  return err !== null && err !== "" && err !== undefined;
+});
     const allRequiredFilled = fields.every((field) => {
       if (field.type === "section" || !field.required) return true;
+      if (!isFieldVisible(field, formData)) return true;
+
       const v = formData[field.name];
+
       if (field.type === "file") return v !== null;
       if (field.type === "selectMultiple" || field.type === "checkboxGroup" || field.type === "multiChips") {
         return Array.isArray(v) && v.length > 0;
       }
+
       return v !== "" && v !== undefined && v !== null;
     });
 
     setIsValidForm(!hasErrors && allRequiredFilled);
-  }, [errors, formData, fields]);
+  }, [errors, formData, fields, isFieldVisible]);
 
   // =========== MANEJAR CAMBIO ===============
   const handleChange = (event) => {
@@ -167,8 +186,15 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
     event.preventDefault();
     let newErrors = { ...errors };
 
-    fields.forEach((field) => {
-      if (field.type === "section" || !field.required) return;
+fields.forEach((field) => {
+  if (field.type === "section") return;
+
+  if (!isFieldVisible(field, formData)) {
+    delete newErrors[field.name];
+    return;
+  }
+
+  if (!field.required) return;
 
       if (field.type === "file" && !formData[field.name]) {
         newErrors[field.name] = "Este campo es obligatorio.";
@@ -266,6 +292,8 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
 
         <form onSubmit={handleSubmit}>
           {fields.map((field, index) => {
+            if (!isFieldVisible(field, formData)) return null;
+
             if (field.type === "section") {
               return (
                 <h4 key={`section-${index}`} className={styles.modalSectionTitle}>
@@ -356,10 +384,10 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
                       onChange={handleChange}
                       disabled={field.disabled}
                     >
-                        {/* Placeholder fijo */}
-                    <option value="" disabled>
-                      Seleccione una opción
-                    </option>
+                      {/* Placeholder fijo */}
+                      <option value="" disabled>
+                        Seleccione una opción
+                      </option>
                       {applySearchFilter(
                         filterOptions(field.options),
                         searchTerm[field.name] || ""
@@ -565,7 +593,7 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
                 {field.type === "multiChips" && (
                   <>
                     <MultiSelectChips
-                      options={field.options || []} 
+                      options={field.options || []}
                       value={Array.isArray(formData[field.name]) ? formData[field.name] : []}
                       onChange={(next) => {
                         setFormData(prev => ({ ...prev, [field.name]: next }));
@@ -584,12 +612,12 @@ const ModalForm = ({ title, message, fields, onSubmit, onClose, modal = () => { 
                 )}
 
                 {field.type === "async-search-select" && (
-  <AsyncSearchSelect
-    key={field.name}
-    field={field}
-    onChange={handleChange} // ✅ el componente ya genera el evento compatible
-  />
-)}
+                  <AsyncSearchSelect
+                    key={field.name}
+                    field={field}
+                    onChange={handleChange} // ✅ el componente ya genera el evento compatible
+                  />
+                )}
 
                 {/* Otros tipos: text, email, etc. */}
                 {!["file", "select", "date", "textarea", "selectMultiple", "checkboxGroup", "info", "multiChips", "async-search-select"].includes(

@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../styles/ManagingEmployer.module.css';
 import { FaSquarePlus, FaBell } from "react-icons/fa6";
 import { RiUserSharedFill } from 'react-icons/ri';
 import { TbFileTypeXml } from "react-icons/tb";
 
 import Filters from "./Filters";
-import FilterStatus from './FilterStatus.jsx';
 
 import { useDebounce } from '../../hooks/useDebounce.jsx';
 import { useLogin } from '../../hooks/useLogin.jsx';
@@ -26,71 +25,67 @@ import PreferentsEmployee from './PreferentsEmployee.jsx';
 import MenuOptionsEmployee from './MenuOptionsEmployee.jsx';
 import SupervisorChangeRequests from './SupervisorChangeRequests.jsx';
 import RelocateHiringsModal from './RelocateHiringsModal.jsx';
-import perfil92 from "../../assets/perfil_92.png";
 import SesameEmployeeContext from '../sesame/SesameEmployeeContext.jsx';
 
+import perfil92 from "../../assets/perfil_92.png";
 
-const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, closeAction }) => {
-  // =========================
-  // AUTH / ROLE
-  // =========================
+const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData }) => {
   const { logged } = useLogin();
-  const isRootOrGlobal =
-    logged?.user?.role === 'root' || logged?.user?.role === 'global' || logged?.user?.role === 'rrhh';
+  const loggedUser = logged?.user || {};
+  const role = loggedUser?.role;
 
-
+  const isRootOrGlobal = role === 'root' || role === 'global' || role === 'rrhh';
 
   const apafaUser =
-    logged.user.apafa == false ||
-      logged.user._id == '67d80ef5f093b4a61894b881' ||
-      logged?.user?.role === 'root'
+    loggedUser?.apafa === false ||
+    loggedUser?._id === '67d80ef5f093b4a61894b881' ||
+    role === 'root'
       ? 'no'
       : 'si';
 
-  // =========================
-  // STATE: UI
-  // =========================
   const [userSelected, setUserSelected] = useState(null);
   const [isRelocateOpen, setIsRelocateOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [selectOptionMenuEmployee, setselectOptionMenuEmployee] = useState('mis-datos');
 
-  // paginación
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(1);
 
-  // lista usuarios
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
-
-  // responsabilidad elegida (SOLO no root/global)
-  const [selectedResponsibility, setSelectedResponsibility] = useState(null);
-
-  // XLS
   const [userXLS, setUsersXls] = useState(null);
 
-  // filtros
   const [filters, setFilters] = useState({
     firstName: '',
+    lastName: '',
+    dni: '',
     email: '',
     phone: '',
-    apafa: apafaUser,
+    dispositive: '',
+    programId: '',
     status: 'total',
-    role:''
+    provinces: '',
+    apafa: apafaUser,
+    position: '',
+    workSchedule: '',
+    gender: '',
+    fostered: '',
+    disability: '',
+    role: '',
   });
+
   const debouncedFilters = useDebounce(filters, 300);
 
-  // =========================
-  // STATE: thumbs cache
-  // =========================
   const thumbsCacheRef = useRef({});
   const [thumbByUserId, setThumbByUserId] = useState({});
 
-  // =========================
-  // HELPERS
-  // =========================
   const normId = (id) => String(id || '');
+
+  const refId = (value) => {
+    if (!value) return '';
+    if (typeof value === 'object') return String(value._id || value.id || '');
+    return String(value);
+  };
 
   const extractDataUrl = (photoValue) => {
     if (!photoValue) return '';
@@ -98,396 +93,233 @@ const ManagingEmployer = ({ modal, charge, listResponsability = [], enumsData, c
     return photoValue?.dataUrl || '';
   };
 
-  const hasProgramAccess = useCallback(
-    (item) =>
-      !!(
+  const userScope = useMemo(() => {
+    const fullProgramIds = new Set();
+    const visibleProgramIds = new Set();
+    const allowedDeviceIds = new Set();
+
+    listResponsability.forEach((item) => {
+      const programId = item?.idProgram ? String(item.idProgram) : '';
+      const deviceId = item?.dispositiveId ? String(item.dispositiveId) : '';
+
+      const fullProgramAccess =
         item?.isProgramResponsible ||
         item?.isProgramCoordinator ||
-        item?.isProgramSupervisor
-      ),
-    []
-  );
+        item?.isProgramSupervisor;
 
-  const hasDeviceAccess = useCallback(
-    (item) =>
-      !!(
+      const deviceAccess =
         item?.isDeviceResponsible ||
         item?.isDeviceCoordinator ||
-        item?.isDeviceSupervisor
-      ),
-    []
-  );
+        item?.isDeviceSupervisor;
 
-const getAllowedDispositiveIdsByResponsibility = useCallback((selectedValue) => {
-  if (!selectedValue) return [];
-
-  try {
-    const parsed = JSON.parse(selectedValue);
-    const ids = new Set();
-
-    listResponsability.forEach((item) => {
-      if (!hasDeviceAccess(item)) return;
-
-      const dispositiveId = item?.dispositiveId ? String(item.dispositiveId) : '';
-      if (!dispositiveId) return;
-
-      const device = enumsData?.dispositiveIndex?.[dispositiveId];
-      if (!device) return;
-
-      const itemProgramId = item?.idProgram ? String(item.idProgram) : '';
-      const itemProvinceId = device?.province ? String(device.province) : '';
-
-      if (parsed.type === 'province' && itemProvinceId === String(parsed.provinceId)) {
-        ids.add(dispositiveId);
+      if (fullProgramAccess && programId) {
+        fullProgramIds.add(programId);
+        visibleProgramIds.add(programId);
       }
 
-      if (
-        parsed.type === 'device-group' &&
-        itemProgramId === String(parsed.programId) &&
-        itemProvinceId === String(parsed.provinceId)
-      ) {
-        ids.add(dispositiveId);
+      if (deviceAccess && deviceId) {
+        allowedDeviceIds.add(deviceId);
+        if (programId) visibleProgramIds.add(programId);
       }
     });
 
-    return [...ids];
-  } catch {
-    return [];
-  }
-}, [listResponsability, hasDeviceAccess, enumsData?.dispositiveIndex]);
+    return {
+      fullProgramIds: [...fullProgramIds],
+      visibleProgramIds: [...visibleProgramIds],
+      allowedDeviceIds: [...allowedDeviceIds],
+    };
+  }, [listResponsability]);
 
-const getResponsibilityOptions = useCallback(() => {
-  const provinceOnlyGroups = new Map();
-  const provinceProgramGroups = new Map();
-  const deviceMap = new Map();
-  const programMap = new Map();
+  const getAllowedDeviceIdsForFilters = useCallback((currentFilters = {}) => {
+    if (isRootOrGlobal) return [];
 
-  listResponsability.forEach((item) => {
-    const programId = item?.idProgram ? String(item.idProgram) : '';
-    const dispositiveId = item?.dispositiveId ? String(item.dispositiveId) : '';
-    const device = enumsData?.dispositiveIndex?.[dispositiveId];
-    const provinceId = device?.province ? String(device.province) : '';
+    const dispositives = Object.entries(enumsData?.dispositiveIndex || {}).map(([id, d]) => ({
+      _id: id,
+      ...d,
+    }));
 
-    if (hasProgramAccess(item) && programId && !programMap.has(programId)) {
-      programMap.set(programId, {
-        label: `(Programa) ${item.programAcronym || item.programName || 'Programa'}`,
-        value: JSON.stringify({ type: 'program', programId }),
-      });
-    }
+    return dispositives
+      .filter((d) => {
+        const deviceId = String(d?._id || '');
+        const programId = refId(d?.program);
+        const provinceId = refId(d?.province);
 
-    if (hasDeviceAccess(item) && dispositiveId && !deviceMap.has(dispositiveId)) {
-      deviceMap.set(dispositiveId, {
-        label: `(Dispositivo) ${item.dispositiveName}${item.programAcronym || item.programName ? ` [${item.programAcronym || item.programName}]` : ''}`,
-        value: JSON.stringify({
-          type: 'device',
-          programId,
-          deviceId: dispositiveId,
-        }),
-        sortName: item.dispositiveName || '',
-      });
-    }
+        if (currentFilters.programId && String(currentFilters.programId) !== programId) return false;
+        if (currentFilters.provinces && String(currentFilters.provinces) !== provinceId) return false;
+        if (currentFilters.dispositive && String(currentFilters.dispositive) !== deviceId) return false;
 
-    if (hasDeviceAccess(item) && provinceId && dispositiveId) {
-      if (!provinceOnlyGroups.has(provinceId)) {
-        provinceOnlyGroups.set(provinceId, {
-          provinceId,
-          deviceIds: [],
-        });
-      }
-      const group = provinceOnlyGroups.get(provinceId);
-      if (!group.deviceIds.includes(dispositiveId)) group.deviceIds.push(dispositiveId);
-    }
+        if (userScope.fullProgramIds.includes(programId)) return true;
 
-    if (hasDeviceAccess(item) && programId && provinceId && dispositiveId) {
-      const key = `${programId}:${provinceId}`;
-      if (!provinceProgramGroups.has(key)) {
-        provinceProgramGroups.set(key, {
-          programId,
-          provinceId,
-          programName: item.programName || '',
-          programAcronym: item.programAcronym || '',
-          deviceIds: [],
-        });
-      }
-      const group = provinceProgramGroups.get(key);
-      if (!group.deviceIds.includes(dispositiveId)) group.deviceIds.push(dispositiveId);
-    }
-  });
+        return userScope.allowedDeviceIds.includes(deviceId);
+      })
+      .map((d) => String(d._id));
+  }, [
+    isRootOrGlobal,
+    enumsData?.dispositiveIndex,
+    userScope.fullProgramIds,
+    userScope.allowedDeviceIds,
+  ]);
 
-  const provinceOnlyOptions = [...provinceOnlyGroups.values()]
-    .filter(group => group.deviceIds.length > 1)
-    .map(group => ({
-      label: `(Provincia) ${enumsData?.provincesIndex?.[group.provinceId]?.name || 'Provincia'} (${group.deviceIds.length} dispositivos)`,
-      value: JSON.stringify({
-        type: 'province',
-        provinceId: group.provinceId,
-      }),
-      sortProvince: enumsData?.provincesIndex?.[group.provinceId]?.name || '',
-    }))
-    .sort((a, b) => a.sortProvince.localeCompare(b.sortProvince, 'es'));
+  const cleanFilters = useCallback((sourceFilters = {}) => {
+    const auxFilters = { ...sourceFilters };
 
-  const provinceProgramOptions = [...provinceProgramGroups.values()]
-    .filter(group => group.deviceIds.length > 1)
-    .map(group => ({
-      label: `(Provincia+Programa) ${group.programAcronym || group.programName} - ${enumsData?.provincesIndex?.[group.provinceId]?.name || 'Provincia'} (${group.deviceIds.length} dispositivos)`,
-      value: JSON.stringify({
-        type: 'device-group',
-        programId: group.programId,
-        provinceId: group.provinceId,
-      }),
-      sortProgram: group.programAcronym || group.programName || '',
-      sortProvince: enumsData?.provincesIndex?.[group.provinceId]?.name || '',
-    }))
-    .sort((a, b) => {
-      const byProvince = a.sortProvince.localeCompare(b.sortProvince, 'es');
-      if (byProvince !== 0) return byProvince;
-      return a.sortProgram.localeCompare(b.sortProgram, 'es');
-    });
-
-  const deviceOptions = [...deviceMap.values()]
-    .sort((a, b) => a.sortName.localeCompare(b.sortName, 'es'))
-    .map(({ sortName, ...opt }) => opt);
-
-  const programOptions = [...programMap.values()]
-    .sort((a, b) => a.label.localeCompare(b.label, 'es'));
-
-  return [
-    ...provinceOnlyOptions,
-    ...provinceProgramOptions,
-    ...deviceOptions,
-    ...programOptions,
-  ];
-}, [listResponsability, hasProgramAccess, hasDeviceAccess, enumsData?.dispositiveIndex, enumsData?.provincesIndex]);
-
-const scopedDeviceOptions = useMemo(() => {
-  if (!selectedResponsibility) return [];
-
-  try {
-    const parsed = JSON.parse(selectedResponsibility);
-    const allowedDevicesMap = new Map();
-
-    listResponsability.forEach((item) => {
-      if (!hasDeviceAccess(item)) return;
-
-      const dispositiveId = item?.dispositiveId ? String(item.dispositiveId) : '';
-      if (!dispositiveId) return;
-
-      const device = enumsData?.dispositiveIndex?.[dispositiveId];
-      if (!device) return;
-
-      const itemProgramId = item?.idProgram ? String(item.idProgram) : '';
-      const itemProvinceId = device?.province ? String(device.province) : '';
-
-      if (
-        parsed.type === 'program' &&
-        itemProgramId === String(parsed.programId)
-      ) {
-        allowedDevicesMap.set(dispositiveId, {
-          value: dispositiveId,
-          label: device?.name || item?.dispositiveName || 'Dispositivo',
-        });
-      }
-
-      if (
-        parsed.type === 'device-group' &&
-        itemProgramId === String(parsed.programId) &&
-        itemProvinceId === String(parsed.provinceId)
-      ) {
-        allowedDevicesMap.set(dispositiveId, {
-          value: dispositiveId,
-          label: device?.name || item?.dispositiveName || 'Dispositivo',
-        });
-      }
-
-      if (
-        parsed.type === 'province' &&
-        itemProvinceId === String(parsed.provinceId)
-      ) {
-        allowedDevicesMap.set(dispositiveId, {
-          value: dispositiveId,
-          label: device?.name || item?.dispositiveName || 'Dispositivo',
-        });
+    Object.keys(auxFilters).forEach((key) => {
+      if (auxFilters[key] === '' || auxFilters[key] === undefined || auxFilters[key] === null) {
+        delete auxFilters[key];
       }
     });
 
-    return [...allowedDevicesMap.values()].sort((a, b) =>
-      a.label.localeCompare(b.label, 'es')
-    );
-  } catch {
-    return [];
-  }
-}, [
-  selectedResponsibility,
-  listResponsability,
-  hasDeviceAccess,
-  enumsData?.dispositiveIndex
-]);
+    return auxFilters;
+  }, []);
 
-  // =========================
-  // LOADERS
-  // =========================
-const loadUsers = useCallback(async (showLoader = false) => {
-  if (showLoader) charge(true);
+  const applyScopeToFilters = useCallback((sourceFilters = {}) => {
+    const auxFilters = cleanFilters(sourceFilters);
 
-  try {
-    const token = getToken();
-    let auxFilters = { ...debouncedFilters };
+    if (isRootOrGlobal) return auxFilters;
 
-    for (let key in auxFilters) {
-      if (auxFilters[key] === "") delete auxFilters[key];
+    const allowedDeviceIds = getAllowedDeviceIdsForFilters(auxFilters);
+
+    if (!allowedDeviceIds.length) return null;
+
+    if (auxFilters.dispositive) {
+      if (!allowedDeviceIds.includes(String(auxFilters.dispositive))) return null;
+      return auxFilters;
     }
 
-    if (!isRootOrGlobal) {
-      if (!selectedResponsibility) {
-        if (showLoader) charge(false);
+    auxFilters.allowedDispositiveIds = allowedDeviceIds;
+    return auxFilters;
+  }, [cleanFilters, getAllowedDeviceIdsForFilters, isRootOrGlobal]);
+
+  const loadUsers = useCallback(async (params = {}) => {
+    const options = typeof params === 'boolean'
+      ? {
+          showLoader: params,
+          currentFilters: debouncedFilters,
+          currentPage: page,
+          currentLimit: limit,
+        }
+      : {
+          showLoader: params.showLoader ?? false,
+          currentFilters: params.currentFilters ?? debouncedFilters,
+          currentPage: params.currentPage ?? page,
+          currentLimit: params.currentLimit ?? limit,
+        };
+
+    const { showLoader, currentFilters, currentPage, currentLimit } = options;
+
+    if (showLoader) charge(true);
+
+    try {
+      const token = getToken();
+      const auxFilters = applyScopeToFilters(currentFilters);
+
+      if (!auxFilters) {
+        setUsers([]);
+        setTotalPages(0);
         return;
       }
 
-      const resp = JSON.parse(selectedResponsibility);
+      const data = await getusers(currentPage, currentLimit, auxFilters, token);
 
-      if (resp.type === 'program') {
-  auxFilters.programId = resp.programId;
-  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
-} else if (resp.type === 'device') {
-  auxFilters.dispositive = resp.deviceId;
-} else if (resp.type === 'device-group') {
-  auxFilters.allowedDispositiveIds = getAllowedDispositiveIdsByResponsibility(selectedResponsibility);
-  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
-} else if (resp.type === 'province') {
-  auxFilters.allowedDispositiveIds = getAllowedDispositiveIdsByResponsibility(selectedResponsibility);
-  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
-}
-    }
+      if (data.error) {
+        modal("Error", data.message);
+        return;
+      }
 
-    const data = await getusers(page, limit, auxFilters, token);
+      const normalizedUsers = (data.users || []).map((user) => ({
+        ...user,
+        firstName: capitalizeWords(user.firstName),
+        lastName: capitalizeWords(user.lastName),
+      }));
 
-    const normalizedUsers = (data.users || []).map((user) => ({
-      ...user,
-      firstName: capitalizeWords(user.firstName),
-      lastName: capitalizeWords(user.lastName),
-    }));
-
-    if (data.error) {
-      modal("Error", data.message);
-    } else {
       setUsers(normalizedUsers);
       setTotalPages(data.totalPages || 0);
+    } catch (error) {
+      modal('Error', error.message || 'Ocurrió un error inesperado.');
+    } finally {
+      if (showLoader) charge(false);
     }
-  } catch (error) {
-    modal('Error', error.message || 'Ocurrió un error inesperado.');
-  } finally {
-    if (showLoader) charge(false);
-  }
-}, [
-  debouncedFilters,
-  isRootOrGlobal,
-  limit,
-  page,
-  selectedResponsibility,
-  filters.dispositive,
-  getAllowedDispositiveIdsByResponsibility
-]);
+  }, [
+    debouncedFilters,
+    page,
+    limit,
+    applyScopeToFilters,
+  ]);
 
   const refreshThumbForUser = useCallback(async (userId) => {
     try {
       const token = getToken();
       const id = normId(userId);
-
       const resp = await profilePhotoGetBatch({ userIds: [id], size: "thumb" }, token);
+
       if (resp?.error) return;
 
-      const raw = resp?.photos?.[id];
-      const dataUrl = extractDataUrl(raw);
+      const dataUrl = extractDataUrl(resp?.photos?.[id]);
       if (!dataUrl) return;
 
       thumbsCacheRef.current[id] = dataUrl;
       setThumbByUserId((prev) => ({ ...prev, [id]: dataUrl }));
-    } catch (e) { }
+    } catch {}
   }, []);
 
   const loadThumbsForUsers = useCallback(async (usersList, signal) => {
     const token = getToken();
-    const ids = (usersList || []).map(u => normId(u?._id)).filter(Boolean);
-
+    const ids = (usersList || []).map((u) => normId(u?._id)).filter(Boolean);
     const cache = thumbsCacheRef.current;
-    const missing = ids.filter(id => !cache[id]);
+    const missing = ids.filter((id) => !cache[id]);
 
-    if (missing.length === 0) {
+    if (!missing.length) {
       setThumbByUserId({ ...cache });
       return;
     }
 
-    const resp = await profilePhotoGetBatch(
-      { userIds: missing, size: "thumb" },
-      token,
-      signal
-    );
-
+    const resp = await profilePhotoGetBatch({ userIds: missing, size: "thumb" }, token, signal);
     if (resp?.error) return;
 
     const photos = resp?.photos || {};
-    let changed = false;
 
-    for (const id of missing) {
+    missing.forEach((id) => {
       const dataUrl = extractDataUrl(photos?.[id]);
-      if (dataUrl && cache[id] !== dataUrl) {
-        cache[id] = dataUrl;
-        changed = true;
-      }
-    }
+      if (dataUrl) cache[id] = dataUrl;
+    });
 
     setThumbByUserId({ ...cache });
-    return changed;
   }, []);
 
-  // =========================
-  // EFFECTS
-  // =========================
   useEffect(() => {
-    if (isRootOrGlobal) return;
-
-    const options = getResponsibilityOptions();
-
-    if (!options.length) {
-      setSelectedResponsibility(null);
-      return;
-    }
-
-    if (options.length === 1) {
-      setSelectedResponsibility(options[0].value);
-      return;
-    }
-
-    setSelectedResponsibility((prev) => {
-      if (!prev) return null;
-      const exists = options.some((opt) => opt.value === prev);
-      return exists ? prev : null;
+    setFilters((prev) => {
+      if (prev.apafa === apafaUser) return prev;
+      return { ...prev, apafa: apafaUser };
     });
-  }, [isRootOrGlobal, getResponsibilityOptions]);
+  }, [apafaUser]);
+
+useEffect(() => {
+  if (!logged?.isLoggedIn) return;
+
+  loadUsers({
+    showLoader: true,
+    currentFilters: debouncedFilters,
+    currentPage: page,
+    currentLimit: limit,
+  });
+}, [logged?.isLoggedIn, debouncedFilters, page, limit, loadUsers]);
 
   useEffect(() => {
-    if (!logged?.isLoggedIn) return;
-    loadUsers(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logged?.isLoggedIn, debouncedFilters, page, limit, selectedResponsibility]);
-
-  useEffect(() => {
-    if (!logged?.isLoggedIn) return;
-    if (!users?.length) return;
+    if (!logged?.isLoggedIn || !users?.length) return;
 
     const ac = new AbortController();
-    loadThumbsForUsers(users, ac.signal).catch(() => { });
+    loadThumbsForUsers(users, ac.signal).catch(() => {});
     return () => ac.abort();
   }, [users, logged?.isLoggedIn, loadThumbsForUsers]);
 
-  // =========================
-  // MEMOS
-  // =========================
   const { activeUsers, onLeaveUsers } = useMemo(() => {
     const active = [];
     const leave = [];
 
-    for (const u of users) (u.isOnLeave ? leave : active).push(u);
+    users.forEach((u) => {
+      if (u.isOnLeave) leave.push(u);
+      else active.push(u);
+    });
 
     const sortByName = (a, b) =>
       (a.lastName || '').localeCompare(b.lastName || '', 'es', { sensitivity: 'base' }) ||
@@ -499,49 +331,57 @@ const loadUsers = useCallback(async (showLoader = false) => {
     return { activeUsers: active, onLeaveUsers: leave };
   }, [users]);
 
-  const responsibilityOptions = useMemo(() => getResponsibilityOptions(), [getResponsibilityOptions]);
-
-  // =========================
-  // HANDLERS
-  // =========================
-const handleSelectResponsibility = (e) => {
-  const value = e.target.value || null;
-  setSelectedResponsibility(value);
-  setPage(1);
-  setUserSelected(null);
-
-  try {
-    const parsed = value ? JSON.parse(value) : null;
-    if (
-      parsed?.type === 'program' ||
-      parsed?.type === 'device-group' ||
-      parsed?.type === 'province'
-    ) {
-      setFilters((prev) => prev.dispositive ? { ...prev, dispositive: '' } : prev);
-    }
-  } catch {}
-};
-
   const handlePageChange = useCallback((newPage) => setPage(newPage), []);
+
   const handleLimitChange = useCallback((event) => {
     setLimit(parseInt(event.target.value, 10));
     setPage(1);
   }, []);
 
-  const handleFilterChange = useCallback((event) => {
-    setPage(1);
-    setUserSelected(null);
-    const { name, value } = event.target;
+const handleFilterChange = useCallback((eventOrPatch) => {
+  setPage(1);
+  setUserSelected(null);
 
-    if (apafaUser === 'no') {
-      setFilters((prev) => ({ ...prev, [name]: value || '' }));
-    } else if (apafaUser === 'si' && name !== 'apafa') {
-      setFilters((prev) => ({ ...prev, [name]: value || '' }));
+  const name = eventOrPatch?.target?.name ?? eventOrPatch?.name;
+  const value = eventOrPatch?.target?.value ?? eventOrPatch?.value ?? '';
+  const patch = eventOrPatch?.patch;
+
+  if (patch) {
+    setFilters((prev) => {
+      const next = { ...prev, ...patch };
+
+      if (apafaUser === 'si') next.apafa = prev.apafa;
+
+      Object.keys(next).forEach((key) => {
+        if (next[key] === undefined || next[key] === null) next[key] = '';
+      });
+
+      return next;
+    });
+
+    return;
+  }
+
+  if (!name) return;
+  if (apafaUser === 'si' && name === 'apafa') return;
+
+  setFilters((prev) => {
+    const next = { ...prev, [name]: value || '' };
+
+    if (name === 'programId' || name === 'provinces') {
+      next.dispositive = '';
     }
-  }, [apafaUser]);
+
+    return next;
+  });
+}, [apafaUser]);
+
+
 
   const resetFilters = useCallback(() => {
+    setPage(1);
     setUserSelected(null);
+
     setFilters({
       firstName: '',
       lastName: '',
@@ -554,7 +394,11 @@ const handleSelectResponsibility = (e) => {
       provinces: '',
       apafa: apafaUser,
       position: '',
-      role:''
+      workSchedule: '',
+      gender: '',
+      fostered: '',
+      disability: '',
+      role: '',
     });
   }, [apafaUser]);
 
@@ -566,22 +410,21 @@ const handleSelectResponsibility = (e) => {
       let found = false;
 
       const next = prev.map((u) => {
-        if (u._id === updatedUser._id) {
-          found = true;
-          return {
-            ...u,
-            ...updatedUser,
-            hasPendingRequests:
-              typeof updatedUser.hasPendingRequests === "boolean"
-                ? updatedUser.hasPendingRequests
-                : u.hasPendingRequests,
-            isOnLeave:
-              typeof updatedUser.isOnLeave === "boolean"
-                ? updatedUser.isOnLeave
-                : u.isOnLeave,
-          };
-        }
-        return u;
+        if (u._id !== updatedUser._id) return u;
+
+        found = true;
+        return {
+          ...u,
+          ...updatedUser,
+          hasPendingRequests:
+            typeof updatedUser.hasPendingRequests === "boolean"
+              ? updatedUser.hasPendingRequests
+              : u.hasPendingRequests,
+          isOnLeave:
+            typeof updatedUser.isOnLeave === "boolean"
+              ? updatedUser.isOnLeave
+              : u.isOnLeave,
+        };
       });
 
       if (!found && updatedUser._id) next.push(updatedUser);
@@ -597,54 +440,32 @@ const handleSelectResponsibility = (e) => {
     }
   };
 
-  // =========================
-  // XLS
-  // =========================
- const getUserNotLimit = async () => {
-  try {
-    charge(true);
-    const token = getToken();
-    let auxFilters = { ...debouncedFilters };
+  const getUserNotLimit = async () => {
+    try {
+      charge(true);
 
-    for (let key in auxFilters) {
-      if (auxFilters[key] === "") delete auxFilters[key];
+      const token = getToken();
+      const auxFilters = applyScopeToFilters(debouncedFilters);
+
+      if (!auxFilters) throw new Error("No tienes dispositivos asignados");
+
+      const data = await getusersnotlimit(auxFilters, token);
+      if (!data?.users?.length) throw new Error("No se recibieron datos de usuarios");
+
+      return data.users;
+    } catch {
+      modal("Error", "Error al obtener usuarios o generar Excel");
+      return null;
+    } finally {
+      charge(false);
     }
-
-    if (!isRootOrGlobal && selectedResponsibility) {
-      const resp = JSON.parse(selectedResponsibility);
-
-      if (resp.type === 'program') {
-  auxFilters.programId = resp.programId;
-  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
-} else if (resp.type === 'device') {
-  auxFilters.dispositive = resp.deviceId;
-} else if (resp.type === 'device-group') {
-  auxFilters.allowedDispositiveIds = getAllowedDispositiveIdsByResponsibility(selectedResponsibility);
-  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
-} else if (resp.type === 'province') {
-  auxFilters.allowedDispositiveIds = getAllowedDispositiveIdsByResponsibility(selectedResponsibility);
-  if (filters.dispositive) auxFilters.dispositive = filters.dispositive;
-}
-    }
-
-    const data = await getusersnotlimit(auxFilters, token);
-    if (!data?.users?.length) throw new Error("No se recibieron datos de usuarios");
-    return data.users;
-  } catch (err) {
-    modal("Error", "Error al obtener usuarios o generar Excel");
-  } finally {
-    charge(false);
-  }
-};
+  };
 
   const openXlsForm = async () => {
     const userAll = await getUserNotLimit();
-    setUsersXls(userAll);
+    if (userAll) setUsersXls(userAll);
   };
 
-  // =========================
-  // MENÚ LATERAL
-  // =========================
   const menuConfig = {
     "mis-datos": [
       (user) => (
@@ -656,7 +477,7 @@ const handleSelectResponsibility = (e) => {
           charge={charge}
           enumsData={enumsData}
           chargeUser={() => loadUsers(true)}
-          changeUser={(x) => changeUserLocally(x)}
+          changeUser={changeUserLocally}
         />
       ),
     ],
@@ -683,7 +504,7 @@ const handleSelectResponsibility = (e) => {
           enumsData={enumsData}
           categoryFiles={enumsData.categoryFiles}
           officialDocs={enumsData.documentation.filter((x) => x.model === "User")}
-          onChange={(x) => changeUserLocally(x)}
+          onChange={changeUserLocally}
         />
       ),
     ],
@@ -695,7 +516,7 @@ const handleSelectResponsibility = (e) => {
           modal={modal}
           charge={charge}
           listResponsability={listResponsability}
-          changeUser={(x) => changeUserLocally(x)}
+          changeUser={changeUserLocally}
         />
       ),
     ],
@@ -706,7 +527,7 @@ const handleSelectResponsibility = (e) => {
           user={user}
           modal={modal}
           charge={charge}
-          changeUser={(x) => changeUserLocally(x)}
+          changeUser={changeUserLocally}
         />
       ),
     ],
@@ -719,7 +540,7 @@ const handleSelectResponsibility = (e) => {
           charge={charge}
           enumsData={enumsData}
           chargeUser={() => loadUsers(true)}
-          changeUser={(x) => changeUserLocally(x)}
+          changeUser={changeUserLocally}
         />
       ),
     ],
@@ -729,11 +550,11 @@ const handleSelectResponsibility = (e) => {
           key="scr"
           changeUserLocally={changeUserLocally}
           userId={user._id}
-          approverId={logged.user._id}
+          approverId={loggedUser._id}
           modal={modal}
           charge={charge}
           enumsData={enumsData}
-          onUserUpdated={(u) => changeUserLocally(u)}
+          onUserUpdated={changeUserLocally}
         />
       ),
     ],
@@ -745,33 +566,31 @@ const handleSelectResponsibility = (e) => {
           modal={modal}
           charge={charge}
           enumsData={enumsData}
-          authorized={logged.user._id}
+          authorized={loggedUser._id}
         />
       ),
     ],
     "controltime": [
       (user) => (
         <SesameEmployeeContext
+          key="sesame"
           user={user}
           modal={modal}
           charge={charge}
           enumsData={enumsData}
           changeUser={changeUserLocally}
         />
-      )
-    ]
+      ),
+    ],
   };
 
-  // =========================
-  // RENDER HELPERS
-  // =========================
   const renderUserRow = (user) => {
+    const id = normId(user._id);
+    const thumbUrl = thumbByUserId[id];
+
     const rowClass = user.isOnLeave
       ? `${styles.tableContainer} ${styles.isOnLeave}`
       : styles.tableContainer;
-
-    const id = normId(user._id);
-    const thumbUrl = thumbByUserId[id];
 
     return (
       <div className={styles.containerEmployer} key={id}>
@@ -799,9 +618,11 @@ const handleSelectResponsibility = (e) => {
 
             <div className={styles.tableCell}>{user.firstName}</div>
             <div className={styles.tableCell}>{user.lastName}</div>
+
             <div className={styles.tableCell}>
               {user.hasPendingRequests && <FaBell color="tomato" />}
             </div>
+
             <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
           </div>
 
@@ -817,7 +638,7 @@ const handleSelectResponsibility = (e) => {
           )}
         </div>
 
-        {logged?.user?.role === 'root' && !userSelected && (
+        {role === 'root' && !userSelected && (
           <DeleteEmployer
             user={user}
             modal={modal}
@@ -829,177 +650,128 @@ const handleSelectResponsibility = (e) => {
     );
   };
 
-  // =========================
-  // RESTRICCIONES POR ROL
-  // =========================
-  if (!isRootOrGlobal) {
-    if (!responsibilityOptions.length) {
-      return (
-        <div className={styles.contenedor}>
-          <div className={styles.contenido}>
-            <h2>No tienes programas o dispositivos asignados.</h2>
-          </div>
+  if (!isRootOrGlobal && !userScope.visibleProgramIds.length && !userScope.allowedDeviceIds.length) {
+    return (
+      <div className={styles.contenedor}>
+        <div className={styles.contenido}>
+          <h2>No tienes programas o dispositivos asignados.</h2>
         </div>
-      );
-    }
-
-    if (responsibilityOptions.length > 1 && !selectedResponsibility) {
-      return (
-        <div className={styles.contenedor}>
-          <div className={styles.contenido}>
-            <h2>Selecciona un Programa o Dispositivo</h2>
-            <select
-              onChange={handleSelectResponsibility}
-              defaultValue=""
-              className={styles.selectInicial}
-            >
-              <option value="">Seleccionar una opción</option>
-              {responsibilityOptions.map((opt, i) => (
-                <option key={i} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      );
-    }
-
-    if (!selectedResponsibility) return null;
+      </div>
+    );
   }
 
-  // =========================
-  // RENDER
-  // =========================
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
-        <>
-          <div className={styles.titulo}>
+        <div className={styles.titulo}>
+          <div>
+            <h2>GESTIÓN DE EMPLEADOS</h2>
+
+            {(role === 'rrhh' || role === 'root') && <FaSquarePlus onClick={openModal} />}
+
+            <TbFileTypeXml onClick={openXlsForm} />
+
+            {!!userXLS && (
+              <CreateDocumentXLS
+                users={userXLS}
+                enumsData={enumsData}
+                closeXls={() => setUsersXls(null)}
+                modal={modal}
+              />
+            )}
+
+            {(role === 'rrhh' || role === 'root') && (
+              <RiUserSharedFill
+                onClick={() => setIsRelocateOpen(true)}
+                style={{ cursor: "pointer", marginLeft: "10px" }}
+                title="Reubicar personal"
+              />
+            )}
+
+            {isRelocateOpen && (
+              <RelocateHiringsModal
+                enumsData={enumsData}
+                modal={modal}
+                charge={charge}
+                close={() => setIsRelocateOpen(false)}
+                onSuccess={() => loadUsers(true)}
+                resetFilters={resetFilters}
+              />
+            )}
+
+            {isModalOpen && (
+              <FormCreateEmployer
+                selectedResponsibility={null}
+                enumsData={enumsData}
+                modal={modal}
+                charge={charge}
+                closeModal={closeModal}
+                chargeUser={() => loadUsers(true)}
+                changeUser={changeUserLocally}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className={styles.caja}>
+          <Filters
+            filters={filters}
+            enums={enumsData}
+            handleFilterChange={handleFilterChange}
+            resetFilters={resetFilters}
+            isRootOrGlobal={isRootOrGlobal}
+            userScope={userScope}
+          />
+
+          <div className={styles.paginacion}>
             <div>
-              <h2>GESTIÓN DE EMPLEADOS</h2>
-              {(logged.user.role == 'rrhh' || logged.user.role == 'root') && <FaSquarePlus onClick={openModal} />}
-              <TbFileTypeXml onClick={openXlsForm} />
-
-              {!!userXLS && (
-                <CreateDocumentXLS
-                  users={userXLS}
-                  enumsData={enumsData}
-                  closeXls={() => setUsersXls(null)}
-                  modal={modal}
-                />
-              )}
-
-              {(logged.user.role == 'rrhh' || logged.user.role == 'root') && (
-                <RiUserSharedFill
-                  onClick={() => setIsRelocateOpen(true)}
-                  style={{ cursor: "pointer", marginLeft: "10px" }}
-                  title="Reubicar personal"
-                />
-              )}
-
-              {isRelocateOpen && (
-                <RelocateHiringsModal
-                  enumsData={enumsData}
-                  modal={modal}
-                  charge={charge}
-                  close={() => setIsRelocateOpen(false)}
-                  onSuccess={() => loadUsers(true)}
-                  resetFilters={resetFilters}
-                />
-              )}
-
-              {isModalOpen && (
-                <FormCreateEmployer
-                  selectedResponsibility={selectedResponsibility}
-                  enumsData={enumsData}
-                  modal={modal}
-                  charge={charge}
-                  closeModal={closeModal}
-                  chargeUser={() => loadUsers(true)}
-                  changeUser={changeUserLocally}
-                />
-              )}
+              <label htmlFor="limit">Usuarios por página:</label>
+              <select id="limit" value={limit} onChange={handleLimitChange}>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
             </div>
 
+            <div>
+              <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
+                {'<'}
+              </button>
 
+              <span>Página {page}</span>
 
-
-            {!isRootOrGlobal && (
-              <div className={styles.cajaSeleccionActiva}>
-                <h4>Activo</h4>
-                <select onChange={handleSelectResponsibility} value={selectedResponsibility || ""}>
-                  {responsibilityOptions.map((opt, i) => (
-                    <option key={i} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className={styles.caja}>
-            {isRootOrGlobal ? (
-              <Filters
-                filters={filters}
-                enums={enumsData}
-                handleFilterChange={handleFilterChange}
-                resetFilters={resetFilters}
-                setFilters={setFilters}
-                listResponsability={listResponsability}
-              />
-            ) : (
-              <FilterStatus
-                filters={filters}
-                enums={enumsData}
-                handleFilterChange={handleFilterChange}
-                resetFilters={resetFilters}
-                scopedDeviceOptions={scopedDeviceOptions}
-                selectedResponsibility={selectedResponsibility}
-              />
-            )}
-            <div className={styles.paginacion}>
-              <div>
-                <label htmlFor="limit">Usuarios por página:</label>
-                <select id="limit" value={limit} onChange={handleLimitChange}>
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
-
-              <div>
-                <button onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
-                  {'<'}
-                </button>
-                <span>Página {page}</span>
-                <button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages}>
-                  {'>'}
-                </button>
-              </div>
-            </div>
-
-            <div className={styles.containerTableContainer}>
-              <div>
-                <div className={styles.tableContainer} id={styles.cabeceraTabla}>
-                  <div className={styles.tableCellPhoto}></div>
-                  <div className={styles.tableCell}>Nombre</div>
-                  <div className={styles.tableCell}>Apellidos</div>
-                  <div className={styles.tableCellCenter}>Peticiones</div>
-                  <div className={styles.tableCellStatus}>Status</div>
-                </div>
-
-                {activeUsers.map(renderUserRow)}
-
-                {onLeaveUsers.length > 0 && (
-                  <>
-                    <div className={styles.sectionDivider} />
-                    <h3 className={styles.sectionTitle}>PERSONAL DE BAJA</h3>
-                    {onLeaveUsers.map(renderUserRow)}
-                  </>
-                )}
-              </div>
+              <button
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page === totalPages || totalPages === 0}
+              >
+                {'>'}
+              </button>
             </div>
           </div>
-        </>
+
+          <div className={styles.containerTableContainer}>
+            <div>
+              <div className={styles.tableContainer} id={styles.cabeceraTabla}>
+                <div className={styles.tableCellPhoto}></div>
+                <div className={styles.tableCell}>Nombre</div>
+                <div className={styles.tableCell}>Apellidos</div>
+                <div className={styles.tableCellCenter}>Peticiones</div>
+                <div className={styles.tableCellStatus}>Status</div>
+              </div>
+
+              {activeUsers.map(renderUserRow)}
+
+              {onLeaveUsers.length > 0 && (
+                <>
+                  <div className={styles.sectionDivider} />
+                  <h3 className={styles.sectionTitle}>PERSONAL DE BAJA</h3>
+                  {onLeaveUsers.map(renderUserRow)}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

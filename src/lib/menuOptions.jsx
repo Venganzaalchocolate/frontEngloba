@@ -1,6 +1,7 @@
 import { FaUserAlt, FaUserCog } from "react-icons/fa";
 import { FaBriefcase, FaChartLine, FaClipboardList, FaPuzzlePiece, FaRegAddressBook, FaToolbox, FaUsers, FaUserShield, FaLock, FaSitemap, FaHouse  } from "react-icons/fa6";
 import { MdOutlineVolunteerActivism } from "react-icons/md";
+import { LiaUsersSolid } from "react-icons/lia";
 
 import { FaHubspot } from "react-icons/fa";
 /**
@@ -48,6 +49,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
 
   const rootOnly = [
     { key: 'root',       label: 'Panel Root',              icon: FaToolbox,        accent: '#d946ef' },
+    { key: 'attendedusers', label: 'Usuarios Atendidos',   icon: LiaUsersSolid,  accent: '#ef9d46' }
     
 
     // { key: 'workspace',  label: 'Gestión de Workspace',    icon: FaUserCog,        accent: '#4ade80' },

@@ -15,6 +15,7 @@ import { getMenuOptions } from "../../lib/menuOptions";
 import Spinnning from "./Spinning";
 import ProgramsVisualMap from "../visualMap/ProgramsVisualMap";
 import ManagingWorkplaces from "../workplaces/ManagingWorkplaces";
+import ManagingAttendedUsers from "../attendedUsers/ManagingAttendedUsers";
 
 
 
@@ -265,6 +266,16 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
               enumsData={enumsEmployer}
               modal={(title, message) => modal(title, message)}
               charge={(x) => charge(x)}
+            />
+          )
+        }
+        {
+          MenuWorker === 'attendedusers' && (
+            <ManagingAttendedUsers
+              modal={modal}
+              charge={charge}
+              enumsData={enumsEmployer}
+              listResponsability={listResponsability}
             />
           )
         }

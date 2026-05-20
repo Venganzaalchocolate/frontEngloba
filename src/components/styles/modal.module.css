@@ -40,3 +40,25 @@
   align-self: center;
 }
 
+.modalMessage {
+  width: 100%;
+}
+
+.modalInfoBlock {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(78, 76, 156, 0.25);
+}
+
+.modalInfoBlock:last-child {
+  border-bottom: none;
+}
+
+.modalInfoTitle {
+  margin: 0 0 4px 0;
+  font-weight: 700;
+  color: #4e4c9c;
+}
+
+.modalInfoLine {
+  margin: 2px 0;
+}

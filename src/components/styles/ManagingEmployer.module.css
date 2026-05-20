@@ -47,6 +47,7 @@
     border-left: 10px solid var(--color-morado);
     display: flex;
     flex: 1;
+    align-items: center;
 }
 
 .titulo svg {
@@ -472,6 +473,7 @@ filtros
   background: transparent;
   display: flex;
   flex: 1;
+  gap: 0.4rem;
 }
 
 /* Estados (ajusta colores a tu gusto) */

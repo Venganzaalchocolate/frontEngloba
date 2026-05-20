@@ -603,3 +603,24 @@ export const deleteWorkplace = (datos, token) => fetchData('/workplacedelete', '
 export const addWorkplaceToDispositive = (datos, token) => fetchData('/workplaceaddtodispositive', 'POST', token, datos);
 export const removeWorkplaceFromDispositive = (datos, token) => fetchData('/workplaceremovefromdispositive', 'POST', token, datos);
 export const listDispositivesByWorkplace = (datos, token) => fetchData('/workplacedispositives', 'POST', token, datos);
+
+
+// attendeduser
+// attendeduser
+export const attendedUserCreate = (datos, token) => fetchData('/attendedusercreate', 'POST', token, datos);
+export const attendedUserList = (page, limit, filters, token) => fetchData('/attendeduserlist', 'POST', token, { page, limit, ...filters });
+export const attendedUserGet = (datos, token) => fetchData('/attendeduserget', 'POST', token, datos);
+export const attendedUserUpdate = (datos, token) => fetchData('/attendeduserupdate', 'POST', token, datos);
+export const attendedUserOpenChronology = (datos, token) => fetchData('/attendeduseropenchronology', 'POST', token, datos);
+export const attendedUserCloseChronology = (datos, token) => fetchData('/attendeduserclosechronology', 'POST', token, datos);
+export const attendedUserDelete = (datos, token) => fetchData('/attendeduserdelete', 'POST', token, datos);
+export const attendedUserImportExcel = (datos, token) => {
+  const fd = new FormData();
+  fd.append("dispositive", datos.dispositive);
+
+  if (datos.file instanceof File) {
+    fd.append("file", datos.file, datos.file.name);
+  }
+
+  return fetchData("/attendeduserimportexcel", "POST", token, fd);
+};

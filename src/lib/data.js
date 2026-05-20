@@ -624,3 +624,11 @@ export const attendedUserImportExcel = (datos, token) => {
 
   return fetchData("/attendeduserimportexcel", "POST", token, fd);
 };
+
+
+// module scope access
+export const upsertModuleScopeAccess = (datos, token) => fetchData('/modulescopeaccessupsert', 'POST', token, datos);
+export const listModuleScopeAccess = (datos, token) => fetchData('/modulescopeaccesslist', 'POST', token, datos);
+export const updateModuleScopeAccess = (datos, token) => fetchData('/modulescopeaccessupdate', 'POST', token, datos);
+export const deleteModuleScopeAccess = (datos, token) => fetchData('/modulescopeaccessdelete', 'POST', token, datos);
+export const getUserModuleScopeAccess = (datos, token) => fetchData('/modulescopeaccessgetuser', 'POST', token, datos);

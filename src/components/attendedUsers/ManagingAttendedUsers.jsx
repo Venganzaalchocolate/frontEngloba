@@ -114,15 +114,20 @@ const ManagingAttendedUsers = ({
     return d?.name || "—";
   };
 
-  const hasProgramAccess = (item) =>
-    item?.isProgramResponsible ||
-    item?.isProgramCoordinator ||
-    item?.isProgramSupervisor;
+const hasModuleAccess = (item, moduleName) =>
+  item?.canAccessModuleScope && item?.module === moduleName;
 
-  const hasDeviceAccess = (item) =>
-    item?.isDeviceResponsible ||
-    item?.isDeviceCoordinator ||
-    item?.isDeviceSupervisor;
+const hasProgramAccess = (item) =>
+  item?.isProgramResponsible ||
+  item?.isProgramCoordinator ||
+  item?.isProgramSupervisor ||
+  (hasModuleAccess(item, "attendedUsers") && item?.scopeType === "program");
+
+const hasDeviceAccess = (item) =>
+  item?.isDeviceResponsible ||
+  item?.isDeviceCoordinator ||
+  item?.isDeviceSupervisor ||
+  (hasModuleAccess(item, "attendedUsers") && item?.scopeType === "dispositive");
 
   const availableDevices = useMemo(() => {
     const map = new Map();

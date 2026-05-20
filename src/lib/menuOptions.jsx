@@ -1,70 +1,237 @@
-import { FaUserAlt, FaUserCog } from "react-icons/fa";
-import { FaBriefcase, FaChartLine, FaClipboardList, FaPuzzlePiece, FaRegAddressBook, FaToolbox, FaUsers, FaUserShield, FaLock, FaSitemap, FaHouse  } from "react-icons/fa6";
+import { FaUserAlt } from "react-icons/fa";
+import {
+  FaBriefcase,
+  FaChartLine,
+  FaClipboardList,
+  FaPuzzlePiece,
+  FaToolbox,
+  FaUsers,
+  FaUserShield,
+  FaSitemap,
+  FaHouse,
+} from "react-icons/fa6";
 import { MdOutlineVolunteerActivism } from "react-icons/md";
 import { LiaUsersSolid } from "react-icons/lia";
-
 import { FaHubspot } from "react-icons/fa";
+
+const MENU = {
+  myself: {
+    key: "myself",
+    label: "Mis datos",
+    icon: FaUserAlt,
+    accent: "#0ea5e9",
+  },
+  visualMap: {
+    key: "visualMap",
+    label: "Mapa Visual",
+    icon: FaSitemap,
+    accent: "#632be3",
+  },
+  cv: {
+    key: "cv",
+    label: "Solicitudes de empleo",
+    icon: FaClipboardList,
+    accent: "#10b981",
+  },
+  employer: {
+    key: "employer",
+    label: "Gestionar empleados",
+    icon: FaUsers,
+    accent: "#8b5cf6",
+  },
+  offersJobs: {
+    key: "offersJobs",
+    label: "Gestionar ofertas",
+    icon: FaBriefcase,
+    accent: "#f59e0b",
+  },
+  organizationChart: {
+    key: "organizationChart",
+    label: "Organigrama",
+    icon: FaHubspot,
+    accent: "#066dd4",
+  },
+  socialForm: {
+    key: "socialForm",
+    label: "Impacto social",
+    icon: FaChartLine,
+    accent: "#22c55e",
+  },
+  auditor: {
+    key: "auditor",
+    label: "Auditoría",
+    icon: FaUserShield,
+    accent: "#ef4444",
+  },
+  programs: {
+    key: "programs",
+    label: "Programas y dispositivos",
+    icon: FaPuzzlePiece,
+    accent: "#06b6d4",
+  },
+  volunteer: {
+    key: "volunteer",
+    label: "Voluntariado",
+    icon: MdOutlineVolunteerActivism,
+    accent: "#ffb5de",
+  },
+  workplace: {
+    key: "workplace",
+    label: "Centro de Trabajo",
+    icon: FaHouse,
+    accent: "#bde15a",
+  },
+  root: {
+    key: "root",
+    label: "Panel Root",
+    icon: FaToolbox,
+    accent: "#d946ef",
+  },
+  attendedusers: {
+    key: "attendedusers",
+    label: "Usuarios Atendidos",
+    icon: LiaUsersSolid,
+    accent: "#ef9d46",
+  },
+};
+
+const GROUPS = {
+  base: [
+    MENU.myself,
+    MENU.visualMap,
+  ],
+
+  rrhh: [
+    MENU.cv,
+    MENU.employer,
+    MENU.offersJobs,
+    MENU.organizationChart,
+    MENU.socialForm,
+    MENU.auditor,
+  ],
+
+  responsible: [
+    MENU.employer,
+    MENU.cv,
+    MENU.offersJobs,
+    MENU.socialForm,
+    MENU.programs,
+    MENU.volunteer,
+    MENU.organizationChart,
+    MENU.attendedusers,
+  ],
+
+  auditor: [
+    MENU.auditor,
+    MENU.employer,
+    MENU.programs,
+    MENU.organizationChart,
+    MENU.socialForm,
+    MENU.workplace,
+  ],
+
+  global: [
+    MENU.auditor,
+    MENU.workplace,
+  ],
+
+  rootOnly: [
+    MENU.root,
+  ],
+
+  attendedUsersOnly: [
+    MENU.attendedusers,
+  ],
+};
+
+const hasRealResponsability = (list = []) =>
+  list.some(
+    (item) =>
+      item?.isProgramResponsible ||
+      item?.isProgramCoordinator ||
+      item?.isProgramSupervisor ||
+      item?.isDeviceResponsible ||
+      item?.isDeviceCoordinator ||
+      item?.isDeviceSupervisor
+  );
+
+const hasModuleScope = (list = [], moduleName) =>
+  list.some(
+    (item) =>
+      item?.canAccessModuleScope === true &&
+      item?.module === moduleName
+  );
+
+const uniqueByKey = (items = []) => {
+  const map = new Map();
+
+  items.forEach((item) => {
+    if (!item?.key) return;
+    if (!map.has(item.key)) map.set(item.key, item);
+  });
+
+  return [...map.values()];
+};
+
 /**
  * Devuelve opciones según rol/responsabilidades SIN JSX.
- * icon: referencia a componente (p.ej. FaUsers), NO <FaUsers />
+ * icon: referencia a componente, NO <FaUsers />
  */
 export function getMenuOptions({ role, listResponsability = null } = {}) {
-  const base = [
-    { key: 'myself',     label: 'Mis datos',               icon: FaUserAlt,        accent: '#0ea5e9' },
-    { key: 'visualMap',  label: 'Mapa Visual',             icon:FaSitemap,         accent:'#632be3'},
-  ];
+  const list = Array.isArray(listResponsability) ? listResponsability : [];
 
-  const rrhh=[
-    { key: 'cv',         label: 'Solicitudes de empleo',   icon: FaClipboardList,  accent: '#10b981' },
-    { key: 'employer',   label: 'Gestionar empleados',     icon: FaUsers,          accent: '#8b5cf6' },
-    { key: 'offersJobs', label: 'Gestionar ofertas',       icon: FaBriefcase,      accent: '#f59e0b' },
-    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'},
-    { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
-    { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
-  ]
+  const userHasRealResponsability = hasRealResponsability(list);
+  const userHasAttendedUsersScope = hasModuleScope(list, "attendedUsers");
 
-  const resp=[
-    { key: 'employer',   label: 'Gestionar empleados',     icon: FaUsers,          accent: '#8b5cf6' },
-    { key: 'cv',         label: 'Solicitudes de empleo',   icon: FaClipboardList,  accent: '#10b981' },
-    { key: 'offersJobs', label: 'Gestionar ofertas',       icon: FaBriefcase,      accent: '#f59e0b' },
-    { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
-    { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
-    { key: 'volunteer', label: 'Voluntariado', icon: MdOutlineVolunteerActivism, accent: '#ffb5de' },
-    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'}
-  ]
+  if (role === "root") {
+    return uniqueByKey([
+      ...GROUPS.responsible,
+      ...GROUPS.global,
+      ...GROUPS.rootOnly,
+      ...GROUPS.base,
+    ]);
+  }
 
-  const auditor=[
-    { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
-    { key: 'employer',   label: 'Gestionar empleados',     icon: FaUsers,          accent: '#8b5cf6' },
-    { key: 'programs',   label: 'Programas y dispositivos',icon: FaPuzzlePiece,    accent: '#06b6d4' },
-    { key: 'organizationChart', label:'Organigrama', icon:FaHubspot, accent: '#066dd4'},
-    { key: 'socialForm', label: 'Impacto social',          icon: FaChartLine,      accent: '#22c55e' },
-    { key: 'workplace', label: 'Centro de Trabajo',        icon: FaHouse,           accent:'#bde15a'}
-  ]
+  if (role === "global") {
+    return uniqueByKey([
+      ...GROUPS.responsible,
+      ...GROUPS.global,
+      ...GROUPS.base,
+    ]);
+  }
 
-  const global = [
-    { key: 'auditor',    label: 'Auditoría',               icon: FaUserShield,     accent: '#ef4444' },
-    { key: 'workplace', label: 'Centro de Trabajo',        icon: FaHouse,           accent:'#bde15a'}
-  ];
+  if (role === "rrhh") {
+    return uniqueByKey([
+      ...GROUPS.rrhh,
+      ...GROUPS.base,
+    ]);
+  }
 
-  const rootOnly = [
-    { key: 'root',       label: 'Panel Root',              icon: FaToolbox,        accent: '#d946ef' },
-    { key: 'attendedusers', label: 'Usuarios Atendidos',   icon: LiaUsersSolid,  accent: '#ef9d46' }
-    
+  if (role === "auditor") {
+    return uniqueByKey([
+      ...GROUPS.auditor,
+      ...GROUPS.base,
+    ]);
+  }
 
-    // { key: 'workspace',  label: 'Gestión de Workspace',    icon: FaUserCog,        accent: '#4ade80' },
-  ];
+  if (userHasRealResponsability) {
+    return uniqueByKey([
+      ...GROUPS.base,
+      ...GROUPS.responsible,
+    ]);
+  }
 
-  if (role === 'root')   return [...resp,...global,  ...rootOnly, ...base];
-  if (role === 'global') return [...resp,...global,  ...base];
-  if (role=='rrhh') return [...rrhh,...base]
-if (role=='auditor') return [...auditor,...base]
+  if (userHasAttendedUsersScope) {
+    return uniqueByKey([
+      ...GROUPS.base,
+      ...GROUPS.attendedUsersOnly,
+    ]);
+  }
 
-
-  const hasResp = Array.isArray(listResponsability)
-    ? listResponsability.length > 0
-    : !!(listResponsability && listResponsability.length > 0);
-
-  return hasResp ? [...base, ...resp] : base;
+  return GROUPS.base;
 }
 
+/*
+MENU.nuevoModulo = { ... }
+GROUPS.nuevoModuloOnly = [MENU.nuevoModulo]
+*/

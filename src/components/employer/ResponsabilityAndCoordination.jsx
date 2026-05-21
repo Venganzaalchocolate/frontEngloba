@@ -98,6 +98,7 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
   const provincesIdx = enumsData?.provincesIndex || {};
   const entityIdx = enumsData?.entityIndex || enumsData?.entitiesIndex || {};
 
+  
 
   const getProgAcr = useCallback((programId, fallbackAcr, fallbackName) => {
     const meta = programsIdx[String(programId)] || {};
@@ -605,11 +606,11 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
         {!!item.notes && <small>{item.notes}</small>}
       </p>
 
-      {canEdit && (
+
         <span>
           <FaTrashAlt onClick={() => handleDelete("moduleScope", null, item)} />
         </span>
-      )}
+    
     </li>
   );
 
@@ -670,7 +671,7 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
           <div className={styles.contenedor}>
             <h2>
               {MODULE_SCOPE_CONFIG.attendedUsers.title}
-              {canEdit && <FaSquarePlus onClick={() => setOpenModuleScopeModal(true)} />}
+              <FaSquarePlus onClick={() => setOpenModuleScopeModal(true)} />
             </h2>
 
             <p className={styles.description}>{MODULE_SCOPE_CONFIG.attendedUsers.description}</p>

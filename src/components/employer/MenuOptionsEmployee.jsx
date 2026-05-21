@@ -19,7 +19,7 @@ export default function MenuOptionsEmployee({ current, onSelect }) {
     { key: "controltime", label: "Control Horario (sesame)", icon: <FaClock /> }
   ];
 
-  const responsable = ["mis-datos", "documentacion", "vacaciones", "contratos", "preferencias", "solicitudes", "controltime", "nominas"];
+  const responsable = ["mis-datos", "documentacion", "vacaciones", "contratos", "preferencias", "solicitudes", "controltime", "nominas", "resp-coord"];
   const rrhh = ["nominas", "mis-datos", "documentacion", "contratos", "preferencias", "controltime", "vacaciones"];
   const global = [...responsable, "resp-coord", "nominas"];
   const auditor=["mis-datos", "documentacion", "contratos"]

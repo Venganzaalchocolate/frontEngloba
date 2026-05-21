@@ -18,11 +18,20 @@ const FormAttendedUser = ({
   modal,
   onSubmit,
   onClose,
+  initialDocumentId = "",
 }) => {
   const isEdit = mode === "edit";
 
   const fields = useMemo(() => {
     const base = [
+      {
+        name: "documentId",
+        label: "Documento",
+        type: "text",
+        required: true,
+        defaultValue: doc?.documentId || initialDocumentId || "",
+        disabled: true,
+      },
       {
         name: "firstName",
         label: "Nombre",
@@ -103,7 +112,7 @@ const FormAttendedUser = ({
     }
 
     return base;
-  }, [doc, isEdit]);
+  }, [doc, isEdit, initialDocumentId]);
 
   const getFieldValue = (value) => {
     if (!value) return "";

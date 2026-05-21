@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "../styles/ManagingEmployer.module.css";
-import { FaSquarePlus, FaUserPlus } from "react-icons/fa6";
+import { FaCloudArrowUp, FaSquarePlus, FaUserPlus } from "react-icons/fa6";
 import { TbFileTypeXml } from "react-icons/tb";
-import { FaFileUpload, FaEdit, FaEye, FaHistory } from "react-icons/fa";
+import { TbFileDownload } from "react-icons/tb";
+import { FaFileUpload, FaEdit, FaEye, FaHistory, FaFileDownload, FaTrashAlt } from "react-icons/fa";
 import ExcelJS from "exceljs";
 
 import { useDebounce } from "../../hooks/useDebounce.jsx";
@@ -11,6 +12,7 @@ import { getToken } from "../../lib/serviceToken.js";
 import { capitalizeWords } from "../../lib/utils.js";
 
 import ModalForm from "../globals/ModalForm.jsx";
+import ModalConfirmation from "../globals/ModalConfirmation";
 import FiltersAttendedUsers from "./FiltersAttendedUsers.jsx";
 import FormAttendedUser from "./FormAttendedUser.jsx";
 import { NATIONALITIES, getNationalityLabel } from "../../lib/nationalities.js";
@@ -22,6 +24,9 @@ import {
   attendedUserCloseChronology,
   attendedUserImportExcel,
   attendedUserOpenChronology,
+  attendedUserGet,
+  attendedUserExport,
+  attendedUserDelete,
 } from "../../lib/data";
 
 const INITIAL_FILTERS = {
@@ -60,13 +65,29 @@ const ManagingAttendedUsers = ({
   const [formMode, setFormMode] = useState("");
   const [editingDoc, setEditingDoc] = useState(null);
 
+  const [checkDocumentModalOpen, setCheckDocumentModalOpen] = useState(false);
+  const [creatingDocumentId, setCreatingDocumentId] = useState("");
+
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [notesDoc, setNotesDoc] = useState(null);
   const [closeStayDoc, setCloseStayDoc] = useState(null);
   const [openStayDoc, setOpenStayDoc] = useState(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  const [deleteDoc, setDeleteDoc] = useState(null);
 
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const debouncedFilters = useDebounce(filters, 300);
+
+  const getStayDeviceId = (stay) => {
+    if (!stay?.dispositive) return "";
+
+    if (typeof stay.dispositive === "object") {
+      return String(stay.dispositive._id || stay.dispositive.id || "");
+    }
+
+    return String(stay.dispositive);
+  };
 
   const refId = (value) => {
     if (!value) return "";
@@ -114,20 +135,20 @@ const ManagingAttendedUsers = ({
     return d?.name || "—";
   };
 
-const hasModuleAccess = (item, moduleName) =>
-  item?.canAccessModuleScope && item?.module === moduleName;
+  const hasModuleAccess = (item, moduleName) =>
+    item?.canAccessModuleScope && item?.module === moduleName;
 
-const hasProgramAccess = (item) =>
-  item?.isProgramResponsible ||
-  item?.isProgramCoordinator ||
-  item?.isProgramSupervisor ||
-  (hasModuleAccess(item, "attendedUsers") && item?.scopeType === "program");
+  const hasProgramAccess = (item) =>
+    item?.isProgramResponsible ||
+    item?.isProgramCoordinator ||
+    item?.isProgramSupervisor ||
+    (hasModuleAccess(item, "attendedUsers") && item?.scopeType === "program");
 
-const hasDeviceAccess = (item) =>
-  item?.isDeviceResponsible ||
-  item?.isDeviceCoordinator ||
-  item?.isDeviceSupervisor ||
-  (hasModuleAccess(item, "attendedUsers") && item?.scopeType === "dispositive");
+  const hasDeviceAccess = (item) =>
+    item?.isDeviceResponsible ||
+    item?.isDeviceCoordinator ||
+    item?.isDeviceSupervisor ||
+    (hasModuleAccess(item, "attendedUsers") && item?.scopeType === "dispositive");
 
   const availableDevices = useMemo(() => {
     const map = new Map();
@@ -228,13 +249,8 @@ const hasDeviceAccess = (item) =>
 
   const normalizeDoc = (doc) => {
     const stays = Array.isArray(doc?.stays) ? doc.stays : [];
-    const getStayDeviceId = (stay) => {
-      if (!stay?.dispositive) return "";
-      if (typeof stay.dispositive === "object") return String(stay.dispositive._id || stay.dispositive.id || "");
-      return String(stay.dispositive);
-    };
 
-    const activeStay = stays.find((s) => s?.active) || null;
+    const activeStays = stays.filter((s) => s?.active);
 
     const scopedActiveStay =
       selectedDeviceId
@@ -246,8 +262,11 @@ const hasDeviceAccess = (item) =>
         ? [...stays].reverse().find((s) => getStayDeviceId(s) === String(selectedDeviceId))
         : null;
 
+    const lastActiveStay = activeStays[0] || null;
     const lastStay = stays[stays.length - 1] || null;
-    const visibleStay = scopedActiveStay || scopedLastStay || activeStay || lastStay;
+
+    const visibleStay = scopedActiveStay || scopedLastStay || lastActiveStay || lastStay;
+    const visibleStayIsActive = !!visibleStay?.active;
 
     const activeDispositive =
       visibleStay?.dispositive?._id ||
@@ -266,8 +285,10 @@ const hasDeviceAccess = (item) =>
       lastName: doc?.lastName ? capitalizeWords(doc.lastName) : "",
       aliases: Array.isArray(doc?.aliases) ? doc.aliases : [],
       stays,
-      activeStay,
+      activeStay: scopedActiveStay || lastActiveStay,
+      activeStays,
       visibleStay,
+      visibleStayIsActive,
       activeDispositive,
       activeProgram,
     };
@@ -446,7 +467,8 @@ const hasDeviceAccess = (item) =>
     }
 
     setEditingDoc(null);
-    setFormMode("create");
+    setCreatingDocumentId("");
+    setCheckDocumentModalOpen(true);
   };
 
   const openEdit = (doc) => {
@@ -456,6 +478,7 @@ const hasDeviceAccess = (item) =>
 
   const closeForm = () => {
     setEditingDoc(null);
+    setCreatingDocumentId("");
     setFormMode("");
   };
 
@@ -490,7 +513,14 @@ const hasDeviceAccess = (item) =>
   };
 
   const submitCloseStay = async (values) => {
-    const stayId = closeStayDoc?.activeStay?._id;
+    const stayId = closeStayDoc?.visibleStayIsActive
+      ? closeStayDoc?.visibleStay?._id
+      : null;
+
+    if (!closeStayDoc?._id || !stayId) {
+      modal("Error", "No se ha encontrado una estancia activa para cerrar.");
+      return;
+    }
 
     if (!closeStayDoc?._id || !stayId) {
       modal("Error", "No se ha encontrado una estancia activa para cerrar.");
@@ -592,6 +622,295 @@ const hasDeviceAccess = (item) =>
     }
   };
 
+  const submitCheckDocument = async (values) => {
+    const documentId = String(values.documentId || "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .trim();
+
+    if (!documentId) {
+      modal("Documento requerido", "Debes introducir un documento válido.");
+      return;
+    }
+
+    try {
+      charge(true);
+
+      const token = getToken();
+      const datos = { documentId: documentId };
+
+      const resp = await attendedUserGet(datos, token);
+
+      if (resp?.error) {
+        const message = String(resp.message || "").toLowerCase();
+
+        const isNotFound =
+          message.includes("no encontrado") ||
+          message.includes("not found") ||
+          resp.status === 404;
+
+        if (!isNotFound) {
+          modal("Error", resp.message || "No se pudo comprobar el documento.");
+          return;
+        }
+
+        setCreatingDocumentId(documentId);
+        setEditingDoc(null);
+        setFormMode("create");
+        setCheckDocumentModalOpen(false);
+        return;
+      }
+
+      const existingUser = resp?.user || resp?.data || resp;
+
+      if (!existingUser?._id) {
+        setCreatingDocumentId(documentId);
+        setEditingDoc(null);
+        setFormMode("create");
+        setCheckDocumentModalOpen(false);
+        return;
+      }
+
+      const normalized = normalizeDoc(existingUser);
+
+      setCheckDocumentModalOpen(false);
+      setOpenStayDoc(normalized);
+
+      modal(
+        "Usuario ya existente",
+        [
+          `Ya existe una persona con el documento ${documentId}.`,
+          "No se creará un usuario nuevo. Puedes registrar una nueva alta en el dispositivo seleccionado.",
+        ]
+      );
+    } catch (e) {
+      modal("Error", e?.message || "No se pudo comprobar el documento.");
+    } finally {
+      charge(false);
+    }
+  };
+
+  const submitDownloadXls = async (values) => {
+
+    const getStayProgramId = (stay) => {
+      if (!stay?.program) return "";
+      if (typeof stay.program === "object") return String(stay.program._id || stay.program.id || "");
+      return String(stay.program);
+    };
+
+    const getStayProvinceName = (stay) => {
+      if (!stay?.province) return "";
+      if (typeof stay.province === "object") return stay.province.name || "";
+      return enumsData?.provincesIndex?.[stay.province]?.name || "";
+    };
+
+    const getAge = (birthday) => {
+      if (!birthday) return "";
+
+      const birth = new Date(birthday);
+      if (Number.isNaN(birth.getTime())) return "";
+
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age -= 1;
+      }
+
+      return age;
+    };
+
+    const toExcelDate = (date) => {
+      if (!date) return "";
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) return "";
+      return d;
+    };
+
+    const getExportAllowedDeviceIds = () => {
+      if (scope === "device" && selectedDeviceId) return [selectedDeviceId];
+      if (scope === "all") return allowedDeviceIds;
+      return [];
+    };
+    const exportMode = values.exportMode || "active";
+    const onlyActive = exportMode === "active";
+    const exportDeviceIds = getExportAllowedDeviceIds();
+
+    if (!exportDeviceIds.length) {
+      modal("Sin dispositivos", "No hay dispositivos disponibles para exportar.");
+      return;
+    }
+
+    try {
+      charge(true);
+
+      const token = getToken();
+
+      const payload = {
+        ...filtersPayload,
+        onlyActiveStays: onlyActive,
+      };
+
+      if (scope === "device") {
+        payload.dispositive = selectedDeviceId;
+        delete payload.allowedDispositiveIds;
+      }
+
+      if (scope === "all") {
+        payload.allowedDispositiveIds = exportDeviceIds;
+        delete payload.dispositive;
+      }
+
+      const resp = await attendedUserExport(payload, token);
+
+      if (resp?.error) {
+        modal("Error", resp.message || "No se pudo obtener la información para exportar.");
+        return;
+      }
+
+      const users = resp?.users || resp?.data?.users || [];
+
+      if (!users.length) {
+        modal("Sin datos", "No hay usuarios atendidos para exportar con estos filtros.");
+        return;
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = "Engloba";
+      workbook.created = new Date();
+
+      const sheet = workbook.addWorksheet("Usuarios atendidos");
+
+      sheet.columns = [
+        { header: "Documento", key: "documentId", width: 18 },
+        { header: "Nombre", key: "firstName", width: 24 },
+        { header: "Apellidos", key: "lastName", width: 32 },
+        { header: "Fecha nacimiento", key: "birthday", width: 18 },
+        { header: "Edad", key: "age", width: 10 },
+        { header: "Nacionalidad", key: "nationality", width: 24 },
+        { header: "Género", key: "gender", width: 16 },
+        { header: "Dispositivo", key: "device", width: 32 },
+        { header: "Programa", key: "program", width: 24 },
+        { header: "Provincia", key: "province", width: 20 },
+        { header: "Fecha alta", key: "startDate", width: 18 },
+        { header: "Fecha baja", key: "endDate", width: 18 },
+        { header: "Estado estancia", key: "stayStatus", width: 18 },
+        { header: "Notas persona", key: "userNotes", width: 45 },
+        { header: "Notas estancia", key: "stayNotes", width: 45 },
+      ];
+
+      sheet.getRow(1).font = { bold: true };
+
+      const exportDeviceSet = new Set(exportDeviceIds.map(String));
+
+      users.forEach((user) => {
+        const stays = Array.isArray(user.stays) ? user.stays : [];
+
+        const filteredStays = stays.filter((stay) => {
+          const deviceId = getStayDeviceId(stay);
+
+          if (!exportDeviceSet.has(deviceId)) return false;
+          if (onlyActive && !stay.active) return false;
+
+          return true;
+        });
+
+        filteredStays.forEach((stay) => {
+          const deviceId = getStayDeviceId(stay);
+          const programId = getStayProgramId(stay);
+
+          sheet.addRow({
+            documentId: user.documentId || "",
+            firstName: capitalizeWords(user.firstName || ""),
+            lastName: capitalizeWords(user.lastName || ""),
+            birthday: toExcelDate(user.birthday),
+            age: getAge(user.birthday),
+            nationality: getNationalityLabel(user.nationality),
+            gender: genderLabel(user.gender),
+            device: stay?.dispositive?.name || getDeviceLabel(deviceId),
+            program: stay?.program?.acronym || stay?.program?.name || getProgramLabel(programId),
+            province: getStayProvinceName(stay),
+            startDate: toExcelDate(stay.startDate),
+            endDate: toExcelDate(stay.endDate),
+            stayStatus: stay.active ? "Activa" : "Finalizada",
+            userNotes: user.notes || "",
+            stayNotes: stay.notes || "",
+          });
+        });
+      });
+
+      if (sheet.rowCount === 1) {
+        modal("Sin datos", "No hay estancias que coincidan con el ámbito y tipo de exportación seleccionado.");
+        return;
+      }
+
+      sheet.getColumn("D").numFmt = "dd/mm/yyyy";
+      sheet.getColumn("K").numFmt = "dd/mm/yyyy";
+      sheet.getColumn("L").numFmt = "dd/mm/yyyy";
+
+      sheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          cell.alignment = {
+            vertical: "middle",
+            wrapText: true,
+          };
+        });
+      });
+
+      const summarySheet = workbook.addWorksheet("Resumen");
+      summarySheet.columns = [
+        { header: "Campo", key: "field", width: 28 },
+        { header: "Valor", key: "value", width: 60 },
+      ];
+
+      summarySheet.addRows([
+        {
+          field: "Ámbito",
+          value: scope === "device" ? selectedDeviceName : "Todos mis dispositivos",
+        },
+        {
+          field: "Tipo de exportación",
+          value: onlyActive ? "Solo estancias activas" : "Histórico completo",
+        },
+        {
+          field: "Fecha de exportación",
+          value: new Date().toLocaleString("es-ES"),
+        },
+        {
+          field: "Filas exportadas",
+          value: sheet.rowCount - 1,
+        },
+      ]);
+
+      summarySheet.getRow(1).font = { bold: true };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const safeScopeName = (scope === "device" ? selectedDeviceName : "todos_mis_dispositivos")
+        .replace(/[\\/:*?"<>|]/g, "")
+        .replace(/\s+/g, "_");
+
+      const suffix = onlyActive ? "activos" : "historico";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = `usuarios_atendidos_${safeScopeName}_${suffix}.xlsx`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+      setExportModalOpen(false);
+    } catch (err) {
+      modal("Error", err?.message || "No se pudo generar el Excel.");
+    } finally {
+      charge(false);
+    }
+  };
+
   const downloadTemplate = async () => {
     if (!canCreateOrImport) {
       modal(
@@ -643,47 +962,47 @@ const hasDeviceAccess = (item) =>
 
     const lastValidationRow = 1000;
 
-for (let row = 2; row <= lastValidationRow; row++) {
-  sheet.getCell(`D${row}`).dataValidation = {
-    type: "date",
-    operator: "between",
-    formulae: [new Date(1900, 0, 1), new Date(2100, 11, 31)],
-    allowBlank: false,
-    showErrorMessage: true,
-    errorTitle: "Fecha de nacimiento obligatoria",
-    error: "Introduce la fecha de nacimiento en formato dd/mm/aaaa.",
-  };
+    for (let row = 2; row <= lastValidationRow; row++) {
+      sheet.getCell(`D${row}`).dataValidation = {
+        type: "date",
+        operator: "between",
+        formulae: [new Date(1900, 0, 1), new Date(2100, 11, 31)],
+        allowBlank: false,
+        showErrorMessage: true,
+        errorTitle: "Fecha de nacimiento obligatoria",
+        error: "Introduce la fecha de nacimiento en formato dd/mm/aaaa.",
+      };
 
-  sheet.getCell(`E${row}`).value = "Marruecos";
+      sheet.getCell(`E${row}`).value = "Marruecos";
 
-  sheet.getCell(`E${row}`).dataValidation = {
-    type: "list",
-    allowBlank: false,
-    formulae: [`=Nacionalidades!$A$1:$A$${NATIONALITIES.length}`],
-    showErrorMessage: true,
-    errorTitle: "Nacionalidad obligatoria",
-    error: "Selecciona una nacionalidad del desplegable.",
-  };
+      sheet.getCell(`E${row}`).dataValidation = {
+        type: "list",
+        allowBlank: false,
+        formulae: [`=Nacionalidades!$A$1:$A$${NATIONALITIES.length}`],
+        showErrorMessage: true,
+        errorTitle: "Nacionalidad obligatoria",
+        error: "Selecciona una nacionalidad del desplegable.",
+      };
 
-  sheet.getCell(`F${row}`).dataValidation = {
-    type: "list",
-    allowBlank: false,
-    formulae: ['"Hombre,Mujer,Otros,No binario"'],
-    showErrorMessage: true,
-    errorTitle: "Género obligatorio",
-    error: "Selecciona Hombre, Mujer, Otros o No binario.",
-  };
+      sheet.getCell(`F${row}`).dataValidation = {
+        type: "list",
+        allowBlank: false,
+        formulae: ['"Hombre,Mujer,Otros,No binario"'],
+        showErrorMessage: true,
+        errorTitle: "Género obligatorio",
+        error: "Selecciona Hombre, Mujer, Otros o No binario.",
+      };
 
-  sheet.getCell(`G${row}`).dataValidation = {
-    type: "date",
-    operator: "between",
-    formulae: [new Date(1900, 0, 1), new Date(2100, 11, 31)],
-    allowBlank: false,
-    showErrorMessage: true,
-    errorTitle: "Fecha de alta obligatoria",
-    error: "Introduce la fecha de alta en formato dd/mm/aaaa.",
-  };
-}
+      sheet.getCell(`G${row}`).dataValidation = {
+        type: "date",
+        operator: "between",
+        formulae: [new Date(1900, 0, 1), new Date(2100, 11, 31)],
+        allowBlank: false,
+        showErrorMessage: true,
+        errorTitle: "Fecha de alta obligatoria",
+        error: "Introduce la fecha de alta en formato dd/mm/aaaa.",
+      };
+    }
 
     const infoSheet = workbook.addWorksheet("Instrucciones");
 
@@ -750,6 +1069,20 @@ for (let row = 2; row <= lastValidationRow; row++) {
     a.click();
 
     URL.revokeObjectURL(url);
+  };
+
+  const downloadXls = () => {
+    if (!scopeReady) {
+      modal("Ámbito requerido", "Selecciona primero un ámbito de trabajo.");
+      return;
+    }
+
+    if (!allowedDeviceIds.length) {
+      modal("Sin dispositivos", "No tienes dispositivos disponibles para exportar.");
+      return;
+    }
+
+    setExportModalOpen(true);
   };
 
   const openImportExcel = () => {
@@ -841,78 +1174,78 @@ for (let row = 2; row <= lastValidationRow; row++) {
     );
   };
 
-const showHistoryCronology = (item) => {
-  const stays = Array.isArray(item.stays) ? item.stays : [];
+  const showHistoryCronology = (item) => {
+    const stays = Array.isArray(item.stays) ? item.stays : [];
 
-  if (!stays.length) {
+    if (!stays.length) {
+      modal(
+        `Histórico de altas/bajas - ${item.firstName} ${item.lastName}`,
+        "No hay estancias registradas."
+      );
+      return;
+    }
+
+    const getStayDeviceName = (stay) => {
+      if (!stay?.dispositive) return "Dispositivo no indicado";
+
+      if (typeof stay.dispositive === "object") {
+        return stay.dispositive.name || getDeviceLabel(stay.dispositive._id);
+      }
+
+      return getDeviceLabel(stay.dispositive);
+    };
+
+    const getStayProgramName = (stay) => {
+      if (!stay?.program) return "Programa no indicado";
+
+      if (typeof stay.program === "object") {
+        return stay.program.acronym || stay.program.name || getProgramLabel(stay.program._id);
+      }
+
+      return getProgramLabel(stay.program);
+    };
+
+    const getStayProvinceName = (stay) => {
+      if (!stay?.province) return "";
+
+      if (typeof stay.province === "object") {
+        return stay.province.name || "";
+      }
+
+      return enumsData?.provincesIndex?.[stay.province]?.name || "";
+    };
+
+    const sortedStays = [...stays].sort((a, b) => {
+      const dateA = a?.startDate ? new Date(a.startDate).getTime() : 0;
+      const dateB = b?.startDate ? new Date(b.startDate).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    const messages = sortedStays.map((stay, i) => {
+      const device = getStayDeviceName(stay);
+      const program = getStayProgramName(stay);
+      const province = getStayProvinceName(stay);
+
+      const startDate = formatDate(stay.startDate);
+      const endDate = stay.endDate ? formatDate(stay.endDate) : "Actualmente activo/a";
+      const status = stay.active ? "Activo/a" : "Finalizado/a";
+
+      const title = `${i + 1}. ${device}`;
+      const context = `${program}${province ? ` · ${province}` : ""}`;
+      const dates = `Alta: ${startDate} · Baja: ${endDate}`;
+      const state = `Estado: ${status}`;
+      const notes = stay.notes ? `Notas: ${stay.notes}` : null;
+
+      return notes
+        ? [title, context, dates, state, notes]
+        : [title, context, dates, state];
+    });
+
     modal(
       `Histórico de altas/bajas - ${item.firstName} ${item.lastName}`,
-      "No hay estancias registradas."
+      messages
     );
-    return;
-  }
-
-  const getStayDeviceName = (stay) => {
-    if (!stay?.dispositive) return "Dispositivo no indicado";
-
-    if (typeof stay.dispositive === "object") {
-      return stay.dispositive.name || getDeviceLabel(stay.dispositive._id);
-    }
-
-    return getDeviceLabel(stay.dispositive);
   };
-
-  const getStayProgramName = (stay) => {
-    if (!stay?.program) return "Programa no indicado";
-
-    if (typeof stay.program === "object") {
-      return stay.program.acronym || stay.program.name || getProgramLabel(stay.program._id);
-    }
-
-    return getProgramLabel(stay.program);
-  };
-
-  const getStayProvinceName = (stay) => {
-    if (!stay?.province) return "";
-
-    if (typeof stay.province === "object") {
-      return stay.province.name || "";
-    }
-
-    return enumsData?.provincesIndex?.[stay.province]?.name || "";
-  };
-
-  const sortedStays = [...stays].sort((a, b) => {
-    const dateA = a?.startDate ? new Date(a.startDate).getTime() : 0;
-    const dateB = b?.startDate ? new Date(b.startDate).getTime() : 0;
-    return dateB - dateA;
-  });
-
-  const messages = sortedStays.map((stay, i) => {
-    const device = getStayDeviceName(stay);
-    const program = getStayProgramName(stay);
-    const province = getStayProvinceName(stay);
-
-    const startDate = formatDate(stay.startDate);
-    const endDate = stay.endDate ? formatDate(stay.endDate) : "Actualmente activo/a";
-    const status = stay.active ? "Activo/a" : "Finalizado/a";
-
-    const title = `${i + 1}. ${device}`;
-    const context = `${program}${province ? ` · ${province}` : ""}`;
-    const dates = `Alta: ${startDate} · Baja: ${endDate}`;
-    const state = `Estado: ${status}`;
-    const notes = stay.notes ? `Notas: ${stay.notes}` : null;
-
-    return notes
-      ? [title, context, dates, state, notes]
-      : [title, context, dates, state];
-  });
-
-  modal(
-    `Histórico de altas/bajas - ${item.firstName} ${item.lastName}`,
-    messages
-  );
-};
 
   const renderRow = (item) => {
     const stay = item.visibleStay;
@@ -945,7 +1278,7 @@ const showHistoryCronology = (item) => {
             </div>
 
             <div className={styles.tableCell}>
-              {item.activeStay ? (
+              {item.visibleStayIsActive ? (
                 <button onClick={() => setCloseStayDoc(item)}>
                   Dar baja
                 </button>
@@ -981,14 +1314,82 @@ const showHistoryCronology = (item) => {
                 style={{ cursor: "pointer" }}
               />
 
-              {!item.activeStay && canOpenStay && (
-                <FaUserPlus onClick={() => setOpenStayDoc(item)} title="Dar alta" style={{ cursor: "pointer" }} />
+              {!item.visibleStayIsActive && canOpenStay && (
+                <FaUserPlus
+                  onClick={() => setOpenStayDoc(item)}
+                  title="Dar alta"
+                  style={{ cursor: "pointer" }}
+                />
               )}
+              <FaTrashAlt
+                onClick={() => openDeleteUserAttended(item)}
+                title="Borrar usuario o estancia"
+                style={{ cursor: "pointer" }}
+              />
             </div>
           </div>
         </div>
       </div>
     );
+  };
+
+  const openDeleteUserAttended = (item) => {
+    if (!item?._id) return;
+
+    if (!item.visibleStay?._id && !selectedDeviceId && !item.activeDispositive) {
+      modal("Error", "No se ha encontrado la estancia o dispositivo a borrar.");
+      return;
+    }
+
+    setDeleteDoc(item);
+  };
+
+  const confirmDeleteUserAttended = async () => {
+    if (!deleteDoc?._id) return;
+
+    const stayId = deleteDoc?.visibleStay?._id || "";
+    const dispositive =
+      getStayDeviceId(deleteDoc?.visibleStay) ||
+      selectedDeviceId ||
+      deleteDoc?.activeDispositive ||
+      "";
+
+    if (!stayId && !dispositive) {
+      modal("Error", "No se ha encontrado la estancia o dispositivo a borrar.");
+      return;
+    }
+
+    try {
+      charge(true);
+
+      const token = getToken();
+
+      const resp = await attendedUserDelete(
+        {
+          id: deleteDoc._id,
+          stayId,
+          dispositive,
+        },
+        token
+      );
+
+      if (resp?.error) {
+        modal("Error", resp.message || "No se pudo borrar el usuario atendido.");
+        return;
+      }
+
+      setDeleteDoc(null);
+      await loadList(false);
+
+      modal(
+        "Usuarios atendidos",
+        resp?.message || "Borrado realizado correctamente."
+      );
+    } catch (e) {
+      modal("Error", e?.message || "No se pudo borrar el usuario atendido.");
+    } finally {
+      charge(false);
+    }
   };
 
   return (
@@ -1005,16 +1406,24 @@ const showHistoryCronology = (item) => {
             />
 
             <TbFileTypeXml
+              onClick={downloadXls}
+              title="Descargar Excel"
+              style={{ cursor: "pointer" }}
+            />
+
+            <FaCloudArrowUp
+              onClick={openImportExcel}
+              title="Importar usuarios desde Excel"
+              style={{ cursor: "pointer" }}
+            />
+
+            <FaFileDownload
               onClick={downloadTemplate}
               title="Descargar plantilla Excel"
               style={{ cursor: "pointer" }}
             />
 
-            <FaFileUpload
-              onClick={openImportExcel}
-              title="Importar usuarios desde Excel"
-              style={{ cursor: "pointer" }}
-            />
+
 
             <input
               ref={importFileInputRef}
@@ -1126,10 +1535,30 @@ const showHistoryCronology = (item) => {
           <FormAttendedUser
             mode={formMode}
             doc={editingDoc}
+            initialDocumentId={creatingDocumentId}
             fixedDispositiveId={selectedDeviceId}
             modal={modal}
             onSubmit={onSubmitForm}
             onClose={closeForm}
+          />
+        )}
+
+        {checkDocumentModalOpen && (
+          <ModalForm
+            title="Comprobar documento"
+            message="Introduce el documento de la persona atendida antes de crearla."
+            fields={[
+              {
+                name: "documentId",
+                label: "Documento",
+                type: "text",
+                required: true,
+                defaultValue: "",
+              },
+            ]}
+            onSubmit={submitCheckDocument}
+            onClose={() => setCheckDocumentModalOpen(false)}
+            modal={modal}
           />
         )}
 
@@ -1189,6 +1618,28 @@ const showHistoryCronology = (item) => {
             modal={modal}
           />
         )}
+        {exportModalOpen && (
+          <ModalForm
+            title="Descargar Excel"
+            message="Selecciona qué información quieres exportar."
+            fields={[
+              {
+                name: "exportMode",
+                label: "Tipo de exportación",
+                type: "select",
+                required: true,
+                defaultValue: "active",
+                options: [
+                  { value: "active", label: "Solo usuarios con estancia activa en este ámbito" },
+                  { value: "history", label: "Histórico completo del ámbito seleccionado" },
+                ],
+              },
+            ]}
+            onSubmit={submitDownloadXls}
+            onClose={() => setExportModalOpen(false)}
+            modal={modal}
+          />
+        )}
 
         {!!notesDoc && (
           <ModalForm
@@ -1205,6 +1656,20 @@ const showHistoryCronology = (item) => {
             onSubmit={submitNotes}
             onClose={() => setNotesDoc(null)}
             modal={modal}
+          />
+        )}
+        {!!deleteDoc && (
+          <ModalConfirmation
+            title="Confirmar borrado"
+            message={
+              `Vas a borrar a ${deleteDoc.firstName} ${deleteDoc.lastName} del dispositivo ${getDeviceLabel(
+                getStayDeviceId(deleteDoc.visibleStay) ||
+                selectedDeviceId ||
+                deleteDoc.activeDispositive
+              )}. Si la persona tiene historial en otros dispositivos, solo se borrará esta estancia. Si solo tiene estancias en este dispositivo, se borrará el usuario completo.`
+            }
+            onConfirm={confirmDeleteUserAttended}
+            onCancel={() => setDeleteDoc(null)}
           />
         )}
 

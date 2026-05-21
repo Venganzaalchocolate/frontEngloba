@@ -225,26 +225,45 @@ fields.forEach((field) => {
   const filterOptions = (options) =>
     options.filter((option) => option.public === undefined || option.public === true);
 
-  const applySearchFilter = (options, term = "") => {
-    if (!term) return options;                      // sin texto → sin filtrar
-    const lc = term.toLowerCase();
+  const normalizeSearchText = (value = "") =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
-    return options.flatMap((opt) => {
-      // 2.1 optgroup
-      if (opt.subcategories && opt.subcategories.length) {
-        const subs = opt.subcategories.filter(
-          (sub) =>
-            (sub.public ?? true) &&
-            sub.label.toLowerCase().includes(lc)
-        );
-        return subs.length ? [{ ...opt, subcategories: subs }] : [];
-      }
-      // 2.2 opción normal
-      const isVisible =
-        (opt.public ?? true) && opt.label.toLowerCase().includes(lc);
-      return isVisible ? [opt] : [];
-    });
-  };
+const getOptionSearchText = (option = {}) =>
+  normalizeSearchText(
+    [
+      option.label,
+      option.name,
+      option.acronym,
+      option.value,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+
+const applySearchFilter = (options, term = "") => {
+  const search = normalizeSearchText(term);
+
+  if (!search) return options;
+
+  return options.flatMap((opt) => {
+    if (opt.subcategories && opt.subcategories.length) {
+      const subs = opt.subcategories.filter((sub) => {
+        if ((sub.public ?? true) === false) return false;
+        return getOptionSearchText(sub).includes(search);
+      });
+
+      return subs.length ? [{ ...opt, subcategories: subs }] : [];
+    }
+
+    if ((opt.public ?? true) === false) return [];
+
+    return getOptionSearchText(opt).includes(search) ? [opt] : [];
+  });
+};
 
 
   useEffect(() => {

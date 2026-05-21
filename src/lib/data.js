@@ -74,7 +74,7 @@ const fetchData = async (
     }
 
     const data = await response.json().catch(() => ({}));
-
+ 
     if (data.error) return { error: true, message: data.error };
 
     return data.data ? data.data : data;
@@ -614,6 +614,7 @@ export const attendedUserUpdate = (datos, token) => fetchData('/attendeduserupda
 export const attendedUserOpenChronology = (datos, token) => fetchData('/attendeduseropenchronology', 'POST', token, datos);
 export const attendedUserCloseChronology = (datos, token) => fetchData('/attendeduserclosechronology', 'POST', token, datos);
 export const attendedUserDelete = (datos, token) => fetchData('/attendeduserdelete', 'POST', token, datos);
+export const attendedUserExport = (datos, token) => fetchData("/attendedusersexport", "POST", token, datos);
 export const attendedUserImportExcel = (datos, token) => {
   const fd = new FormData();
   fd.append("dispositive", datos.dispositive);

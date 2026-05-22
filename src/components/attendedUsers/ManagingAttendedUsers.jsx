@@ -89,6 +89,8 @@ const ManagingAttendedUsers = ({
     return String(stay.dispositive);
   };
 
+
+
   const refId = (value) => {
     if (!value) return "";
     if (typeof value === "object") return String(value._id || value.id || value.value || "");
@@ -212,6 +214,7 @@ const ManagingAttendedUsers = ({
   );
 
   const selectedDeviceName = selectedDeviceId ? getDeviceLabel(selectedDeviceId) : "";
+
   const scopeReady = !!scope && (scope === "all" || !!selectedDeviceId);
   const canCreateOrImport = scope === "device" && !!selectedDeviceId;
   const canOpenStay = availableDevices.length > 0;

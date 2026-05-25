@@ -11,7 +11,7 @@ import { getToken } from "../../lib/serviceToken.js";
 import FiltersWorkplaces from "./FiltersWorkplaces.jsx";
 import InfoWorkplace from "./InfoWorkplace.jsx";
 import WorkplaceDispositivesPanel from "./WorkplaceDispositivesPanel.jsx";
-
+import DocumentMiscelaneaGeneric from "../globals/DocumentMiscelaneaGeneric";
 
 import ModalForm from "../globals/ModalForm.jsx";
 import ModalConfirmation from "../globals/ModalConfirmation.jsx";
@@ -22,12 +22,15 @@ import {
   getWorkplaceId,
   updateWorkplace,
   deleteWorkplace,
+  infoListDocumentationProgramDispositive,
 } from "../../lib/data";
 
 export default function ManagingWorkplaces({ modal, charge, enumsData }) {
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+
+  const [workplaceOfficialDocs, setWorkplaceOfficialDocs] = useState([]);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
@@ -36,13 +39,15 @@ export default function ManagingWorkplaces({ modal, charge, enumsData }) {
   const [showModal, setShowModal] = useState("");
   const [sesameOfficeTarget, setSesameOfficeTarget] = useState(null);
 
+
+
   const [filters, setFilters] = useState({
-  q: "",
-  province: "",
-  programId: "",
-  dispositive: "",
-  active: "total",
-});
+    q: "",
+    province: "",
+    programId: "",
+    dispositive: "",
+    active: "total",
+  });
 
 
   const debouncedFilters = useDebounce(filters, 300);
@@ -147,15 +152,15 @@ export default function ManagingWorkplaces({ modal, charge, enumsData }) {
     charge(true);
 
     const payload = {
-  page,
-  limit,
-  ...(debouncedFilters.q?.trim() && { q: debouncedFilters.q.trim() }),
-  ...(debouncedFilters.province && { province: debouncedFilters.province }),
-  ...(debouncedFilters.programId && { programId: debouncedFilters.programId }),
-  ...(debouncedFilters.dispositive && { dispositive: debouncedFilters.dispositive }),
-  ...(debouncedFilters.active === "active" && { active: true }),
-  ...(debouncedFilters.active === "inactive" && { active: false }),
-};
+      page,
+      limit,
+      ...(debouncedFilters.q?.trim() && { q: debouncedFilters.q.trim() }),
+      ...(debouncedFilters.province && { province: debouncedFilters.province }),
+      ...(debouncedFilters.programId && { programId: debouncedFilters.programId }),
+      ...(debouncedFilters.dispositive && { dispositive: debouncedFilters.dispositive }),
+      ...(debouncedFilters.active === "active" && { active: true }),
+      ...(debouncedFilters.active === "inactive" && { active: false }),
+    };
 
     const res = await listWorkplaces(payload, getToken());
 
@@ -169,6 +174,28 @@ export default function ManagingWorkplaces({ modal, charge, enumsData }) {
     setTotalPages(res.pages || 0);
     charge(false);
   }, [page, limit, debouncedFilters]);
+
+const loadWorkplaceDocumentation = async (workplaceId) => {
+  if (!workplaceId) return [];
+
+  const res = await infoListDocumentationProgramDispositive(
+    {
+      type: "Workplace",
+      id: workplaceId,
+    },
+    getToken()
+  );
+
+  if (!res || res.error) {
+    modal(
+      "Error",
+      res?.message || res?.error || "No se pudo cargar la documentación del centro."
+    );
+    return [];
+  }
+
+  return (res.list || []).filter((doc) => doc.model === "Workplace");
+};
 
   /**
    * Carga el listado cuando cambian página, límite o filtros.
@@ -184,6 +211,7 @@ export default function ManagingWorkplaces({ modal, charge, enumsData }) {
     if (selectedId === id) {
       setSelectedId(null);
       setSelected(null);
+      setWorkplaceOfficialDocs([]);
       return;
     }
 
@@ -197,8 +225,12 @@ export default function ManagingWorkplaces({ modal, charge, enumsData }) {
       return;
     }
 
+    const docs = await loadWorkplaceDocumentation(id);
+
     setSelectedId(id);
     setSelected(res);
+    setWorkplaceOfficialDocs(docs);
+
     charge(false);
   };
 
@@ -305,18 +337,18 @@ export default function ManagingWorkplaces({ modal, charge, enumsData }) {
    * Limpia todos los filtros.
    */
   const resetFilters = () => {
-  setPage(1);
-  setSelected(null);
-  setSelectedId(null);
+    setPage(1);
+    setSelected(null);
+    setSelectedId(null);
 
-  setFilters({
-    q: "",
-    province: "",
-    programId: "",
-    dispositive: "",
-    active: "total",
-  });
-};
+    setFilters({
+      q: "",
+      province: "",
+      programId: "",
+      dispositive: "",
+      active: "total",
+    });
+  };
 
   /**
    * Cambia de página en el listado.
@@ -352,22 +384,22 @@ export default function ManagingWorkplaces({ modal, charge, enumsData }) {
       createSesameOffice: values.createSesameOffice === true || values.createSesameOffice === "true",
       ...(values.city || values.postcode
         ? {
-            resolvedAddress: {
-              city: values.city || "",
-              postcode: values.postcode || "",
-              country: "España",
-              source: "manual",
-              resolvedAt: new Date(),
-            },
-          }
+          resolvedAddress: {
+            city: values.city || "",
+            postcode: values.postcode || "",
+            country: "España",
+            source: "manual",
+            resolvedAt: new Date(),
+          },
+        }
         : {}),
       ...(values.lat || values.lng
         ? {
-            coordinates: {
-              lat: values.lat,
-              lng: values.lng,
-            },
-          }
+          coordinates: {
+            lat: values.lat,
+            lng: values.lng,
+          },
+        }
         : {}),
     };
 
@@ -437,28 +469,37 @@ export default function ManagingWorkplaces({ modal, charge, enumsData }) {
         onDocUpdated={syncWorkplace}
       />
 
-<WorkplaceDispositivesPanel
-  doc={doc}
-  modal={modal}
-  charge={charge}
-  enumsData={enumsData}
-  onChanged={async () => {
-    const res = await getWorkplaceId({ workplaceId: doc._id }, getToken());
+      <WorkplaceDispositivesPanel
+        doc={doc}
+        modal={modal}
+        charge={charge}
+        enumsData={enumsData}
+        onChanged={async () => {
+          const res = await getWorkplaceId({ workplaceId: doc._id }, getToken());
 
-    if (!res || res.error) {
-      modal("Error", res?.message || "No se pudo refrescar el centro.");
-      return;
-    }
+          if (!res || res.error) {
+            modal("Error", res?.message || "No se pudo refrescar el centro.");
+            return;
+          }
 
-    syncWorkplace(res);
-  }}
-/>
+          syncWorkplace(res);
+        }}
+      />
 
       <InfoSesameOffice
         workplace={doc}
         modal={modal}
         charge={charge}
         onCreateSesameOffice={handleCreateSesameOffice}
+      />
+
+      <DocumentMiscelaneaGeneric
+        data={doc}
+        modelName="Workplace"
+        officialDocs={workplaceOfficialDocs}
+        modal={modal}
+        charge={charge}
+        authorized={true}
       />
 
       {showModal === "eliminar" && (

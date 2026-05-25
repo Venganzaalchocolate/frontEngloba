@@ -29,11 +29,12 @@ import DocsProgramDevicesSync from "./DocsProgramDevicesSync";
  *        • Documentación del Programa (solo model === "Program")
  *        • Documentación de los Dispositivos
  *
- *  - Si es DISPOSITIVO → sin pestañas:
- *        • Muestra únicamente documentación del dispositivo
+ *  - Si es DISPOSITIVO:
+ *        • Gestiona documentación propia del dispositivo
+ *        • Muestra/carga también documentación de sus centros de trabajo asociados
  *
- *  - Incluye gestión: añadir/quitar docs del programa/dispositivo
- *  - Incluye bloque de subida/carga de archivos oficiales
+ *  - La documentación de Workplace se muestra desde el dispositivo,
+ *    pero se guarda realmente contra originModel: "Workplace".
  * ===========================================================
  */
 
@@ -43,6 +44,7 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
   const [currentInfo, setCurrentInfo] = useState(info || null);
   const [listDocumentation, setListDocumentation] = useState([]);
   const [linkedDocs, setLinkedDocs] = useState([]);
+  const [workplaces, setWorkplaces] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
@@ -63,7 +65,9 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
   // ===========================================================
   //  Sincronizar entidad seleccionada
   // ===========================================================
-  useEffect(() => setCurrentInfo(info), [info]);
+  useEffect(() => {
+    setCurrentInfo(info);
+  }, [info]);
 
   // ===========================================================
   //  Cargar documentación desde backend
@@ -73,12 +77,16 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
 
     const load = async () => {
       charge(true);
+
       try {
         const token = getToken();
+        const type = info.type === "program" ? "Program" : "Dispositive";
+
         const res = await infoListDocumentationProgramDispositive(
           {
-            type: info.type === "program" ? "Program" : "Dispositive",
+            type,
             id: info._id,
+            includeWorkplaces: info.type === "dispositive",
           },
           token
         );
@@ -87,13 +95,18 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
           modal("Error", res.error || "Error al cargar la documentación.");
           setListDocumentation([]);
           setLinkedDocs([]);
+          setWorkplaces([]);
           return;
         }
 
         setListDocumentation(res.list || []);
         setLinkedDocs(res.linkedDocs?.map((d) => d._id) || []);
+        setWorkplaces(res.workplaces || []);
       } catch (e) {
-        modal("Error", e.message);
+        modal("Error", e.message || "Error al cargar la documentación.");
+        setListDocumentation([]);
+        setLinkedDocs([]);
+        setWorkplaces([]);
       } finally {
         charge(false);
       }
@@ -107,54 +120,122 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
   // ===========================================================
   const groupedDocs = useMemo(() => {
     const out = {};
+
     for (const doc of listDocumentation) {
       const cat = doc.categoryFiles || "Sin categoría";
       if (!out[cat]) out[cat] = [];
       out[cat].push(doc);
     }
+
     return out;
   }, [listDocumentation]);
 
   // ===========================================================
-  //  Agrupación filtrada SOLO para PROGRAMAS (model === "Program")
+  //  Agrupación SOLO para PROGRAMAS (model === "Program")
   // ===========================================================
   const groupedDocsProgramModel = useMemo(() => {
     const out = {};
+
     for (const doc of listDocumentation) {
       if (doc.model !== "Program") continue;
+
       const cat = doc.categoryFiles || "Sin categoría";
       if (!out[cat]) out[cat] = [];
       out[cat].push(doc);
     }
+
     return out;
   }, [listDocumentation]);
+
+  // ===========================================================
+  //  Agrupación SOLO para DISPOSITIVOS (model === "Dispositive")
+  //  Importante: el panel de gestión del dispositivo NO gestiona
+  //  documentos Workplace para evitar enviar workplace docs con dispositiveId.
+  // ===========================================================
+  const groupedDocsDispositiveModel = useMemo(() => {
+    const out = {};
+
+    for (const doc of listDocumentation) {
+      if (doc.model !== "Dispositive") continue;
+
+      const cat = doc.categoryFiles || "Sin categoría";
+      if (!out[cat]) out[cat] = [];
+      out[cat].push(doc);
+    }
+
+    return out;
+  }, [listDocumentation]);
+
+  // ===========================================================
+  //  Centros de trabajo relacionados para DocumentMiscelaneaGeneric
+  // ===========================================================
+  const relatedFileSources = useMemo(() => {
+    if (info.type !== "dispositive") return [];
+
+    return (workplaces || []).map((workplace) => ({
+      modelName: "Workplace",
+      data: workplace,
+      label: `Centro de trabajo: ${workplace.name || "Sin nombre"}`,
+    }));
+  }, [info.type, workplaces]);
+
+  // ===========================================================
+  //  Documentos oficiales que verá el componente de subida
+  //  - Program: solo documentos vinculados de Program
+  //  - Dispositive: documentos vinculados de Dispositive
+  //                 + documentos Workplace disponibles para subir/ver desde el dispositivo
+  // ===========================================================
+  const officialDocsToUpload = useMemo(() => {
+    if (info.type === "program") {
+      return listDocumentation.filter(
+        (doc) => linkedDocs.includes(doc._id) && doc.model === "Program"
+      );
+    }
+
+    return listDocumentation.filter((doc) => {
+      if (doc.model === "Dispositive") {
+        return linkedDocs.includes(doc._id);
+      }
+
+      if (doc.model === "Workplace") {
+        return true;
+      }
+
+      return false;
+    });
+  }, [info.type, listDocumentation, linkedDocs]);
 
   // ===========================================================
   //  Vincular / Desvincular documento
   // ===========================================================
   const handleToggleLink = async (doc, isLinked) => {
     setLoading(true);
-    const token = getToken();
 
-    const payload = {
-      documentationId: doc._id,
-      ...(info.type === "program"
-        ? { programId: info._id }
-        : { dispositiveId: info._id }),
-      action: isLinked ? "remove" : "add",
-    };
+    try {
+      const token = getToken();
 
-    const res = await addProgramOrDispositiveToDocumentation(payload, token);
+      const payload = {
+        documentationId: doc._id,
+        ...(info.type === "program"
+          ? { programId: info._id }
+          : { dispositiveId: info._id }),
+        action: isLinked ? "remove" : "add",
+      };
 
-    if (res?.error) {
-      modal("Error", res.error || "No se pudo actualizar el vínculo.");
-    } else {
-      setLinkedDocs((prev) =>
-        isLinked ? prev.filter((id) => id !== doc._id) : [...prev, doc._id]
-      );
+      const res = await addProgramOrDispositiveToDocumentation(payload, token);
+
+      if (res?.error) {
+        modal("Error", res.error || "No se pudo actualizar el vínculo.");
+      } else {
+        setLinkedDocs((prev) =>
+          isLinked ? prev.filter((id) => id !== doc._id) : [...prev, doc._id]
+        );
+      }
+    } catch (e) {
+      modal("Error", e.message || "No se pudo actualizar el vínculo.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   // ===========================================================
@@ -164,7 +245,7 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
     logged?.user?.role === "global" || logged?.user?.role === "root";
 
   // ===========================================================
-  //  RENDER: Vista
+  //  RENDER
   // ===========================================================
   return (
     <div className={styles.contenedor}>
@@ -191,7 +272,6 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
             )}
           </button>
 
-          {/* CONTENIDO DEL PANEL */}
           {showPanel && (
             <div className={styles.panelContent}>
               {/* ================================
@@ -233,18 +313,22 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
                       ([category, docs]) => (
                         <div key={category} className={styles.categoryBlock}>
                           <h4 className={styles.categoryTitle}>{category}</h4>
+
                           <ul className={styles.list}>
                             {docs.map((doc) => {
                               const isLinked = linkedDocs.includes(doc._id);
+
                               return (
                                 <li key={doc._id} className={styles.listItemLine}>
                                   <div className={styles.lineLeft}>
                                     <span className={styles.docName}>{doc.name}</span>
+
                                     {doc.duration && (
                                       <span className={styles.metaTag}>
                                         <FaClock /> {doc.duration} días
                                       </span>
                                     )}
+
                                     {doc.requiresSignature && (
                                       <span className={styles.metaTag}>
                                         <FaPenFancy /> Firma
@@ -256,9 +340,7 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
                                     className={`${styles.btnToggle} ${
                                       isLinked ? styles.btnLinked : styles.btnUnlinked
                                     }`}
-                                    onClick={() =>
-                                      handleToggleLink(doc, isLinked)
-                                    }
+                                    onClick={() => handleToggleLink(doc, isLinked)}
                                     disabled={loading}
                                   >
                                     {isLinked ? "Quitar" : "Añadir"}
@@ -275,7 +357,7 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
               )}
 
               {/* ================================
-                  TAB: DOCUMENTACIÓN DE DISPOSITIVOS (SOLO PROGRAMAS)
+                  TAB: DOCUMENTACIÓN DE DISPOSITIVOS
                  ================================ */}
               {info.type === "program" && activeTab === "devices" && (
                 <DocsProgramDevicesSync
@@ -290,59 +372,59 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
 
               {/* ================================
                   VISTA PARA DISPOSITIVOS
+                  Solo gestiona docs model === "Dispositive".
+                  Los docs Workplace se muestran/suben abajo en el bloque genérico.
                  ================================ */}
-                            {info.type === "dispositive" && (
+              {info.type === "dispositive" && (
                 <>
-                  {listDocumentation.length === 0 ? (
+                  {Object.keys(groupedDocsDispositiveModel).length === 0 ? (
                     <p className={styles.textEmpty}>
-                      No hay documentación disponible.
+                      No hay documentación de dispositivo disponible.
                     </p>
                   ) : (
-                    Object.entries(groupedDocs).map(([category, docs]) => (
-                      <div key={category} className={styles.categoryBlock}>
-                        <h4 className={styles.categoryTitle}>{category}</h4>
+                    Object.entries(groupedDocsDispositiveModel).map(
+                      ([category, docs]) => (
+                        <div key={category} className={styles.categoryBlock}>
+                          <h4 className={styles.categoryTitle}>{category}</h4>
 
-                        <ul className={styles.list}>
-                          {docs.map((doc) => {
-                            const isLinked = linkedDocs.includes(doc._id);
+                          <ul className={styles.list}>
+                            {docs.map((doc) => {
+                              const isLinked = linkedDocs.includes(doc._id);
 
-                            return (
-                              <li key={doc._id} className={styles.listItemLine}>
-                                <div className={styles.lineLeft}>
-                                  <span className={styles.docName}>{doc.name}</span>
+                              return (
+                                <li key={doc._id} className={styles.listItemLine}>
+                                  <div className={styles.lineLeft}>
+                                    <span className={styles.docName}>{doc.name}</span>
 
-                                  {doc.duration && (
-                                    <span className={styles.metaTag}>
-                                      <FaClock /> {doc.duration} días
-                                    </span>
-                                  )}
+                                    {doc.duration && (
+                                      <span className={styles.metaTag}>
+                                        <FaClock /> {doc.duration} días
+                                      </span>
+                                    )}
 
-                                  {doc.requiresSignature && (
-                                    <span className={styles.metaTag}>
-                                      <FaPenFancy /> Firma
-                                    </span>
-                                  )}
-                                </div>
+                                    {doc.requiresSignature && (
+                                      <span className={styles.metaTag}>
+                                        <FaPenFancy /> Firma
+                                      </span>
+                                    )}
+                                  </div>
 
-                                <button
-                                  className={`${styles.btnToggle} ${
-                                    isLinked
-                                      ? styles.btnLinked
-                                      : styles.btnUnlinked
-                                  }`}
-                                  onClick={() =>
-                                    handleToggleLink(doc, isLinked)
-                                  }
-                                  disabled={loading}
-                                >
-                                  {isLinked ? "Quitar" : "Añadir"}
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    ))
+                                  <button
+                                    className={`${styles.btnToggle} ${
+                                      isLinked ? styles.btnLinked : styles.btnUnlinked
+                                    }`}
+                                    onClick={() => handleToggleLink(doc, isLinked)}
+                                    disabled={loading}
+                                  >
+                                    {isLinked ? "Quitar" : "Añadir"}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )
+                    )
                   )}
                 </>
               )}
@@ -358,17 +440,8 @@ const DocsProgramOrDispositive = ({ info, modal, charge }) => {
         <DocumentMiscelaneaGeneric
           data={currentInfo}
           modelName={info.type === "program" ? "Program" : "Dispositive"}
-          officialDocs={
-            info.type === "program"
-              ? listDocumentation.filter(
-                  (doc) =>
-                    linkedDocs.includes(doc._id) &&
-                    doc.model === "Program"
-                )
-              : listDocumentation.filter((doc) =>
-                  linkedDocs.includes(doc._id)
-                )
-          }
+          officialDocs={officialDocsToUpload}
+          relatedFileSources={relatedFileSources}
           modal={modal}
           charge={charge}
           authorized={true}

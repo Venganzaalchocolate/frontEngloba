@@ -9,7 +9,7 @@ import {
   downloadZipFiles,
   listFile,
   documentationAuditCanSign,
-  documentationAuditRegisterDownload 
+  documentationAuditRegisterDownload
 } from "../../lib/data";
 
 import ModalForm from "./ModalForm";
@@ -49,11 +49,19 @@ const DocumentMiscelaneaGeneric = ({
   charge,
   authorized = false,
   onRequestCreated = () => { },
+  relatedFileSources = [],
 }) => {
 
   // 1) Archivos normalizados del modelo
   const [normalizedFiles, setNormalizedFiles] = useState([]);
-const { logged } = useLogin();
+  const { logged } = useLogin();
+
+  const relatedSourcesKey = JSON.stringify(
+    (relatedFileSources || []).map((s) => ({
+      modelName: s.modelName,
+      id: s.data?._id,
+    }))
+  );
   useEffect(() => {
     if (!data?._id || !modelName) {
       setNormalizedFiles([]);
@@ -63,33 +71,74 @@ const { logged } = useLogin();
     let isMounted = true;
 
     const fetchFiles = async () => {
+      try {
+        charge?.(true);
+        const token = getToken();
 
-      charge?.(true);
-      const token = getToken();
-      const res = await listFile(
-        { originModel: modelName, idModel: data._id },
-        token
-      );
+        const mainRes = await listFile(
+          { originModel: modelName, idModel: data._id },
+          token
+        );
 
+        if (mainRes?.error) {
+          modal?.("Error", "No se pudieron cargar los documentos.");
+          if (isMounted) setNormalizedFiles([]);
+          return;
+        }
 
+        const mainItems = mainRes?.items || mainRes || [];
 
-      if (res.error) {
-        charge?.(false);
+        const mainFiles = transformFiles(mainItems, {
+          sourceModel: modelName,
+          sourceId: data._id,
+          sourceLabel: "Documentación propia",
+          inherited: false,
+        });
+
+        const relatedFiles = [];
+
+        for (const source of relatedFileSources || []) {
+          if (!source?.modelName || !source?.data?._id) continue;
+
+          const res = await listFile(
+            {
+              originModel: source.modelName,
+              idModel: source.data._id,
+            },
+            token
+          );
+
+          if (res?.error) continue;
+
+          const items = res?.items || res || [];
+
+          relatedFiles.push(
+            ...transformFiles(items, {
+              sourceModel: source.modelName,
+              sourceId: source.data._id,
+              sourceLabel: source.label || source.data.name || source.modelName,
+              inherited: true,
+            })
+          );
+        }
+
+        if (!isMounted) return;
+
+        setNormalizedFiles([...mainFiles, ...relatedFiles]);
+      } catch (error) {
         modal?.("Error", "No se pudieron cargar los documentos.");
         if (isMounted) setNormalizedFiles([]);
-      } else {
-        const items = res?.items || res || [];
-        if (!isMounted) return;
-        setNormalizedFiles(transformFiles(items));
+      } finally {
         charge?.(false);
       }
     };
 
     fetchFiles();
+
     return () => {
       isMounted = false;
     };
-  }, [data?._id, modelName]);
+  }, [data?._id, modelName, relatedSourcesKey]);
 
   // 2) Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -99,26 +148,26 @@ const { logged } = useLogin();
   // FIRMA DE RICIBIS
   const [signRecibiDoc, setSignRecibiDoc] = useState(null);
 
-const handleSignRecibi = async (doc) => {
-  try {
-    charge?.(true);
-    const token = getToken();
-    const result = await documentationAuditCanSign({ userId: data._id, documentationId: doc._id }, token);
-    if (!result || result.error) {
-      modal?.("Error", result?.message || "No se pudo comprobar si puedes firmar el recibí.");
-      return;
+  const handleSignRecibi = async (doc) => {
+    try {
+      charge?.(true);
+      const token = getToken();
+      const result = await documentationAuditCanSign({ userId: data._id, documentationId: doc._id }, token);
+      if (!result || result.error) {
+        modal?.("Error", result?.message || "No se pudo comprobar si puedes firmar el recibí.");
+        return;
+      }
+      if (!result.canSign) {
+        modal?.("Descarga obligatoria", "Antes de firmar el recibí debes descargar primero el documento oficial.");
+        return;
+      }
+      setSignRecibiDoc(doc);
+    } catch (error) {
+      modal?.("Error", error?.message || "No se pudo comprobar si puedes firmar el recibí.");
+    } finally {
+      charge?.(false);
     }
-    if (!result.canSign) {
-      modal?.("Descarga obligatoria", "Antes de firmar el recibí debes descargar primero el documento oficial.");
-      return;
-    }
-    setSignRecibiDoc(doc);
-  } catch (error) {
-    modal?.("Error", error?.message || "No se pudo comprobar si puedes firmar el recibí.");
-  } finally {
-    charge?.(false);
-  }
-};
+  };
 
   const afterSignRecibi = (updatedUser) => {
     if (updatedUser) syncFromParent(updatedUser);
@@ -141,28 +190,85 @@ const handleSignRecibi = async (doc) => {
 
   // Extrae la lista de Filedrive desde el "padre" devuelto por el back
   const syncFromParent = useCallback(
-    (parent) => {
+    (parent, sourceModel = modelName, sourceId = data?._id) => {
       if (!parent) {
-        setNormalizedFiles([]);
+        setNormalizedFiles((prev) =>
+          prev.filter(
+            (f) =>
+              f.__sourceModel !== sourceModel ||
+              String(f.__sourceId) !== String(sourceId)
+          )
+        );
         return;
       }
 
       let filesDocs = [];
 
-      if (modelName === "User") {
-        // User: files = [{ filesId: <Filedrive> }]
+      if (sourceModel === "User") {
         filesDocs = (parent.files || [])
           .map((f) => f.filesId)
           .filter(Boolean);
       } else {
-        // Program / Dispositive: files = [<Filedrive>]
         filesDocs = parent.files || [];
       }
 
-      setNormalizedFiles(transformFiles(filesDocs));
+      const source =
+        sourceModel === modelName
+          ? {
+            sourceModel: modelName,
+            sourceId: data?._id,
+            sourceLabel: "Documentación propia",
+            inherited: false,
+          }
+          : {
+            sourceModel,
+            sourceId,
+            sourceLabel:
+              relatedFileSources.find(
+                (s) =>
+                  s.modelName === sourceModel &&
+                  String(s.data?._id) === String(sourceId)
+              )?.label || sourceModel,
+            inherited: true,
+          };
+
+      const nextFiles = transformFiles(filesDocs, source);
+
+      setNormalizedFiles((prev) => [
+        ...prev.filter(
+          (f) =>
+            f.__sourceModel !== sourceModel ||
+            String(f.__sourceId) !== String(sourceId)
+        ),
+        ...nextFiles,
+      ]);
     },
-    [modelName]
+    [modelName, data?._id, relatedFileSources]
   );
+
+  const getSourceForDoc = (doc) => {
+    if (!doc?.model || doc.model === modelName) {
+      return {
+        modelName,
+        id: data._id,
+        label: "Documentación propia",
+      };
+    }
+
+    const sources = (relatedFileSources || []).filter(
+      (source) => source?.modelName === doc.model && source?.data?._id
+    );
+
+    if (sources.length === 1) {
+      return {
+        modelName: sources[0].modelName,
+        id: sources[0].data._id,
+        label: sources[0].label || sources[0].data.name || sources[0].modelName,
+      };
+    }
+
+    return null;
+  };
 
 
   // 3) Agrupar oficiales con sus archivos
@@ -228,55 +334,55 @@ const handleSignRecibi = async (doc) => {
   // ==================================================
   // ============== DESCARGA DE ARCHIVO ===============
   // ==================================================
- const handleDownloadFile = async (docOrFalse, fileObj, model = false) => {
-  if (!fileObj?._id && !fileObj?.idDrive) {
-    modal("Error", "No se ha encontrado el identificador del archivo.");
-    return;
-  }
-  try {
-    charge(true);
-    const token = getToken();
-
-    if (model && docOrFalse?._id && docOrFalse?.requiresSignature && docOrFalse?.modeloPDF) {
-      const audit = await documentationAuditRegisterDownload({
-        userId: data._id,
-        documentationId: docOrFalse._id,
-        driveId: docOrFalse.modeloPDF,
-      }, token);
-      if (audit?.error) {
-        modal("Error", audit.message || "No se pudo registrar la descarga del documento.");
-        return;
-      }
-    }
-
-    const response = await getFileDrive({ idFile: fileObj._id || fileObj.idDrive }, token);
-    if (!response?.url) {
-      modal("Error", "No se pudo descargar el archivo (URL no disponible).");
+  const handleDownloadFile = async (docOrFalse, fileObj, model = false) => {
+    if (!fileObj?._id && !fileObj?.idDrive) {
+      modal("Error", "No se ha encontrado el identificador del archivo.");
       return;
     }
+    try {
+      charge(true);
+      const token = getToken();
 
-    const link = document.createElement("a");
-    link.href = response.url;
+      if (model && docOrFalse?._id && docOrFalse?.requiresSignature && docOrFalse?.modeloPDF) {
+        const audit = await documentationAuditRegisterDownload({
+          userId: data._id,
+          documentationId: docOrFalse._id,
+          driveId: docOrFalse.modeloPDF,
+        }, token);
+        if (audit?.error) {
+          modal("Error", audit.message || "No se pudo registrar la descarga del documento.");
+          return;
+        }
+      }
 
-    let finalName = "";
-    if (!model) {
-      const nameFileAux = !docOrFalse ? compact(fileObj.fileLabel) : compact(docOrFalse.name);
-      const nameUserAux = compact(data.firstName);
-      const lastUserAux = compact(data.lastName);
-      finalName = `${nameFileAux}-${nameUserAux}_${lastUserAux}`;
-    } else {
-      finalName = `modelo_${compact(docOrFalse?.name || "documento")}`;
+      const response = await getFileDrive({ idFile: fileObj._id || fileObj.idDrive }, token);
+      if (!response?.url) {
+        modal("Error", "No se pudo descargar el archivo (URL no disponible).");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.href = response.url;
+
+      let finalName = "";
+      if (!model) {
+        const nameFileAux = !docOrFalse ? compact(fileObj.fileLabel) : compact(docOrFalse.name);
+        const nameUserAux = compact(data.firstName);
+        const lastUserAux = compact(data.lastName);
+        finalName = `${nameFileAux}-${nameUserAux}_${lastUserAux}`;
+      } else {
+        finalName = `modelo_${compact(docOrFalse?.name || "documento")}`;
+      }
+
+      link.download = `${finalName}.pdf`;
+      link.click();
+      URL.revokeObjectURL(response.url);
+    } catch (err) {
+      modal("Error", "No se pudo descargar el archivo.");
+    } finally {
+      charge(false);
     }
-
-    link.download = `${finalName}.pdf`;
-    link.click();
-    URL.revokeObjectURL(response.url);
-  } catch (err) {
-    modal("Error", "No se pudo descargar el archivo.");
-  } finally {
-    charge(false);
-  }
-};
+  };
 
   // ==================================================
   // ============== ELIMINAR ARCHIVO ==================
@@ -291,8 +397,8 @@ const handleSignRecibi = async (doc) => {
       const token = getToken();
       const payload = {
         fileId: fileObj._id,
-        originModel: modelName,
-        idModel: data._id,
+        originModel: fileObj.__sourceModel || modelName,
+        idModel: fileObj.__sourceId || data._id,
       };
       const updatedData = await deleteFileDrive(payload, token);
       if (!updatedData || updatedData.error) {
@@ -300,7 +406,11 @@ const handleSignRecibi = async (doc) => {
         return;
       }
       //en vez de hacer el onChange quieor una funcion que setNormalizedFiles(transformFiles(updatedData.files o updateData.files.filesId si es user etc));
-      syncFromParent(updatedData);
+      syncFromParent(
+        updatedData,
+        fileObj.__sourceModel || modelName,
+        fileObj.__sourceId || data._id
+      );
       modal("Archivo eliminado", "El archivo se ha eliminado con éxito.");
     } catch (err) {
       modal("Error", "Hubo un problema al eliminar el archivo.");
@@ -363,11 +473,20 @@ const handleSignRecibi = async (doc) => {
           }
 
           const token = getToken();
+          const target = getSourceForDoc(chosen);
+
+          if (!target) {
+            modal(
+              "Error",
+              "No se pudo determinar dónde debe subirse este documento."
+            );
+            return;
+          }
           const payload = {
             file,
-            originModel: modelName,
-            idModel: data._id,
-            originDocumentation: docId, // ← OFICIAL
+            originModel: target.modelName,
+            idModel: target.id,
+            originDocumentation: docId,
             date,
             description: chosen.name,
             category: chosen.categoryFiles || "Oficial",
@@ -379,7 +498,7 @@ const handleSignRecibi = async (doc) => {
             return;
           }
 
-          syncFromParent(updatedData);
+          syncFromParent(updatedData, target.modelName, target.id);
           modal("Documento oficial", "Documento subido con éxito.");
         } catch (err) {
           modal("Error", "No se pudo subir el archivo.");
@@ -639,8 +758,8 @@ const handleSignRecibi = async (doc) => {
           const token = getToken();
           const payload = {
             fileId: fileObj._id,
-            originModel: modelName,
-            idModel: data._id,
+            originModel: fileObj.__sourceModel || modelName,
+            idModel: fileObj.__sourceId || data._id,
             description: (description ?? fileObj.description) || "",
           };
           if (fileName && fileName.trim()) {
@@ -655,7 +774,11 @@ const handleSignRecibi = async (doc) => {
             throw new Error(updatedData?.message || "No se pudo actualizar el archivo.");
           }
           //en vez del onChange quieor una funcion que actualice 
-          syncFromParent(updatedData);
+          syncFromParent(
+            updatedData,
+            fileObj.__sourceModel || modelName,
+            fileObj.__sourceId || data._id
+          );
           modal(
             "Documento actualizado",
             `El documento "${fileName || fileObj.fileLabel || fileObj.description || "Documento"}" se actualizó.`
@@ -876,32 +999,32 @@ const handleSignRecibi = async (doc) => {
                   className={doc.model === "antiguomodelo" ? styles.officialDocGroupUser : styles.officialDocGroup}
                 >
                   <div className={styles.docHeader}>
-                    {doc.requiresSignature 
-                    ?
-                    <label className={styles.docLabeluploadButton}>{doc.name} </label>
-                    :
-                    <label
-                      className={styles.docLabeluploadButton}
-                      onClick={
-                        authorized
-                          ? () => handleUploadOfficialFromSelect(doc._id)
-                          : () => handleRequestOfficialUpload(doc)
-                      }
-                      title={
-                        authorized
-                          ? "Subir documento oficial"
-                          : "Solicitar subida de este documento oficial"
-                      }
-                    >
-                      {doc.name} <AiOutlineCloudUpload />
-                    </label>
-                  }
-                    
+                    {doc.requiresSignature
+                      ?
+                      <label className={styles.docLabeluploadButton}>{doc.name} </label>
+                      :
+                      <label
+                        className={styles.docLabeluploadButton}
+                        onClick={
+                          authorized
+                            ? () => handleUploadOfficialFromSelect(doc._id)
+                            : () => handleRequestOfficialUpload(doc)
+                        }
+                        title={
+                          authorized
+                            ? "Subir documento oficial"
+                            : "Solicitar subida de este documento oficial"
+                        }
+                      >
+                        {doc.name} <AiOutlineCloudUpload />
+                      </label>
+                    }
+
                     {
                       doc.modeloPDF && <button onClick={() => { handleDownloadFile(doc, { idDrive: doc.modeloPDF }, true) }}>{doc.requiresSignature ? 'Descargar' : 'Descargar Modelo'}</button>
                     }
                     {/* FIRMAR RECIBÍ OFICIAL */}
-                    {doc.requiresSignature && data?._id==logged.user._id && (
+                    {doc.requiresSignature && data?._id == logged.user._id && (
                       <button
                         type="button"
                         className={styles.signRecibiBtn}
@@ -951,11 +1074,18 @@ const handleSignRecibi = async (doc) => {
                             onClick={() => handleDownloadFile(doc, file)}
                           >
                             <p>
-                              {`Fecha: ${formatDate(file.date)} `}
+                              {file.date ? `Fecha: ${formatDate(file.date)} ` : "Documento subido "}
                               <CiFileOn />
                             </p>
+
+                            {file.__inherited && (
+                              <small className={styles.inheritedLabel}>
+                                {file.__sourceLabel}
+                              </small>
+                            )}
                           </div>
                         )}
+
                         {authorized && (
                           <FaTrash
                             className={styles.trash}
@@ -998,6 +1128,12 @@ const handleSignRecibi = async (doc) => {
                   {`Fecha: ${formatDate(fileObj.date)} `}
                   <CiFileOn />
                 </p>
+
+              )}
+              {fileObj.__inherited && (
+                <small className={styles.inheritedLabel}>
+                  {fileObj.__sourceLabel}
+                </small>
               )}
               {fileObj.fileLabel || "Documento adicional"}
             </div>
@@ -1072,7 +1208,7 @@ const handleSignRecibi = async (doc) => {
     </div>
   );
 };
-function transformFiles(files) {
+function transformFiles(files, meta = {}) {
   if (!files) return [];
 
   const extractOriginId = (od) =>
@@ -1081,6 +1217,7 @@ function transformFiles(files) {
   return (files || [])
     .map((f) => {
       if (!f || !f._id) return null;
+
       return {
         _id: f._id,
         originDocumentation: extractOriginId(f.originDocumentation),
@@ -1088,6 +1225,12 @@ function transformFiles(files) {
         fileLabel: f.fileLabel || f.fileName || "",
         description: f.description || "",
         idDrive: f.idDrive,
+
+        // Fuente real del archivo
+        __sourceModel: meta.sourceModel || f.originModel,
+        __sourceId: meta.sourceId || f.idModel,
+        __sourceLabel: meta.sourceLabel || "",
+        __inherited: !!meta.inherited,
       };
     })
     .filter(Boolean);

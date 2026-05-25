@@ -337,3 +337,10 @@
 @media (max-width: 600px) {
   .categoryGroup { overflow-x: hidden; }
 }
+
+.inheritedLabel {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}

@@ -9,7 +9,8 @@ import {
   downloadZipFiles,
   listFile,
   documentationAuditCanSign,
-  documentationAuditRegisterDownload
+  documentationAuditRegisterDownload,
+  lastHiringForUser
 } from "../../lib/data";
 
 import ModalForm from "./ModalForm";
@@ -40,7 +41,12 @@ import { useLogin } from "../../hooks/useLogin";
  * @param {Function} props.onChange - Callback para actualizar el padre cuando se sube/edita/borra
  * @param {Boolean} [props.authorized] - true = supervisor/HR (sube directo). false = empleado (solicita).
  * @param {Function} [props.onRequestCreated] - Notifica CR optimista/real al padre (para MyChangeRequests)
+ * 
+ * 
+ * 
  */
+
+
 const DocumentMiscelaneaGeneric = ({
   data,
   modelName,
@@ -54,6 +60,7 @@ const DocumentMiscelaneaGeneric = ({
 
   // 1) Archivos normalizados del modelo
   const [normalizedFiles, setNormalizedFiles] = useState([]);
+  const [positionUserIds, setPositionUserIds] = useState([]);
   const { logged } = useLogin();
 
   const relatedSourcesKey = JSON.stringify(
@@ -74,6 +81,32 @@ const DocumentMiscelaneaGeneric = ({
       try {
         charge?.(true);
         const token = getToken();
+        let currentPositionIds = [];
+
+if (modelName === "User") {
+  const periodsRes = await lastHiringForUser(
+    {
+      idUser: data._id,
+      includeInactive: false,
+    },
+    token
+  );
+
+  const periods = Array.isArray(periodsRes)
+    ? periodsRes
+    : periodsRes
+      ? [periodsRes]
+      : [];
+
+  currentPositionIds = [
+    ...new Set(
+      periods
+        .map((period) => period?.position?._id || period?.position)
+        .filter(Boolean)
+        .map(String)
+    ),
+  ];
+}
 
         const mainRes = await listFile(
           { originModel: modelName, idModel: data._id },
@@ -124,10 +157,14 @@ const DocumentMiscelaneaGeneric = ({
 
         if (!isMounted) return;
 
-        setNormalizedFiles([...mainFiles, ...relatedFiles]);
+        setPositionUserIds(currentPositionIds);
+setNormalizedFiles([...mainFiles, ...relatedFiles]);
       } catch (error) {
         modal?.("Error", "No se pudieron cargar los documentos.");
-        if (isMounted) setNormalizedFiles([]);
+        if (isMounted) {
+  setPositionUserIds([]);
+  setNormalizedFiles([]);
+}
       } finally {
         charge?.(false);
       }
@@ -272,12 +309,20 @@ const DocumentMiscelaneaGeneric = ({
 
 
   // 3) Agrupar oficiales con sus archivos
-  const officialDocumentsToShow = (officialDocs || []).map((doc) => {
-    const filesForDoc = normalizedFiles.filter(
-      (f) => f.originDocumentation?.toString() === doc._id.toString()
-    );
-    return { doc, files: filesForDoc };
-  });
+const visibleOfficialDocs = filterOfficialDocsByPositions({
+  docs: officialDocs || [],
+  files: normalizedFiles,
+  modelName,
+  positionIds: positionUserIds,
+});
+
+const officialDocumentsToShow = visibleOfficialDocs.map((doc) => {
+  const filesForDoc = normalizedFiles.filter(
+    (f) => f.originDocumentation?.toString() === doc._id.toString()
+  );
+
+  return { doc, files: filesForDoc };
+});
 
   // 4) Por categoría
   const officialByCategory = officialDocumentsToShow.reduce((acc, { doc, files }) => {
@@ -1237,5 +1282,83 @@ function transformFiles(files, meta = {}) {
 }
 
 
+const getDocPositionIds = (doc) =>
+  (doc?.jobScope?.positions || []).map((id) => String(id));
 
+const getDocAutoKey = (doc) =>
+  doc?.jobScope?.autoKey || null;
+
+const docHasPositionScope = (doc) =>
+  getDocPositionIds(doc).length > 0;
+
+const hasUploadedFileForDoc = (doc, files = []) =>
+  files.some(
+    (file) => file.originDocumentation?.toString() === doc._id?.toString()
+  );
+
+const getDocGroupKey = (doc) => {
+  const autoKey = getDocAutoKey(doc);
+
+  if (autoKey) {
+    return `${doc.model || "User"}::${doc.categoryFiles || "Sin categoría"}::${autoKey}`;
+  }
+
+  return `doc::${doc._id}`;
+};
+
+const hasAnyMatchingPosition = (doc, positionIds = []) => {
+  const docPositions = getDocPositionIds(doc);
+  return docPositions.some((id) => positionIds.includes(String(id)));
+};
+
+const filterOfficialDocsByPositions = ({
+  docs = [],
+  files = [],
+  modelName,
+  positionIds = [],
+}) => {
+  if (modelName !== "User") return docs;
+
+  const activePositions = (positionIds || []).map(String);
+  const groups = new Map();
+
+  for (const doc of docs || []) {
+    const groupKey = getDocGroupKey(doc);
+
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, []);
+    }
+
+    groups.get(groupKey).push(doc);
+  }
+
+  const visibleDocs = [];
+
+  for (const groupDocs of groups.values()) {
+    const generalDocs = groupDocs.filter((doc) => !docHasPositionScope(doc));
+
+    const matchingPositionDocs =
+      activePositions.length > 0
+        ? groupDocs.filter((doc) => hasAnyMatchingPosition(doc, activePositions))
+        : [];
+
+    const docsWithUploadedFiles = groupDocs.filter((doc) =>
+      hasUploadedFileForDoc(doc, files)
+    );
+
+    if (matchingPositionDocs.length > 0) {
+      visibleDocs.push(...matchingPositionDocs);
+    } else {
+      visibleDocs.push(...generalDocs);
+    }
+
+    for (const doc of docsWithUploadedFiles) {
+      if (!visibleDocs.some((visible) => String(visible._id) === String(doc._id))) {
+        visibleDocs.push(doc);
+      }
+    }
+  }
+
+  return visibleDocs;
+};
 export default DocumentMiscelaneaGeneric;

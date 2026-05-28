@@ -224,40 +224,154 @@ const CvPanel = ({
         setInfoUserWork(dataUser);
     };
 
-    const buildFieldsForModal = async (userObj) => {
-        const last = await lastHiringForUser({ idUser: userObj._id }, getToken());
-        const activo = userObj.employmentStatus !== 'ya no trabaja con nosotros';
-        const fmt = (d) => d ? new Date(d).toLocaleDateString('es-ES') : '—';
+const buildFieldsForModal = async (userObj) => {
+    const token = getToken();
+    const activo = userObj.employmentStatus !== 'ya no trabaja con nosotros';
+    const fmt = (d) => d ? new Date(d).toLocaleDateString('es-ES') : '—';
+
+    const buildPeriodFields = (period, title, index = null) => {
+        const suffix = index !== null ? `_${index}` : '';
 
         return [
-            { type: 'section', label: 'Información básica' },
-            { name: 'nombre', label: 'Nombre', type: 'text', defaultValue: `${userObj.firstName} ${userObj.lastName}`, disabled: true },
-            { name: 'dni', label: 'DNI', type: 'text', defaultValue: userObj.dni || '—', disabled: true },
-            { type: 'info', content: activo ? 'Actualmente trabajando en Engloba' : 'No trabaja en Engloba' },
-
-            { type: 'section', label: 'Último periodo de contratación' },
-            { name: 'inicio', label: 'Inicio', type: 'text', defaultValue: fmt(last?.startDate), disabled: true },
-            { name: 'fin', label: 'Fin', type: 'text', defaultValue: fmt(last?.endDate || 'Abierto'), disabled: true },
-            { name: 'jornada', label: 'Jornada', type: 'text', defaultValue: last?.workShift?.type || '—', disabled: true },
-            { name: 'puesto', label: 'Puesto', type: 'text', defaultValue: enumsEmployer.jobsIndex[last?.position]?.name || '—', disabled: true },
-            { name: 'dispositivo', label: 'Dispositivo', type: 'text', defaultValue: enumsEmployer.dispositiveIndex[last?.dispositiveId]?.name || '—', disabled: true },
+            { type: 'section', label: title },
+            {
+                name: `inicio${suffix}`,
+                label: 'Inicio',
+                type: 'text',
+                defaultValue: fmt(period?.startDate),
+                disabled: true,
+            },
+            {
+                name: `fin${suffix}`,
+                label: 'Fin',
+                type: 'text',
+                defaultValue: period?.endDate ? fmt(period.endDate) : 'Abierto',
+                disabled: true,
+            },
+            {
+                name: `jornada${suffix}`,
+                label: 'Jornada',
+                type: 'text',
+                defaultValue: period?.workShift?.type || '—',
+                disabled: true,
+            },
+            {
+                name: `puesto${suffix}`,
+                label: 'Puesto',
+                type: 'text',
+                defaultValue: enumsEmployer.jobsIndex?.[period?.position]?.name || '—',
+                disabled: true,
+            },
+            {
+                name: `dispositivo${suffix}`,
+                label: 'Dispositivo',
+                type: 'text',
+                defaultValue: enumsEmployer.dispositiveIndex?.[period?.dispositiveId]?.name || '—',
+                disabled: true,
+            },
         ];
     };
 
-    useEffect(() => {
-        if (!infoUserWork) return;
+    let currentPeriods = [];
 
-        let alive = true;
+    if (activo) {
+        const currentRes = await lastHiringForUser(
+            {
+                idUser: userObj._id,
+                includeInactive: false,
+            },
+            token
+        );
 
-        (async () => {
-            setLoadingFields(true);
+        currentPeriods = Array.isArray(currentRes)
+            ? currentRes
+            : currentRes
+                ? [currentRes]
+                : [];
+    }
+
+    const fields = [
+        { type: 'section', label: 'Información básica' },
+        {
+            name: 'nombre',
+            label: 'Nombre',
+            type: 'text',
+            defaultValue: `${userObj.firstName || ''} ${userObj.lastName || ''}`.trim(),
+            disabled: true,
+        },
+        {
+            name: 'dni',
+            label: 'DNI',
+            type: 'text',
+            defaultValue: userObj.dni || '—',
+            disabled: true,
+        },
+        {
+            type: 'info',
+            content: activo ? 'Actualmente trabajando en Engloba' : 'No trabaja en Engloba',
+        },
+    ];
+
+    if (currentPeriods.length > 0) {
+        currentPeriods.forEach((period, index) => {
+            const title =
+                currentPeriods.length > 1
+                    ? `Periodo actual ${index + 1}`
+                    : 'Periodo actual';
+
+            fields.push(...buildPeriodFields(period, title, index));
+        });
+
+        return fields;
+    }
+
+    const last = await lastHiringForUser(
+        {
+            idUser: userObj._id,
+            includeInactive: true,
+        },
+        token
+    );
+
+    if (!last || last.error) {
+        fields.push({
+            type: 'info',
+            content: 'No constan periodos de contratación.',
+        });
+
+        return fields;
+    }
+
+    fields.push(...buildPeriodFields(last, 'Último periodo de contratación'));
+
+    return fields;
+};
+
+useEffect(() => {
+    if (!infoUserWork) return;
+
+    let alive = true;
+
+    (async () => {
+        setLoadingFields(true);
+
+        try {
             const fields = await buildFieldsForModal(infoUserWork);
-            if (alive) setFieldsModal(fields);
-            setLoadingFields(false);
-        })();
 
-        return () => { alive = false };
-    }, [infoUserWork]);
+            if (alive) {
+                setFieldsModal(fields);
+            }
+        } finally {
+            if (alive) {
+                setLoadingFields(false);
+            }
+        }
+    })();
+
+    return () => {
+        alive = false;
+    };
+}, [infoUserWork]);
 
 
     // -------------------------------------------------------

@@ -229,6 +229,16 @@ const ManagingProgramsDispositive = ({
       ],
       defaultValue: true,
     },
+    {
+      name: "allDevicesResidential",
+      label: "¿Todos los dispositivos de este programa son residenciales?",
+      type: "select",
+      options: [
+        { value: true, label: "Sí" },
+        { value: false, label: "No" },
+      ],
+      defaultValue: "",
+    },
     { name: "description", label: "Descripción", type: "textarea" },
     { name: "objectives", label: "Objetivos", type: "textarea" },
     { name: "profile", label: "Perfil", type: "textarea" },
@@ -268,6 +278,22 @@ const ManagingProgramsDispositive = ({
       type: "select",
       required: true,
       options: [{ value: "", label: "Seleccione provincia" }, ...provinceOptions],
+    },
+    {
+      name: "serviceTypeResidencial",
+      label: "¿Es residencial?",
+      type: "select",
+      options: [
+        { value: true, label: "Sí" },
+        { value: false, label: "No" },
+      ],
+      defaultValue: false,
+    },
+    {
+      name: "serviceTypeCapacity",
+      label: "Número de plazas / usuarios",
+      type: "number",
+      defaultValue: 0,
     },
     {
       name: "active",
@@ -426,6 +452,14 @@ const ManagingProgramsDispositive = ({
       responsible: [],
       coordinators: [],
       supervisors: [],
+      serviceType: {
+        residencial:
+          formData.serviceTypeResidencial === true ||
+          formData.serviceTypeResidencial === "true",
+        capacity: Number.isFinite(Number(formData.serviceTypeCapacity))
+          ? Number(formData.serviceTypeCapacity)
+          : 0,
+      },
       userCreate: logged?.user?.email || logged?.user?.firstName || "usuario",
     };
 
@@ -439,15 +473,15 @@ const ManagingProgramsDispositive = ({
       return;
     }
 
-await chargeEnums();
+    await chargeEnums();
 
-if (res?.dispositive?._id) {
-  onSelect({ type: "dispositive", _id: res.dispositive._id });
-}
+    if (res?.dispositive?._id) {
+      onSelect({ type: "dispositive", _id: res.dispositive._id });
+    }
 
-modal("Dispositivo creado", `${payload.name} creado correctamente`);
-setShowDeviceForm(false);
-charge(false);
+    modal("Dispositivo creado", `${payload.name} creado correctamente`);
+    setShowDeviceForm(false);
+    charge(false);
   };
 
   const handleEdit = async (formData) => {
@@ -460,6 +494,8 @@ charge(false);
     if (editTarget.type === "program") {
       const original = editTarget;
       const update = {};
+
+      const allDevicesResidential = formData.allDevicesResidential;
 
       const newEntity = formData.entity || null;
       const oldEntity =
@@ -500,13 +536,81 @@ charge(false);
       if (newProfile !== oldProfile) about.profile = newProfile;
       if (Object.keys(about).length > 0) update.about = about;
 
-      if (Object.keys(update).length === 0) {
+      const shouldUpdateDevicesResidential =
+        allDevicesResidential === true ||
+        allDevicesResidential === "true" ||
+        allDevicesResidential === false ||
+        allDevicesResidential === "false";
+
+      if (Object.keys(update).length === 0 && !shouldUpdateDevicesResidential) {
         modal("Sin cambios", "No has modificado ningún campo del programa.");
         charge(false);
         return;
       }
 
-      res = await updateProgram({ id: original._id, ...update }, token);
+      if (Object.keys(update).length > 0) {
+        res = await updateProgram({ id: original._id, ...update }, token);
+
+        if (!res || res.error) {
+          modal("Error", res?.message || "No se pudo actualizar.");
+          charge(false);
+          return;
+        }
+      } else {
+        res = { ok: true };
+      }
+
+      if (allDevicesResidential === true || allDevicesResidential === "true") {
+        const devices = Object.values(enumsData?.dispositiveIndex || {}).filter((d) => {
+          const programId =
+            typeof d.program === "string"
+              ? d.program
+              : d.program?._id;
+
+          return programId === original._id;
+        });
+
+        await Promise.all(
+          devices.map((d) =>
+            updateDispositive(
+              {
+                dispositiveId: d._id,
+                serviceType: {
+                  residencial: true,
+                  capacity: d.serviceType?.capacity ?? 0,
+                },
+              },
+              token
+            )
+          )
+        );
+      }
+
+      if (allDevicesResidential === false || allDevicesResidential === "false") {
+        const devices = Object.values(enumsData?.dispositiveIndex || {}).filter((d) => {
+          const programId =
+            typeof d.program === "string"
+              ? d.program
+              : d.program?._id;
+
+          return programId === original._id;
+        });
+
+        await Promise.all(
+          devices.map((d) =>
+            updateDispositive(
+              {
+                dispositiveId: d._id,
+                serviceType: {
+                  residencial: false,
+                  capacity: d.serviceType?.capacity ?? 0,
+                },
+              },
+              token
+            )
+          )
+        );
+      }
     } else {
       const original = editTarget;
       const update = {};
@@ -538,6 +642,20 @@ charge(false);
           ? original.program
           : original.program?._id || null;
 
+      const newResidencial =
+        formData.serviceTypeResidencial === true ||
+        formData.serviceTypeResidencial === "true";
+
+      const oldResidencial = Boolean(original.serviceType?.residencial);
+
+      const newCapacity = Number.isFinite(Number(formData.serviceTypeCapacity))
+        ? Number(formData.serviceTypeCapacity)
+        : 0;
+
+      const oldCapacity = Number.isFinite(Number(original.serviceType?.capacity))
+        ? Number(original.serviceType.capacity)
+        : 0;
+
       if (newName !== oldName) update.name = newName;
       if (newActive !== oldActive) update.active = newActive;
       if (newAddress !== oldAddress) update.address = newAddress;
@@ -545,6 +663,13 @@ charge(false);
       if (newPhone !== oldPhone) update.phone = newPhone;
       if (newProvince !== oldProvince) update.province = newProvince;
       if (newProgram !== oldProgram) update.program = newProgram;
+
+      if (newResidencial !== oldResidencial || newCapacity !== oldCapacity) {
+        update.serviceType = {
+          residencial: newResidencial,
+          capacity: newCapacity,
+        };
+      }
 
       if (Object.keys(update).length === 0) {
         modal("Sin cambios", "No has modificado ningún campo del dispositivo.");
@@ -604,13 +729,15 @@ charge(false);
               ? data.area
               : f.name === "active"
                 ? Boolean(data.active)
-                : f.name === "description"
-                  ? data.about?.description || ""
-                  : f.name === "objectives"
-                    ? data.about?.objectives || ""
-                    : f.name === "profile"
-                      ? data.about?.profile || ""
-                      : data[f.name] ?? f.defaultValue ?? "",
+                : f.name === "allDevicesResidential"
+                  ? ""
+                  : f.name === "description"
+                    ? data.about?.description || ""
+                    : f.name === "objectives"
+                      ? data.about?.objectives || ""
+                      : f.name === "profile"
+                        ? data.about?.profile || ""
+                        : data[f.name] ?? f.defaultValue ?? "",
       }));
     }
 
@@ -623,7 +750,11 @@ charge(false);
             ? data.province?._id || data.province || ""
             : f.name === "active"
               ? Boolean(data.active)
-              : data[f.name] ?? f.defaultValue ?? "",
+              : f.name === "serviceTypeResidencial"
+                ? Boolean(data.serviceType?.residencial)
+                : f.name === "serviceTypeCapacity"
+                  ? data.serviceType?.capacity ?? 0
+                  : data[f.name] ?? f.defaultValue ?? "",
     }));
   };
 
@@ -895,9 +1026,8 @@ charge(false);
       {showDeleteConfirm && (
         <ModalConfirmation
           title="Confirmar eliminación"
-          message={`¿Seguro que deseas eliminar este ${
-            deleteTarget?.type === "program" ? "programa" : "dispositivo"
-          }?`}
+          message={`¿Seguro que deseas eliminar este ${deleteTarget?.type === "program" ? "programa" : "dispositivo"
+            }?`}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteConfirm(false)}
         />

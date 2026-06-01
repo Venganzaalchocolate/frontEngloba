@@ -293,9 +293,18 @@ const InfoProgramOrDispositive = ({
 
     const payload = { dispositiveId: info._id };
 
-    if (quickEditField === "address") payload.address = formData.address || "";
-    if (quickEditField === "phone") payload.phone = formData.phone || "";
-    if (quickEditField === "email") payload.email = formData.email || "";
+if (quickEditField === "address") payload.address = formData.address || "";
+if (quickEditField === "phone") payload.phone = formData.phone || "";
+if (quickEditField === "email") payload.email = formData.email || "";
+
+if (quickEditField === "capacity") {
+  payload.serviceType = {
+    residencial: Boolean(info?.serviceType?.residencial),
+    capacity: Number.isFinite(Number(formData.capacity))
+      ? Number(formData.capacity)
+      : 0,
+  };
+}
 
     const res = await updateDispositive(payload, getToken());
 
@@ -378,18 +387,29 @@ const InfoProgramOrDispositive = ({
         defaultValue: info?.email || "",
       },
     ],
+    capacity: [
+  {
+    name: "capacity",
+    label: "Número de plazas / usuarios",
+    type: "number",
+    required: false,
+    defaultValue: info?.serviceType?.capacity ?? 0,
+  },
+],
   };
 
   const quickEditTitles = {
     address: "Editar dirección",
     phone: "Editar teléfono",
     email: "Editar email de grupo",
+    capacity: "Editar número de plazas",
   };
 
   const quickEditMessages = {
     address: "Actualiza la dirección del dispositivo.",
     phone: "Actualiza el teléfono del centro.",
     email: "Actualiza el email de grupo del dispositivo.",
+    capacity: "Actualiza el número de plazas o usuarios del dispositivo.",
   };
 
   if (!info) {
@@ -535,6 +555,36 @@ const InfoProgramOrDispositive = ({
         <label className={styles.fieldLabel}>Nombre</label>
         <p className={styles.fieldTextStatic}>{info.name || "—"}</p>
       </div>
+
+      {!isProgram && (
+  <>
+    <div className={styles.fieldContainer}>
+      <label className={styles.fieldLabel}>Tipo de dispositivo</label>
+      <p className={styles.fieldTextStatic}>
+        {info?.serviceType?.residencial ? "Residencial" : "No residencial"}
+      </p>
+    </div>
+
+    <div className={styles.fieldContainer}>
+      <label className={styles.fieldLabel}>
+        Número de plazas / usuarios
+        <button
+          type="button"
+          className={styles.btnInlineEdit}
+          onClick={() => setQuickEditField("capacity")}
+        >
+          Editar
+        </button>
+      </label>
+
+      <p className={styles.fieldTextStatic}>
+        {Number.isFinite(Number(info?.serviceType?.capacity))
+          ? Number(info.serviceType.capacity)
+          : 0}
+      </p>
+    </div>
+  </>
+)}
 
       {!isProgram && (
         <div className={styles.fieldContainer}>

@@ -6,6 +6,7 @@ import { TbFileDownload } from "react-icons/tb";
 import { FaFileUpload, FaEdit, FaEye, FaHistory, FaFileDownload, FaTrashAlt } from "react-icons/fa";
 import ExcelJS from "exceljs";
 
+
 import { useDebounce } from "../../hooks/useDebounce.jsx";
 import { useLogin } from "../../hooks/useLogin.jsx";
 import { getToken } from "../../lib/serviceToken.js";
@@ -17,6 +18,7 @@ import FiltersAttendedUsers from "./FiltersAttendedUsers.jsx";
 import FormAttendedUser from "./FormAttendedUser.jsx";
 import { NATIONALITIES, getNationalityLabel } from "../../lib/nationalities.js";
 
+
 import {
   attendedUserCreate,
   attendedUserList,
@@ -27,7 +29,9 @@ import {
   attendedUserGet,
   attendedUserExport,
   attendedUserDelete,
+  updateDispositive,
 } from "../../lib/data";
+import { useMenuWorker } from "../../hooks/useMenuWorker.jsx";
 
 const INITIAL_FILTERS = {
   q: "",
@@ -47,12 +51,14 @@ const ManagingAttendedUsers = ({
   listResponsability = [],
 }) => {
   const { logged } = useLogin();
+  const { changeMenuWorker } = useMenuWorker();
 
   const role = logged?.user?.role;
   const isRootOrGlobal = role === "root" || role === "global" || role === "rrhh";
 
   const importFileInputRef = useRef(null);
   const silentNextLoadRef = useRef(false);
+  const [capacityCheckDevice, setCapacityCheckDevice] = useState(null);
 
   const [scope, setScope] = useState(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
@@ -214,7 +220,22 @@ const ManagingAttendedUsers = ({
   );
 
   const selectedDeviceName = selectedDeviceId ? getDeviceLabel(selectedDeviceId) : "";
+const selectedDevice = selectedDeviceId
+  ? enumsData?.dispositiveIndex?.[selectedDeviceId]
+  : null;
 
+const selectedDeviceCapacity = Number.isFinite(Number(selectedDevice?.serviceType?.capacity))
+  ? Number(selectedDevice.serviceType.capacity)
+  : 0;
+
+const isSelectedDeviceResidential = Boolean(selectedDevice?.serviceType?.residencial);
+
+const attendedUsersCount = items.filter((item) => item.visibleStayIsActive).length;
+
+const availablePlaces =
+  isSelectedDeviceResidential && selectedDeviceCapacity > 0
+    ? Math.max(selectedDeviceCapacity - attendedUsersCount, 0)
+    : null;
   const scopeReady = !!scope && (scope === "all" || !!selectedDeviceId);
   const canCreateOrImport = scope === "device" && !!selectedDeviceId;
   const canOpenStay = availableDevices.length > 0;
@@ -412,29 +433,108 @@ const ManagingAttendedUsers = ({
     },
   ], [availableDevices, scope, selectedDeviceId]);
 
-  const submitScope = (values) => {
-    const dispositiveId = getFieldValue(values.dispositive);
+  const submitCapacityCheck = async (values) => {
+    if (!capacityCheckDevice?._id) return;
 
-    if (values.mode === "device" && !dispositiveId) {
-      modal("Dispositivo requerido", "Debes seleccionar un dispositivo concreto.");
+    const knowsCapacity =
+      values.knowsCapacity === true || values.knowsCapacity === "true";
+
+    if (!knowsCapacity) {
+      setCapacityCheckDevice(null);
       return;
     }
 
-    if (values.mode === "all") {
-      setScope("all");
-      setSelectedDeviceId("");
+    const capacity = Number.isFinite(Number(values.capacity))
+      ? Number(values.capacity)
+      : 0;
+
+    if (capacity <= 0) {
+      modal("Número no válido", "Introduce una cantidad mayor que 0.");
+      return;
     }
 
-    if (values.mode === "device") {
-      setScope("device");
-      setSelectedDeviceId(dispositiveId);
+    try {
+      charge(true);
+
+      const res = await updateDispositive(
+        {
+          dispositiveId: capacityCheckDevice._id,
+          serviceType: {
+            residencial: true,
+            capacity,
+          },
+        },
+        getToken()
+      );
+
+      if (!res || res.error) {
+        modal("Error", res?.message || "No se pudo actualizar el número de plazas.");
+        return;
+      }
+
+      setCapacityCheckDevice(null);
+      modal("Dispositivo actualizado", "Número de plazas actualizado correctamente.");
+    } catch (err) {
+      modal("Error", err?.message || "No se pudo actualizar el número de plazas.");
+    } finally {
+      charge(false);
+    }
+  };
+
+const submitScope = async (values) => {
+  const dispositiveId = getFieldValue(values.dispositive);
+
+  if (values.mode === "device" && !dispositiveId) {
+    modal("Dispositivo requerido", "Debes seleccionar un dispositivo concreto.");
+    return;
+  }
+
+  if (values.mode === "all") {
+    const sameScope = scope === "all";
+
+    setScope("all");
+    setSelectedDeviceId("");
+    setScopeModalOpen(false);
+
+    if (sameScope) {
+      await loadList(false);
+      return;
     }
 
     setPage(1);
     setItems([]);
     setTotalPages(0);
+    return;
+  }
+
+  if (values.mode === "device") {
+    const sameDevice = scope === "device" && selectedDeviceId === dispositiveId;
+    const device = enumsData?.dispositiveIndex?.[dispositiveId];
+
+    setScope("device");
+    setSelectedDeviceId(dispositiveId);
     setScopeModalOpen(false);
-  };
+
+    const isResidential = Boolean(device?.serviceType?.residencial);
+    const capacity = Number(device?.serviceType?.capacity || 0);
+
+    if (isResidential && capacity === 0) {
+      setCapacityCheckDevice({
+        _id: dispositiveId,
+        name: device?.name || "Dispositivo seleccionado",
+      });
+    }
+
+    if (sameDevice) {
+      await loadList(false);
+      return;
+    }
+
+    setPage(1);
+    setItems([]);
+    setTotalPages(0);
+  }
+};
 
   const handleLimitChange = (e) => {
     setLimit(parseInt(e.target.value, 10));
@@ -1395,6 +1495,15 @@ const ManagingAttendedUsers = ({
     }
   };
 
+  const closeScopeModal = () => {
+    if (scopeReady) {
+      setScopeModalOpen(false);
+      return;
+    }
+
+    changeMenuWorker(null);
+  };
+
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
@@ -1440,13 +1549,24 @@ const ManagingAttendedUsers = ({
           <div className={styles.cajaSeleccionActiva}>
             <h4>Ámbito activo</h4>
 
-            <p>
-              {scope === "all"
-                ? "Todos mis dispositivos"
-                : selectedDeviceId
-                  ? getDeviceLabel(selectedDeviceId)
-                  : "Sin seleccionar"}
-            </p>
+
+<p>
+  {scope === "all" ? (
+    "Todos mis dispositivos"
+  ) : selectedDeviceId ? (
+    <>
+      {getDeviceLabel(selectedDeviceId)}
+      {availablePlaces !== null && (
+        <>
+          {" "}
+          · Plazas disponibles: {availablePlaces} / {selectedDeviceCapacity}
+        </>
+      )}
+    </>
+  ) : (
+    "Sin seleccionar"
+  )}
+</p>
 
             <button onClick={() => setScopeModalOpen(true)}>
               Cambiar ámbito
@@ -1527,9 +1647,7 @@ const ManagingAttendedUsers = ({
             message="Selecciona si quieres trabajar con todos tus dispositivos o con uno concreto."
             fields={scopeFields}
             onSubmit={submitScope}
-            onClose={() => {
-              if (scopeReady) setScopeModalOpen(false);
-            }}
+            onClose={closeScopeModal}
             modal={modal}
           />
         )}
@@ -1673,6 +1791,38 @@ const ManagingAttendedUsers = ({
             }
             onConfirm={confirmDeleteUserAttended}
             onCancel={() => setDeleteDoc(null)}
+          />
+        )}
+
+        {!!capacityCheckDevice && (
+          <ModalForm
+            title="Número de plazas no indicado"
+            message={`El dispositivo "${capacityCheckDevice.name}" es residencial, pero tiene 0 plazas registradas.`}
+            fields={[
+              {
+                name: "knowsCapacity",
+                label: "¿Conoces el número de plazas totales?",
+                type: "select",
+                required: true,
+                defaultValue: "",
+                options: [
+                  { value: "", label: "Seleccione una opción" },
+                  { value: true, label: "Sí" },
+                  { value: false, label: "No lo sé" },
+                ],
+              },
+              {
+                name: "capacity",
+                label: "Número de plazas / usuarios",
+                type: "number",
+                required: true,
+                defaultValue: "",
+                showIf: (data) => data.knowsCapacity === true || data.knowsCapacity === "true",
+              },
+            ]}
+            onSubmit={submitCapacityCheck}
+            onClose={() => setCapacityCheckDevice(null)}
+            modal={modal}
           />
         )}
 

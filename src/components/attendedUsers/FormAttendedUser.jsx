@@ -15,6 +15,7 @@ const FormAttendedUser = ({
   doc = null,
   mode = "create",
   fixedDispositiveId,
+  protectedMode = false,
   modal,
   onSubmit,
   onClose,
@@ -29,7 +30,9 @@ const FormAttendedUser = ({
         label: "Documento",
         type: "text",
         required: true,
-        defaultValue: doc?.documentId || initialDocumentId || "",
+        defaultValue: protectedMode
+          ? initialDocumentId
+          : doc?.documentId || initialDocumentId || "",
         disabled: true,
       },
       {
@@ -37,14 +40,16 @@ const FormAttendedUser = ({
         label: "Nombre",
         type: "text",
         required: true,
-        defaultValue: doc?.firstName || "",
+        defaultValue: protectedMode ? "Anónimo" : doc?.firstName || "",
+        disabled: protectedMode,
       },
       {
         name: "lastName",
         label: "Apellidos",
         type: "text",
         required: true,
-        defaultValue: doc?.lastName || "",
+        defaultValue: protectedMode ? "Anónimo" : doc?.lastName || "",
+        disabled: protectedMode,
       },
     ];
 
@@ -112,7 +117,7 @@ const FormAttendedUser = ({
     }
 
     return base;
-  }, [doc, isEdit, initialDocumentId]);
+  }, [doc, isEdit, initialDocumentId, protectedMode]);
 
   const getFieldValue = (value) => {
     if (!value) return "";
@@ -134,6 +139,12 @@ const FormAttendedUser = ({
       nationality: getFieldValue(values.nationality),
     };
 
+    if (protectedMode && !isEdit) {
+      payload.documentId = initialDocumentId;
+      payload.firstName = "Anónimo";
+      payload.lastName = "Anónimo";
+    }
+
     if (isEdit) {
       payload._id = doc?._id;
     } else {
@@ -147,9 +158,11 @@ const FormAttendedUser = ({
     <ModalForm
       title={isEdit ? "Editar usuario atendido" : "Crear usuario atendido"}
       message={
-        isEdit
-          ? "Modifica los datos principales. Si cambias nombre o apellidos, se guardará el alias anterior."
-          : "El usuario se creará asociado al dispositivo seleccionado."
+        protectedMode
+          ? "Este dispositivo pertenece a un programa sensible. El usuario se creará con datos anonimizados."
+          : isEdit
+            ? "Modifica los datos principales. Si cambias nombre o apellidos, se guardará el alias anterior."
+            : "El usuario se creará asociado al dispositivo seleccionado."
       }
       submitText={isEdit ? "Guardar cambios" : "Crear usuario"}
       cancelText="Cancelar"

@@ -2,10 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "../styles/ManagingEmployer.module.css";
 import { FaCloudArrowUp, FaSquarePlus, FaUserPlus } from "react-icons/fa6";
 import { TbFileTypeXml } from "react-icons/tb";
-import { TbFileDownload } from "react-icons/tb";
-import { FaFileUpload, FaEdit, FaEye, FaHistory, FaFileDownload, FaTrashAlt } from "react-icons/fa";
+import { FaEdit, FaEye, FaHistory, FaFileDownload, FaTrashAlt } from "react-icons/fa";
 import ExcelJS from "exceljs";
-
 
 import { useDebounce } from "../../hooks/useDebounce.jsx";
 import { useLogin } from "../../hooks/useLogin.jsx";
@@ -17,7 +15,6 @@ import ModalConfirmation from "../globals/ModalConfirmation";
 import FiltersAttendedUsers from "./FiltersAttendedUsers.jsx";
 import FormAttendedUser from "./FormAttendedUser.jsx";
 import { NATIONALITIES, getNationalityLabel } from "../../lib/nationalities.js";
-
 
 import {
   attendedUserCreate,
@@ -43,6 +40,8 @@ const INITIAL_FILTERS = {
   active: "total",
   onlyActiveStays: "true",
 };
+
+const PROTECTED_DATA = ["68aee343f80f1cd5a5de406d"];
 
 const ManagingAttendedUsers = ({
   modal,
@@ -94,8 +93,6 @@ const ManagingAttendedUsers = ({
 
     return String(stay.dispositive);
   };
-
-
 
   const refId = (value) => {
     if (!value) return "";
@@ -220,22 +217,59 @@ const ManagingAttendedUsers = ({
   );
 
   const selectedDeviceName = selectedDeviceId ? getDeviceLabel(selectedDeviceId) : "";
-const selectedDevice = selectedDeviceId
-  ? enumsData?.dispositiveIndex?.[selectedDeviceId]
-  : null;
 
-const selectedDeviceCapacity = Number.isFinite(Number(selectedDevice?.serviceType?.capacity))
-  ? Number(selectedDevice.serviceType.capacity)
-  : 0;
-
-const isSelectedDeviceResidential = Boolean(selectedDevice?.serviceType?.residencial);
-
-const attendedUsersCount = items.filter((item) => item.visibleStayIsActive).length;
-
-const availablePlaces =
-  isSelectedDeviceResidential && selectedDeviceCapacity > 0
-    ? Math.max(selectedDeviceCapacity - attendedUsersCount, 0)
+  const selectedDevice = selectedDeviceId
+    ? enumsData?.dispositiveIndex?.[selectedDeviceId]
     : null;
+
+  const selectedDeviceProgramId = refId(selectedDevice?.program);
+
+  const isProtectedSelectedDevice = PROTECTED_DATA.includes(selectedDeviceProgramId);
+
+  const getProtectedDeviceCode = () => {
+    const code =
+      selectedDevice?.acronym ||
+      selectedDevice?.code ||
+      selectedDevice?.name ||
+      "DISPOSITIVO";
+
+    return String(code)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 12);
+  };
+
+  const buildProtectedDocumentId = () => {
+    const random = Math.random().toString(36).slice(2, 7).toUpperCase();
+    return `${getProtectedDeviceCode()}-${Date.now()}-${random}`;
+  };
+
+  const applyProtectedDataIfNeeded = (payload) => {
+    if (!isProtectedSelectedDevice || formMode !== "create") return payload;
+
+    return {
+      ...payload,
+      documentId: payload.documentId || buildProtectedDocumentId(),
+      firstName: "Anónimo",
+      lastName: "Anónimo",
+    };
+  };
+
+  const selectedDeviceCapacity = Number.isFinite(Number(selectedDevice?.serviceType?.capacity))
+    ? Number(selectedDevice.serviceType.capacity)
+    : 0;
+
+  const isSelectedDeviceResidential = Boolean(selectedDevice?.serviceType?.residencial);
+
+  const attendedUsersCount = items.filter((item) => item.visibleStayIsActive).length;
+
+  const availablePlaces =
+    isSelectedDeviceResidential && selectedDeviceCapacity > 0
+      ? Math.max(selectedDeviceCapacity - attendedUsersCount, 0)
+      : null;
+
   const scopeReady = !!scope && (scope === "all" || !!selectedDeviceId);
   const canCreateOrImport = scope === "device" && !!selectedDeviceId;
   const canOpenStay = availableDevices.length > 0;
@@ -481,60 +515,60 @@ const availablePlaces =
     }
   };
 
-const submitScope = async (values) => {
-  const dispositiveId = getFieldValue(values.dispositive);
+  const submitScope = async (values) => {
+    const dispositiveId = getFieldValue(values.dispositive);
 
-  if (values.mode === "device" && !dispositiveId) {
-    modal("Dispositivo requerido", "Debes seleccionar un dispositivo concreto.");
-    return;
-  }
-
-  if (values.mode === "all") {
-    const sameScope = scope === "all";
-
-    setScope("all");
-    setSelectedDeviceId("");
-    setScopeModalOpen(false);
-
-    if (sameScope) {
-      await loadList(false);
+    if (values.mode === "device" && !dispositiveId) {
+      modal("Dispositivo requerido", "Debes seleccionar un dispositivo concreto.");
       return;
     }
 
-    setPage(1);
-    setItems([]);
-    setTotalPages(0);
-    return;
-  }
+    if (values.mode === "all") {
+      const sameScope = scope === "all";
 
-  if (values.mode === "device") {
-    const sameDevice = scope === "device" && selectedDeviceId === dispositiveId;
-    const device = enumsData?.dispositiveIndex?.[dispositiveId];
+      setScope("all");
+      setSelectedDeviceId("");
+      setScopeModalOpen(false);
 
-    setScope("device");
-    setSelectedDeviceId(dispositiveId);
-    setScopeModalOpen(false);
+      if (sameScope) {
+        await loadList(false);
+        return;
+      }
 
-    const isResidential = Boolean(device?.serviceType?.residencial);
-    const capacity = Number(device?.serviceType?.capacity || 0);
-
-    if (isResidential && capacity === 0) {
-      setCapacityCheckDevice({
-        _id: dispositiveId,
-        name: device?.name || "Dispositivo seleccionado",
-      });
-    }
-
-    if (sameDevice) {
-      await loadList(false);
+      setPage(1);
+      setItems([]);
+      setTotalPages(0);
       return;
     }
 
-    setPage(1);
-    setItems([]);
-    setTotalPages(0);
-  }
-};
+    if (values.mode === "device") {
+      const sameDevice = scope === "device" && selectedDeviceId === dispositiveId;
+      const device = enumsData?.dispositiveIndex?.[dispositiveId];
+
+      setScope("device");
+      setSelectedDeviceId(dispositiveId);
+      setScopeModalOpen(false);
+
+      const isResidential = Boolean(device?.serviceType?.residencial);
+      const capacity = Number(device?.serviceType?.capacity || 0);
+
+      if (isResidential && capacity === 0) {
+        setCapacityCheckDevice({
+          _id: dispositiveId,
+          name: device?.name || "Dispositivo seleccionado",
+        });
+      }
+
+      if (sameDevice) {
+        await loadList(false);
+        return;
+      }
+
+      setPage(1);
+      setItems([]);
+      setTotalPages(0);
+    }
+  };
 
   const handleLimitChange = (e) => {
     setLimit(parseInt(e.target.value, 10));
@@ -570,6 +604,14 @@ const submitScope = async (values) => {
     }
 
     setEditingDoc(null);
+
+    if (isProtectedSelectedDevice) {
+      setCreatingDocumentId(buildProtectedDocumentId());
+      setCheckDocumentModalOpen(false);
+      setFormMode("create");
+      return;
+    }
+
     setCreatingDocumentId("");
     setCheckDocumentModalOpen(true);
   };
@@ -590,11 +632,12 @@ const submitScope = async (values) => {
       charge(true);
 
       const token = getToken();
+      const cleanPayload = applyProtectedDataIfNeeded(payload);
 
       const resp =
         formMode === "edit"
-          ? await attendedUserUpdate(payload, token)
-          : await attendedUserCreate(payload, token);
+          ? await attendedUserUpdate(cleanPayload, token)
+          : await attendedUserCreate(cleanPayload, token);
 
       if (resp?.error) {
         modal("Error", resp.message || "No se pudo guardar");
@@ -619,11 +662,6 @@ const submitScope = async (values) => {
     const stayId = closeStayDoc?.visibleStayIsActive
       ? closeStayDoc?.visibleStay?._id
       : null;
-
-    if (!closeStayDoc?._id || !stayId) {
-      modal("Error", "No se ha encontrado una estancia activa para cerrar.");
-      return;
-    }
 
     if (!closeStayDoc?._id || !stayId) {
       modal("Error", "No se ha encontrado una estancia activa para cerrar.");
@@ -794,7 +832,6 @@ const submitScope = async (values) => {
   };
 
   const submitDownloadXls = async (values) => {
-
     const getStayProgramId = (stay) => {
       if (!stay?.program) return "";
       if (typeof stay.program === "object") return String(stay.program._id || stay.program.id || "");
@@ -836,6 +873,7 @@ const submitScope = async (values) => {
       if (scope === "all") return allowedDeviceIds;
       return [];
     };
+
     const exportMode = values.exportMode || "active";
     const onlyActive = exportMode === "active";
     const exportDeviceIds = getExportAllowedDeviceIds();
@@ -1043,9 +1081,9 @@ const submitScope = async (values) => {
     sheet.getRow(1).font = { bold: true };
 
     sheet.addRow({
-      documentId: "X1234567A",
-      firstName: "Nombre ejemplo",
-      lastName: "Apellidos ejemplo",
+      documentId: isProtectedSelectedDevice ? "Se generará automáticamente" : "X1234567A",
+      firstName: isProtectedSelectedDevice ? "Anónimo" : "Nombre ejemplo",
+      lastName: isProtectedSelectedDevice ? "Anónimo" : "Apellidos ejemplo",
       birthday: new Date(2000, 0, 1),
       nationality: "Marruecos",
       gender: "Hombre",
@@ -1121,15 +1159,21 @@ const submitScope = async (values) => {
       },
       {
         field: "Documento",
-        help: "Obligatorio y único. Puede ser DNI, NIE, pasaporte u otro identificador.",
+        help: isProtectedSelectedDevice
+          ? "En este dispositivo protegido, el documento se generará automáticamente al importar o crear."
+          : "Obligatorio y único. Puede ser DNI, NIE, pasaporte u otro identificador.",
       },
       {
         field: "Nombre",
-        help: "Obligatorio.",
+        help: isProtectedSelectedDevice
+          ? "En este dispositivo protegido, se guardará automáticamente como Anónimo."
+          : "Obligatorio.",
       },
       {
         field: "Apellidos",
-        help: "Obligatorio.",
+        help: isProtectedSelectedDevice
+          ? "En este dispositivo protegido, se guardará automáticamente como Anónimo."
+          : "Obligatorio.",
       },
       {
         field: "Fecha nacimiento",
@@ -1350,6 +1394,74 @@ const submitScope = async (values) => {
     );
   };
 
+  const openDeleteUserAttended = (item) => {
+    if (!item?._id) return;
+
+    if (!item.visibleStay?._id && !selectedDeviceId && !item.activeDispositive) {
+      modal("Error", "No se ha encontrado la estancia o dispositivo a borrar.");
+      return;
+    }
+
+    setDeleteDoc(item);
+  };
+
+  const confirmDeleteUserAttended = async () => {
+    if (!deleteDoc?._id) return;
+
+    const stayId = deleteDoc?.visibleStay?._id || "";
+    const dispositive =
+      getStayDeviceId(deleteDoc?.visibleStay) ||
+      selectedDeviceId ||
+      deleteDoc?.activeDispositive ||
+      "";
+
+    if (!stayId && !dispositive) {
+      modal("Error", "No se ha encontrado la estancia o dispositivo a borrar.");
+      return;
+    }
+
+    try {
+      charge(true);
+
+      const token = getToken();
+
+      const resp = await attendedUserDelete(
+        {
+          id: deleteDoc._id,
+          stayId,
+          dispositive,
+        },
+        token
+      );
+
+      if (resp?.error) {
+        modal("Error", resp.message || "No se pudo borrar el usuario atendido.");
+        return;
+      }
+
+      setDeleteDoc(null);
+      await loadList(false);
+
+      modal(
+        "Usuarios atendidos",
+        resp?.message || "Borrado realizado correctamente."
+      );
+    } catch (e) {
+      modal("Error", e?.message || "No se pudo borrar el usuario atendido.");
+    } finally {
+      charge(false);
+    }
+  };
+
+  const closeScopeModal = () => {
+    if (scopeReady) {
+      setScopeModalOpen(false);
+      return;
+    }
+
+    changeMenuWorker(null);
+  };
+
   const renderRow = (item) => {
     const stay = item.visibleStay;
 
@@ -1424,6 +1536,7 @@ const submitScope = async (values) => {
                   style={{ cursor: "pointer" }}
                 />
               )}
+
               <FaTrashAlt
                 onClick={() => openDeleteUserAttended(item)}
                 title="Borrar usuario o estancia"
@@ -1434,74 +1547,6 @@ const submitScope = async (values) => {
         </div>
       </div>
     );
-  };
-
-  const openDeleteUserAttended = (item) => {
-    if (!item?._id) return;
-
-    if (!item.visibleStay?._id && !selectedDeviceId && !item.activeDispositive) {
-      modal("Error", "No se ha encontrado la estancia o dispositivo a borrar.");
-      return;
-    }
-
-    setDeleteDoc(item);
-  };
-
-  const confirmDeleteUserAttended = async () => {
-    if (!deleteDoc?._id) return;
-
-    const stayId = deleteDoc?.visibleStay?._id || "";
-    const dispositive =
-      getStayDeviceId(deleteDoc?.visibleStay) ||
-      selectedDeviceId ||
-      deleteDoc?.activeDispositive ||
-      "";
-
-    if (!stayId && !dispositive) {
-      modal("Error", "No se ha encontrado la estancia o dispositivo a borrar.");
-      return;
-    }
-
-    try {
-      charge(true);
-
-      const token = getToken();
-
-      const resp = await attendedUserDelete(
-        {
-          id: deleteDoc._id,
-          stayId,
-          dispositive,
-        },
-        token
-      );
-
-      if (resp?.error) {
-        modal("Error", resp.message || "No se pudo borrar el usuario atendido.");
-        return;
-      }
-
-      setDeleteDoc(null);
-      await loadList(false);
-
-      modal(
-        "Usuarios atendidos",
-        resp?.message || "Borrado realizado correctamente."
-      );
-    } catch (e) {
-      modal("Error", e?.message || "No se pudo borrar el usuario atendido.");
-    } finally {
-      charge(false);
-    }
-  };
-
-  const closeScopeModal = () => {
-    if (scopeReady) {
-      setScopeModalOpen(false);
-      return;
-    }
-
-    changeMenuWorker(null);
   };
 
   return (
@@ -1535,8 +1580,6 @@ const submitScope = async (values) => {
               style={{ cursor: "pointer" }}
             />
 
-
-
             <input
               ref={importFileInputRef}
               type="file"
@@ -1549,24 +1592,29 @@ const submitScope = async (values) => {
           <div className={styles.cajaSeleccionActiva}>
             <h4>Ámbito activo</h4>
 
-
-<p>
-  {scope === "all" ? (
-    "Todos mis dispositivos"
-  ) : selectedDeviceId ? (
-    <>
-      {getDeviceLabel(selectedDeviceId)}
-      {availablePlaces !== null && (
-        <>
-          {" "}
-          · Plazas disponibles: {availablePlaces} / {selectedDeviceCapacity}
-        </>
-      )}
-    </>
-  ) : (
-    "Sin seleccionar"
-  )}
-</p>
+            <p>
+              {scope === "all" ? (
+                "Todos mis dispositivos"
+              ) : selectedDeviceId ? (
+                <>
+                  {getDeviceLabel(selectedDeviceId)}
+                  {isProtectedSelectedDevice && (
+                    <>
+                      {" "}
+                      · Datos protegidos
+                    </>
+                  )}
+                  {availablePlaces !== null && (
+                    <>
+                      {" "}
+                      · Plazas disponibles: {availablePlaces} / {selectedDeviceCapacity}
+                    </>
+                  )}
+                </>
+              ) : (
+                "Sin seleccionar"
+              )}
+            </p>
 
             <button onClick={() => setScopeModalOpen(true)}>
               Cambiar ámbito
@@ -1658,6 +1706,7 @@ const submitScope = async (values) => {
             doc={editingDoc}
             initialDocumentId={creatingDocumentId}
             fixedDispositiveId={selectedDeviceId}
+            protectedMode={isProtectedSelectedDevice && formMode === "create"}
             modal={modal}
             onSubmit={onSubmitForm}
             onClose={closeForm}
@@ -1739,6 +1788,7 @@ const submitScope = async (values) => {
             modal={modal}
           />
         )}
+
         {exportModalOpen && (
           <ModalForm
             title="Descargar Excel"
@@ -1779,6 +1829,7 @@ const submitScope = async (values) => {
             modal={modal}
           />
         )}
+
         {!!deleteDoc && (
           <ModalConfirmation
             title="Confirmar borrado"
@@ -1825,7 +1876,6 @@ const submitScope = async (values) => {
             modal={modal}
           />
         )}
-
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import EnumDocumentationCRUD from "./EnumDocumentationCRUD";
+import DocumentationReceiptTemplateCRUD from "./DocumentationReceiptTemplateCRUD";
 import { EnumCRUD } from "./EnumCRUD";
 import ModalConfirmation from "../globals/ModalConfirmation";
 import styles from "../styles/enumStyleManaging.module.css";
@@ -13,13 +14,15 @@ import {
   createSubData,
   deleteSubData,
   deleteFileEnums,
+  documentationReceiptTemplateList,
+  documentationReceiptTemplateUpsert,
+  documentationReceiptTemplateDelete,
+  documentationReceiptTemplateToggle,
 } from "../../lib/data";
+
 import { getToken } from "../../lib/serviceToken";
 import { ENUM_OPTIONS } from "./enumsConfig";
 
-/* ===============================
-   FUNCIONES AUXILIARES
-================================= */
 const indexToTree = (index = {}) => {
   const roots = [];
   const byId = {};
@@ -37,9 +40,7 @@ const indexToTree = (index = {}) => {
   Object.entries(index).forEach(([id, v]) => {
     if (v.isSub && v.parent != null) {
       const parentId = String(v.parent);
-      if (byId[parentId] && byId[id]) {
-        byId[parentId].subcategories.push(byId[id]);
-      }
+      if (byId[parentId] && byId[id]) byId[parentId].subcategories.push(byId[id]);
     }
   });
 
@@ -48,20 +49,16 @@ const indexToTree = (index = {}) => {
   });
 
   roots.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
-  roots.forEach((r) =>
-    r.subcategories.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }))
-  );
+  roots.forEach((r) => r.subcategories.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" })));
 
   return roots;
 };
 
-/* ===============================
-   COMPONENTE PRINCIPAL
-================================= */
 export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) {
   const [selectedKey, setSelectedKey] = useState("studies");
   const [crudData, setCrudData] = useState({});
   const [confirm, setConfirm] = useState(null);
+  const [receiptTemplates, setReceiptTemplates] = useState([]);
 
   useEffect(() => {
     if (!enumsData) {
@@ -81,15 +78,9 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
 
     const normalized = {
       jobs: enumsData.jobsIndex ? indexToTree(enumsData.jobsIndex) : enumsData.jobs || [],
-      provinces: enumsData.provincesIndex
-        ? indexToTree(enumsData.provincesIndex)
-        : enumsData.provinces || [],
-      leavetype: enumsData.leavesIndex
-        ? indexToTree(enumsData.leavesIndex)
-        : enumsData.leavetype || [],
-      studies: enumsData.studiesIndex
-        ? indexToTree(enumsData.studiesIndex)
-        : enumsData.studies || [],
+      provinces: enumsData.provincesIndex ? indexToTree(enumsData.provincesIndex) : enumsData.provinces || [],
+      leavetype: enumsData.leavesIndex ? indexToTree(enumsData.leavesIndex) : enumsData.leavetype || [],
+      studies: enumsData.studiesIndex ? indexToTree(enumsData.studiesIndex) : enumsData.studies || [],
       work_schedule: enumsData.work_schedule || [],
       finantial: enumsData.finantial || [],
       documentation: enumsData.documentation || [],
@@ -115,21 +106,32 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
     return grouped;
   }, [crudData.documentation]);
 
-  const runWithSpinner = useCallback(
-    async (fn) => {
-      try {
-        charge(true);
-        const res = await fn();
-        await chargeEnums?.();
-        return res;
-      } catch (err) {
-        modal("Error", "Ha ocurrido un problema con la operación.");
-      } finally {
-        charge(false);
-      }
-    },
-    [chargeEnums, charge, modal]
-  );
+  const runWithSpinner = useCallback(async (fn) => {
+    try {
+      charge(true);
+      const res = await fn();
+      await chargeEnums?.();
+      return res;
+    } catch (err) {
+      modal("Error", err?.message || "Ha ocurrido un problema con la operación.");
+    } finally {
+      charge(false);
+    }
+  }, [chargeEnums, charge, modal]);
+
+  const loadReceiptTemplates = useCallback(async () => {
+    const token = getToken();
+    const res = await documentationReceiptTemplateList({ page: 1, limit: 200 }, token);
+    if (res?.error) {
+      modal("Error", res.message || "No se pudieron cargar las plantillas.");
+      return;
+    }
+    setReceiptTemplates(res?.items || []);
+  }, [modal]);
+
+  useEffect(() => {
+    if (selectedKey === "documentationReceiptTemplate") loadReceiptTemplates();
+  }, [selectedKey, loadReceiptTemplates]);
 
   const handleCreate = async (form) => {
     const payload = buildCreatePayload(selectedKey, form);
@@ -152,15 +154,9 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
   const handleDelete = (item) => {
     setConfirm({
       title: "Confirmar eliminación",
-      message: item.name
-        ? `¿Seguro que deseas eliminar "${item.name}"?`
-        : `¿Seguro que deseas eliminar el archivo asociado?`,
+      message: item.name ? `¿Seguro que deseas eliminar "${item.name}"?` : `¿Seguro que deseas eliminar el archivo asociado?`,
       onConfirm: async () => {
-        await runWithSpinner(() =>
-          item.name
-            ? deleteData(getToken(), { id: item._id, type: selectedKey })
-            : deleteFileEnums(getToken(), item)
-        );
+        await runWithSpinner(() => item.name ? deleteData(getToken(), { id: item._id, type: selectedKey }) : deleteFileEnums(getToken(), item));
         setConfirm(null);
       },
       onCancel: () => setConfirm(null),
@@ -186,21 +182,42 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
     });
   };
 
+  const handleReceiptTemplateUpsert = async (form) => {
+    await runWithSpinner(async () => {
+      const res = await documentationReceiptTemplateUpsert(form, getToken());
+      if (res?.error) throw new Error(res.message);
+      await loadReceiptTemplates();
+      return res;
+    });
+  };
+
+  const handleReceiptTemplateDelete = async (item) => {
+    await runWithSpinner(async () => {
+      const res = await documentationReceiptTemplateDelete({ templateId: item._id }, getToken());
+      if (res?.error) throw new Error(res.message);
+      await loadReceiptTemplates();
+      return res;
+    });
+  };
+
+  const handleReceiptTemplateToggle = async (item) => {
+    await runWithSpinner(async () => {
+      const res = await documentationReceiptTemplateToggle({ templateId: item._id, active: !item.active }, getToken());
+      if (res?.error) throw new Error(res.message);
+      await loadReceiptTemplates();
+      return res;
+    });
+  };
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Gestión de Enums</h1>
 
       <div className={styles.block}>
         <label className={styles.label}>Tipo</label>
-        <select
-          className={styles.select}
-          value={selectedKey}
-          onChange={(e) => setSelectedKey(e.target.value)}
-        >
+        <select className={styles.select} value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
           {ENUM_OPTIONS.map((opt) => (
-            <option key={opt.key} value={opt.key}>
-              {opt.label}
-            </option>
+            <option key={opt.key} value={opt.key}>{opt.label}</option>
           ))}
         </select>
       </div>
@@ -212,6 +229,15 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
           onCreate={handleCreate}
           onEdit={(item, form) => handleEdit(item, form)}
           onDelete={handleDelete}
+          modal={modal}
+        />
+      ) : selectedKey === "documentationReceiptTemplate" ? (
+        <DocumentationReceiptTemplateCRUD
+          data={receiptTemplates}
+          docs={crudData.documentation || []}
+          onCreateOrUpdate={handleReceiptTemplateUpsert}
+          onDelete={handleReceiptTemplateDelete}
+          onToggle={handleReceiptTemplateToggle}
           modal={modal}
         />
       ) : (
@@ -243,7 +269,6 @@ function buildCreatePayload(enumKey, form) {
     payload.model = form.model;
     payload.categoryFiles = form.categoryFiles || "";
     payload.requiresSignature = form.requiresSignature;
-
     if (form.date === "si") payload.duration = Number(form.duration || 0);
     if (form.file) payload.file = form.file;
   }
@@ -262,7 +287,6 @@ function buildEditPayload(enumKey, itemOrParent, form, extra = {}) {
     payload.model = form.model;
     payload.categoryFiles = form.categoryFiles || "";
     payload.requiresSignature = form.requiresSignature;
-
     if (form.date === "si") payload.duration = Number(form.duration || 0);
     if (form.file) payload.file = form.file;
   }

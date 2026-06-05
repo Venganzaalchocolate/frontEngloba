@@ -271,3 +271,80 @@
   display: inline-block;
   margin-left: 0.5rem;
 }
+
+/* =======================================================
+   PLANTILLAS DE RECIBÍ
+   Solo afecta al modal nuevo si usas:
+   styles.receiptModalOverlay
+   styles.receiptTemplateModal
+   ======================================================= */
+
+.receiptModalOverlay {
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+.receiptTemplateModal {
+  max-width: 46rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  margin: auto 0;
+}
+
+.receiptInlineFields {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.receiptInlineFields .field {
+  flex: 1;
+}
+
+.receiptQuestionsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.receiptQuestionCard {
+  background: #fafafa;
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+.receiptQuestionCard:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.receiptTextarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.receiptTextareaSmall {
+  min-height: 4rem;
+  resize: vertical;
+}
+
+.receiptDocName {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 700px) {
+  .receiptInlineFields,
+  .receiptQuestionsHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .receiptTemplateModal {
+    margin: 0;
+  }
+}

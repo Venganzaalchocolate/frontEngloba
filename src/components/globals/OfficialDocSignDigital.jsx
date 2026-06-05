@@ -6,6 +6,7 @@ import { confirmSignature, requestSignature } from "../../lib/data";
 const OfficialDocSignDigital = ({
   user,
   documentation,
+  receiptAnswers = [],
   charge,
   modal,
   onClose,
@@ -39,18 +40,23 @@ const OfficialDocSignDigital = ({
       charge?.(true);
 
       const token = getToken();
-      const resp = await requestSignature(
-        {
-          userId,
-          docType: "recibi",
-          docId,
-          meta: {
-            folderId: folderId || null,
-            description: `Conforme a recibido y leído ${documentation?.name || "el documento"}.`,
-          },
+
+      const payload = {
+        userId,
+        docType: "recibi",
+        docId,
+        meta: {
+          folderId: folderId || null,
+          description: `Conforme a recibido y leído ${documentation?.name || "el documento"}.`,
+          ...(receiptAnswers?.length ? { answers: receiptAnswers } : {}),
         },
-        token
-      );
+      };
+
+
+
+      const resp = await requestSignature(payload, token);
+
+
 
       charge?.(false);
 
@@ -98,6 +104,7 @@ const OfficialDocSignDigital = ({
     charge?.(true);
 
     const token = getToken();
+
     const resp = await confirmSignature(
       {
         userId,

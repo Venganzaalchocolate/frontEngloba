@@ -9,6 +9,7 @@ export const ENUM_OPTIONS = [
   { key: "finantial", label: "Financiación" },
   { key: "leavetype", label: "Excedencias" },
   { key: "entity", label: "Entidades" },
+  { key: "documentationReceiptTemplate", label: "Plantillas de recibí" },
 ];
 
 export const NO_SUB_ENUMS = [

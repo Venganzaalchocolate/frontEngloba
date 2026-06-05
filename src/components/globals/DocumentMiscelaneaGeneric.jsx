@@ -10,7 +10,8 @@ import {
   listFile,
   documentationAuditCanSign,
   documentationAuditRegisterDownload,
-  lastHiringForUser
+  lastHiringForUser,
+  documentationReceiptTemplateGetActiveQuestions,
 } from "../../lib/data";
 
 import ModalForm from "./ModalForm";
@@ -30,6 +31,8 @@ import { BsCheckCircleFill } from "react-icons/bs";
 import { MdWarningAmber } from "react-icons/md";
 import OfficialDocSignDigital from "./OfficialDocSignDigital";
 import { useLogin } from "../../hooks/useLogin";
+
+import OfficialDocReceiptQuestions from "./OfficialDocReceiptQuestions";
 /**
  * @param {Object} props
  * @param {Object} props.data - El objeto user, program o device
@@ -61,6 +64,9 @@ const DocumentMiscelaneaGeneric = ({
   // 1) Archivos normalizados del modelo
   const [normalizedFiles, setNormalizedFiles] = useState([]);
   const [positionUserIds, setPositionUserIds] = useState([]);
+
+  const [receiptQuestionsConfig, setReceiptQuestionsConfig] = useState(null);
+  const [receiptAnswers, setReceiptAnswers] = useState([]);
   const { logged } = useLogin();
 
   const relatedSourcesKey = JSON.stringify(
@@ -83,30 +89,30 @@ const DocumentMiscelaneaGeneric = ({
         const token = getToken();
         let currentPositionIds = [];
 
-if (modelName === "User") {
-  const periodsRes = await lastHiringForUser(
-    {
-      idUser: data._id,
-      includeInactive: false,
-    },
-    token
-  );
+        if (modelName === "User") {
+          const periodsRes = await lastHiringForUser(
+            {
+              idUser: data._id,
+              includeInactive: false,
+            },
+            token
+          );
 
-  const periods = Array.isArray(periodsRes)
-    ? periodsRes
-    : periodsRes
-      ? [periodsRes]
-      : [];
+          const periods = Array.isArray(periodsRes)
+            ? periodsRes
+            : periodsRes
+              ? [periodsRes]
+              : [];
 
-  currentPositionIds = [
-    ...new Set(
-      periods
-        .map((period) => period?.position?._id || period?.position)
-        .filter(Boolean)
-        .map(String)
-    ),
-  ];
-}
+          currentPositionIds = [
+            ...new Set(
+              periods
+                .map((period) => period?.position?._id || period?.position)
+                .filter(Boolean)
+                .map(String)
+            ),
+          ];
+        }
 
         const mainRes = await listFile(
           { originModel: modelName, idModel: data._id },
@@ -158,13 +164,13 @@ if (modelName === "User") {
         if (!isMounted) return;
 
         setPositionUserIds(currentPositionIds);
-setNormalizedFiles([...mainFiles, ...relatedFiles]);
+        setNormalizedFiles([...mainFiles, ...relatedFiles]);
       } catch (error) {
         modal?.("Error", "No se pudieron cargar los documentos.");
         if (isMounted) {
-  setPositionUserIds([]);
-  setNormalizedFiles([]);
-}
+          setPositionUserIds([]);
+          setNormalizedFiles([]);
+        }
       } finally {
         charge?.(false);
       }
@@ -185,30 +191,72 @@ setNormalizedFiles([...mainFiles, ...relatedFiles]);
   // FIRMA DE RICIBIS
   const [signRecibiDoc, setSignRecibiDoc] = useState(null);
 
-  const handleSignRecibi = async (doc) => {
-    try {
-      charge?.(true);
-      const token = getToken();
-      const result = await documentationAuditCanSign({ userId: data._id, documentationId: doc._id }, token);
-      if (!result || result.error) {
-        modal?.("Error", result?.message || "No se pudo comprobar si puedes firmar el recibí.");
-        return;
-      }
-      if (!result.canSign) {
-        modal?.("Descarga obligatoria", "Antes de firmar el recibí debes descargar primero el documento oficial.");
-        return;
-      }
-      setSignRecibiDoc(doc);
-    } catch (error) {
-      modal?.("Error", error?.message || "No se pudo comprobar si puedes firmar el recibí.");
-    } finally {
-      charge?.(false);
+const handleSignRecibi = async (doc) => {
+  try {
+    charge?.(true);
+
+    const token = getToken();
+
+    const questionsResult = await documentationReceiptTemplateGetActiveQuestions(
+      { documentationId: doc._id },
+      token
+    );
+
+    if (questionsResult?.error) {
+      modal?.("Error", questionsResult.message || "No se pudo comprobar si el documento tiene preguntas.");
+      return;
     }
-  };
+
+    const questionsPayload = questionsResult?.data || questionsResult;
+
+    // CASO NUEVO: el documento se genera desde plantilla.
+    // No necesita modelo PDF ni descarga previa.
+    if (questionsPayload?.hasTemplate && questionsPayload.questions?.length > 0) {
+      setReceiptQuestionsConfig({
+        documentation: doc,
+        template: questionsPayload.template,
+        questions: questionsPayload.questions,
+      });
+      return;
+    }
+
+    // CASO ANTIGUO: recibí de un modelo PDF descargado.
+    if (!doc.modeloPDF) {
+      modal?.(
+        "Modelo no disponible",
+        "Este documento requiere firma, pero no tiene modelo PDF ni plantilla de recibí configurada."
+      );
+      return;
+    }
+
+    const result = await documentationAuditCanSign(
+      { userId: data._id, documentationId: doc._id },
+      token
+    );
+
+    if (!result || result.error) {
+      modal?.("Error", result?.message || "No se pudo comprobar si puedes firmar el recibí.");
+      return;
+    }
+
+    if (!result.canSign) {
+      modal?.("Descarga obligatoria", "Antes de firmar el recibí debes descargar primero el documento oficial.");
+      return;
+    }
+
+    setReceiptAnswers([]);
+    setSignRecibiDoc(doc);
+  } catch (error) {
+    modal?.("Error", error?.message || "No se pudo comprobar si puedes firmar el recibí.");
+  } finally {
+    charge?.(false);
+  }
+};
 
   const afterSignRecibi = (updatedUser) => {
     if (updatedUser) syncFromParent(updatedUser);
     setSignRecibiDoc(null);
+    setReceiptAnswers([]);
   };
 
   const [isGeneratingZip, setIsGeneratingZip] = useState(false);
@@ -283,6 +331,17 @@ setNormalizedFiles([...mainFiles, ...relatedFiles]);
     [modelName, data?._id, relatedFileSources]
   );
 
+const handleReceiptQuestionsContinue = (answers) => {
+  if (!receiptQuestionsConfig?.documentation) {
+    modal?.("Error", "No se ha encontrado el documento a firmar.");
+    return;
+  }
+
+  setReceiptAnswers(answers);
+  setSignRecibiDoc(receiptQuestionsConfig.documentation);
+  setReceiptQuestionsConfig(null);
+};
+
   const getSourceForDoc = (doc) => {
     if (!doc?.model || doc.model === modelName) {
       return {
@@ -309,20 +368,20 @@ setNormalizedFiles([...mainFiles, ...relatedFiles]);
 
 
   // 3) Agrupar oficiales con sus archivos
-const visibleOfficialDocs = filterOfficialDocsByPositions({
-  docs: officialDocs || [],
-  files: normalizedFiles,
-  modelName,
-  positionIds: positionUserIds,
-});
+  const visibleOfficialDocs = filterOfficialDocsByPositions({
+    docs: officialDocs || [],
+    files: normalizedFiles,
+    modelName,
+    positionIds: positionUserIds,
+  });
 
-const officialDocumentsToShow = visibleOfficialDocs.map((doc) => {
-  const filesForDoc = normalizedFiles.filter(
-    (f) => f.originDocumentation?.toString() === doc._id.toString()
-  );
+  const officialDocumentsToShow = visibleOfficialDocs.map((doc) => {
+    const filesForDoc = normalizedFiles.filter(
+      (f) => f.originDocumentation?.toString() === doc._id.toString()
+    );
 
-  return { doc, files: filesForDoc };
-});
+    return { doc, files: filesForDoc };
+  });
 
   // 4) Por categoría
   const officialByCategory = officialDocumentsToShow.reduce((acc, { doc, files }) => {
@@ -1065,26 +1124,22 @@ const officialDocumentsToShow = visibleOfficialDocs.map((doc) => {
                       </label>
                     }
 
-                    {
-                      doc.modeloPDF && <button onClick={() => { handleDownloadFile(doc, { idDrive: doc.modeloPDF }, true) }}>{doc.requiresSignature ? 'Descargar' : 'Descargar Modelo'}</button>
-                    }
+                    {doc.modeloPDF && (
+  <button onClick={() => handleDownloadFile(doc, { idDrive: doc.modeloPDF }, true)}>
+    Descargar modelo
+  </button>
+)}
                     {/* FIRMAR RECIBÍ OFICIAL */}
-                    {doc.requiresSignature && data?._id == logged.user._id && (
-                      <button
-                        type="button"
-                        className={styles.signRecibiBtn}
-                        onClick={() => {
-                          if (!doc.modeloPDF) {
-                            modal?.("Modelo no disponible", "Este documento requiere firma, pero aún no tiene un modelo PDF asociado.");
-                            return;
-                          }
-                          handleSignRecibi(doc);
-                        }}
-                        title={`Firmar recibí de ${doc.name}`}
-                      >
-                        Firmar recibí
-                      </button>
-                    )}
+                    {doc.requiresSignature && String(data?._id) === String(logged?.user?._id) && (
+  <button
+    type="button"
+    className={styles.signRecibiBtn}
+    onClick={() => handleSignRecibi(doc)}
+    title={`Firmar ${doc.name}`}
+  >
+    Firmar
+  </button>
+)}
                     {/* Indicador de fecha */}
                     {doc.date && renewal && renewal.lastDate && (
                       <div
@@ -1239,14 +1294,33 @@ const officialDocumentsToShow = visibleOfficialDocs.map((doc) => {
         />
       )}
 
+      {receiptQuestionsConfig && (
+        <OfficialDocReceiptQuestions
+          documentation={receiptQuestionsConfig.documentation}
+          template={receiptQuestionsConfig.template}
+          questions={receiptQuestionsConfig.questions}
+          charge={charge}
+          modal={modal}
+          onClose={() => {
+            setReceiptQuestionsConfig(null);
+            setReceiptAnswers([]);
+          }}
+          onContinue={handleReceiptQuestionsContinue}
+        />
+      )}
+
       {/* FIRMAR RECIBÍ */}
       {signRecibiDoc && (
         <OfficialDocSignDigital
           user={data}
           documentation={signRecibiDoc}
+          receiptAnswers={receiptAnswers}
           charge={charge}
           modal={modal}
-          onClose={() => setSignRecibiDoc(null)}
+          onClose={() => {
+            setSignRecibiDoc(null);
+            setReceiptAnswers([]);
+          }}
           onSigned={afterSignRecibi}
         />
       )}

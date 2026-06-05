@@ -633,3 +633,21 @@ export const listModuleScopeAccess = (datos, token) => fetchData('/modulescopeac
 export const updateModuleScopeAccess = (datos, token) => fetchData('/modulescopeaccessupdate', 'POST', token, datos);
 export const deleteModuleScopeAccess = (datos, token) => fetchData('/modulescopeaccessdelete', 'POST', token, datos);
 export const getUserModuleScopeAccess = (datos, token) => fetchData('/modulescopeaccessgetuser', 'POST', token, datos);
+
+// documentation receipt template
+export const documentationReceiptTemplateList = (datos, token) => fetchData('/documentationreceipttemplatelist', 'POST', token, datos);
+export const documentationReceiptTemplateGet = (datos, token) => fetchData('/documentationreceipttemplateget', 'POST', token, datos);
+export const documentationReceiptTemplateGetByDocumentation = (datos, token) => fetchData('/documentationreceipttemplategetbydocumentation', 'POST', token, datos);
+export const documentationReceiptTemplateGetActiveQuestions = (datos, token) => fetchData('/documentationreceipttemplategetactivequestions', 'POST', token, datos);
+export const documentationReceiptTemplateCreate = (datos, token) => fetchData('/documentationreceipttemplatecreate', 'POST', token, datos);
+export const documentationReceiptTemplateUpsert = (datos, token) => fetchData('/documentationreceipttemplateupsert', 'POST', token, datos);
+export const documentationReceiptTemplateUpdate = (datos, token) => fetchData('/documentationreceipttemplateupdate', 'POST', token, datos);
+export const documentationReceiptTemplateToggle = (datos, token) => fetchData('/documentationreceipttemplatetoggle', 'POST', token, datos);
+export const documentationReceiptTemplateDelete = (datos, token) => fetchData('/documentationreceipttemplatedelete', 'POST', token, datos);
+export const documentationReceiptTemplateValidateAnswers = (datos, token) => fetchData('/documentationreceipttemplatevalidateanswers', 'POST', token, datos);
+export const documentationReceiptTemplatePreview = async (datos, token) => {
+  const pdfBlob = await fetchData('/documentationreceipttemplatepreview', 'POST', token, datos, true);
+  if (!pdfBlob || pdfBlob.error) return pdfBlob || { error: true, message: "No se pudo generar el recibí de prueba" };
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  return { url: pdfUrl, blob: pdfBlob };
+};

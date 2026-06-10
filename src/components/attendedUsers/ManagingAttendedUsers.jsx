@@ -1085,7 +1085,7 @@ const ManagingAttendedUsers = ({
       firstName: isProtectedSelectedDevice ? "Anónimo" : "Nombre ejemplo",
       lastName: isProtectedSelectedDevice ? "Anónimo" : "Apellidos ejemplo",
       birthday: new Date(2000, 0, 1),
-      nationality: "Marruecos",
+      nationality: "España",
       gender: "Hombre",
       startDate: new Date(),
       notes: "Notas opcionales",
@@ -1114,7 +1114,7 @@ const ManagingAttendedUsers = ({
         error: "Introduce la fecha de nacimiento en formato dd/mm/aaaa.",
       };
 
-      sheet.getCell(`E${row}`).value = "Marruecos";
+      sheet.getCell(`E${row}`).value = "España";
 
       sheet.getCell(`E${row}`).dataValidation = {
         type: "list",

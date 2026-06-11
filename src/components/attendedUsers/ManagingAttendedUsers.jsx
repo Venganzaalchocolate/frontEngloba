@@ -41,7 +41,7 @@ const INITIAL_FILTERS = {
   onlyActiveStays: "true",
 };
 
-const PROTECTED_DATA = ["68aee343f80f1cd5a5de406d"];
+const PROTECTED_DATA = ["68aee343f80f1cd5a5de406d", "686e1a4834a93f0862cf29cb"];
 
 const ManagingAttendedUsers = ({
   modal,

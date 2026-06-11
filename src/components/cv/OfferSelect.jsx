@@ -26,7 +26,11 @@ const OfferSelect = ({
   const [fieldsForm, setFieldsModal] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { logged } = useLogin();
-  const isRoot = logged?.user?.role === "root";
+  const isRootOrGlobal =
+  logged?.user?.role === "root" ||
+  logged?.user?.role === "global" ||
+  logged?.user?.role === "rrhh" ||
+  logged?.user?.role === "auditor";
 
   useEffect(() => {
     const getOfferTitle = (o) => {
@@ -45,7 +49,7 @@ const OfferSelect = ({
 
     let filtered = allOffers;
 
-    if (!isRoot) {
+    if (!isRootOrGlobal) {
       const allowedProgramIds = new Set();
       const allowedDispositiveIds = new Set();
 
@@ -103,7 +107,7 @@ const OfferSelect = ({
     ];
 
     setFieldsModal(fieldsAux);
-  }, [enumsData, logged, isRoot]);
+  }, [enumsData, logged, isRootOrGlobal]);
 
   const normalize = (str = "") =>
     str

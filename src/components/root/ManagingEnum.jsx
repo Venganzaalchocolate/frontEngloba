@@ -49,10 +49,23 @@ const indexToTree = (index = {}) => {
   });
 
   roots.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
-  roots.forEach((r) => r.subcategories.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" })));
+  roots.forEach((r) =>
+    r.subcategories.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }))
+  );
 
   return roots;
 };
+
+const indexToList = (index = {}) =>
+  Object.entries(index)
+    .map(([id, item]) => ({
+      _id: id,
+      name: item.name || "",
+      description: item.description || "",
+      active: item.active,
+      _meta: { ...item },
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
 
 export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) {
   const [selectedKey, setSelectedKey] = useState("studies");
@@ -72,6 +85,7 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
         documentation: [],
         categoryFiles: [],
         entity: [],
+        periodEndReason: [],
       });
       return;
     }
@@ -86,6 +100,9 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
       documentation: enumsData.documentation || [],
       categoryFiles: Array.isArray(enumsData.categoryFiles) ? enumsData.categoryFiles : [],
       entity: enumsData.entity || [],
+      periodEndReason: enumsData.periodEndReasonsIndex
+        ? indexToList(enumsData.periodEndReasonsIndex)
+        : enumsData.periodEndReason || [],
     };
 
     setCrudData(normalized);
@@ -96,36 +113,45 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
   const groupedDocs = useMemo(() => {
     const docs = crudData.documentation || [];
     const grouped = {};
+
     docs.forEach((doc) => {
       const model = doc.model || "Sin modelo";
       const cat = doc.categoryFiles || "Sin categoría";
+
       if (!grouped[model]) grouped[model] = {};
       if (!grouped[model][cat]) grouped[model][cat] = [];
+
       grouped[model][cat].push(doc);
     });
+
     return grouped;
   }, [crudData.documentation]);
 
-  const runWithSpinner = useCallback(async (fn) => {
-    try {
-      charge(true);
-      const res = await fn();
-      await chargeEnums?.();
-      return res;
-    } catch (err) {
-      modal("Error", err?.message || "Ha ocurrido un problema con la operación.");
-    } finally {
-      charge(false);
-    }
-  }, [chargeEnums, charge, modal]);
+  const runWithSpinner = useCallback(
+    async (fn) => {
+      try {
+        charge(true);
+        const res = await fn();
+        await chargeEnums?.();
+        return res;
+      } catch (err) {
+        modal("Error", err?.message || "Ha ocurrido un problema con la operación.");
+      } finally {
+        charge(false);
+      }
+    },
+    [chargeEnums, charge, modal]
+  );
 
   const loadReceiptTemplates = useCallback(async () => {
     const token = getToken();
     const res = await documentationReceiptTemplateList({ page: 1, limit: 200 }, token);
+
     if (res?.error) {
       modal("Error", res.message || "No se pudieron cargar las plantillas.");
       return;
     }
+
     setReceiptTemplates(res?.items || []);
   }, [modal]);
 
@@ -135,28 +161,38 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
 
   const handleCreate = async (form) => {
     const payload = buildCreatePayload(selectedKey, form);
+
     if (selectedKey === "documentation" && payload.date === "si" && (!payload.duration || payload.duration <= 0)) {
       modal("Campo obligatorio", "Duración debe ser mayor que 0 cuando el documento tiene fecha.");
       return;
     }
+
     await runWithSpinner(() => createData(getToken(), payload));
   };
 
   const handleEdit = async (itemOrParent, form, extra) => {
     const payload = buildEditPayload(selectedKey, itemOrParent, form, extra);
+
     if (selectedKey === "documentation" && payload.date === "si" && (!payload.duration || payload.duration <= 0)) {
       modal("Campo obligatorio", "Duración debe ser mayor que 0 cuando el documento tiene fecha.");
       return;
     }
+
     await runWithSpinner(() => changeData(getToken(), payload));
   };
 
   const handleDelete = (item) => {
     setConfirm({
       title: "Confirmar eliminación",
-      message: item.name ? `¿Seguro que deseas eliminar "${item.name}"?` : `¿Seguro que deseas eliminar el archivo asociado?`,
+      message: item.name
+        ? `¿Seguro que deseas eliminar "${item.name}"?`
+        : `¿Seguro que deseas eliminar el archivo asociado?`,
       onConfirm: async () => {
-        await runWithSpinner(() => item.name ? deleteData(getToken(), { id: item._id, type: selectedKey }) : deleteFileEnums(getToken(), item));
+        await runWithSpinner(() =>
+          item.name
+            ? deleteData(getToken(), { id: item._id, type: selectedKey })
+            : deleteFileEnums(getToken(), item)
+        );
         setConfirm(null);
       },
       onCancel: () => setConfirm(null),
@@ -217,7 +253,9 @@ export default function ManagingEnum({ chargeEnums, charge, enumsData, modal }) 
         <label className={styles.label}>Tipo</label>
         <select className={styles.select} value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
           {ENUM_OPTIONS.map((opt) => (
-            <option key={opt.key} value={opt.key}>{opt.label}</option>
+            <option key={opt.key} value={opt.key}>
+              {opt.label}
+            </option>
           ))}
         </select>
       </div>
@@ -264,6 +302,11 @@ function buildCreatePayload(enumKey, form) {
 
   if (enumKey === "jobs") payload.public = form.public;
 
+  if (enumKey === "periodEndReason") {
+    payload.description = form.description || "";
+    payload.active = form.active === "si";
+  }
+
   if (enumKey === "documentation") {
     payload.date = form.date;
     payload.model = form.model;
@@ -281,6 +324,11 @@ function buildEditPayload(enumKey, itemOrParent, form, extra = {}) {
   if (extra.subId) payload.subId = extra.subId;
 
   if (enumKey === "jobs") payload.public = form.public;
+
+  if (enumKey === "periodEndReason") {
+    payload.description = form.description || "";
+    payload.active = form.active === "si";
+  }
 
   if (enumKey === "documentation") {
     payload.date = form.date;

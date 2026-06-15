@@ -10,6 +10,7 @@ export const ENUM_OPTIONS = [
   { key: "leavetype", label: "Excedencias" },
   { key: "entity", label: "Entidades" },
   { key: "documentationReceiptTemplate", label: "Plantillas de recibí" },
+  { key: "periodEndReason", label: "Razones de fin de periodo" }
 ];
 
 export const NO_SUB_ENUMS = [
@@ -18,6 +19,8 @@ export const NO_SUB_ENUMS = [
   "work_schedule",
   "finantial",
   "entity",
+  "documentationReceiptTemplate",
+  "periodEndReason"
 ];
 
 export const ENUM_LABEL = ENUM_OPTIONS.reduce((acc, it) => {

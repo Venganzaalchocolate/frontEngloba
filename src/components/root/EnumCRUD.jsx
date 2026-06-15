@@ -20,7 +20,16 @@ const Eye = ({ val }) => {
 function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData, modal }) {
   const [form, setForm] = useState(() => {
     const base = { name: item?.name ?? "" };
-    if (enumKey === "jobs") base.public = item?.public ? "si" : "no";
+
+    if (enumKey === "jobs") {
+      base.public = item?.public ? "si" : "no";
+    }
+
+    if (enumKey === "periodEndReason") {
+      base.description = item?.description || "";
+      base.active = item?.active === false ? "no" : "si";
+    }
+
     if (enumKey === "documentation") {
       base.date = item?.date ? "si" : "no";
       base.requiresSignature = item?.requiresSignature ? "si" : "no";
@@ -28,6 +37,7 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData, modal }) {
       base.duration = item?.duration || 0;
       base.categoryFiles = item?.categoryFiles || "";
     }
+
     return base;
   });
 
@@ -43,6 +53,7 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData, modal }) {
 
     if (enumKey === "documentation") {
       if (!form.model) return modal("Campo obligatorio", "El campo 'Sección (model)' es obligatorio.");
+
       if (form.date === "si") {
         const d = Number(form.duration || 0);
         if (!Number.isFinite(d) || d <= 0) {
@@ -73,6 +84,35 @@ function EnumForm({ enumKey, item, onCancel, onSubmit, enumsData, modal }) {
           placeholder="Nombre"
         />
       </div>
+
+      {enumKey === "periodEndReason" && (
+        <>
+          <div className={styles.field}>
+            <label className={styles.label}>Descripción</label>
+            <textarea
+              className={styles.input}
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Descripción del motivo"
+              rows={3}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Activo</label>
+            <select
+              className={styles.select}
+              name="active"
+              value={form.active}
+              onChange={handleChange}
+            >
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+        </>
+      )}
 
       {enumKey === "jobs" && (
         <div className={styles.field}>
@@ -177,6 +217,7 @@ function SubcategoryForm({ enumKey, parent, onCancel, onSubmit, modal }) {
     if (!form.name.trim()) {
       return modal("Campo obligatorio", "El nombre de la subcategoría es obligatorio.");
     }
+
     onSubmit(form);
   };
 
@@ -285,9 +326,22 @@ export const EnumCRUD = ({
         {(data ?? []).map((item) => (
           <div key={item._id} className={styles.card}>
             <div className={styles.cardHead}>
-              <div className={styles.cardTitle}>
-                <span>{item.name}</span>
-                {selectedKey === "jobs" && <Eye val={item.public} />}
+              <div>
+                <div className={styles.cardTitle}>
+                  <span>{item.name}</span>
+
+                  {selectedKey === "jobs" && <Eye val={item.public} />}
+
+                  {selectedKey === "periodEndReason" && (
+                    <Eye val={item.active !== false} />
+                  )}
+                </div>
+
+                {selectedKey === "periodEndReason" && item.description && (
+                  <p style={{ margin: "0.35rem 0 0", color: "#6b7280", fontSize: ".875rem" }}>
+                    {item.description}
+                  </p>
+                )}
               </div>
 
               <div className={styles.actions}>

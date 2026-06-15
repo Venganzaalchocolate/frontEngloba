@@ -93,6 +93,12 @@ const MENU = {
     icon: LiaUsersSolid,
     accent: "#ef9d46",
   },
+  anide:{
+    key: "anide",
+    label: "Anide",
+    icon: LiaUsersSolid,
+    accent: "#941031",
+  }
 };
 
 const GROUPS = {
@@ -137,6 +143,7 @@ const GROUPS = {
 
   rootOnly: [
     MENU.root,
+    MENU.anide,
   ],
 
   attendedUsersOnly: [

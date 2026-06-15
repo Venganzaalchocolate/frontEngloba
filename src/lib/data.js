@@ -651,3 +651,12 @@ export const documentationReceiptTemplatePreview = async (datos, token) => {
   const pdfUrl = URL.createObjectURL(pdfBlob);
   return { url: pdfUrl, blob: pdfBlob };
 };
+
+
+/* =========================
+ *  ANIDE
+ * ========================= */
+
+export const anideCentroManager = (datos, token) => fetchData("/anide/centro", "POST", token, datos);
+export const anideUsuariaManager = (datos, token) => fetchData("/anide/usuaria", "POST", token, datos);
+export const anideCentroOccupancy = (datos, token) => fetchData("/anide/occupancy", "POST", token, datos);

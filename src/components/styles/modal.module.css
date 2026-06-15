@@ -15,6 +15,7 @@
   justify-content: center;
   background-color: white;
   flex:0;
+  min-width: 30rem;
   max-width: 30rem;
   flex-direction: column;
   padding: 2rem;
@@ -61,4 +62,14 @@
 
 .modalInfoLine {
   margin: 2px 0;
+}
+
+.modalMessage p {
+  white-space: pre-wrap;
+  line-height: 1;
+}
+
+.modalInfoLine {
+  white-space: pre-wrap;
+  word-break: break-word;
 }

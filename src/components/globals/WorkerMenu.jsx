@@ -35,6 +35,7 @@ const FormCreateEmployer = React.lazy(() => import("../employer/FormCreateEmploy
 const ManagingProgramsDispositive = React.lazy(() => import("../programsanddispositives/ManagingProgramsDispositive"));
 const ManagingVolunteers = React.lazy(() => import("../volunteer/ManagingVolunteers"));
 const OrganizationChart = React.lazy(() => import("./OrganizationChart"));
+const ManagingAnide = React.lazy(() => import("../anide/ManagingAnide"));
 
 /* === Tile reutilizable (card clickable con icono y texto) ===
    Le paso un icono, label, color de acento y callback onClick */
@@ -279,6 +280,13 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
             />
           )
         }
+        {MenuWorker === "anide" && (
+          <ManagingAnide
+            modal={modal}
+            charge={charge}
+            enumsData={enumsEmployer}
+          />
+        )}
       </Suspense>
     );
   }

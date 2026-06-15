@@ -1,0 +1,661 @@
+.contenedor {
+    display: flex;
+    flex-direction: row;
+    flex: 1 100%;
+    background-color: var(--color-morado);
+    gap: 1rem;
+}
+
+.contenido {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-color: var(--color-gris-claro);
+    padding: 2rem;
+    border-radius: 1rem;
+    flex-wrap: wrap;
+    color: var(--color-morado);
+
+}
+
+.contendor select {
+    flex: 0;
+    max-width: auto;
+    width: 100%;
+}
+
+.containerEmployer {
+    display: flex;
+    flex: 100%;
+    align-items: center;
+    >div:nth-child(1) {
+        flex: 1;
+    }
+    >:nth-child(2) {
+        width: 2rem;
+    }
+}
+
+.titulo {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.titulo>div>h2 {
+    padding: 0.5rem 2rem 0 1rem;
+    border-left: 10px solid var(--color-morado);
+    display: flex;
+    flex: 1;
+    align-items: center;
+}
+
+.titulo svg {
+    width: 3rem;
+    height: 3rem;
+    justify-content: end;
+    align-self: flex-end;
+}
+
+.wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.header h2 {
+  margin: 0;
+  color: #4f529f;
+  font-size: 1.6rem;
+}
+
+.header p {
+  margin: 0.3rem 0 0;
+  color: #666;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.headerActions button,
+.viewSwitch button,
+.assignButton,
+.bedActions button,
+.userActions button,
+.iconButton,
+.addBedCard {
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  font-family: inherit;
+}
+
+.headerActions button,
+.viewSwitch button,
+.userActions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.8rem;
+  background: #f0f1ff;
+  color: #4f529f;
+  font-weight: 600;
+}
+
+.headerActions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.selectorBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 280px;
+}
+
+.selectorBlock label {
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 700;
+}
+
+.selectorBlock select,
+.usersFilters input,
+.usersFilters select {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.viewSwitch {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.activeView {
+  background: #4f529f !important;
+  color: #ffffff !important;
+}
+
+.boardWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  padding: 0.8rem 1rem;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  font-size: 0.9rem;
+}
+
+.legend div {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legendDot {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.selectedCenterPanel,
+.globalBoard,
+.usersPanel {
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.centerTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.centerGlobalRowSelected{
+ background-color: var(--color-malva);
+ padding: 0.4rem;
+ border-radius: 8px;
+}
+
+.centerTitle h3,
+.globalBoard h3 {
+  margin: 0;
+  color: #4f529f;
+  font-size: 1.35rem;
+}
+
+.centerTitle p {
+  margin: 0.25rem 0 0;
+  color: #666;
+}
+
+.summaryCards {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.summaryCards div {
+  min-width: 90px;
+  padding: 0.65rem;
+  text-align: center;
+  background: #f7f7ff;
+  border-radius: 12px;
+}
+
+.summaryCards strong {
+  display: block;
+  font-size: 1.4rem;
+  color: #4f529f;
+}
+
+.summaryCards span {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.roomsDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.roomDetailCard {
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 1rem;
+  background: #fcfcff;
+}
+
+.roomDetailHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.roomDetailHeader h4 {
+  margin: 0;
+  color: #333;
+}
+
+.roomDetailHeader p {
+  margin: 0.2rem 0 0;
+  color: #666;
+  font-size: 0.88rem;
+}
+
+.iconButton {
+  margin-left: auto;
+  background: transparent;
+  color: #4f529f;
+  padding: 0.35rem;
+  font-size: 1rem;
+}
+
+.roomStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.8rem 0;
+}
+
+.roomStats span {
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: #f0f1ff;
+  color: #4f529f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.bedsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 0.6rem;
+}
+
+.bedCard,
+.addBedCard {
+  min-height: 118px;
+  padding: 0.7rem;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+}
+
+.bedTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem;
+  color: #4f529f;
+  font-weight: 700;
+}
+
+.bedTitle span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.bedCard strong {
+  display: block;
+  margin-top: 0.5rem;
+  color: #333;
+}
+
+.bedCard small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #666;
+}
+
+.bedOccupied {
+  background: #fff4f4;
+  border-color: #ffd1d1;
+}
+
+.bedBlocked {
+  background: #f2f2f2;
+  border-color: #ddd;
+  opacity: 0.8;
+}
+
+.bedMuted {
+  margin: 0.8rem 0 0;
+  color: #777;
+  font-weight: 700;
+}
+
+.bedFree {
+  margin: 0.8rem 0;
+  color: #008f72;
+  font-weight: 700;
+}
+
+.assignButton {
+  width: 100%;
+  padding: 0.45rem;
+  background: #e7fff8;
+  color: #008f72;
+  font-weight: 700;
+}
+
+.bedActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.bedActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  background: #f0f1ff;
+  color: #4f529f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.addBedCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px dashed #b8baf0;
+  color: #4f529f;
+  background: #fafaff;
+  font-weight: 700;
+}
+
+.roomNotes {
+  margin: 0.8rem 0 0;
+  display: flex;
+  gap: 0.4rem;
+  color: #a76a00;
+  font-size: 0.88rem;
+}
+
+.globalBoard h3 {
+  margin-bottom: 1rem;
+}
+
+.provinceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 1rem;
+}
+
+.provinceBlock {
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 1rem;
+  background: #fcfcff;
+}
+
+.provinceBlock h4 {
+  margin: 0 0 0.8rem;
+  color: #4f529f;
+  font-size: 1.15rem;
+  text-transform: uppercase;
+}
+
+.provinceBlock>div {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem
+
+}
+
+.provinceBlock>div>div {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem
+
+}
+
+.typeRow {
+  display: grid;
+  grid-template-columns: 55px 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 34px;
+  margin-bottom: 0.45rem;
+}
+
+.typeLabel {
+  font-weight: 900;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.roomDotsLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.roomDot,
+.roomDotLarge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.14);
+  color: #222;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.roomDot {
+  width: 25px;
+  height: 25px;
+  font-size: 0.72rem;
+}
+
+.roomDotLarge {
+  min-width: 46px;
+  height: 46px;
+  font-size: 0.9rem;
+}
+
+.roomDotSelected {
+  outline: 3px solid #bec3f4;
+}
+
+.roomOccupied {
+  background: #e74c3c;
+  color: white;
+}
+
+.roomFree {
+  background: #00a884;
+  color: white;
+}
+
+.roomSemi {
+  background: #f39c12;
+  color: white;
+}
+
+.roomOccupiedWithFree {
+  background: #ffffff;
+  position: relative;
+}
+
+.roomOccupiedWithFree::after {
+  content: "×";
+  position: absolute;
+  color: #111;
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.roomMaintenance {
+  background: #ffffff;
+  border-color: #e74c3c;
+  border-style: dashed;
+}
+
+.roomUnusable {
+  background: #eeeeee;
+  position: relative;
+}
+
+.roomUnusable::after {
+  content: "⊘";
+  position: absolute;
+  color: #222;
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.roomUnknown {
+  background: #dcdcdc;
+}
+
+.noRooms {
+  color: #aaa;
+}
+
+.usersFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.usersFilters input {
+  min-width: 260px;
+}
+
+.usersList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.userRow {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 0.8fr 1.4fr;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.8rem;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #fcfcff;
+}
+
+.userRow strong {
+  display: block;
+  color: #333;
+}
+
+.userRow span {
+  display: block;
+  color: #777;
+  font-size: 0.85rem;
+}
+
+.userActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.userActions button {
+  font-size: 0.78rem;
+}
+
+.emptyState {
+  padding: 1.2rem;
+  text-align: center;
+  color: #777;
+  background: #fafafa;
+  border-radius: 12px;
+}
+
+@media (min-width: 700px) {
+    .contenedor{
+        padding: 1rem 2rem;
+    }
+
+    .selectorBlock {
+  flex-direction: row;
+}
+}
+
+@media (max-width: 900px) {
+  .header,
+  .topBar,
+  .centerTitle {
+    flex-direction: column;
+  }
+
+  .summaryCards {
+    width: 100%;
+  }
+
+  .summaryCards div {
+    flex: 1;
+  }
+
+  .userRow {
+    grid-template-columns: 1fr;
+  }
+
+  .userActions {
+    justify-content: flex-start;
+  }
+
+
+}
+
+

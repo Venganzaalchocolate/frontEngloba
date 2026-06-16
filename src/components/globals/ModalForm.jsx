@@ -302,6 +302,21 @@ const applySearchFilter = (options, term = "") => {
       return changed ? next : prev;
     });
   }, [fields]);
+
+  const getSelectedOption = (options = [], value) => {
+  if (!value) return null;
+
+  for (const option of options) {
+    if (option.subcategories?.length) {
+      const sub = option.subcategories.find(s => String(s.value) === String(value));
+      if (sub) return sub;
+    }
+
+    if (String(option.value) === String(value)) return option;
+  }
+
+  return null;
+};
   // =========== RENDER ===============
   return (
     <div className={styles.modalVentana}>
@@ -398,45 +413,52 @@ const applySearchFilter = (options, term = "") => {
 
                     {/* ——— 3.2 Select con las opciones filtradas ——— */}
                     <select
-                      name={field.name}
-                      value={formData[field.name] ?? ""}
-                      onChange={handleChange}
-                      disabled={field.disabled}
-                    >
-                      {/* Placeholder fijo */}
-                      <option value="" disabled>
-                        Seleccione una opción
-                      </option>
-                      {applySearchFilter(
-                        filterOptions(field.options),
-                        searchTerm[field.name] || ""
-                      ).map((option, optIndex) => {
-                        // Mantiene tu soporte de optgroup
-                        if (option.subcategories && option.subcategories.length) {
-                          return (
-                            <optgroup
-                              key={option.value || optIndex}
-                              label={option.label || option.name}
-                            >
-                              {option.subcategories.map((sub, subIdx) => (
-                                <option key={sub.value || subIdx} value={sub.value}>
-                                  {sub.label}
-                                </option>
-                              ))}
-                            </optgroup>
-                          );
-                        }
-                        return (
-                          <option key={option.value || optIndex} value={option.value}>
-                            {option.label}
-                          </option>
-                        );
-                      })}
-                    </select>
+  name={field.name}
+  value={formData[field.name] ?? ""}
+  onChange={handleChange}
+  disabled={field.disabled}
+>
+  <option value="" disabled>
+    Seleccione una opción
+  </option>
 
-                    {errors[field.name] && (
-                      <p className={styles.modalError}>{errors[field.name]}</p>
-                    )}
+  {applySearchFilter(
+    filterOptions(field.options),
+    searchTerm[field.name] || ""
+  ).map((option, optIndex) => {
+    if (option.subcategories && option.subcategories.length) {
+      return (
+        <optgroup
+          key={option.value || optIndex}
+          label={option.label || option.name}
+        >
+          {option.subcategories.map((sub, subIdx) => (
+            <option key={sub.value || subIdx} value={sub.value}>
+              {sub.label}
+            </option>
+          ))}
+        </optgroup>
+      );
+    }
+
+    return (
+      <option key={option.value || optIndex} value={option.value}>
+        {option.label}
+      </option>
+    );
+  })}
+</select>
+
+{field.showSelectedDescription &&
+  getSelectedOption(field.options, formData[field.name])?.description && (
+    <div className={styles.selectDescription}>
+      {getSelectedOption(field.options, formData[field.name]).description}
+    </div>
+  )}
+
+{errors[field.name] && (
+  <p className={styles.modalError}>{errors[field.name]}</p>
+)}
                   </>
                 )}
                 {/* Campo TIPO CHECKBOX GROUP (varios checkboxes para múltiples opciones)*/}

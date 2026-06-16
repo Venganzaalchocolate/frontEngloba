@@ -124,9 +124,11 @@
 .modalVentana .modalContenedor select{
   appearance: none;
   background-color: white;
-  padding: 0.25rem;
+  padding: 0.45rem 0.5rem;
   border: solid 1px var(--color-malva);
-  width: inherit;
+  width: 100%;
+  max-width: 100%;
+  color: var(--color-morado);
 }
 
 .modalVentana .modalContenedor textarea {
@@ -295,4 +297,16 @@
 
 .modalContenedor h4{
  color: var(--color-info);
+}
+
+.selectDescription {
+  margin-top: 0.45rem;
+  padding: 0.55rem 0.7rem;
+  border-left: 4px solid var(--color-malva);
+  background-color: rgba(79, 82, 161, 0.06);
+  color: var(--color-morado);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  border-radius: 0.4rem;
+  text-align: left;
 }

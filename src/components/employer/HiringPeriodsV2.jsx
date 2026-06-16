@@ -1,14 +1,13 @@
 // src/components/employer/HiringPeriodsV2.jsx
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import styles from '../styles/hiringperiods.module.css';
-import { FaTrashAlt, FaEdit, FaInfoCircle } from "react-icons/fa";
-import { FaSquarePlus } from "react-icons/fa6";
+import { FaTrashAlt, FaEdit, FaInfoCircle } from 'react-icons/fa';
+import { FaSquarePlus } from 'react-icons/fa6';
 import ModalForm from '../globals/ModalForm';
 import ModalConfirmation from '../globals/ModalConfirmation';
 import { useLogin } from '../../hooks/useLogin.jsx';
 import { getToken } from '../../lib/serviceToken.js';
 
-// API
 import {
   hiringList,
   hiringCreate,
@@ -22,20 +21,24 @@ import {
   leaveHardDelete,
   preferentCreate,
 } from '../../lib/data';
-import { buildModalFormOptionsFromIndex, buildOptionsFromIndex, formatDate } from '../../lib/utils.js';
 
-/* -------------------- helpers -------------------- */
+import {
+  buildModalFormOptionsFromIndex,
+  buildOptionsFromIndex,
+  formatDate,
+} from '../../lib/utils.js';
+
 const todayYMD = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+
 const fmt = (d) => (d ? new Date(d).toLocaleDateString() : '—');
 const isPeriodOpen = (hp) => hp.active !== false && !hp.endDate;
 const isValidObjectId = (s) => typeof s === 'string' && /^[0-9a-fA-F]{24}$/.test(s);
 
-/* ==================================================
-   Componente
-================================================== */
+const PERIOD_END_REASON_REJOIN_ID = '6a30f39b780162164b39bf3a';
+
 export default function HiringPeriodsV2({
   user,
   modal,
@@ -45,47 +48,46 @@ export default function HiringPeriodsV2({
 }) {
   const token = getToken();
   const { logged } = useLogin();
+
   const canEdit = true;
   const canDelete = logged?.user?.role === 'root' || logged?.user?.role === 'rrhh';
 
-  // Acepta user.status o user.employmentStatus
   const statusField = (user?.employmentStatus ?? user?.status) || '';
   const userStatusActive = statusField !== 'ya no trabaja con nosotros';
 
   const [periods, setPeriods] = useState([]);
   const [isBusy, setIsBusy] = useState(false);
 
-  // Modales / contexto
   const [showCreateHiring, setShowCreateHiring] = useState(false);
   const [editHiring, setEditHiring] = useState(null);
-  const [closeHiringCtx, setCloseHiringCtx] = useState(null);   // { hiringId }
+  const [closeHiringCtx, setCloseHiringCtx] = useState(null);
   const [confirmDeleteHiringId, setConfirmDeleteHiringId] = useState(null);
 
   const [infoLeaveData, setInfoLeaveData] = useState(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
 
-  // Leaves por periodo (clave: String(periodId))
   const [leavesByPeriod, setLeavesByPeriod] = useState({});
-const [leavesLoading, setLeavesLoading] = useState({});
-  const [createLeaveCtx, setCreateLeaveCtx] = useState(null);   // { periodId }
-  const [editLeave, setEditLeave] = useState(null);             // { ...leave, periodId }
-  const [closeLeaveCtx, setCloseLeaveCtx] = useState(null);     // { leaveId }
+  const [leavesLoading, setLeavesLoading] = useState({});
+  const [createLeaveCtx, setCreateLeaveCtx] = useState(null);
+  const [editLeave, setEditLeave] = useState(null);
+  const [closeLeaveCtx, setCloseLeaveCtx] = useState(null);
 
-  // Reincorporación
-  const [rejoinCtx, setRejoinCtx] = useState(null);             // { periodId, leave }
+  const [rejoinCtx, setRejoinCtx] = useState(null);
   const [rejoinConfirm, setRejoinConfirm] = useState(null);
 
   const [openModalPreferents, setOpenModalPreferents] = useState(false);
+  const [showPast, setShowPast] = useState(false);
 
-
-  /* -------------------- cargar periodos -------------------- */
   useEffect(() => {
     const fetchHiring = async () => {
       if (!user?._id) return;
+
       try {
         charge?.(true);
+
         const res = await hiringList({ userId: user._id, page: 1, limit: 200 }, token);
         if (res?.error) throw new Error(res.message || 'No se pudo cargar periodos');
+
         setPeriods(res.docs || []);
       } catch (e) {
         modal?.('Error', e.message || 'Error cargando periodos');
@@ -93,69 +95,69 @@ const [leavesLoading, setLeavesLoading] = useState({});
         charge?.(false);
       }
     };
+
     fetchHiring();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id]);
 
   const requestedLeavesRef = useRef(new Set());
 
-useEffect(() => {
-  const missingPeriodIds = periods
-    .map(p => String(p._id))
-    .filter(pid => !requestedLeavesRef.current.has(pid));
+  useEffect(() => {
+    const missingPeriodIds = periods
+      .map(p => String(p._id))
+      .filter(pid => !requestedLeavesRef.current.has(pid));
 
-  if (!missingPeriodIds.length) return;
+    if (!missingPeriodIds.length) return;
 
-  const loadAllLeaves = async () => {
-    for (const pid of missingPeriodIds) {
-      requestedLeavesRef.current.add(pid);
+    const loadAllLeaves = async () => {
+      for (const pid of missingPeriodIds) {
+        requestedLeavesRef.current.add(pid);
 
-      try {
-        setLeavesLoading(prev => ({ ...prev, [pid]: true }));
+        try {
+          setLeavesLoading(prev => ({ ...prev, [pid]: true }));
 
-        const res = await leaveList({ periodId: pid, page: 1, limit: 200 }, token);
-        if (res?.error) throw new Error(res.message || 'No se pudieron cargar las bajas/excedencias');
+          const res = await leaveList({ periodId: pid, page: 1, limit: 200 }, token);
+          if (res?.error) throw new Error(res.message || 'No se pudieron cargar las bajas/excedencias');
 
-        const docs = (res.docs || []).map(l => ({ ...l, periodId: pid }));
-        setLeavesByPeriod(prev => ({ ...prev, [pid]: docs }));
-      } catch (e) {
-        requestedLeavesRef.current.delete(pid);
-        modal?.('Error', e.message || 'No se pudieron cargar las bajas/excedencias');
-      } finally {
-        setLeavesLoading(prev => ({ ...prev, [pid]: false }));
+          const docs = (res.docs || []).map(l => ({ ...l, periodId: pid }));
+          setLeavesByPeriod(prev => ({ ...prev, [pid]: docs }));
+        } catch (e) {
+          requestedLeavesRef.current.delete(pid);
+          modal?.('Error', e.message || 'No se pudieron cargar las bajas/excedencias');
+        } finally {
+          setLeavesLoading(prev => ({ ...prev, [pid]: false }));
+        }
       }
-    }
-  };
+    };
 
-  loadAllLeaves();
-}, [periods]);
+    loadAllLeaves();
+  }, [periods, token, modal]);
 
-  /* -------------------- helpers nombres/ids -------------------- */
   const getProgramById = (id) => enumsData?.programsIndex?.[id] || null;
   const getProgramOfDevice = (deviceId) => enumsData?.dispositiveIndex?.[deviceId]?.program || '';
-  const getProgramDisplay = (programId) => {
-    const p = getProgramById(programId);
-    if (!p) return '—';
-    return p.acronym ? `${p.name} (${p.acronym})` : p.name;
-  };
+
   const getProgramShort = (programId) => {
     const p = getProgramById(programId);
     return p?.acronym || p?.name || '';
   };
+
   const getDeviceName = (id) => enumsData?.dispositiveIndex?.[id]?.name || 'No disponible';
   const getDeviceProvince = (id) => enumsData?.dispositiveIndex?.[id]?.province || '';
 
   const getPositionName = (id) => {
     const key = String(id || '');
     if (!key) return 'No asignado';
+
     const direct = enumsData?.jobsIndex?.[key];
     if (direct?.name) return direct.name;
+
     if (enumsData?.jobsIndex) {
       for (const [, j] of Object.entries(enumsData.jobsIndex)) {
         const sub = (j.subcategories || []).find(sc => String(sc._id) === key);
         if (sub) return sub.name;
       }
     }
+
     return 'No asignado';
   };
 
@@ -164,9 +166,20 @@ useEffect(() => {
     return enumsData?.leavesIndex?.[key]?.name || 'No especificado';
   };
 
-  /* -------------------- opciones selects -------------------- */
+  const periodEndReasonOptions = useMemo(() => {
+    const index = enumsData?.periodEndReasonsIndex || {};
 
-    const provincesOptions = useMemo(
+    return Object.entries(index)
+      .filter(([, reason]) => reason?.active !== false)
+      .map(([id, reason]) => ({
+        value: String(id),
+        label: reason?.name || 'Sin nombre',
+        description: reason?.description || '',
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [enumsData?.periodEndReasonsIndex]);
+
+  const provincesOptions = useMemo(
     () => buildModalFormOptionsFromIndex(enumsData?.provincesIndex),
     [enumsData?.provincesIndex]
   );
@@ -178,21 +191,22 @@ useEffect(() => {
 
   const scheduleOptions = useMemo(() => {
     const list = Array.isArray(enumsData?.work_schedule) ? enumsData.work_schedule : [];
-    return [...list.map(s => ({ value: String(s._id), label: s.name }))];
+    return list.map(s => ({ value: String(s._id), label: s.name }));
   }, [enumsData?.work_schedule]);
 
   const deviceOptions = useMemo(
-    () => [ ...(buildOptionsFromIndex(enumsData?.dispositiveIndex) || [])],
+    () => buildOptionsFromIndex(enumsData?.dispositiveIndex) || [],
     [enumsData?.dispositiveIndex]
   );
 
   const leaveTypeOptions = useMemo(
-    () => [ ...(buildOptionsFromIndex(enumsData?.leavesIndex) || [])],
+    () => buildOptionsFromIndex(enumsData?.leavesIndex) || [],
     [enumsData?.leavesIndex]
   );
 
   const voluntaryLeaveIds = useMemo(() => {
     if (!enumsData?.leavesIndex) return [];
+
     return Object.entries(enumsData.leavesIndex)
       .filter(([, meta]) => meta?.name?.toLowerCase().includes('voluntari'))
       .map(([id]) => String(id));
@@ -201,12 +215,12 @@ useEffect(() => {
   const isExcedenciaVoluntaria = (leaveTypeId) =>
     voluntaryLeaveIds.includes(String(leaveTypeId));
 
-  /* -------------------- crear / editar periodo -------------------- */
   const openCreateHiring = () => {
     if (!userStatusActive) {
       modal?.('Error al Crear', 'No se puede crear un periodo si el estado laboral es "Ya no trabaja con nosotros"');
       return;
     }
+
     setShowCreateHiring(true);
   };
 
@@ -220,15 +234,15 @@ useEffect(() => {
       required: true,
       options: [
         { value: 'completa', label: 'Completa' },
-        { value: 'parcial', label: 'Parcial' }
-      ]
+        { value: 'parcial', label: 'Parcial' },
+      ],
     },
     {
       name: 'workShift.schedule',
       label: 'Horario',
       type: 'select',
       required: false,
-      options: scheduleOptions
+      options: scheduleOptions,
     },
     { name: 'position', label: 'Puesto', type: 'select', required: true, options: positionOptions },
     { name: 'reason.dni', label: 'DNI de sustitución (opcional)', type: 'text' },
@@ -239,17 +253,21 @@ useEffect(() => {
       modal?.('Error', 'La fecha de fin no puede ser anterior al inicio');
       return;
     }
+
     if (!isValidObjectId(String(form.dispositiveId || ''))) {
       modal?.('Falta dato', 'Selecciona un dispositivo válido.');
       return;
     }
+
     if (!isValidObjectId(String(form.position || ''))) {
       modal?.('Falta dato', 'Selecciona un puesto válido.');
       return;
     }
+
     try {
       setIsBusy(true);
       charge?.(true);
+
       const payload = {
         idUser: user._id,
         startDate: form.startDate || null,
@@ -262,11 +280,14 @@ useEffect(() => {
         position: form.position || null,
         reason: form['reason.dni'] ? { dni: form['reason.dni'] } : undefined,
       };
+
       const created = await hiringCreate(payload, token);
       if (created?.error) throw new Error(created.message || 'No se pudo crear el periodo');
+
       setPeriods(prev =>
         [created, ...prev].sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
       );
+
       setShowCreateHiring(false);
       modal?.('Periodo de contratación', 'Periodo de contratación creado correctamente');
       chargeUser?.();
@@ -283,19 +304,25 @@ useEffect(() => {
       modal?.('Error al Editar', 'No se puede editar un periodo si el estado laboral es "Ya no trabaja con nosotros"');
       return;
     }
+
     setEditHiring(hp);
   };
 
   const resolveScheduleDefault = (h) => {
     const raw = h?.workShift?.schedule;
     if (!raw) return '';
+
     const list = Array.isArray(enumsData?.work_schedule) ? enumsData.work_schedule : [];
+
     if (typeof raw === 'string') {
       if (list.some(ws => String(ws._id) === raw)) return raw;
+
       const hit = list.find(ws => ws.name === raw);
       return hit ? String(hit._id) : '';
     }
+
     if (typeof raw === 'object') return String(raw._id || '');
+
     return '';
   };
 
@@ -307,7 +334,7 @@ useEffect(() => {
       required: true,
       defaultValue: editHiring.startDate
         ? new Date(editHiring.startDate).toISOString().split('T')[0]
-        : ''
+        : '',
     },
     {
       name: 'endDate',
@@ -315,7 +342,7 @@ useEffect(() => {
       type: 'date',
       defaultValue: editHiring.endDate
         ? new Date(editHiring.endDate).toISOString().split('T')[0]
-        : ''
+        : '',
     },
     {
       name: 'dispositiveId',
@@ -323,7 +350,7 @@ useEffect(() => {
       type: 'select',
       required: true,
       defaultValue: editHiring.dispositiveId || '',
-      options: deviceOptions
+      options: deviceOptions,
     },
     {
       name: 'workShift.type',
@@ -333,15 +360,15 @@ useEffect(() => {
       defaultValue: editHiring.workShift?.type || '',
       options: [
         { value: 'completa', label: 'Completa' },
-        { value: 'parcial', label: 'Parcial' }
-      ]
+        { value: 'parcial', label: 'Parcial' },
+      ],
     },
     {
       name: 'workShift.schedule',
       label: 'Horario',
       type: 'select',
       defaultValue: resolveScheduleDefault(editHiring),
-      options: scheduleOptions
+      options: scheduleOptions,
     },
     {
       name: 'position',
@@ -349,13 +376,13 @@ useEffect(() => {
       type: 'select',
       required: true,
       defaultValue: editHiring.position || '',
-      options: positionOptions
+      options: positionOptions,
     },
     {
       name: 'reason.dni',
       label: 'DNI de sustitución (opcional)',
       type: 'text',
-      defaultValue: editHiring?.reason?.dni || ''
+      defaultValue: editHiring?.reason?.dni || '',
     },
   ] : [];
 
@@ -364,9 +391,11 @@ useEffect(() => {
       modal?.('Error', 'La fecha de fin no puede ser anterior al inicio');
       return;
     }
+
     try {
       setIsBusy(true);
       charge?.(true);
+
       const patch = {
         hiringId: editHiring._id,
         startDate: form.startDate || undefined,
@@ -382,11 +411,14 @@ useEffect(() => {
             : undefined,
         reason: form['reason.dni'] ? { dni: form['reason.dni'] } : undefined,
       };
+
       const updated = await hiringUpdate(patch, token);
       if (updated?.error) throw new Error(updated.message || 'No se pudo actualizar el periodo');
+
       setPeriods(prev =>
         prev.map(p => (String(p._id) === String(updated._id) ? updated : p))
       );
+
       setEditHiring(null);
       modal?.('Periodo guardado', 'Periodo actualizado con éxito');
       chargeUser?.();
@@ -398,18 +430,20 @@ useEffect(() => {
     }
   };
 
-  /* -------------------- cierres -------------------- */
-
   const closeAllLeavesForPeriod = useCallback(
     async (rawPeriodId, endDateISO, excludeLeaveId = null) => {
       const periodId = String(rawPeriodId);
       const endRef = new Date(endDateISO);
+
       const res = await leaveList({ periodId, openOnly: true, page: 1, limit: 500 }, token);
       const leaves = res?.docs || [];
-      let closed = 0, failed = 0;
+
+      let closed = 0;
+      let failed = 0;
 
       for (const l of leaves) {
         if (String(l._id) === String(excludeLeaveId)) continue;
+
         const start = new Date(l.startLeaveDate);
         const effectiveIso =
           endRef >= start
@@ -421,6 +455,7 @@ useEffect(() => {
             { leaveId: l._id, actualEndLeaveDate: effectiveIso, active: false },
             token
           );
+
           if (!closedLeave?.error) {
             setLeavesByPeriod(prev => {
               const pid = String(periodId);
@@ -432,14 +467,19 @@ useEffect(() => {
                       : x
                   )
                 : [{ ...closedLeave, periodId: pid }];
+
               return { ...prev, [pid]: nextArr };
             });
+
             closed++;
-          } else failed++;
+          } else {
+            failed++;
+          }
         } catch {
           failed++;
         }
       }
+
       return { closed, failed };
     },
     [token]
@@ -447,17 +487,35 @@ useEffect(() => {
 
   const handleCloseHiring = async (form) => {
     const endDateISO = form.closeDate;
+    const endReason = form.endReason;
+
+    if (!endReason) {
+      modal?.('Falta dato', 'Selecciona una razón para cerrar el periodo.');
+      return;
+    }
+
     setCloseHiringCtx(null);
     setIsBusy(true);
     charge?.(true);
+
     try {
-      const res = await hiringClose({ hiringId: closeHiringCtx.hiringId, endDate: endDateISO }, token);
+      const res = await hiringClose(
+        {
+          hiringId: closeHiringCtx.hiringId,
+          endDate: endDateISO,
+          endReason,
+        },
+        token
+      );
+
       if (res?.error) throw new Error(res.message || 'No se pudo cerrar el periodo');
+
       setPeriods(prev =>
         prev.map(p => (String(p._id) === String(res._id) ? res : p))
       );
 
       const { closed, failed } = await closeAllLeavesForPeriod(res._id, endDateISO);
+
       if (failed === 0) {
         modal?.('Periodo cerrado', `Se cerró el periodo. Bajas cerradas: ${closed}.`);
       } else {
@@ -466,6 +524,7 @@ useEffect(() => {
           `Se cerró el periodo. Bajas cerradas: ${closed}. Fallos: ${failed} baja(s).`
         );
       }
+
       chargeUser?.();
     } catch (e) {
       modal?.('Error', e.message);
@@ -477,22 +536,28 @@ useEffect(() => {
 
   const doHardDeleteHiring = async () => {
     const targetId = String(confirmDeleteHiringId);
+
     try {
       setIsBusy(true);
       charge?.(true);
+
       const res = await hiringHardDelete({ hiringId: targetId }, token);
       if (res?.error || res?.deleted !== true) {
         throw new Error(res?.message || 'No se pudo eliminar el periodo');
       }
+
       setPeriods(prev => prev.filter(p => String(p._id) !== targetId));
+
       setLeavesByPeriod(prev => {
         const { [targetId]: _omit, ...rest } = prev;
         return rest;
       });
+
       setLeavesLoading(prev => {
         const { [targetId]: _omit, ...rest } = prev;
         return rest;
       });
+
       setConfirmDeleteHiringId(null);
       chargeUser?.();
       modal?.('Periodo eliminado', 'Periodo eliminado permanentemente.');
@@ -504,9 +569,9 @@ useEffect(() => {
     }
   };
 
-  /* -------------------- sustitución: info -------------------- */
   const openInfoSustitucion = (hp) => {
     const { leave, personDni, personName } = hp?.replacement || {};
+
     setInfoLeaveData({
       name: personName || 'Empleado sustituido',
       dni: personDni || '',
@@ -515,11 +580,10 @@ useEffect(() => {
       reason: leave?.typeName,
       fin: leave?.finished ? 'si' : 'no',
     });
+
     setShowInfoModal(true);
   };
 
-
-  /* -------------------- crear / editar / cerrar baja -------------------- */
   const createLeaveFields = [
     { name: 'leaveType', label: 'Tipo de Baja/Excedencia', type: 'select', required: true, options: leaveTypeOptions },
     { name: 'startLeaveDate', label: 'Fecha de Inicio', type: 'date', required: true },
@@ -530,7 +594,9 @@ useEffect(() => {
     try {
       setIsBusy(true);
       charge?.(true);
+
       const pid = String(createLeaveCtx.periodId);
+
       const payload = {
         idUser: user._id,
         idPeriod: pid,
@@ -539,18 +605,20 @@ useEffect(() => {
         expectedEndLeaveDate: form.expectedEndLeaveDate || undefined,
         active: true,
       };
+
       const created = await leaveCreate(payload, token);
       if (created?.error) {
-  
         modal('Error', created.message);
         return;
       }
+
       setLeavesByPeriod(prev => ({
         ...prev,
         [pid]: [{ ...created, periodId: pid }, ...(prev[pid] || [])].sort(
           (a, b) => new Date(b.startLeaveDate) - new Date(a.startLeaveDate)
         ),
       }));
+
       setCreateLeaveCtx(null);
       modal?.('Baja/Excedencia', 'Baja/Excedencia creada correctamente');
     } catch (e) {
@@ -569,7 +637,7 @@ useEffect(() => {
       required: true,
       defaultValue: editLeave.startLeaveDate
         ? new Date(editLeave.startLeaveDate).toISOString().split('T')[0]
-        : ''
+        : '',
     },
     {
       name: 'expectedEndLeaveDate',
@@ -578,24 +646,24 @@ useEffect(() => {
       required: true,
       defaultValue: editLeave.expectedEndLeaveDate
         ? new Date(editLeave.expectedEndLeaveDate).toISOString().split('T')[0]
-        : ''
+        : '',
     },
-{
-          name: 'actualEndLeaveDate',
-          label: 'Fecha Real de Fin',
-          type: 'date',
-          defaultValue: editLeave.actualEndLeaveDate
-            ? new Date(editLeave.actualEndLeaveDate).toISOString().split('T')[0]
-            : '',
-          disabled: !canDelete,
-        },
+    {
+      name: 'actualEndLeaveDate',
+      label: 'Fecha Real de Fin',
+      type: 'date',
+      defaultValue: editLeave.actualEndLeaveDate
+        ? new Date(editLeave.actualEndLeaveDate).toISOString().split('T')[0]
+        : '',
+      disabled: !canDelete,
+    },
     {
       name: 'leaveType',
       label: 'Tipo de Baja/Excedencia',
       type: 'select',
       required: true,
       defaultValue: editLeave.leaveType || '',
-      options: leaveTypeOptions
+      options: leaveTypeOptions,
     },
   ] : [];
 
@@ -603,19 +671,23 @@ useEffect(() => {
     try {
       setIsBusy(true);
       charge?.(true);
+
       const closeDateISO = form.closeDate;
-      let found = null, periodId = null;
+      let found = null;
+      let periodId = null;
 
       for (const pid of Object.keys(leavesByPeriod)) {
         const l = (leavesByPeriod[pid] || []).find(
           x => String(x._id) === String(closeLeaveCtx.leaveId)
         );
+
         if (l) {
           found = l;
           periodId = String(pid);
           break;
         }
       }
+
       if (!found || !periodId) {
         modal('Error', 'No se encontró la baja/excedencia a cerrar');
         return;
@@ -624,6 +696,7 @@ useEffect(() => {
       const closeDate = new Date(closeDateISO);
       const startDate = new Date(found.startLeaveDate);
       const today = new Date();
+
       closeDate.setHours(0, 0, 0, 0);
       startDate.setHours(0, 0, 0, 0);
       today.setHours(0, 0, 0, 0);
@@ -633,6 +706,7 @@ useEffect(() => {
         setCloseLeaveCtx(null);
         return;
       }
+
       if (closeDate < startDate) {
         modal?.('Fecha no válida', 'La fecha de fin de la baja/excedencia no puede ser anterior a la fecha de inicio.');
         setCloseLeaveCtx(null);
@@ -643,11 +717,21 @@ useEffect(() => {
 
       if (isVol) {
         const endDateForPeriod = new Date(found.startLeaveDate).toISOString().split('T')[0];
-        const updatedPeriod = await hiringClose({ hiringId: periodId, endDate: endDateForPeriod }, token);
+
+        const updatedPeriod = await hiringClose(
+          {
+            hiringId: periodId,
+            endDate: endDateForPeriod,
+            endReason: PERIOD_END_REASON_REJOIN_ID,
+          },
+          token
+        );
+
         if (!updatedPeriod?.error) {
           setPeriods(prev =>
             prev.map(p => (String(p._id) === String(updatedPeriod._id) ? updatedPeriod : p))
           );
+
           await closeAllLeavesForPeriod(periodId, endDateForPeriod, found._id);
         }
 
@@ -655,7 +739,11 @@ useEffect(() => {
           { leaveId: found._id, actualEndLeaveDate: closeDateISO, active: false },
           token
         );
-        if (closedLeave?.error) throw new Error(closedLeave.message || 'No se pudo cerrar la excedencia');
+
+        if (closedLeave?.error) {
+          throw new Error(closedLeave.message || 'No se pudo cerrar la excedencia');
+        }
+
         setLeavesByPeriod(prev => ({
           ...prev,
           [periodId]: (prev[periodId] || []).map(l =>
@@ -664,6 +752,7 @@ useEffect(() => {
               : l
           ),
         }));
+
         setCloseLeaveCtx(null);
         modal?.('Excedencia', 'Excedencia voluntaria cerrada y periodo finalizado.');
       } else {
@@ -671,7 +760,11 @@ useEffect(() => {
           { leaveId: found._id, actualEndLeaveDate: closeDateISO, active: false },
           token
         );
-        if (closedLeave?.error) throw new Error(closedLeave.message || 'No se pudo cerrar la baja/excedencia');
+
+        if (closedLeave?.error) {
+          throw new Error(closedLeave.message || 'No se pudo cerrar la baja/excedencia');
+        }
+
         setLeavesByPeriod(prev => ({
           ...prev,
           [periodId]: (prev[periodId] || []).map(l =>
@@ -680,6 +773,7 @@ useEffect(() => {
               : l
           ),
         }));
+
         setCloseLeaveCtx(null);
         modal?.('Baja/Excedencia', 'Baja/Excedencia cerrada');
       }
@@ -695,7 +789,9 @@ useEffect(() => {
     try {
       setIsBusy(true);
       charge?.(true);
+
       const pid = String(editLeave.periodId);
+
       const patch = {
         leaveId: editLeave._id,
         startLeaveDate: form.startLeaveDate || undefined,
@@ -706,6 +802,7 @@ useEffect(() => {
 
       const updated = await leaveUpdate(patch, token);
       if (updated?.error) throw new Error(updated.message || 'No se pudo actualizar la baja/excedencia');
+
       setLeavesByPeriod(prev => ({
         ...prev,
         [pid]: (prev[pid] || []).map(l =>
@@ -714,6 +811,7 @@ useEffect(() => {
             : l
         ),
       }));
+
       setEditLeave(null);
       modal?.('Baja/Excedencia', 'Baja/Excedencia actualizada con éxito');
     } catch (e) {
@@ -726,25 +824,30 @@ useEffect(() => {
 
   const handleHardDeleteLeave = async (leave) => {
     const targetId = String(leave?._id);
+
     try {
       setIsBusy(true);
       charge?.(true);
+
       const res = await leaveHardDelete({ leaveId: targetId }, token);
       if (res?.error || res?.deleted !== true) {
         throw new Error(res?.message || 'No se pudo eliminar la baja/excedencia');
       }
+
       const pid =
         String(leave?.periodId) ||
         Object.keys(leavesByPeriod).find(pid =>
           (leavesByPeriod[pid] || []).some(l => String(l._id) === targetId)
         ) ||
         null;
+
       if (pid) {
         setLeavesByPeriod(prev => ({
           ...prev,
           [pid]: (prev[pid] || []).filter(l => String(l._id) !== targetId),
         }));
       }
+
       modal?.('Baja/Excedencia', 'Baja/Excedencia eliminada permanentemente.');
     } catch (e) {
       modal?.('Error', e.message);
@@ -754,17 +857,19 @@ useEffect(() => {
     }
   };
 
-  /* -------------------- reincorporación -------------------- */
   const openRejoinModal = (periodId, leave) =>
     setRejoinCtx({ periodId: String(periodId), leave });
 
   const handleRejoinSubmit = async (form) => {
     try {
       const { periodId, leave } = rejoinCtx || {};
+
       const period = periods.find(p => String(p._id) === String(periodId));
       if (!period) throw new Error('No se encontró el periodo');
+
       const deviceId = period?.dispositiveId ?? period?.dispositiveId;
       const provinceId = getDeviceProvince(deviceId);
+
       if (!isValidObjectId(provinceId)) throw new Error('No se pudo resolver la provincia (_id).');
       if (!isValidObjectId(String(period.position))) throw new Error('No se pudo resolver el puesto (position).');
 
@@ -779,6 +884,7 @@ useEffect(() => {
       const inicioExc = leave?.startLeaveDate
         ? new Date(leave.startLeaveDate).toLocaleDateString()
         : 'la fecha de inicio de la excedencia';
+
       setRejoinConfirm({
         message:
           `Vas a registrar una reincorporación.\n\n` +
@@ -798,6 +904,7 @@ useEffect(() => {
     try {
       setIsBusy(true);
       charge?.(true);
+
       const { payload, periodId, leave, rejoinDateISO } = rejoinConfirm || {};
       if (!payload || !periodId || !leave) return;
 
@@ -808,7 +915,9 @@ useEffect(() => {
         { leaveId: leave._id, actualEndLeaveDate: rejoinDateISO, active: false },
         token
       );
+
       if (closedLeave?.error) throw new Error(closedLeave.message || 'No se pudo cerrar la excedencia');
+
       setLeavesByPeriod(prev => ({
         ...prev,
         [periodId]: (prev[periodId] || []).map(l =>
@@ -819,13 +928,24 @@ useEffect(() => {
       }));
 
       const endDateForPeriod = new Date(leave.startLeaveDate).toISOString().split('T')[0];
-      const updatedPeriod = await hiringClose({ hiringId: periodId, endDate: endDateForPeriod }, token);
+
+      const updatedPeriod = await hiringClose(
+        {
+          hiringId: periodId,
+          endDate: endDateForPeriod,
+          endReason: PERIOD_END_REASON_REJOIN_ID,
+        },
+        token
+      );
+
       if (updatedPeriod?.error) throw new Error(updatedPeriod.message || 'No se pudo cerrar el periodo');
+
       setPeriods(prev =>
         prev.map(p => (String(p._id) === String(updatedPeriod._id) ? updatedPeriod : p))
       );
 
       await closeAllLeavesForPeriod(periodId, endDateForPeriod);
+
       modal?.('Reincorporación', 'Reincorporación registrada. Excedencia y periodo cerrados correctamente.');
       setRejoinCtx(null);
     } catch (e) {
@@ -837,13 +957,11 @@ useEffect(() => {
     }
   };
 
-  /* -------------------- traslados -------------------- */
   const currentPeriods = periods.filter(isPeriodOpen);
+
   const pastPeriods = periods
     .filter(p => !isPeriodOpen(p))
     .sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-
-  const [showPast, setShowPast] = useState(false);
 
   const labelForPeriod = (p) => {
     const ini = p.startDate ? new Date(p.startDate).toLocaleDateString() : '—';
@@ -851,21 +969,24 @@ useEffect(() => {
     const pos = getPositionName(p.position) || 'Sin puesto';
     const progShort = getProgramShort(getProgramOfDevice(p.dispositiveId));
     const progTag = progShort ? ` — ${progShort}` : '';
+
     return `${ini} — ${dev}${progTag} — ${pos}`;
   };
 
-
   const handleSubmitPref = async (formData) => {
-    const token = getToken();
+    const currentToken = getToken();
+
     formData.userId = user._id;
     formData.type = 'traslado';
     formData.authorized = logged.user._id;
 
     let hiringsId = [];
+
     if (currentPeriods.length === 1) {
       hiringsId = [String(currentPeriods[0]._id)];
     } else {
-      const choice = formData.associateScope; // '', 'ALL' o un ObjectId (string)
+      const choice = formData.associateScope;
+
       if (choice === 'ALL') {
         hiringsId = [...currentPeriods]
           .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
@@ -878,9 +999,11 @@ useEffect(() => {
         return;
       }
     }
+
     formData.hiringsId = hiringsId;
 
-    const res = await preferentCreate(formData, token);
+    const res = await preferentCreate(formData, currentToken);
+
     if (!res?.error) {
       modal('Petición añadida', 'Petición de traslado añadida correctamente');
       setOpenModalPreferents(false);
@@ -894,6 +1017,7 @@ useEffect(() => {
       value: String(p._id),
       label: labelForPeriod(p),
     }));
+
     const hasMany = currentPeriods.length > 1;
 
     const baseFields = [
@@ -913,7 +1037,7 @@ useEffect(() => {
         type: 'multiChips',
         required: true,
         defaultValue: [],
-        options: [...(provincesOptions || [])],
+        options: provincesOptions || [],
         placeholder: 'Busca y añade una o varias',
       },
     ];
@@ -944,66 +1068,72 @@ useEffect(() => {
       );
       return;
     }
+
     setOpenModalPreferents(true);
   };
 
-  /* -------------------- render -------------------- */
-return (
-  <div className={styles.contenedor}>
-    <h2>
-      PERIODOS DE CONTRATACIÓN
-      {canDelete && <FaSquarePlus title="Añadir periodo" onClick={openCreateHiring} />}
-      <button onClick={handleAdd} style={{ cursor: 'pointer' }}>
-        Crear solicitud de traslado
-      </button>
-    </h2>
+  return (
+    <div className={styles.contenedor}>
+      <h2>
+        PERIODOS DE CONTRATACIÓN
 
-    {currentPeriods.length === 0 && <p>No hay periodos de contratación activos.</p>}
+        {canDelete && (
+          <FaSquarePlus title="Añadir periodo" onClick={openCreateHiring} />
+        )}
 
-    {currentPeriods.map(hp => {
-      const pid = String(hp._id);
+        <button className={styles.transferButton} onClick={handleAdd}>
+          Crear solicitud de traslado
+        </button>
+      </h2>
 
-      return (
-        <article
-          key={pid}
-          className={`${styles.cardPrincipal} ${hp.reason?.replacement ? styles.cardReplacement : ''}`}
-        >
-          <header className={styles.cardHeader}>
-            <div className={styles.headerMain}>
-              <h3 className={styles.cardTitle}>
-                {hp.reason?.replacement
-                  ? 'Periodo de sustitución'
-                  : 'Periodo de contratación (actual)'}
-              </h3>
+      {currentPeriods.length === 0 && (
+        <p className={styles.emptyState}>No hay periodos de contratación activos.</p>
+      )}
 
-              {hp?.replacement && (
-                <button
-                  className={styles.linkButton}
-                  onClick={() => openInfoSustitucion(hp)}
-                >
-                  Ver información de sustitución
-                </button>
-              )}
-            </div>
+      {currentPeriods.map(hp => {
+        const pid = String(hp._id);
 
-            {canDelete && isPeriodOpen(hp) && (
-              <nav className={styles.headerActions} aria-label="Acciones del periodo">
-                <button
-                  disabled={isBusy}
-                  onClick={() => setCloseHiringCtx({ hiringId: pid })}
-                >
-                  Cerrar periodo
-                </button>
+        return (
+          <article
+            key={pid}
+            className={`${styles.cardPrincipal} ${hp.reason?.replacement ? styles.cardReplacement : ''}`}
+          >
+            <header className={styles.cardHeader}>
+              <div className={styles.headerMain}>
+                <h3 className={styles.cardTitle}>
+                  {hp.reason?.replacement
+                    ? 'Periodo de sustitución'
+                    : 'Periodo de contratación (actual)'}
+                </h3>
 
-                <FaEdit
-                  role="button"
-                  tabIndex={0}
-                  title="Editar periodo"
-                  className={styles.iconAction}
-                  onClick={() => openEditHiring(hp)}
-                />
+                {hp?.replacement && (
+                  <button
+                    className={styles.linkButton}
+                    onClick={() => openInfoSustitucion(hp)}
+                  >
+                    Ver información de sustitución
+                  </button>
+                )}
+              </div>
 
-                {canDelete && (
+              {canDelete && isPeriodOpen(hp) && (
+                <nav className={styles.headerActions} aria-label="Acciones del periodo">
+                  <button
+                    className={styles.closePeriodButton}
+                    disabled={isBusy}
+                    onClick={() => setCloseHiringCtx({ hiringId: pid })}
+                  >
+                    Cerrar periodo
+                  </button>
+
+                  <FaEdit
+                    role="button"
+                    tabIndex={0}
+                    title="Editar periodo"
+                    className={styles.iconAction}
+                    onClick={() => openEditHiring(hp)}
+                  />
+
                   <FaTrashAlt
                     role="button"
                     tabIndex={0}
@@ -1011,461 +1141,476 @@ return (
                     className={styles.iconActionDanger}
                     onClick={() => setConfirmDeleteHiringId(pid)}
                   />
-                )}
-              </nav>
-            )}
-          </header>
+                </nav>
+              )}
+            </header>
 
-          <section className={styles.meta} aria-label="Información del periodo">
-            <dl className={styles.metaGrid}>
-              <div>
-                <dt>Inicio</dt>
-                <dd className={styles.mono}>{fmt(hp.startDate)}</dd>
-              </div>
-              <div>
-                <dt>Fin</dt>
-                <dd className={styles.mono}>{fmt(hp.endDate)}</dd>
-              </div>
-              <div>
-                <dt>Dispositivo</dt>
-                <dd>{getDeviceName(hp.dispositiveId)}</dd>
-              </div>
-              <div>
-                <dt>Jornada</dt>
-                <dd>{hp.workShift?.type || '—'}</dd>
-              </div>
-              <div>
-                <dt>Puesto</dt>
-                <dd>{getPositionName(hp.position)}</dd>
-              </div>
-            </dl>
-          </section>
+            <section className={styles.meta} aria-label="Información del periodo">
+              <dl className={styles.metaGrid}>
+                <div>
+                  <dt>Inicio</dt>
+                  <dd className={styles.mono}>{fmt(hp.startDate)}</dd>
+                </div>
 
-          <section className={styles.leaves} aria-label="Bajas o excedencias">
-            <div
-              style={{
-                display: 'flex',
-                gap: '0.5rem',
-                alignItems: 'center',
-                marginBottom: '0.5rem',
-              }}
-            >
-              <h4 className={styles.tituloBajas}>BAJAS O EXCEDENCIAS</h4>
+                <div>
+                  <dt>Fin</dt>
+                  <dd className={styles.mono}>{fmt(hp.endDate)}</dd>
+                </div>
 
-              <button
-                className={styles.buttonBajas}
-                onClick={() => setCreateLeaveCtx({ periodId: pid })}
-              >
-                Añadir baja/excedencia
-              </button>
-            </div>
+                <div>
+                  <dt>Dispositivo</dt>
+                  <dd>{getDeviceName(hp.dispositiveId)}</dd>
+                </div>
 
-            {leavesLoading[pid] && <p>Cargando…</p>}
+                <div>
+                  <dt>Jornada</dt>
+                  <dd>{hp.workShift?.type || '—'}</dd>
+                </div>
 
-            {!leavesLoading[pid] && (
-              <ul className={styles.leafList}>
-                <li className={styles.leafHeader} aria-hidden="true">
-                  <span>Inicio</span>
-                  <span>Prevista</span>
-                  <span>Fin</span>
-                  <span>Descripción</span>
-                  <span>Acciones</span>
-                </li>
+                <div>
+                  <dt>Puesto</dt>
+                  <dd>{getPositionName(hp.position)}</dd>
+                </div>
+              </dl>
+            </section>
 
-                {(leavesByPeriod[pid] || []).map(leave => {
-                  const isOpenLeave = leave.active !== false && !leave.actualEndLeaveDate;
+            <section className={styles.leaves} aria-label="Bajas o excedencias">
+              <div className={styles.leavesHeader}>
+                <h4 className={styles.tituloBajas}>BAJAS O EXCEDENCIAS</h4>
 
-                  return (
-                    <li className={styles.leafRow} key={leave._id}>
-                      <span className={`${styles.leafCell} ${styles.mono}`}>
-                        {fmt(leave.startLeaveDate)}
-                      </span>
-
-                      <span className={`${styles.leafCell} ${styles.mono}`}>
-                        {fmt(leave.expectedEndLeaveDate)}
-                      </span>
-
-                      <span className={`${styles.leafCell} ${styles.mono}`}>
-                        {fmt(leave.actualEndLeaveDate)}
-                      </span>
-
-                      <span className={styles.leafCell}>
-                        {getLeaveTypeName(leave.leaveType)}
-                      </span>
-
-                      <span className={`${styles.leafCell} ${styles.leafActions}`}>
-                        {isOpenLeave && (
-                          <button
-                            disabled={isBusy}
-                            onClick={() => setCloseLeaveCtx({ leaveId: leave._id })}
-                          >
-                            Finalizar
-                          </button>
-                        )}
-
-                        {isOpenLeave && isExcedenciaVoluntaria(leave.leaveType) && (
-                          <button
-                            title="Reincorporación"
-                            disabled={isBusy}
-                            onClick={() => openRejoinModal(pid, leave)}
-                          >
-                            Reincorporación
-                          </button>
-                        )}
-
-                        <FaEdit
-                          role="button"
-                          tabIndex={0}
-                          title="Editar baja/excedencia"
-                          className={styles.iconAction}
-                          onClick={() => setEditLeave({ ...leave, periodId: pid })}
-                        />
-
-                        {canDelete && (
-                          <FaTrashAlt
-                            role="button"
-                            tabIndex={0}
-                            title="Eliminar baja/excedencia"
-                            className={styles.iconActionDanger}
-                            onClick={() => handleHardDeleteLeave({ ...leave, periodId: pid })}
-                          />
-                        )}
-                      </span>
-                    </li>
-                  );
-                })}
-
-                {(leavesByPeriod[pid]?.length ?? 0) === 0 && (
-                  <li className={styles.leafRow}>
-                    <span>No hay bajas o excedencias</span>
-                  </li>
-                )}
-              </ul>
-            )}
-          </section>
-        </article>
-      );
-    })}
-
-    {pastPeriods.length > 0 && (
-      <div className={styles.pastWrapper}>
-        <button
-          className={styles.togglePast}
-          aria-expanded={showPast}
-          onClick={() => setShowPast(v => !v)}
-        >
-          {showPast
-            ? 'Ocultar periodos anteriores'
-            : `Mostrar periodos anteriores (${pastPeriods.length})`}
-        </button>
-
-        <div
-          className={`${styles.pastPanel} ${showPast ? styles.pastOpen : ''}`}
-          role="region"
-          aria-label="Periodos anteriores"
-        >
-          {showPast &&
-            pastPeriods.map(hp => {
-              const pid = String(hp._id);
-
-              return (
-                <article
-                  key={pid}
-                  className={`${styles.card} ${hp.reason?.replacement ? styles.cardReplacement : ''}`}
+                <button
+                  className={styles.buttonBajas}
+                  onClick={() => setCreateLeaveCtx({ periodId: pid })}
                 >
-                  <header className={styles.cardHeader}>
-                    <div className={styles.headerMain}>
-                      <h3 className={styles.cardTitle}>
-                        {hp.reason?.replacement
-                          ? 'Periodo de sustitución'
-                          : 'Periodo de contratación (anterior)'}
-                      </h3>
+                  Añadir baja/excedencia
+                </button>
+              </div>
 
-                      {hp.reason?.replacement && (
-                        <FaInfoCircle
-                          className={styles.iconAction}
-                          onClick={() => openInfoSustitucion(hp)}
-                        />
-                      )}
-                    </div>
+              {leavesLoading[pid] && <p className={styles.loadingText}>Cargando…</p>}
 
-                    {canEdit && (
-                      <nav className={styles.headerActions} aria-label="Acciones del periodo">
-                        <FaEdit
-                          role="button"
-                          tabIndex={0}
-                          title="Editar periodo"
-                          className={styles.iconAction}
-                          onClick={() => setEditHiring(hp)}
-                        />
+              {!leavesLoading[pid] && (
+                <ul className={styles.leafList}>
+                  <li className={styles.leafHeader} aria-hidden="true">
+                    <span>Inicio</span>
+                    <span>Prevista</span>
+                    <span>Fin</span>
+                    <span>Descripción</span>
+                    <span>Acciones</span>
+                  </li>
 
-                        {canDelete && (
-                          <FaTrashAlt
+                  {(leavesByPeriod[pid] || []).map(leave => {
+                    const isOpenLeave = leave.active !== false && !leave.actualEndLeaveDate;
+
+                    return (
+                      <li className={styles.leafRow} key={leave._id}>
+                        <span data-label="Inicio" className={`${styles.leafCell} ${styles.mono}`}>
+                          {fmt(leave.startLeaveDate)}
+                        </span>
+
+                        <span data-label="Prevista" className={`${styles.leafCell} ${styles.mono}`}>
+                          {fmt(leave.expectedEndLeaveDate)}
+                        </span>
+
+                        <span data-label="Fin" className={`${styles.leafCell} ${styles.mono}`}>
+                          {fmt(leave.actualEndLeaveDate)}
+                        </span>
+
+                        <span data-label="Descripción" className={styles.leafCell}>
+                          {getLeaveTypeName(leave.leaveType)}
+                        </span>
+
+                        <span data-label="Acciones" className={`${styles.leafCell} ${styles.leafActions}`}>
+                          {isOpenLeave && (
+                            <button
+                              className={styles.smallButton}
+                              disabled={isBusy}
+                              onClick={() => setCloseLeaveCtx({ leaveId: leave._id })}
+                            >
+                              Finalizar
+                            </button>
+                          )}
+
+                          {isOpenLeave && isExcedenciaVoluntaria(leave.leaveType) && (
+                            <button
+                              className={styles.smallButton}
+                              title="Reincorporación"
+                              disabled={isBusy}
+                              onClick={() => openRejoinModal(pid, leave)}
+                            >
+                              Reincorporación
+                            </button>
+                          )}
+
+                          <FaEdit
                             role="button"
                             tabIndex={0}
-                            title="Eliminar periodo"
-                            className={styles.iconActionDanger}
-                            onClick={() => setConfirmDeleteHiringId(pid)}
+                            title="Editar baja/excedencia"
+                            className={styles.iconAction}
+                            onClick={() => setEditLeave({ ...leave, periodId: pid })}
+                          />
+
+                          {canDelete && (
+                            <FaTrashAlt
+                              role="button"
+                              tabIndex={0}
+                              title="Eliminar baja/excedencia"
+                              className={styles.iconActionDanger}
+                              onClick={() => handleHardDeleteLeave({ ...leave, periodId: pid })}
+                            />
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
+
+                  {(leavesByPeriod[pid]?.length ?? 0) === 0 && (
+                    <li className={styles.emptyLeafRow}>
+                      No hay bajas o excedencias
+                    </li>
+                  )}
+                </ul>
+              )}
+            </section>
+          </article>
+        );
+      })}
+
+      {pastPeriods.length > 0 && (
+        <div className={styles.pastWrapper}>
+          <button
+            className={styles.togglePast}
+            aria-expanded={showPast}
+            onClick={() => setShowPast(v => !v)}
+          >
+            {showPast
+              ? 'Ocultar periodos anteriores'
+              : `Mostrar periodos anteriores (${pastPeriods.length})`}
+          </button>
+
+          <div
+            className={`${styles.pastPanel} ${showPast ? styles.pastOpen : ''}`}
+            role="region"
+            aria-label="Periodos anteriores"
+          >
+            {showPast &&
+              pastPeriods.map(hp => {
+                const pid = String(hp._id);
+
+                return (
+                  <article
+                    key={pid}
+                    className={`${styles.card} ${hp.reason?.replacement ? styles.cardReplacement : ''}`}
+                  >
+                    <header className={styles.cardHeader}>
+                      <div className={styles.headerMain}>
+                        <h3 className={styles.cardTitle}>
+                          {hp.reason?.replacement
+                            ? 'Periodo de sustitución'
+                            : 'Periodo de contratación (anterior)'}
+                        </h3>
+
+                        {hp.reason?.replacement && (
+                          <FaInfoCircle
+                            className={styles.iconAction}
+                            onClick={() => openInfoSustitucion(hp)}
                           />
                         )}
-                      </nav>
+                      </div>
+
+                      {canEdit && (
+                        <nav className={styles.headerActions} aria-label="Acciones del periodo">
+                          <FaEdit
+                            role="button"
+                            tabIndex={0}
+                            title="Editar periodo"
+                            className={styles.iconAction}
+                            onClick={() => setEditHiring(hp)}
+                          />
+
+                          {canDelete && (
+                            <FaTrashAlt
+                              role="button"
+                              tabIndex={0}
+                              title="Eliminar periodo"
+                              className={styles.iconActionDanger}
+                              onClick={() => setConfirmDeleteHiringId(pid)}
+                            />
+                          )}
+                        </nav>
+                      )}
+                    </header>
+
+                    <section className={styles.meta} aria-label="Información del periodo">
+                      <dl className={styles.metaGrid}>
+                        <div>
+                          <dt>Inicio</dt>
+                          <dd className={styles.mono}>{fmt(hp.startDate)}</dd>
+                        </div>
+
+                        <div>
+                          <dt>Fin</dt>
+                          <dd className={styles.mono}>{fmt(hp.endDate)}</dd>
+                        </div>
+
+                        <div>
+                          <dt>Dispositivo</dt>
+                          <dd>{getDeviceName(hp.dispositiveId)}</dd>
+                        </div>
+
+                        <div>
+                          <dt>Jornada</dt>
+                          <dd>{hp.workShift?.type || '—'}</dd>
+                        </div>
+
+                        <div>
+                          <dt>Puesto</dt>
+                          <dd>{getPositionName(hp.position)}</dd>
+                        </div>
+                      </dl>
+                    </section>
+
+                    {hp.endReason && (
+                      <section className={styles.reasonEndBox}>
+                        <h4 className={styles.reasonEndTitle}>Razón de cierre</h4>
+                        <p className={styles.reasonEndName}>{hp.endReason.name}</p>
+
+                        {hp.endReason.description && (
+                          <p className={styles.reasonEndDescription}>
+                            {hp.endReason.description}
+                          </p>
+                        )}
+                      </section>
                     )}
-                  </header>
 
-                  <section className={styles.meta} aria-label="Información del periodo">
-                    <dl className={styles.metaGrid}>
-                      <div>
-                        <dt>Inicio</dt>
-                        <dd className={styles.mono}>{fmt(hp.startDate)}</dd>
+                    <section className={styles.leaves} aria-label="Bajas o excedencias">
+                      <div className={styles.leavesHeader}>
+                        <h4 className={styles.tituloBajas}>BAJAS O EXCEDENCIAS</h4>
                       </div>
-                      <div>
-                        <dt>Fin</dt>
-                        <dd className={styles.mono}>{fmt(hp.endDate)}</dd>
-                      </div>
-                      <div>
-                        <dt>Dispositivo</dt>
-                        <dd>{getDeviceName(hp.dispositiveId)}</dd>
-                      </div>
-                      <div>
-                        <dt>Jornada</dt>
-                        <dd>{hp.workShift?.type || '—'}</dd>
-                      </div>
-                      <div>
-                        <dt>Puesto</dt>
-                        <dd>{getPositionName(hp.position)}</dd>
-                      </div>
-                    </dl>
-                  </section>
 
-                  <section className={styles.leaves} aria-label="Bajas o excedencias">
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: '0.5rem',
-                        alignItems: 'center',
-                        marginBottom: '0.5rem',
-                      }}
-                    >
-                      <h4 className={styles.tituloBajas}>BAJAS O EXCEDENCIAS</h4>
-                    </div>
+                      {leavesLoading[pid] && <p className={styles.loadingText}>Cargando…</p>}
 
-                    {leavesLoading[pid] && <p>Cargando…</p>}
+                      {!leavesLoading[pid] && (
+                        <ul className={styles.leafList}>
+                          <li className={styles.leafHeader} aria-hidden="true">
+                            <span>Inicio</span>
+                            <span>Prevista</span>
+                            <span>Fin</span>
+                            <span>Descripción</span>
+                            <span>Acciones</span>
+                          </li>
 
-                    {!leavesLoading[pid] && (
-                      <ul className={styles.leafList}>
-                        <li className={styles.leafHeader} aria-hidden="true">
-                          <span>Inicio</span>
-                          <span>Prevista</span>
-                          <span>Fin</span>
-                          <span>Descripción</span>
-                          <span>Acciones</span>
-                        </li>
+                          {(leavesByPeriod[pid] || []).map(leave => (
+                            <li className={styles.leafRow} key={leave._id}>
+                              <span data-label="Inicio" className={`${styles.leafCell} ${styles.mono}`}>
+                                {fmt(leave.startLeaveDate)}
+                              </span>
 
-                        {(leavesByPeriod[pid] || []).map(leave => (
-                          <li className={styles.leafRow} key={leave._id}>
-                            <span className={`${styles.leafCell} ${styles.mono}`}>
-                              {fmt(leave.startLeaveDate)}
-                            </span>
+                              <span data-label="Prevista" className={`${styles.leafCell} ${styles.mono}`}>
+                                {fmt(leave.expectedEndLeaveDate)}
+                              </span>
 
-                            <span className={`${styles.leafCell} ${styles.mono}`}>
-                              {fmt(leave.expectedEndLeaveDate)}
-                            </span>
+                              <span data-label="Fin" className={`${styles.leafCell} ${styles.mono}`}>
+                                {fmt(leave.actualEndLeaveDate)}
+                              </span>
 
-                            <span className={`${styles.leafCell} ${styles.mono}`}>
-                              {fmt(leave.actualEndLeaveDate)}
-                            </span>
+                              <span data-label="Descripción" className={styles.leafCell}>
+                                {getLeaveTypeName(leave.leaveType)}
+                              </span>
 
-                            <span className={styles.leafCell}>
-                              {getLeaveTypeName(leave.leaveType)}
-                            </span>
-
-                            <span className={`${styles.leafCell} ${styles.leafActions}`}>
-                              <FaEdit
-                                role="button"
-                                tabIndex={0}
-                                title="Editar baja/excedencia"
-                                className={styles.iconAction}
-                                onClick={() => setEditLeave({ ...leave, periodId: pid })}
-                              />
-
-                              {canDelete && (
-                                <FaTrashAlt
+                              <span data-label="Acciones" className={`${styles.leafCell} ${styles.leafActions}`}>
+                                <FaEdit
                                   role="button"
                                   tabIndex={0}
-                                  title="Eliminar baja/excedencia"
-                                  className={styles.iconActionDanger}
-                                  onClick={() => handleHardDeleteLeave({ ...leave, periodId: pid })}
+                                  title="Editar baja/excedencia"
+                                  className={styles.iconAction}
+                                  onClick={() => setEditLeave({ ...leave, periodId: pid })}
                                 />
-                              )}
-                            </span>
-                          </li>
-                        ))}
 
-                        {(leavesByPeriod[pid]?.length ?? 0) === 0 && (
-                          <li className={styles.leafRow}>
-                            <span>No hay bajas o excedencias</span>
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                  </section>
-                </article>
-              );
-            })}
+                                {canDelete && (
+                                  <FaTrashAlt
+                                    role="button"
+                                    tabIndex={0}
+                                    title="Eliminar baja/excedencia"
+                                    className={styles.iconActionDanger}
+                                    onClick={() => handleHardDeleteLeave({ ...leave, periodId: pid })}
+                                  />
+                                )}
+                              </span>
+                            </li>
+                          ))}
+
+                          {(leavesByPeriod[pid]?.length ?? 0) === 0 && (
+                            <li className={styles.emptyLeafRow}>
+                              No hay bajas o excedencias
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                    </section>
+                  </article>
+                );
+              })}
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {showCreateHiring && (
-      <ModalForm
-        title="Añadir Periodo de Contratación"
-        message="Completa los siguientes campos"
-        fields={createHiringFields}
-        onSubmit={handleCreateHiring}
-        onClose={() => setShowCreateHiring(false)}
-        modal={modal}
-      />
-    )}
+      {showCreateHiring && (
+        <ModalForm
+          title="Añadir Periodo de Contratación"
+          message="Completa los siguientes campos"
+          fields={createHiringFields}
+          onSubmit={handleCreateHiring}
+          onClose={() => setShowCreateHiring(false)}
+          modal={modal}
+        />
+      )}
 
-    {editHiring && (
-      <ModalForm
-        title="Editar Periodo de Contratación"
-        message="Modifica los campos necesarios"
-        fields={editHiringFields}
-        onSubmit={handleUpdateHiring}
-        onClose={() => setEditHiring(null)}
-        modal={modal}
-      />
-    )}
+      {editHiring && (
+        <ModalForm
+          title="Editar Periodo de Contratación"
+          message="Modifica los campos necesarios"
+          fields={editHiringFields}
+          onSubmit={handleUpdateHiring}
+          onClose={() => setEditHiring(null)}
+          modal={modal}
+        />
+      )}
 
-    {closeHiringCtx && (
-      <ModalForm
-        title="Cerrar periodo de contratación"
-        message="Selecciona la fecha de fin del periodo."
-        fields={[
-          {
-            name: 'closeDate',
-            label: 'Fecha',
-            type: 'date',
-            required: true,
-            defaultValue: todayYMD(),
-          },
-        ]}
-        onSubmit={handleCloseHiring}
-        onClose={() => setCloseHiringCtx(null)}
-        modal={modal}
-      />
-    )}
+      {closeHiringCtx && (
+        <ModalForm
+          title="Cerrar periodo de contratación"
+          message="Selecciona la fecha de fin y el motivo principal por el que se cierra el periodo."
+          fields={[
+            {
+              name: 'closeDate',
+              label: 'Fecha de cierre',
+              type: 'date',
+              required: true,
+              defaultValue: todayYMD(),
+            },
+            {
+              name: 'endReason',
+              label: 'Razón de cierre',
+              type: 'select',
+              required: true,
+              searchable: true,
+              showSelectedDescription: true,
+              options: periodEndReasonOptions,
+            },
+          ]}
+          onSubmit={handleCloseHiring}
+          onClose={() => setCloseHiringCtx(null)}
+          modal={modal}
+        />
+      )}
 
-    {confirmDeleteHiringId && (
-      <ModalConfirmation
-        title="Eliminar periodo"
-        message="¿Seguro que deseas eliminar PERMANENTEMENTE este periodo? (también se borrarán sus bajas)."
-        onConfirm={doHardDeleteHiring}
-        onCancel={() => setConfirmDeleteHiringId(null)}
-      />
-    )}
+      {confirmDeleteHiringId && (
+        <ModalConfirmation
+          title="Eliminar periodo"
+          message="¿Seguro que deseas eliminar PERMANENTEMENTE este periodo? (también se borrarán sus bajas)."
+          onConfirm={doHardDeleteHiring}
+          onCancel={() => setConfirmDeleteHiringId(null)}
+        />
+      )}
 
-    {showInfoModal && infoLeaveData && (
-      <ModalForm
-        title="Información"
-        message="Datos del periodo de baja/excedencia del trabajador sustituido"
-        fields={[
-          { name: 'name', label: 'Nombre', defaultValue: infoLeaveData.name || '', disabled: true },
-          { name: 'dni', label: 'DNI', defaultValue: infoLeaveData.dni || '', disabled: true },
-          { name: 'startLeaveDate', label: 'Inicio', defaultValue: infoLeaveData.startLeaveDate || '—', disabled: true },
-          { name: 'expectedEndLeaveDate', label: 'Fin previsto', defaultValue: infoLeaveData.expectedEndLeaveDate || '—', disabled: true },
-          { name: 'reason', label: 'Motivo', defaultValue: infoLeaveData.reason || '—', disabled: true },
-          { name: 'fin', label: 'Terminada', defaultValue: infoLeaveData.fin || 'no', disabled: true },
-        ]}
-        onSubmit={() => setShowInfoModal(false)}
-        onClose={() => setShowInfoModal(false)}
-        modal={modal}
-      />
-    )}
+      {showInfoModal && infoLeaveData && (
+        <ModalForm
+          title="Información"
+          message="Datos del periodo de baja/excedencia del trabajador sustituido"
+          fields={[
+            { name: 'name', label: 'Nombre', defaultValue: infoLeaveData.name || '', disabled: true },
+            { name: 'dni', label: 'DNI', defaultValue: infoLeaveData.dni || '', disabled: true },
+            { name: 'startLeaveDate', label: 'Inicio', defaultValue: infoLeaveData.startLeaveDate || '—', disabled: true },
+            { name: 'expectedEndLeaveDate', label: 'Fin previsto', defaultValue: infoLeaveData.expectedEndLeaveDate || '—', disabled: true },
+            { name: 'reason', label: 'Motivo', defaultValue: infoLeaveData.reason || '—', disabled: true },
+            { name: 'fin', label: 'Terminada', defaultValue: infoLeaveData.fin || 'no', disabled: true },
+          ]}
+          onSubmit={() => setShowInfoModal(false)}
+          onClose={() => setShowInfoModal(false)}
+          modal={modal}
+        />
+      )}
 
-    {createLeaveCtx && (
-      <ModalForm
-        title="Añadir Baja/Excedencia"
-        message="Completa los siguientes campos"
-        fields={createLeaveFields}
-        onSubmit={handleCreateLeave}
-        onClose={() => setCreateLeaveCtx(null)}
-        modal={modal}
-      />
-    )}
+      {createLeaveCtx && (
+        <ModalForm
+          title="Añadir Baja/Excedencia"
+          message="Completa los siguientes campos"
+          fields={createLeaveFields}
+          onSubmit={handleCreateLeave}
+          onClose={() => setCreateLeaveCtx(null)}
+          modal={modal}
+        />
+      )}
 
-    {editLeave && (
-      <ModalForm
-        title="Editar Baja/Excedencia"
-        message="Modifica los campos necesarios"
-        fields={editLeaveFields}
-        onSubmit={handleUpdateLeave}
-        onClose={() => setEditLeave(null)}
-        modal={modal}
-      />
-    )}
+      {editLeave && (
+        <ModalForm
+          title="Editar Baja/Excedencia"
+          message="Modifica los campos necesarios"
+          fields={editLeaveFields}
+          onSubmit={handleUpdateLeave}
+          onClose={() => setEditLeave(null)}
+          modal={modal}
+        />
+      )}
 
-    {closeLeaveCtx && (
-      <ModalForm
-        title="Cerrar baja/excedencia"
-        message="Selecciona la fecha de fin real."
-        fields={[
-          {
-            name: 'closeDate',
-            label: 'Fecha',
-            type: 'date',
-            required: true,
-            defaultValue: todayYMD(),
-          },
-        ]}
-        onSubmit={handleCloseLeave}
-        onClose={() => setCloseLeaveCtx(null)}
-        modal={modal}
-      />
-    )}
+      {closeLeaveCtx && (
+        <ModalForm
+          title="Cerrar baja/excedencia"
+          message="Selecciona la fecha de fin real."
+          fields={[
+            {
+              name: 'closeDate',
+              label: 'Fecha',
+              type: 'date',
+              required: true,
+              defaultValue: todayYMD(),
+            },
+          ]}
+          onSubmit={handleCloseLeave}
+          onClose={() => setCloseLeaveCtx(null)}
+          modal={modal}
+        />
+      )}
 
-    {rejoinCtx && (
-      <ModalForm
-        title="Reincorporación por excedencia voluntaria"
-        message="Indique la fecha de reincorporación."
-        fields={[
-          {
-            name: 'rejoinDate',
-            label: 'Fecha de reincorporación',
-            type: 'date',
-            required: true,
-            defaultValue: todayYMD(),
-          },
-        ]}
-        onSubmit={handleRejoinSubmit}
-        onClose={() => setRejoinCtx(null)}
-        modal={modal}
-      />
-    )}
+      {rejoinCtx && (
+        <ModalForm
+          title="Reincorporación por excedencia voluntaria"
+          message="Indique la fecha de reincorporación."
+          fields={[
+            {
+              name: 'rejoinDate',
+              label: 'Fecha de reincorporación',
+              type: 'date',
+              required: true,
+              defaultValue: todayYMD(),
+            },
+          ]}
+          onSubmit={handleRejoinSubmit}
+          onClose={() => setRejoinCtx(null)}
+          modal={modal}
+        />
+      )}
 
-    {rejoinConfirm && (
-      <ModalConfirmation
-        title="Confirmar reincorporación"
-        message={rejoinConfirm.message}
-        onConfirm={doConfirmRejoin}
-        onCancel={() => setRejoinConfirm(null)}
-      />
-    )}
+      {rejoinConfirm && (
+        <ModalConfirmation
+          title="Confirmar reincorporación"
+          message={rejoinConfirm.message}
+          onConfirm={doConfirmRejoin}
+          onCancel={() => setRejoinConfirm(null)}
+        />
+      )}
 
-    {openModalPreferents && (
-      <ModalForm
-        key="add"
-        title="Añadir Solicitud de Traslado"
-        message="Seleccione cargos y provincias"
-        fields={buildFieldsPreferents()}
-        onSubmit={handleSubmitPref}
-        onClose={() => {
-          setOpenModalPreferents(false);
-        }}
-        modal={modal}
-      />
-    )}
-  </div>
-);
+      {openModalPreferents && (
+        <ModalForm
+          key="add"
+          title="Añadir Solicitud de Traslado"
+          message="Seleccione cargos y provincias"
+          fields={buildFieldsPreferents()}
+          onSubmit={handleSubmitPref}
+          onClose={() => setOpenModalPreferents(false)}
+          modal={modal}
+        />
+      )}
+    </div>
+  );
 }

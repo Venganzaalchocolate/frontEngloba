@@ -1,9 +1,8 @@
-/* ===== Variables base (comparten look con Info/Documentos) ===== */
 .contenedor {
   --radius: 12px;
   --pad: 16px;
   --bd: 1px solid color-mix(in srgb, var(--color-morado) 20%, #fff);
-  --shadow: 0 6px 18px rgba(0,0,0,.06);
+  --shadow: 0 6px 18px rgba(0, 0, 0, .06);
 
   display: flex;
   flex-direction: column;
@@ -16,10 +15,10 @@
   box-sizing: border-box;
 }
 
-/* ===== Título del bloque principal ===== */
 .contenedor > h2 {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin: 0 0 4px 0;
   padding-bottom: 8px;
@@ -27,122 +26,244 @@
   color: var(--color-morado);
   border-bottom: 1px solid var(--color-morado);
 }
+
 .contenedor > h2 svg {
   cursor: pointer;
   transition: transform .15s ease, color .15s ease;
 }
+
 .contenedor > h2 svg:hover {
   color: var(--color-chicle);
   transform: translateY(-1px);
 }
 
-/* ==================
-   Tarjeta de periodo
-   ================== */
-.card, .cardPrincipal {
-  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #fff);
-  border-radius: var(--radius);
-  background: var(--color-gris-claro);;
-  box-shadow: 0 4px 12px rgba(0,0,0,.04);
-  padding: 14px;
+.emptyState,
+.loadingText {
+  margin: 0;
+  color: var(--color-morado);
+}
+
+.card,
+.cardPrincipal {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--color-morado) 16%, #fff);
+  border-radius: var(--radius);
+  background: var(--color-gris-claro);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .04);
 }
 
-.cardPrincipal{
-  background: white;
+.cardPrincipal {
+  background: #fff;
 }
+
 .cardReplacement {
   background: color-mix(in srgb, lightblue 8%, #fff);
   border-color: color-mix(in srgb, lightblue 32%, #fff);
 }
 
-/* Cabecera compacta */
 .cardHeader {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
   justify-content: space-between;
+  gap: 12px;
 }
-.headerMain { display: flex; align-items: center; gap: 10px; }
-.cardTitle { margin: 0; font-size: 12.5pt; color: var(--color-morado); font-weight: 800; }
 
-/* Acciones de cabecera */
-.headerActions { display: flex; align-items: center; gap: 8px; }
+.headerMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-.chipButton {
+.cardTitle {
+  margin: 0;
+  font-size: 12.5pt;
+  color: var(--color-morado);
+  font-weight: 800;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transferButton,
+.closePeriodButton,
+.buttonBajas,
+.smallButton,
+.linkButton,
+.togglePast {
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform .12s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+
+.transferButton,
+.closePeriodButton,
+.togglePast {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: var(--color-yema);
+  background: var(--color-morado);
   color: #fff;
-  border: none;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(44,25,102,.12);
-  transition: transform .12s ease, background .12s ease, color .12s ease, box-shadow .12s ease;
+  box-shadow: 0 2px 8px rgba(44, 25, 102, .08);
 }
-.chipButton:hover {
+
+.transferButton:hover,
+.closePeriodButton:hover,
+.togglePast:hover {
   background: color-mix(in srgb, var(--color-morado) 18%, #fff);
   color: var(--color-morado);
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0,0,0,.08);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .08);
 }
-.iconAction, .iconActionDanger {
-  width: 1.1rem; height: 1.1rem; cursor: pointer; opacity: .9;
+
+.buttonBajas,
+.smallButton,
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-yema);
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(44, 25, 102, .12);
+}
+
+.buttonBajas {
+  padding: 6px 10px;
+}
+
+.smallButton {
+  padding: 5px 9px;
+  font-size: .78rem;
+}
+
+.linkButton {
+  padding: 5px 10px;
+  font-size: .82rem;
+}
+
+.buttonBajas:hover,
+.smallButton:hover,
+.linkButton:hover {
+  background: color-mix(in srgb, var(--color-morado) 18%, #fff);
+  color: var(--color-morado);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .08);
+}
+
+.transferButton:disabled,
+.closePeriodButton:disabled,
+.buttonBajas:disabled,
+.smallButton:disabled,
+.linkButton:disabled,
+.togglePast:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.iconAction,
+.iconActionDanger {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+  opacity: .9;
   transition: transform .12s ease, color .12s ease, opacity .12s ease;
 }
-.iconAction:hover, .iconActionDanger:hover { transform: translateY(-1px); opacity: 1; }
-.iconAction { color: var(--color-morado); }
-.iconActionDanger { color: color-mix(in srgb, #d9534f 85%, #000); }
-.iconActionDanger:hover { color: #d9534f; }
 
-/* ==================
-   Metadatos del periodo
-   ================== */
-.meta { padding: 6px 0 0; }
+.iconAction:hover,
+.iconActionDanger:hover {
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+.iconAction {
+  color: var(--color-morado);
+}
+
+.iconActionDanger {
+  color: color-mix(in srgb, #d9534f 85%, #000);
+}
+
+.iconActionDanger:hover {
+  color: #d9534f;
+}
+
+.meta {
+  padding: 6px 0 0;
+}
+
 .metaGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px 12px;
   margin: 0;
 }
+
 .metaGrid > div {
   display: grid;
   grid-template-columns: 120px 1fr;
   align-items: center;
 }
-.metaGrid dt { font-weight: 700; color: var(--color-malva); }
-.metaGrid dd { margin: 0; color: color-mix(in srgb, var(--color-morado) 92%, #222); }
 
-/* monoespaciado para fechas */
+.metaGrid dt {
+  font-weight: 700;
+  color: var(--color-malva);
+}
+
+.metaGrid dd {
+  margin: 0;
+  color: color-mix(in srgb, var(--color-morado) 92%, #222);
+}
+
 .mono {
   font: 700 10pt ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
   color: color-mix(in srgb, var(--color-morado) 90%, #222);
 }
 
-/* ==============
-   Bajas/Excedencias
-   ============== */
-.leaves { display: flex; flex-direction: column; gap: 8px; }
-h4.tituloBajas { margin: 0; color: var(--color-yema); font-weight: 800; }
-
-.leafList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
+.leaves {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-/* Cabecera de la lista (oculta en móvil) */
-.leafHeader { display: none; }
+.leavesHeader {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: .5rem;
+}
 
-.leafRow {
+.tituloBajas {
+  margin: 0;
+  color: var(--color-yema);
+  font-weight: 800;
+}
+
+.leafList {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.leafHeader {
+  display: none;
+}
+
+.leafRow,
+.emptyLeafRow {
   display: grid;
   grid-template-columns: 1fr;
   gap: 6px;
@@ -151,33 +272,112 @@ h4.tituloBajas { margin: 0; color: var(--color-yema); font-weight: 800; }
   background: #fafaff;
   border: 1px solid color-mix(in srgb, var(--color-morado) 18%, #fff);
 }
-.leafCell { display: flex; align-items: center; }
+
+.emptyLeafRow {
+  color: var(--color-morado);
+  font-weight: 600;
+}
+
+.leafCell {
+  display: flex;
+  align-items: center;
+}
+
 .leafCell::before {
   content: attr(data-label) ": ";
+  margin-right: 6px;
   font-weight: 700;
   color: var(--color-malva);
-  margin-right: 6px;
 }
-.leafActions { justify-content: flex-end; gap: 8px; }
-.leafActions .iconAction, .leafActions .iconActionDanger { margin-left: 4px; }
 
-.buttonBajas{
- background-color: var(--color-yema);
+.leafActions {
+  justify-content: flex-end;
+  gap: 8px;
 }
-/* ===== Desktop ===== */
+
+.leafActions .iconAction,
+.leafActions .iconActionDanger {
+  margin-left: 4px;
+}
+
+.pastWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.togglePast {
+  align-self: flex-start;
+}
+
+.pastPanel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: max-height .28s ease, opacity .2s ease, transform .2s ease;
+}
+
+.pastOpen {
+  max-height: 3000px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pastPanel .card {
+  margin-bottom: 16px;
+}
+
+.pastPanel .card:last-child {
+  margin-bottom: 0;
+}
+
+.reasonEndBox {
+  border: 1px solid color-mix(in srgb, var(--color-yema) 35%, #fff);
+  background: color-mix(in srgb, var(--color-yema) 8%, #fff);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.reasonEndTitle {
+  margin: 0 0 .35rem 0;
+  color: var(--color-yema);
+  font-weight: 800;
+  font-size: .95rem;
+}
+
+.reasonEndName {
+  margin: 0;
+  color: var(--color-morado);
+  font-weight: 800;
+}
+
+.reasonEndDescription {
+  margin: .25rem 0 0 0;
+  color: color-mix(in srgb, var(--color-morado) 82%, #333);
+  font-size: .85rem;
+  line-height: 1.35;
+}
+
 @media (min-width: 720px) {
-  .metaGrid { grid-template-columns: repeat(5, 1fr); }
-  .metaGrid > div { grid-template-columns: 1fr; }
+  .metaGrid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .metaGrid > div {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (min-width: 840px) {
-  /* Cabecera visible en desktop como "thead" */
-  .contenedor{
+  .contenedor {
     min-width: 30rem;
   }
+
   .leafHeader {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* Inicio | Prevista | Fin | Descripción | Acciones */
+    grid-template-columns: repeat(5, 1fr);
     align-items: center;
     padding: 10px;
     border-radius: 10px 10px 0 0;
@@ -193,59 +393,11 @@ h4.tituloBajas { margin: 0; color: var(--color-yema); font-weight: 800; }
     border-top-right-radius: 0;
   }
 
-  .leafCell::before { content: none; } /* hay cabecera */
-  .leafActions { justify-content: end; }
-}
+  .leafCell::before {
+    content: none;
+  }
 
-/* ==============
-   Periodos anteriores (toggle)
-   ============== */
-.pastWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.togglePast {
-  align-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: var(--color-morado);
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
-  box-shadow: 0 2px 8px rgba(44,25,102,.08);
-}
-.togglePast:hover {
-
-  background: color-mix(in srgb, var(--color-morado) 18%, #fff);
-  color: var(--color-morado);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0,0,0,.08);
-
-}
-
-.pastPanel {
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: max-height .28s ease, opacity .2s ease, transform .2s ease;
-}
-.pastOpen {
-  max-height: 3000px; /* suficiente para una lista; ajusta si hace falta */
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.pastPanel .card {
-  margin-bottom: 16px; /* separa cada tarjeta */
-}
-
-.pastPanel .card:last-child {
-  margin-bottom: 0; /* al último no le dejes hueco extra */
+  .leafActions {
+    justify-content: flex-end;
+  }
 }

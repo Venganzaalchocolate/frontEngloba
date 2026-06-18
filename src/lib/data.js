@@ -660,3 +660,4 @@ export const documentationReceiptTemplatePreview = async (datos, token) => {
 export const anideCentroManager = (datos, token) => fetchData("/anide/centro", "POST", token, datos);
 export const anideUsuariaManager = (datos, token) => fetchData("/anide/usuaria", "POST", token, datos);
 export const anideCentroOccupancy = (datos, token) => fetchData("/anide/occupancy", "POST", token, datos);
+

@@ -63,7 +63,8 @@ export default function FormWorkspaceGroup({
         { value: 'social', label: 'Trabajadores Sociales' },
         { value: 'psychology', label: 'Psicólogos' },
         { value: 'tecnicos', label: 'Equipo Técnico' },
-        { value:'education', label: 'Equipo Educativo'}
+        { value:'education', label: 'Equipo Educativo'},
+        { value: 'juridico', label: 'Equipo Jurídico'}
     ];
 
     const isCreate = mode === 'createGroup';

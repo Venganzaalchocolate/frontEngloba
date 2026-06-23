@@ -95,6 +95,42 @@ const FormAnideUser = ({
         ],
       },
       {
+        type: "section",
+        label: "Unidad familiar / acompañantes",
+      },
+      {
+        name: "children",
+        label: "Menores acompañantes",
+        type: "number",
+        required: false,
+        defaultValue: doc?.familyUnit?.children ?? 0,
+      },
+      {
+        name: "dependents",
+        label: "Personas dependientes",
+        type: "number",
+        required: false,
+        defaultValue: doc?.familyUnit?.dependents ?? 0,
+      },
+      {
+        name: "adults",
+        label: "Personas adultas acompañantes",
+        type: "number",
+        required: false,
+        defaultValue: doc?.familyUnit?.adults ?? 0,
+      },
+      {
+        name: "familyNotes",
+        label: "Notas de unidad familiar",
+        type: "textarea",
+        required: false,
+        defaultValue: doc?.familyUnit?.notes || "",
+      },
+      {
+        type: "section",
+        label: "Notas generales",
+      },
+      {
         name: "notes",
         label: "Notas",
         type: "textarea",
@@ -128,6 +164,12 @@ const FormAnideUser = ({
       birthday: values.birthday || null,
       nationality: getFieldValue(values.nationality),
       gender: values.gender || "",
+      familyUnit: {
+        children: Number(values.children || 0),
+        dependents: Number(values.dependents || 0),
+        adults: Number(values.adults || 0),
+        notes: values.familyNotes || "",
+      },
       notes: values.notes || "",
     };
 

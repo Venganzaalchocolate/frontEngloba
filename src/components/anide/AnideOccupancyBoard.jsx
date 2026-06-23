@@ -1,12 +1,15 @@
 import {
+  FaBabyCarriage,
   FaBed,
   FaCircleExclamation,
+  FaHandsHoldingChild,
   FaNoteSticky,
   FaPenToSquare,
   FaPlus,
   FaRightLeft,
 } from "react-icons/fa6";
 import { FaSignOutAlt } from "react-icons/fa";
+import { IoMdPeople } from "react-icons/io";
 import styles from "../styles/anide.module.css";
 
 const getRoomClass = (status) => {
@@ -26,7 +29,7 @@ const getRoomClass = (status) => {
 
 const getRoomLabel = (status) => {
   switch (status) {
-    case "occupied":
+    case "occupied": 
       return "Habitación ocupada";
     case "free":
       return "Habitación libre";
@@ -64,7 +67,29 @@ const getProvinceName = (province) => {
   return "Sin provincia";
 };
 
-const getBedUser = (bed) => bed?.usuaria || null;
+const getBedBlockedLabel = (bed) => {
+  if (bed.active === false) return "Cama inactiva";
+  if (bed.status === "maintenance") return "Por arreglar";
+  if (bed.status === "unusable") return "Inutilizable";
+  if (bed.status === "reserved") return "Reservada";
+
+  return "";
+};
+
+const isBedBlocked = (bed) => {
+  return (
+    bed.active === false ||
+    ["maintenance", "unusable", "reserved"].includes(bed.status)
+  );
+};
+
+const hasFamilyInfo = (family = {}) => {
+  return (
+    Number(family.children || 0) > 0 ||
+    Number(family.dependents || 0) > 0 ||
+    Number(family.adults || 0) > 0
+  );
+};
 
 const AnideOccupancyBoard = ({
   center,
@@ -79,7 +104,7 @@ const AnideOccupancyBoard = ({
   onMoveStay,
   onCloseStay,
   onViewNotes,
-onAddNote,
+  onAddNote,
 }) => {
   const selectedCenter =
     center ||
@@ -93,8 +118,6 @@ onAddNote,
 
     return acc;
   }, {});
-
-
 
   return (
     <div className={styles.boardWrapper}>
@@ -117,6 +140,26 @@ onAddNote,
         <div>
           <span className={`${styles.legendDot} ${styles.roomUnusable}`} />
           Habitación inactiva
+        </div>
+
+        <div>
+          <span className={`${styles.legendDot} ${styles.roomUnusable}`} />
+          Cama reservada / por arreglar / inutilizable
+        </div>
+
+        <div>
+          <span className={styles.familyLegend}>M</span>
+          Menores
+        </div>
+
+        <div>
+          <span className={styles.familyLegend}>D</span>
+          Dependientes
+        </div>
+
+        <div>
+          <span className={styles.familyLegend}>A</span>
+          Adultos acompañantes
         </div>
       </div>
 
@@ -187,9 +230,16 @@ onAddNote,
 
                   <div className={styles.bedsGrid}>
                     {(room.camas || []).map((bed) => {
-                      const user = getBedUser(bed);
+                      const user = bed?.usuaria || null;
                       const occupied = !!user;
-                      const bedBlocked = bed.active === false;
+                      const bedBlocked = isBedBlocked(bed);
+                      const blockedLabel = getBedBlockedLabel(bed);
+
+                      const familyUnit = user?.familyUnit || {};
+                      const companions = user?.companions || {};
+                      const visibleFamily = hasFamilyInfo(companions)
+                        ? companions
+                        : familyUnit;
 
                       return (
                         <div
@@ -217,18 +267,28 @@ onAddNote,
                             </button>
                           </div>
 
+                          {!!bed.capacity && (
+                            <small>Capacidad: {bed.capacity}</small>
+                          )}
+
                           {bedBlocked ? (
-                            <p className={styles.bedMuted}>Cama inactiva</p>
+                            <>
+                              <p className={styles.bedMuted}>
+                                {blockedLabel || "Cama no disponible"}
+                              </p>
+
+                              {!!bed.notes && <small>{bed.notes}</small>}
+                            </>
                           ) : occupied ? (
                             <>
                               <button
-  type="button"
-  className={styles.bedUserButton}
-  onClick={() => onViewNotes?.(user)}
-  title="Ver notas de la usuaria"
->
-  {user.name || "Usuaria"}
-</button>
+                                type="button"
+                                className={styles.bedUserButton}
+                                onClick={() => onViewNotes?.(user)}
+                                title="Ver notas de la usuaria"
+                              >
+                                {user.name || "Usuaria"}
+                              </button>
 
                               <small>
                                 Entrada:{" "}
@@ -238,6 +298,32 @@ onAddNote,
                                     )
                                   : "—"}
                               </small>
+
+                              {hasFamilyInfo(visibleFamily) && (
+                                <div className={styles.bedBadges}>
+                                  {!!visibleFamily.children && (
+                                    
+                                    <span><FaBabyCarriage/> {visibleFamily.children}</span>
+                                  )}
+
+                                  {!!visibleFamily.dependents && (
+                                    <span>
+                                      
+                                      <FaHandsHoldingChild/> {visibleFamily.dependents}
+                                    </span>
+                                  )}
+
+                                  {!!visibleFamily.adults && (
+                                    <span>
+                                      <IoMdPeople /> {visibleFamily.adults}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              {!!visibleFamily.notes && (
+                                <small>{visibleFamily.notes}</small>
+                              )}
 
                               <div className={styles.bedActions}>
                                 <button
@@ -316,15 +402,19 @@ onAddNote,
         <div className={styles.provinceGrid}>
           {Object.entries(provinceGroups).map(
             ([provinceName, provinceCenters]) => (
-              //seleccionado
               <article className={styles.provinceBlock} key={provinceName}>
                 <h4>{provinceName}</h4>
 
                 <div className={styles.centersByProvince}>
                   {provinceCenters.map((item) => (
-                    <div className={ String(item._id) === String(selectedCenterId)
-                            ? styles.centerGlobalRowSelected
-                            : styles.centerGlobalRow} key={item._id}>
+                    <div
+                      className={
+                        String(item._id) === String(selectedCenterId)
+                          ? styles.centerGlobalRowSelected
+                          : styles.centerGlobalRow
+                      }
+                      key={item._id}
+                    >
                       <button
                         type="button"
                         className={[

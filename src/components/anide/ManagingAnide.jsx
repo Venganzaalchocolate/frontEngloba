@@ -26,6 +26,7 @@ const todayInput = () => new Date().toISOString().slice(0, 10);
 
 const refId = (value) => {
   if (!value) return "";
+
   if (typeof value === "object") {
     return String(value._id || value.id || value.value || "");
   }
@@ -61,6 +62,13 @@ const genderLabel = (gender) => {
   }
 };
 
+const isBedAssignable = (bed = {}) => {
+  if (bed.active === false) return false;
+  if (bed.occupied) return false;
+
+  return !["maintenance", "unusable", "reserved"].includes(bed.status);
+};
+
 const getRoomVisualStatus = (room) => {
   if (room.visualStatus) return room.visualStatus;
   if (room.active === false) return "unusable";
@@ -81,7 +89,12 @@ const normalizeRoom = (room = {}) => {
 
   const activeBeds =
     room.activeBeds ??
-    camas.filter((bed) => bed.active !== false).length;
+    camas.filter((bed) => {
+      return (
+        bed.active !== false &&
+        !["maintenance", "unusable"].includes(bed.status)
+      );
+    }).length;
 
   const occupiedBeds =
     room.occupiedBeds ??
@@ -89,7 +102,7 @@ const normalizeRoom = (room = {}) => {
 
   const freeBeds =
     room.freeBeds ??
-    Math.max(Number(activeBeds) - Number(occupiedBeds), 0);
+    camas.filter((bed) => isBedAssignable(bed)).length;
 
   return {
     ...room,
@@ -169,96 +182,13 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
   const [assignStayData, setAssignStayData] = useState(null);
   const [moveStayData, setMoveStayData] = useState(null);
   const [closeStayData, setCloseStayData] = useState(null);
-
   const [notesModal, setNotesModal] = useState(null);
 
   const [userFilters, setUserFilters] = useState({
     q: "",
     active: "active",
     centroId: "",
-    onlyWithActiveStay: true,
   });
-
-  const openUserNotes = async (usuaria) => {
-    const usuariaId = usuaria?.usuariaId || usuaria?._id;
-
-    if (!usuariaId) {
-      modal("Usuaria no encontrada", "No se ha podido identificar la usuaria.");
-      return;
-    }
-
-    try {
-      charge(true);
-
-      const token = getToken();
-
-      const data = await anideUsuariaManager(
-        {
-          type: "get",
-          usuariaId,
-        },
-        token
-      );
-
-      if (data?.error) {
-        modal("Error", data.message || "No se pudieron cargar las notas de la usuaria");
-        return;
-      }
-
-      setNotesModal({
-        user: data,
-        sourceName: usuaria?.name || buildFullName(data),
-      });
-    } catch (e) {
-      modal("Error", e?.message || "No se pudieron cargar las notas de la usuaria");
-    } finally {
-      charge(false);
-    }
-  };
-
-  const submitUserNote = async (values) => {
-    const currentNotes = String(notesModal?.user?.notes || "").trim();
-    const newNote = String(values.newNote || "").trim();
-
-    if (!newNote) {
-      modal("Nota requerida", "Escribe una nota antes de guardar.");
-      return;
-    }
-
-    const date = new Date().toLocaleDateString("es-ES");
-    const fullNote = currentNotes
-      ? `${currentNotes}\n\n[${date}] ${newNote}`
-      : `[${date}] ${newNote}`;
-
-    try {
-      charge(true);
-
-      const token = getToken();
-
-      const resp = await anideUsuariaManager(
-        {
-          type: "update",
-          usuariaId: notesModal.user._id,
-          notes: fullNote,
-        },
-        token
-      );
-
-      if (resp?.error) {
-        modal("Error", resp.message || "No se pudo guardar la nota");
-        return;
-      }
-
-      setNotesModal(null);
-      await refreshAll(false);
-
-      modal("ANIDE", "Nota añadida correctamente");
-    } catch (e) {
-      modal("Error", e?.message || "No se pudo guardar la nota");
-    } finally {
-      charge(false);
-    }
-  };
 
   const provinceOptions = useMemo(() => {
     const index = enumsData?.provincesIndex || {};
@@ -272,7 +202,9 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
   }, [enumsData]);
 
   const selectedCenter = useMemo(() => {
-    return centers.find((center) => String(center._id) === String(selectedCenterId)) || null;
+    return centers.find(
+      (center) => String(center._id) === String(selectedCenterId)
+    ) || null;
   }, [centers, selectedCenterId]);
 
   const centerOptions = useMemo(() => {
@@ -282,18 +214,41 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
     }));
   }, [centers]);
 
+  const assignedUserIds = useMemo(() => {
+    const ids = new Set();
+
+    centers.forEach((center) => {
+      (center.habitaciones || []).forEach((room) => {
+        (room.camas || []).forEach((bed) => {
+          const user = bed?.usuaria;
+          const id = user?.usuariaId || user?._id || user?.id;
+
+          if (id) ids.add(String(id));
+        });
+      });
+    });
+
+    return ids;
+  }, [centers]);
+
+  const assignUserOptions = useMemo(() => {
+    return users
+      .filter((user) => !assignedUserIds.has(String(user._id)))
+      .map((user) => ({
+        value: user._id,
+        label: `${buildFullName(user)} · ${user.documentId || "sin doc."}`,
+      }));
+  }, [users, assignedUserIds]);
+
   const freeBedsOptions = useMemo(() => {
     const options = [];
 
     centers.forEach((center) => {
-      const rooms = center.habitaciones || [];
-
-      rooms.forEach((room) => {
+      (center.habitaciones || []).forEach((room) => {
         const normalizedRoom = normalizeRoom(room);
 
         normalizedRoom.camas.forEach((bed) => {
-          if (bed.active === false) return;
-          if (bed.occupied) return;
+          if (!isBedAssignable(bed)) return;
 
           options.push({
             value: `${center._id}|${room._id}|${bed._id}`,
@@ -359,12 +314,11 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
 
       setSelectedCenterId(nextSelectedId);
 
-      const selectedOccupancy =
+      setSelectedCenterOccupancy(
         centersWithOccupancy.find(
           (item) => String(item._id) === String(nextSelectedId)
-        ) || null;
-
-      setSelectedCenterOccupancy(selectedOccupancy);
+        ) || null
+      );
 
       return centersWithOccupancy;
     } catch (e) {
@@ -375,44 +329,7 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
     }
   };
 
-  const loadSelectedOccupancy = async (showLoader = true) => {
-    if (!selectedCenterId) {
-      setSelectedCenterOccupancy(null);
-      return;
-    }
-
-    if (showLoader) charge(true);
-
-    try {
-      const token = getToken();
-
-      const data = await anideCentroOccupancy(
-        { centroId: selectedCenterId },
-        token
-      );
-
-      if (data?.error) {
-        modal("Error", data.message || "No se pudo cargar la ocupación del centro");
-        return;
-      }
-
-      const normalized = normalizeCenter(data);
-
-      setSelectedCenterOccupancy(normalized);
-
-      setCenters((prev) =>
-        prev.map((item) =>
-          String(item._id) === String(normalized._id) ? normalized : item
-        )
-      );
-    } catch (e) {
-      modal("Error", e?.message || "No se pudo cargar la ocupación del centro");
-    } finally {
-      if (showLoader) charge(false);
-    }
-  };
-
-  const loadUsers = async (showLoader = true) => {
+  const loadUsers = async (showLoader = true, filters = userFilters) => {
     if (showLoader) charge(true);
 
     try {
@@ -420,15 +337,14 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
 
       const payload = {
         type: "list",
-        q: userFilters.q || undefined,
+        q: filters.q || undefined,
         page: 1,
         limit: 100,
-        onlyWithActiveStay: userFilters.onlyWithActiveStay,
       };
 
-      if (userFilters.active === "active") payload.active = true;
-      if (userFilters.active === "inactive") payload.active = false;
-      if (userFilters.centroId) payload.centroId = userFilters.centroId;
+      if (filters.active === "active") payload.active = true;
+      if (filters.active === "inactive") payload.active = false;
+      if (filters.centroId) payload.centroId = filters.centroId;
 
       Object.keys(payload).forEach((key) => {
         if (payload[key] === undefined || payload[key] === "") delete payload[key];
@@ -438,12 +354,16 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
 
       if (data?.error) {
         modal("Error", data.message || "No se pudieron cargar las usuarias");
-        return;
+        return [];
       }
 
-      setUsers(data?.items || data?.users || []);
+      const nextUsers = data?.items || data?.users || [];
+      setUsers(nextUsers);
+
+      return nextUsers;
     } catch (e) {
       modal("Error", e?.message || "No se pudieron cargar las usuarias");
+      return [];
     } finally {
       if (showLoader) charge(false);
     }
@@ -460,10 +380,12 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
   }, []);
 
   useEffect(() => {
-    const found = centers.find((item) => String(item._id) === String(selectedCenterId));
+    const found = centers.find(
+      (item) => String(item._id) === String(selectedCenterId)
+    );
+
     setSelectedCenterOccupancy(found || null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCenterId]);
+  }, [centers, selectedCenterId]);
 
   useEffect(() => {
     if (view === "users") loadUsers();
@@ -605,6 +527,8 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
         centroId: bedForm.centroId,
         habitacionId: bedForm.room._id,
         name: values.name,
+        status: values.status || "available",
+        capacity: Number(values.capacity || 1),
         notes: values.notes || "",
       };
 
@@ -664,7 +588,13 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
     }
   };
 
-  const openAssignStay = (center, room, bed) => {
+  const openAssignStay = async (center, room, bed) => {
+    await loadUsers(false, {
+      q: "",
+      active: "active",
+      centroId: "",
+    });
+
     setAssignStayData({
       center,
       room,
@@ -674,6 +604,14 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
 
   const submitAssignStay = async (values) => {
     const usuariaId = getFieldValue(values.usuariaId);
+
+    if (!assignUserOptions.length) {
+      modal(
+        "Sin usuarias disponibles",
+        "No hay usuarias libres para asignar. Si la usuaria ya está en una cama, usa la opción Trasladar."
+      );
+      return;
+    }
 
     if (!usuariaId) {
       modal("Usuaria requerida", "Selecciona una usuaria para asignarla a la cama.");
@@ -757,7 +695,6 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
       }
 
       setMoveStayData(null);
-      setRoomDetail(null);
       await refreshAll(false);
 
       modal("ANIDE", "Traslado registrado correctamente");
@@ -797,7 +734,6 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
       }
 
       setCloseStayData(null);
-      setRoomDetail(null);
       await refreshAll(false);
 
       modal("ANIDE", "Salida registrada correctamente");
@@ -808,12 +744,131 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
     }
   };
 
-  const userSelectOptions = useMemo(() => {
-    return users.map((user) => ({
-      value: user._id,
-      label: `${buildFullName(user)} · ${user.documentId || "sin doc."}`,
-    }));
-  }, [users]);
+  const openUserNotes = async (usuaria) => {
+    const usuariaId = usuaria?.usuariaId || usuaria?._id;
+
+    if (!usuariaId) {
+      modal("Usuaria no encontrada", "No se ha podido identificar la usuaria.");
+      return;
+    }
+
+    try {
+      charge(true);
+
+      const token = getToken();
+
+      const data = await anideUsuariaManager(
+        {
+          type: "get",
+          usuariaId,
+        },
+        token
+      );
+
+      if (data?.error) {
+        modal("Error", data.message || "No se pudieron cargar las notas de la usuaria");
+        return;
+      }
+
+      setNotesModal({
+        user: data,
+        sourceName: usuaria?.name || buildFullName(data),
+      });
+    } catch (e) {
+      modal("Error", e?.message || "No se pudieron cargar las notas de la usuaria");
+    } finally {
+      charge(false);
+    }
+  };
+
+  const submitUserNote = async (values) => {
+    const currentNotes = String(notesModal?.user?.notes || "").trim();
+    const newNote = String(values.newNote || "").trim();
+
+    if (!newNote) {
+      modal("Nota requerida", "Escribe una nota antes de guardar.");
+      return;
+    }
+
+    const date = new Date().toLocaleDateString("es-ES");
+    const fullNote = currentNotes
+      ? `${currentNotes}\n\n[${date}] ${newNote}`
+      : `[${date}] ${newNote}`;
+
+    try {
+      charge(true);
+
+      const token = getToken();
+
+      const resp = await anideUsuariaManager(
+        {
+          type: "update",
+          usuariaId: notesModal.user._id,
+          notes: fullNote,
+        },
+        token
+      );
+
+      if (resp?.error) {
+        modal("Error", resp.message || "No se pudo guardar la nota");
+        return;
+      }
+
+      setNotesModal(null);
+      await refreshAll(false);
+
+      modal("ANIDE", "Nota añadida correctamente");
+    } catch (e) {
+      modal("Error", e?.message || "No se pudo guardar la nota");
+    } finally {
+      charge(false);
+    }
+  };
+
+  const viewUserNotes = async (usuaria) => {
+    const usuariaId = usuaria?.usuariaId || usuaria?._id;
+
+    if (!usuariaId) {
+      modal("Usuaria no encontrada", "No se ha podido identificar la usuaria.");
+      return;
+    }
+
+    try {
+      charge(true);
+
+      const token = getToken();
+
+      const data = await anideUsuariaManager(
+        {
+          type: "get",
+          usuariaId,
+        },
+        token
+      );
+
+      if (data?.error) {
+        modal("Error", data.message || "No se pudieron cargar las notas de la usuaria");
+        return;
+      }
+
+      const notes = String(data?.notes || "").trim();
+
+      modal(`Notas de ${usuaria?.name || buildFullName(data)}`, [
+        [
+          "Notas actuales",
+          notes
+            ? notes
+                .replace(/\s*(\[\d{1,2}\/\d{1,2}\/\d{4}\])/g, "\n\n$1")
+                .trim()
+            : "Esta usuaria todavía no tiene notas registradas.",
+        ],
+      ]);
+    } catch (e) {
+      modal("Error", e?.message || "No se pudieron cargar las notas de la usuaria");
+    } finally {
+      charge(false);
+    }
+  };
 
   const assignUserFields = useMemo(() => [
     {
@@ -823,10 +878,14 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
       searchable: true,
       required: true,
       defaultValue: "",
-      options: [
-        { value: "", label: "Selecciona una usuaria" },
-        ...userSelectOptions,
-      ],
+      options: assignUserOptions.length
+        ? [{ value: "", label: "Selecciona una usuaria" }, ...assignUserOptions]
+        : [
+            {
+              value: "",
+              label: "No hay usuarias libres. Si ya tiene estancia activa, usa Trasladar.",
+            },
+          ],
     },
     {
       name: "startDate",
@@ -837,12 +896,12 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
     },
     {
       name: "notes",
-      label: "Notas",
+      label: "Notas de estancia",
       type: "textarea",
       required: false,
       defaultValue: "",
     },
-  ], [userSelectOptions]);
+  ], [assignUserOptions]);
 
   const moveFields = useMemo(() => [
     {
@@ -933,6 +992,26 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
       defaultValue: bedForm?.doc?.name || "",
     },
     {
+      name: "status",
+      label: "Estado",
+      type: "select",
+      required: true,
+      defaultValue: bedForm?.doc?.status || "available",
+      options: [
+        { value: "available", label: "Disponible" },
+        { value: "reserved", label: "Reservada" },
+        { value: "maintenance", label: "Por arreglar" },
+        { value: "unusable", label: "Inutilizable" },
+      ],
+    },
+    {
+      name: "capacity",
+      label: "Capacidad",
+      type: "number",
+      required: true,
+      defaultValue: bedForm?.doc?.capacity || 1,
+    },
+    {
       name: "active",
       label: "Activa",
       type: "select",
@@ -953,198 +1032,48 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
     },
   ], [bedForm]);
 
-const viewUserNotes = async (usuaria) => {
-  const usuariaId = usuaria?.usuariaId || usuaria?._id;
-
-  if (!usuariaId) {
-    modal("Usuaria no encontrada", "No se ha podido identificar la usuaria.");
-    return;
-  }
-
-  try {
-    charge(true);
-
-    const token = getToken();
-
-    const data = await anideUsuariaManager(
-      {
-        type: "get",
-        usuariaId,
-      },
-      token
-    );
-
-    if (data?.error) {
-      modal("Error", data.message || "No se pudieron cargar las notas de la usuaria");
-      return;
-    }
-
-    const notes = String(data?.notes || "").trim();
-
-    modal(`Notas de ${usuaria?.name || buildFullName(data)}`, [
-      [
-        "Notas actuales",
-        notes
-          ? notes
-              .replace(/\s*(\[\d{1,2}\/\d{1,2}\/\d{4}\])/g, "\n\n$1")
-              .trim()
-          : "Esta usuaria todavía no tiene notas registradas.",
-      ],
-    ]);
-  } catch (e) {
-    modal("Error", e?.message || "No se pudieron cargar las notas de la usuaria");
-  } finally {
-    charge(false);
-  }
-};
-const openAddUserNote = async (usuaria) => {
-  const usuariaId = usuaria?.usuariaId || usuaria?._id;
-
-  if (!usuariaId) {
-    modal("Usuaria no encontrada", "No se ha podido identificar la usuaria.");
-    return;
-  }
-
-  try {
-    charge(true);
-
-    const token = getToken();
-
-    const data = await anideUsuariaManager(
-      {
-        type: "get",
-        usuariaId,
-      },
-      token
-    );
-
-    if (data?.error) {
-      modal("Error", data.message || "No se pudieron cargar las notas de la usuaria");
-      return;
-    }
-
-    setNotesModal({
-      user: data,
-      sourceName: usuaria?.name || buildFullName(data),
-    });
-  } catch (e) {
-    modal("Error", e?.message || "No se pudieron cargar las notas de la usuaria");
-  } finally {
-    charge(false);
-  }
-};
   return (
     <div className={styles.contenedor}>
-      <div className={styles.contenido}> 
-      <div className={styles.wrapper}>
-        <div className={styles.header}>
-          <div>
-            <h2>GESTIÓN ANIDE</h2>
-            <p>Mapa visual de ocupación por centros, habitaciones y camas.</p>
+      <div className={styles.contenido}>
+        <div className={styles.wrapper}>
+          <div className={styles.header}>
+            <div>
+              <h2>GESTIÓN ANIDE</h2>
+              <p>Mapa visual de ocupación por centros, habitaciones y camas.</p>
+            </div>
+
+            <div className={styles.headerActions}>
+              <button onClick={openCreateCenter}>
+                <FaHouseMedical /> Crear centro
+              </button>
+
+              <button onClick={openEditCenter} disabled={!selectedCenterId}>
+                <FaEdit /> Editar centro
+              </button>
+
+              <button onClick={() => setUserForm({ mode: "create", doc: null })}>
+                <FaUserPlus /> Crear usuaria
+              </button>
+
+              <button onClick={openCreateRoom} disabled={!selectedCenterId}>
+                <FaDoorOpen /> Añadir habitación
+              </button>
+
+              <button onClick={() => refreshAll(true)}>
+                <FaArrowsRotate /> Actualizar
+              </button>
+            </div>
           </div>
 
-          <div className={styles.headerActions}>
-            <button onClick={openCreateCenter}>
-              <FaHouseMedical /> Crear centro
-            </button>
-
-            <button onClick={openEditCenter} disabled={!selectedCenterId}>
-              <FaEdit /> Editar centro
-            </button>
-
-            <button onClick={() => setUserForm({ mode: "create", doc: null })}>
-              <FaUserPlus /> Crear usuaria
-            </button>
-
-            <button onClick={openCreateRoom} disabled={!selectedCenterId}>
-              <FaDoorOpen /> Añadir habitación
-            </button>
-
-            <button onClick={() => refreshAll(true)}>
-              <FaArrowsRotate /> Actualizar
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.topBar}>
-          <div className={styles.selectorBlock}>
-            <label>Centro activo</label>
-
-            <select
-              value={selectedCenterId}
-              onChange={(e) => setSelectedCenterId(e.target.value)}
-            >
-              <option value="">Selecciona un centro</option>
-
-              {centerOptions.map((center) => (
-                <option key={center.value} value={center.value}>
-                  {center.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.viewSwitch}>
-            <button
-              className={view === "board" ? styles.activeView : ""}
-              onClick={() => setView("board")}
-            >
-              Ocupación
-            </button>
-
-            <button
-              className={view === "users" ? styles.activeView : ""}
-              onClick={() => setView("users")}
-            >
-              Usuarias
-            </button>
-          </div>
-        </div>
-
-        {view === "board" && (
-          <AnideOccupancyBoard
-            center={selectedCenterOccupancy}
-            centers={centers}
-            selectedCenterId={selectedCenterId}
-            onSelectCenter={setSelectedCenterId}
-            onRoomClick={(center, room) =>
-  modal(`${center?.name || ""} · ${room?.name || ""}`, [
-    `Camas activas: ${room?.activeBeds ?? 0}`,
-    `Ocupadas: ${room?.occupiedBeds ?? 0}`,
-    `Libres: ${room?.freeBeds ?? 0}`,
-    room?.notes ? `Notas: ${room.notes}` : "",
-  ].filter(Boolean))
-}
-            onAssignStay={openAssignStay}
-            onEditRoom={openEditRoom}
-            onCreateBed={openCreateBed}
-            onEditBed={openEditBed}
-            onMoveStay={openMoveStay}
-            onCloseStay={openCloseStay}
-            onViewNotes={viewUserNotes}
-onAddNote={openAddUserNote}
-          />
-        )}
-
-        {view === "users" && (
-          <div className={styles.usersPanel}>
-            <div className={styles.usersFilters}>
-              <input
-                type="text"
-                placeholder="Buscar por nombre, documento..."
-                value={userFilters.q}
-                onChange={(e) =>
-                  setUserFilters((prev) => ({ ...prev, q: e.target.value }))
-                }
-              />
+          <div className={styles.topBar}>
+            <div className={styles.selectorBlock}>
+              <label>Centro activo</label>
 
               <select
-                value={userFilters.centroId}
-                onChange={(e) =>
-                  setUserFilters((prev) => ({ ...prev, centroId: e.target.value }))
-                }
+                value={selectedCenterId}
+                onChange={(e) => setSelectedCenterId(e.target.value)}
               >
-                <option value="">Todos los centros</option>
+                <option value="">Selecciona un centro</option>
 
                 {centerOptions.map((center) => (
                   <option key={center.value} value={center.value}>
@@ -1152,203 +1081,273 @@ onAddNote={openAddUserNote}
                   </option>
                 ))}
               </select>
-
-              <select
-                value={userFilters.active}
-                onChange={(e) =>
-                  setUserFilters((prev) => ({ ...prev, active: e.target.value }))
-                }
-              >
-                <option value="active">Activas</option>
-                <option value="inactive">Inactivas</option>
-                <option value="total">Todas</option>
-              </select>
             </div>
 
-            <div className={styles.usersList}>
-              {users.map((user) => (
-                <div className={styles.userRow} key={user._id}>
-                  <div>
-                    <strong>{buildFullName(user)}</strong>
-                    <span>{user.documentId || "—"}</span>
-                  </div>
+            <div className={styles.viewSwitch}>
+              <button
+                className={view === "board" ? styles.activeView : ""}
+                onClick={() => setView("board")}
+              >
+                Ocupación
+              </button>
 
-                  <div>{getNationalityLabel(user.nationality)}</div>
-                  <div>{genderLabel(user.gender)}</div>
-
-                  <div className={styles.userActions}>
-                    <button onClick={() => setUserForm({ mode: "edit", doc: user })}>
-                      <FaUserEdit /> Editar
-                    </button>
-
-                    <button onClick={() => openUserNotes(user)}>
-                      <FaStickyNote /> Notas
-                    </button>
-
-                    <button onClick={() => openMoveStay(user)}>
-                      <FaArrowRightArrowLeft /> Trasladar
-                    </button>
-
-                    <button onClick={() => openCloseStay(user)}>
-                      <FaSignOutAlt /> Salida
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              {!users.length && (
-                <div className={styles.emptyState}>
-                  No hay usuarias con estos filtros.
-                </div>
-              )}
+              <button
+                className={view === "users" ? styles.activeView : ""}
+                onClick={() => setView("users")}
+              >
+                Usuarias
+              </button>
             </div>
           </div>
-        )}
 
-        {!!centerForm && (
-          <ModalForm
-            title={centerForm.mode === "edit" ? "Editar centro ANIDE" : "Crear centro ANIDE"}
-            message="Indica los datos principales del centro."
-            fields={centerFields}
-            submitText={centerForm.mode === "edit" ? "Guardar cambios" : "Crear centro"}
-            cancelText="Cancelar"
-            onSubmit={submitCenter}
-            onClose={() => setCenterForm(null)}
-            modal={modal}
-          />
-        )}
+          {view === "board" && (
+            <AnideOccupancyBoard
+              center={selectedCenterOccupancy}
+              centers={centers}
+              selectedCenterId={selectedCenterId}
+              onSelectCenter={setSelectedCenterId}
+              onRoomClick={(center, room) =>
+                modal(`${center?.name || ""} · ${room?.name || ""}`, [
+                  `Camas activas: ${room?.activeBeds ?? 0}`,
+                  `Ocupadas: ${room?.occupiedBeds ?? 0}`,
+                  `Libres: ${room?.freeBeds ?? 0}`,
+                  room?.notes ? `Notas: ${room.notes}` : "",
+                ].filter(Boolean))
+              }
+              onAssignStay={openAssignStay}
+              onEditRoom={openEditRoom}
+              onCreateBed={openCreateBed}
+              onEditBed={openEditBed}
+              onMoveStay={openMoveStay}
+              onCloseStay={openCloseStay}
+              onViewNotes={viewUserNotes}
+              onAddNote={openUserNotes}
+            />
+          )}
 
-        {!!roomForm && (
-          <ModalForm
-            title={roomForm.mode === "edit" ? "Editar habitación" : "Añadir habitación"}
-            message="Configura la habitación del centro seleccionado."
-            fields={roomFields}
-            submitText={roomForm.mode === "edit" ? "Guardar cambios" : "Crear habitación"}
-            cancelText="Cancelar"
-            onSubmit={submitRoom}
-            onClose={() => setRoomForm(null)}
-            modal={modal}
-          />
-        )}
+          {view === "users" && (
+            <div className={styles.usersPanel}>
+              <div className={styles.usersFilters}>
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, documento..."
+                  value={userFilters.q}
+                  onChange={(e) =>
+                    setUserFilters((prev) => ({ ...prev, q: e.target.value }))
+                  }
+                />
 
-        {!!bedForm && (
-          <ModalForm
-            title={bedForm.mode === "edit" ? "Editar cama" : "Añadir cama"}
-            message={`Habitación: ${bedForm.room?.name || "—"}`}
-            fields={bedFields}
-            submitText={bedForm.mode === "edit" ? "Guardar cambios" : "Crear cama"}
-            cancelText="Cancelar"
-            onSubmit={submitBed}
-            onClose={() => setBedForm(null)}
-            modal={modal}
-          />
-        )}
+                <select
+                  value={userFilters.centroId}
+                  onChange={(e) =>
+                    setUserFilters((prev) => ({ ...prev, centroId: e.target.value }))
+                  }
+                >
+                  <option value="">Todos los centros</option>
 
-        {!!userForm && (
-          <FormAnideUser
-            mode={userForm.mode}
-            doc={userForm.doc}
-            modal={modal}
-            onSubmit={submitUser}
-            onClose={() => setUserForm(null)}
-          />
-        )}
+                  {centerOptions.map((center) => (
+                    <option key={center.value} value={center.value}>
+                      {center.label}
+                    </option>
+                  ))}
+                </select>
 
-        {!!assignStayData && (
-          <ModalForm
-            title="Asignar cama"
-            message={`${assignStayData.center?.name || ""} · ${assignStayData.room?.name || ""} · ${assignStayData.bed?.name || ""}`}
-            fields={assignUserFields}
-            submitText="Asignar"
-            cancelText="Cancelar"
-            onSubmit={submitAssignStay}
-            onClose={() => setAssignStayData(null)}
-            modal={modal}
-          />
-        )}
+                <select
+                  value={userFilters.active}
+                  onChange={(e) =>
+                    setUserFilters((prev) => ({ ...prev, active: e.target.value }))
+                  }
+                >
+                  <option value="active">Activas</option>
+                  <option value="inactive">Inactivas</option>
+                  <option value="total">Todas</option>
+                </select>
+              </div>
 
-        {!!moveStayData && (
-          <ModalForm
-            title="Trasladar usuaria"
-            message="Selecciona una cama libre de destino. Se cerrará la estancia actual y se abrirá una nueva."
-            fields={moveFields}
-            submitText="Trasladar"
-            cancelText="Cancelar"
-            onSubmit={submitMoveStay}
-            onClose={() => setMoveStayData(null)}
-            modal={modal}
-          />
-        )}
+              <div className={styles.usersList}>
+                {users.map((user) => (
+                  <div className={styles.userRow} key={user._id}>
+                    <div>
+                      <strong>{buildFullName(user)}</strong>
+                      <span>{user.documentId || "—"}</span>
+                    </div>
 
-        {!!closeStayData && !closeStayData.confirmForm && (
-          <ModalConfirmation
-            title="Registrar salida"
-            message={`Vas a cerrar la estancia activa de ${closeStayData.name || buildFullName(closeStayData)}.`}
-            onConfirm={() => {
-              setCloseStayData({
-                ...closeStayData,
-                confirmForm: true,
-              });
-            }}
-            onCancel={() => setCloseStayData(null)}
-          />
-        )}
+                    <div>{getNationalityLabel(user.nationality)}</div>
+                    <div>{genderLabel(user.gender)}</div>
 
-        {!!closeStayData?.confirmForm && (
-          <ModalForm
-            title="Fecha de salida"
-            message={`Indica la fecha de salida de ${closeStayData.name || buildFullName(closeStayData)}.`}
-            fields={[
-              {
-                name: "endDate",
-                label: "Fecha de salida",
-                type: "date",
-                required: true,
-                defaultValue: todayInput(),
-              },
-              {
-                name: "notes",
-                label: "Notas",
-                type: "textarea",
-                required: false,
-                defaultValue: "",
-              },
-            ]}
-            submitText="Registrar salida"
-            cancelText="Cancelar"
-            onSubmit={submitCloseStay}
-            onClose={() => setCloseStayData(null)}
-            modal={modal}
-          />
-        )}
+                    <div className={styles.userActions}>
+                      <button onClick={() => setUserForm({ mode: "edit", doc: user })}>
+                        <FaUserEdit /> Editar
+                      </button>
 
-        
-        {!!notesModal && (
-          <ModalForm
-            title={`Notas de ${notesModal.sourceName || buildFullName(notesModal.user)}`}
-            message={[
-              "Añade una nueva nota. Se guardará debajo de las anteriores.",
-            ]}
-            fields={[
-              {
-                name: "newNote",
-                label: "Nueva nota",
-                type: "textarea",
-                required: true,
-                defaultValue: "",
-              },
-            ]}
-            submitText="Añadir nota"
-            cancelText="Cerrar"
-            onSubmit={submitUserNote}
-            onClose={() => setNotesModal(null)}
-            modal={modal}
-          />
-        )}
+                      <button onClick={() => viewUserNotes(user)}>
+                        <FaStickyNote /> Ver notas
+                      </button>
+
+                      <button onClick={() => openUserNotes(user)}>
+                        <FaStickyNote /> Añadir nota
+                      </button>
+
+                      <button onClick={() => openMoveStay(user)}>
+                        <FaArrowRightArrowLeft /> Trasladar
+                      </button>
+
+                      <button onClick={() => openCloseStay(user)}>
+                        <FaSignOutAlt /> Salida
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {!users.length && (
+                  <div className={styles.emptyState}>
+                    No hay usuarias con estos filtros.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!!centerForm && (
+            <ModalForm
+              title={centerForm.mode === "edit" ? "Editar centro ANIDE" : "Crear centro ANIDE"}
+              message="Indica los datos principales del centro."
+              fields={centerFields}
+              submitText={centerForm.mode === "edit" ? "Guardar cambios" : "Crear centro"}
+              cancelText="Cancelar"
+              onSubmit={submitCenter}
+              onClose={() => setCenterForm(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!roomForm && (
+            <ModalForm
+              title={roomForm.mode === "edit" ? "Editar habitación" : "Añadir habitación"}
+              message="Configura la habitación del centro seleccionado."
+              fields={roomFields}
+              submitText={roomForm.mode === "edit" ? "Guardar cambios" : "Crear habitación"}
+              cancelText="Cancelar"
+              onSubmit={submitRoom}
+              onClose={() => setRoomForm(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!bedForm && (
+            <ModalForm
+              title={bedForm.mode === "edit" ? "Editar cama" : "Añadir cama"}
+              message={`Habitación: ${bedForm.room?.name || "—"}`}
+              fields={bedFields}
+              submitText={bedForm.mode === "edit" ? "Guardar cambios" : "Crear cama"}
+              cancelText="Cancelar"
+              onSubmit={submitBed}
+              onClose={() => setBedForm(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!userForm && (
+            <FormAnideUser
+              mode={userForm.mode}
+              doc={userForm.doc}
+              modal={modal}
+              onSubmit={submitUser}
+              onClose={() => setUserForm(null)}
+            />
+          )}
+
+          {!!assignStayData && (
+            <ModalForm
+              title="Asignar cama"
+              message={`${assignStayData.center?.name || ""} · ${assignStayData.room?.name || ""} · ${assignStayData.bed?.name || ""}`}
+              fields={assignUserFields}
+              submitText="Asignar"
+              cancelText="Cancelar"
+              onSubmit={submitAssignStay}
+              onClose={() => setAssignStayData(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!moveStayData && (
+            <ModalForm
+              title="Trasladar usuaria"
+              message="Selecciona una cama libre de destino. Se cerrará la estancia actual y se abrirá una nueva."
+              fields={moveFields}
+              submitText="Trasladar"
+              cancelText="Cancelar"
+              onSubmit={submitMoveStay}
+              onClose={() => setMoveStayData(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!closeStayData && !closeStayData.confirmForm && (
+            <ModalConfirmation
+              title="Registrar salida"
+              message={`Vas a cerrar la estancia activa de ${closeStayData.name || buildFullName(closeStayData)}.`}
+              onConfirm={() => {
+                setCloseStayData({
+                  ...closeStayData,
+                  confirmForm: true,
+                });
+              }}
+              onCancel={() => setCloseStayData(null)}
+            />
+          )}
+
+          {!!closeStayData?.confirmForm && (
+            <ModalForm
+              title="Fecha de salida"
+              message={`Indica la fecha de salida de ${closeStayData.name || buildFullName(closeStayData)}.`}
+              fields={[
+                {
+                  name: "endDate",
+                  label: "Fecha de salida",
+                  type: "date",
+                  required: true,
+                  defaultValue: todayInput(),
+                },
+                {
+                  name: "notes",
+                  label: "Notas",
+                  type: "textarea",
+                  required: false,
+                  defaultValue: "",
+                },
+              ]}
+              submitText="Registrar salida"
+              cancelText="Cancelar"
+              onSubmit={submitCloseStay}
+              onClose={() => setCloseStayData(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!notesModal && (
+            <ModalForm
+              title={`Notas de ${notesModal.sourceName || buildFullName(notesModal.user)}`}
+              message="Añade una nueva nota. Se guardará debajo de las anteriores."
+              fields={[
+                {
+                  name: "newNote",
+                  label: "Nueva nota",
+                  type: "textarea",
+                  required: true,
+                  defaultValue: "",
+                },
+              ]}
+              submitText="Añadir nota"
+              cancelText="Cerrar"
+              onSubmit={submitUserNote}
+              onClose={() => setNotesModal(null)}
+              modal={modal}
+            />
+          )}
+        </div>
       </div>
-</div>
     </div>
-
   );
 };
 

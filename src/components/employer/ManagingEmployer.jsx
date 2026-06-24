@@ -584,7 +584,10 @@ const handleFilterChange = useCallback((eventOrPatch) => {
     ],
   };
 
-
+const formatHiringStartDate = (date) => {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('es-ES');
+};
 
   const renderUserRow = (user) => {
     const id = normId(user._id);
@@ -626,6 +629,10 @@ const handleFilterChange = useCallback((eventOrPatch) => {
             </div>
 
             <div className={styles.tableCellStatus}>{user.employmentStatus}</div>
+
+<div className={styles.tableCell}>
+  {formatHiringStartDate(user.hiringStartDate)}
+</div>
           </div>
 
           {userSelected && normId(userSelected._id) === id && (
@@ -755,12 +762,13 @@ const handleFilterChange = useCallback((eventOrPatch) => {
           <div className={styles.containerTableContainer}>
             <div>
               <div className={styles.tableContainer} id={styles.cabeceraTabla}>
-                <div className={styles.tableCellPhoto}></div>
-                <div className={styles.tableCell}>Nombre</div>
-                <div className={styles.tableCell}>Apellidos</div>
-                <div className={styles.tableCellCenter}>Peticiones</div>
-                <div className={styles.tableCellStatus}>Status</div>
-              </div>
+  <div className={styles.tableCellPhoto}></div>
+  <div className={styles.tableCell}>Nombre</div>
+  <div className={styles.tableCell}>Apellidos</div>
+  <div className={styles.tableCellCenter}>Peticiones</div>
+  <div className={styles.tableCellStatus}>Status</div>
+  <div className={styles.tableCell}>Fecha alta</div>
+</div>
 
               {activeUsers.map(renderUserRow)}
 

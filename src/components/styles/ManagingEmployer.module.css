@@ -520,3 +520,54 @@ filtros
   border-radius: 999px;
   background: rgba(0,0,0,0.08);
 }
+
+
+@media (min-width: 1080px) {
+  .tableContainer {
+    display: grid;
+    grid-template-columns: 44px 1.3fr 1.6fr 0.6fr 1.4fr 1fr;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  #cabeceraTabla {
+    display: grid;
+    grid-template-columns: 44px 1.3fr 1.6fr 0.6fr 1.4fr 1fr;
+    align-items: center;
+  }
+
+  .tableCell,
+  .tableCellStatus,
+  .tableCellCenter,
+  .tableCellPhoto {
+    flex: initial;
+    width: auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .tableCellCenter {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .tableCellStatus {
+    justify-content: flex-start;
+  }
+
+  #cabeceraTabla .tableCell,
+  #cabeceraTabla .tableCellStatus,
+  #cabeceraTabla .tableCellCenter {
+    color: white;
+    font-weight: bold;
+  }
+
+  #cabeceraTabla .tableCellCenter {
+    justify-content: center;
+  }
+
+  #cabeceraTabla .tableCellStatus {
+    justify-content: flex-start;
+  }
+}

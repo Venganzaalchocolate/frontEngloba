@@ -13,6 +13,7 @@ import {
 import { MdOutlineVolunteerActivism } from "react-icons/md";
 import { LiaUsersSolid } from "react-icons/lia";
 import { FaHubspot } from "react-icons/fa";
+import { SiMoodle } from "react-icons/si";
 
 const MENU = {
   myself: {
@@ -98,6 +99,12 @@ const MENU = {
     label: "Anide",
     icon: LiaUsersSolid,
     accent: "#941031",
+  },
+  formacion:{
+    key:"formacion",
+    label: "Formación",
+    icon: SiMoodle,
+    accent:"#ff5e01"
   }
 };
 
@@ -144,6 +151,7 @@ const GROUPS = {
   rootOnly: [
     MENU.root,
     MENU.anide,
+    MENU.formacion
   ],
 
   attendedUsersOnly: [

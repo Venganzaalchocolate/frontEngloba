@@ -1,0 +1,523 @@
+.contenedor {
+    display: flex;
+    flex-direction: row;
+    flex: 1 100%;
+    background-color: var(--color-morado);
+    gap: 1rem;
+}
+
+.contenido {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    flex-wrap: wrap;
+    color: var(--color-morado);
+
+}
+
+.contendor select {
+    flex: 0;
+    max-width: auto;
+    width: 100%;
+}
+
+.containerEmployer {
+    display: flex;
+    flex: 100%;
+    align-items: center;
+    >div:nth-child(1) {
+        flex: 1;
+    }
+    >:nth-child(2) {
+        width: 2rem;
+    }
+}
+
+.titulo {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.titulo>div>h2 {
+    padding: 0.5rem 2rem 0 1rem;
+    border-left: 10px solid var(--color-morado);
+    display: flex;
+    flex: 1;
+    align-items: center;
+}
+
+.titulo svg {
+    width: 3rem;
+    height: 3rem;
+    justify-content: end;
+    align-self: flex-end;
+}
+
+.titulo>div {
+    display: flex;
+}
+
+.paginacion select {
+    flex: 0 2rem;
+}
+
+.caja {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.cajaSeleccion {
+    display: flex;
+    align-self: center;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: var(--color-malva);
+    padding: 2rem;
+    border-radius: 1rem;
+}
+
+.cajaSeleccion select {
+    border: solid 1px var(--color-morado);
+    border-radius: 0.5rem;
+}
+
+.cajaSeleccionActiva {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    align-items: flex-end;
+}
+
+.cajaSeleccionActiva select {
+    border: 1px solid white;
+    background-color: var(--color-chicle);
+    color: white;
+    font-weight: bold;
+    width: fit-content;
+    text-align: center;
+}
+
+.paginacion {
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    align-items: center;
+    flex-direction: column;
+}
+
+.paginacion>div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.paginacion label {
+    color: var(--color-morado);
+    display: flex;
+    align-self: auto;
+}
+
+.containerTableContainer {
+    display: flex;
+    flex: 1 100%;
+    flex-direction: column;
+    font-size: 12pt;
+}
+
+.tableContainer {
+    color: var(--color-morado);
+    flex: 1;
+    border: 1px solid var(--color-morado);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 0.2rem 0;
+    transition: all 0.3s ease;
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+}
+
+.tableContainer:hover {
+    transform: scale(1.02);
+    background-color: var(--color-malva);
+    border: none;
+}
+
+.contenedorfiltro {
+    display: flex;
+    flex-wrap: wrap;
+    background-color: var(--color-malva);
+    padding: 1rem;
+    border-radius: 1rem;
+    gap: 1rem;
+    align-items: flex-end;
+    flex: 1 100%;
+    margin: 1rem 0;
+}
+
+.contenedorfiltro h3 {
+    flex: 1 100%;
+}
+
+.contenedorfiltro button {
+    color: var(--color-yema);
+    background-color: var(--color-morado);
+}
+
+.contenedorfiltro button:hover {
+    background-color: var(--color-yema);
+    color: var(--color-morado);
+}
+
+.contenedorfiltro div {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.cajaIconosFiltro {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.cajaIconosFiltro svg {
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-morado);
+}
+
+#cabeceraTabla {
+    font-weight: bold;
+    background-color: var(--color-morado);
+    color: white;
+    transition: none;
+}
+
+#cabeceraTabla:hover {
+    transform: none;
+}
+
+.contenedor>.contenido>select.selectInicial {
+    margin-top: 1rem;
+    border: solid 1px var(--color-morado);
+    flex: initial;
+    appearance: auto;
+}
+
+.contenedorEmployer{
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    flex-direction: column;
+}
+
+.botonMailto{
+    background-color: var(--color-morado);
+    border-radius: 1rem;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    display: flex;
+    font-size: 10pt;
+    font-weight: 900;
+    margin-left: 1rem;
+}
+
+a.botonMailto:hover{
+    background-color: var(--color-malva);
+    color: var(--color-morado);
+}
+
+.baja, .sus{
+    padding-right: 1rem;
+    width: 2rem;
+    height: 2rem;
+}
+
+.baja{
+    color: var(--color-chicle);
+
+}
+
+.sus{
+    color: lightskyblue;
+}
+
+/* por defecto (móvil): columna, uno debajo del otro */
+.rcGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/*
+filtros
+*/
+/* WRAP + INPUT */
+.pdSearchWrap {
+  position: relative;
+}
+
+.pdSearchInput {
+  width: 100%;
+  padding-right: 2rem; /* espacio para la X */
+}
+
+/* CLEAR BUTTON (la X dentro del input) */
+.pdClearBtn {
+  position: absolute;
+  right: .5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+}
+.pdClearBtn:hover { opacity: 1; }
+
+/* DROPDOWN */
+.pdSearchList {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  z-index: 9999; /* por encima de selects */
+}
+
+/* Lista estática con el mismo aspecto que el dropdown de dispositivos */
+.pdStaticList {
+  /* SIN position absolute */
+  max-height: 300px;
+  overflow: auto;
+  margin: 6px 0 0;
+  padding: 6px 0;
+  list-style: none;
+
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+
+
+/* ITEM – resetea estilos para que no parezca tu botón morado */
+.pdSearchItem {
+  all: unset;                 /* limpia estilos heredados */
+  display: flex;
+  align-items: left;
+  flex-direction: column;
+
+  padding: .5rem .75rem;
+  cursor: pointer;
+  font-size: 10pt;
+}
+.pdSearchItem:hover,
+.pdSearchItem:focus {
+  background: #f5f6fb;
+}
+
+/* BADGE + LABEL */
+.pdBadge {
+  font-size: .75rem;
+  padding: .125rem .375rem;
+  border-radius: .375rem;
+  background: #eef1ff;
+  color: #3b4db7;
+  white-space: nowrap;
+}
+.pdLabel {
+  color: #1f2340;
+}
+
+.pdLabelName{
+    font-size: 8pt;
+  color: var(--color-malva-oscuro);
+}
+
+.isOnLeave{
+    background-color: var(--color-gris-medio);
+    /* border-color:  var(--color-gris-medio); */
+    >.tableCell, .tableCellStatus{
+        color: white;
+    }
+}
+
+.isSubstituting{
+      background-color: lightblue;
+}
+
+.sectionTitle{
+    padding-top: 1rem;
+}
+
+.contenedorfiltro> .contenedorfiltroOpciones{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+/* desktop: lado a lado */
+@media (min-width: 721px) {
+    .contenedor{
+        padding: 1rem 2rem;
+    }
+    .contenedorEmployer{
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    flex-direction: row;
+    
+}
+
+  .rcGrid {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .rcGrid > .contenedor {
+    flex: 1 1 0;
+    margin-top: 0; /* aseguramos que no herede margen */
+  }
+}
+
+@media (min-width: 1080px) {
+    .containerEmployer{
+        flex-direction: row;
+    }
+
+    .contendor select {
+        flex: 1;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .titulo {
+        flex-direction: row;
+
+    }
+
+    .tableContainer {
+        flex-direction: row;
+    }
+
+    .tableCell {
+        display: flex;
+        flex: 0 15rem;
+        align-self: center;
+    }
+
+    .tableCellStatus {
+        flex: 1;
+       
+        display: flex;
+        align-self: center;
+    }
+
+    .tableCellStatus>p{
+        display: flex;
+  align-items: center;
+    }
+
+    .paginacion {
+
+        flex-direction: row;
+
+    }
+}
+
+.contenedorEmployerButtonVolun{
+    display: flex;
+    flex: 1 100%;
+  flex-direction: row;
+  justify-content: end;
+  gap: 1rem;
+  background-color: aliceblue;
+  padding: 0.5rem;
+  border: solid 1px cornflowerblue;
+  border-radius: 1rem;
+}
+
+.filtroBuscar{
+    flex:1;
+}
+
+/* Para que el fondo se vea en toda la fila */
+.tableContainer {
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+/* Importante: si tus celdas tienen background propio, esto lo anula */
+.tableCell,
+.tableCellStatus {
+  background: transparent;
+  display: flex;
+  flex: 1;
+  gap: 0.4rem;
+}
+
+/* Estados (ajusta colores a tu gusto) */
+.row_no_asignado {
+  background: rgba(150, 150, 150, 0.10);
+}
+
+.row_activo {
+  background: rgba(0, 160, 80, 0.12);
+}
+
+.row_pendiente {
+  background: rgba(255, 170, 0, 0.12);
+}
+
+.row_descartado {
+  background: rgba(220, 40, 40, 0.10);
+}
+
+.bajaVoluntario{
+   /* border-color:  var(--color-gris-medio); */
+    >.tableCell, .tableCellStatus{
+        color: grey;
+    }
+}
+
+.tableCellPhoto{
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photoThumb{
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.photoPlaceholder{
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.08);
+}
+

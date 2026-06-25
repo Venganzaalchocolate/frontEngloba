@@ -20,6 +20,7 @@ import ManagingAttendedUsers from "../attendedUsers/ManagingAttendedUsers";
 
 
 
+
 // === Importación diferida (lazy) de los módulos pesados ===
 // Nota: con esto React hace code-splitting y cada panel se descarga solo cuando se usa.
 // Así evitamos que toda la app se cargue de golpe.
@@ -36,6 +37,7 @@ const ManagingProgramsDispositive = React.lazy(() => import("../programsanddispo
 const ManagingVolunteers = React.lazy(() => import("../volunteer/ManagingVolunteers"));
 const OrganizationChart = React.lazy(() => import("./OrganizationChart"));
 const ManagingAnide = React.lazy(() => import("../anide/ManagingAnide"));
+const ManagingMoodle=React.lazy(() => import("../globals/ManagingMoodle"));
 
 /* === Tile reutilizable (card clickable con icono y texto) ===
    Le paso un icono, label, color de acento y callback onClick */
@@ -282,6 +284,13 @@ const WorkerMenu = ({ modal, charge, listResponsability }) => {
         }
         {MenuWorker === "anide" && (
           <ManagingAnide
+            modal={modal}
+            charge={charge}
+            enumsData={enumsEmployer}
+          />
+        )}
+        {MenuWorker === "formacion" && (
+          <ManagingMoodle
             modal={modal}
             charge={charge}
             enumsData={enumsEmployer}

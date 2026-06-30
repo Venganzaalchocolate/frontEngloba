@@ -132,6 +132,7 @@ const GROUPS = {
     MENU.volunteer,
     MENU.organizationChart,
     MENU.attendedusers,
+    MENU.formacion
   ],
 
   auditor: [
@@ -151,7 +152,6 @@ const GROUPS = {
   rootOnly: [
     MENU.root,
     MENU.anide,
-    MENU.formacion
   ],
 
   attendedUsersOnly: [

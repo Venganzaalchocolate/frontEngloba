@@ -1,16 +1,34 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FaArrowUpRightFromSquare, FaGraduationCap } from "react-icons/fa6";
 
 import { moodleLaunch } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import styles from "../styles/ManagingMoodle.module.css";
 
+// hooks y librerías que ya usas en Login
+import { useLogin } from "../../hooks/useLogin";
+
 
 const ManagingMoodle = ({ modal, charge }) => {
+    const { logged } = useLogin();
+
   const [opening, setOpening] = useState(false);
+
+const emails = [
+  "santiago.ruizgalacho@engloba.org.es",
+  "juanluis.crucessolis@engloba.org.es",
+  "pablo.aragonsalguero@engloba.org.es",
+  "alba.izquierdopavon@engloba.org.es",
+  "web@engloba.org.es"
+];
+
+const authorized = useMemo(() => {
+  return emails.includes(logged?.user?.email);
+}, [logged?.user?.email]);
 
   const openMoodle = async () => {
     if (opening) return;
+    if(!authorized) return;
 
     const moodleWindow = window.open("", "_blank");
 
@@ -22,6 +40,7 @@ const ManagingMoodle = ({ modal, charge }) => {
       return;
     }
 
+
     moodleWindow.opener = null;
     moodleWindow.document.title = "Abriendo Formación...";
 
@@ -29,7 +48,6 @@ const ManagingMoodle = ({ modal, charge }) => {
     charge(true);
 
     const token = getToken();
-    console.log(token)
     const data = await moodleLaunch(token);
 
     charge(false);
@@ -78,7 +96,7 @@ const ManagingMoodle = ({ modal, charge }) => {
             type="button"
             className={styles.accessButton}
             onClick={openMoodle}
-            disabled={opening}
+            disabled={opening || !authorized}
           >
             <FaArrowUpRightFromSquare />
             {opening ? "Abriendo Formación..." : "Acceder a Formación"}

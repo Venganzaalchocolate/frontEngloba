@@ -228,7 +228,6 @@ const OffersJobsPanelV2 = ({ enumsData, modal, charge }) => {
     if (o?.location) fields.push({ name: "location", label: "Ubicación", type: "text", defaultValue: o.location, disabled: true });
     fields.push({ name: "status", label: "Estado", type: "text", defaultValue: (o?.active === false ? "Cerrada" : "Activa"), disabled: true });
     fields.push({ name: "created", label: "Creada", type: "text", defaultValue: fmtDate(getCreatedDate(o)), disabled: true });
-    if (o?.updatedAt) fields.push({ name: "updated", label: "Actualizada", type: "text", defaultValue: fmtDate(o.updatedAt), disabled: true });
     fields.push({ name: "cvs", label: "CVs vinculados", type: "text", defaultValue: String(getCvCount(o)), disabled: true });
     if (o?.essentials_requirements) fields.push({ name: "essentials_requirements", label: "Requisitos Esenciales", type: "textarea", defaultValue: o?.essentials_requirements, disabled: true });
     if (o?.optionals_requirements) fields.push({ name: "optionals_requirements", label: "Requisitos Opcionales", type: "textarea", defaultValue: o?.optionals_requirements, disabled: true });

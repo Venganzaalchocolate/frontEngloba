@@ -5,6 +5,7 @@ import { moodleLaunch } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import styles from "../styles/ManagingMoodle.module.css";
 
+
 const ManagingMoodle = ({ modal, charge }) => {
   const [opening, setOpening] = useState(false);
 
@@ -28,6 +29,7 @@ const ManagingMoodle = ({ modal, charge }) => {
     charge(true);
 
     const token = getToken();
+    console.log(token)
     const data = await moodleLaunch(token);
 
     charge(false);

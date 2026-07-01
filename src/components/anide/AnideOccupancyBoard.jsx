@@ -1,5 +1,4 @@
 import {
-  FaBabyCarriage,
   FaBed,
   FaCircleExclamation,
   FaHandsHoldingChild,
@@ -7,9 +6,10 @@ import {
   FaPenToSquare,
   FaPlus,
   FaRightLeft,
+  FaUser,
+  FaUserGroup,
 } from "react-icons/fa6";
 import { FaSignOutAlt } from "react-icons/fa";
-import { IoMdPeople } from "react-icons/io";
 import styles from "../styles/anide.module.css";
 
 const getRoomClass = (status) => {
@@ -29,7 +29,7 @@ const getRoomClass = (status) => {
 
 const getRoomLabel = (status) => {
   switch (status) {
-    case "occupied": 
+    case "occupied":
       return "Habitación ocupada";
     case "free":
       return "Habitación libre";
@@ -83,12 +83,65 @@ const isBedBlocked = (bed) => {
   );
 };
 
-const hasFamilyInfo = (family = {}) => {
-  return (
-    Number(family.children || 0) > 0 ||
-    Number(family.dependents || 0) > 0 ||
-    Number(family.adults || 0) > 0
-  );
+const getOccupantType = (occupant = {}) => {
+  if (occupant.occupantType) return occupant.occupantType;
+
+  if (occupant.familyMemberId || occupant.relationship) {
+    return "familyMember";
+  }
+
+  return "primary";
+};
+
+const getRelationshipLabel = (occupant = {}) => {
+  if (occupant.relationship === "dependent") return "Persona dependiente";
+  if (occupant.relationship === "child") return "Menor";
+
+  return "Responsable";
+};
+
+const getOccupantIcon = (occupant = {}) => {
+  const occupantType = getOccupantType(occupant);
+
+  if (occupantType === "familyMember") {
+    return occupant.relationship === "dependent" ? (
+      <FaHandsHoldingChild />
+    ) : (
+      <FaUser />
+    );
+  }
+
+  return <FaUserGroup />;
+};
+
+const buildOccupantName = (occupant = {}) => {
+  if (occupant.name) return String(occupant.name).trim();
+
+  return `${occupant.firstName || ""} ${occupant.lastName || ""}`.trim() || "Persona alojada";
+};
+
+const getResponsibleName = (occupant = {}) => {
+  if (occupant.responsibleName) return occupant.responsibleName;
+  if (occupant.responsible?.name) return occupant.responsible.name;
+
+  return "";
+};
+
+const getOccupantActionPayload = (occupant = {}) => {
+  const occupantType = getOccupantType(occupant);
+
+  return {
+    ...occupant,
+    occupantType,
+    usuariaId:
+      occupant.usuariaId ||
+      occupant.responsibleId ||
+      occupant.responsible?._id ||
+      occupant._id ||
+      "",
+    familyMemberId: occupant.familyMemberId || "",
+    name: buildOccupantName(occupant),
+  };
 };
 
 const AnideOccupancyBoard = ({
@@ -148,18 +201,18 @@ const AnideOccupancyBoard = ({
         </div>
 
         <div>
+          <span className={styles.familyLegend}>R</span>
+          Responsable
+        </div>
+
+        <div>
           <span className={styles.familyLegend}>M</span>
-          Menores
+          Menor
         </div>
 
         <div>
           <span className={styles.familyLegend}>D</span>
-          Dependientes
-        </div>
-
-        <div>
-          <span className={styles.familyLegend}>A</span>
-          Adultos acompañantes
+          Persona dependiente
         </div>
       </div>
 
@@ -230,16 +283,14 @@ const AnideOccupancyBoard = ({
 
                   <div className={styles.bedsGrid}>
                     {(room.camas || []).map((bed) => {
-                      const user = bed?.usuaria || null;
-                      const occupied = !!user;
+                      const occupant = bed?.usuaria || null;
+                      const occupied = !!occupant;
                       const bedBlocked = isBedBlocked(bed);
                       const blockedLabel = getBedBlockedLabel(bed);
-
-                      const familyUnit = user?.familyUnit || {};
-                      const companions = user?.companions || {};
-                      const visibleFamily = hasFamilyInfo(companions)
-                        ? companions
-                        : familyUnit;
+                      const actionPayload = getOccupantActionPayload(occupant || {});
+                      const occupantType = getOccupantType(occupant || {});
+                      const isFamilyMember = occupantType === "familyMember";
+                      const responsibleName = getResponsibleName(occupant || {});
 
                       return (
                         <div
@@ -284,59 +335,56 @@ const AnideOccupancyBoard = ({
                               <button
                                 type="button"
                                 className={styles.bedUserButton}
-                                onClick={() => onViewNotes?.(user)}
-                                title="Ver notas de la usuaria"
+                                onClick={() => {
+                                  if (!isFamilyMember) onViewNotes?.(actionPayload);
+                                }}
+                                title={
+                                  isFamilyMember
+                                    ? "Miembro de una unidad familiar"
+                                    : "Ver notas de la responsable"
+                                }
                               >
-                                {user.name || "Usuaria"}
+                                {buildOccupantName(occupant)}
                               </button>
+
+                              <div className={styles.occupantType}>
+                                {getOccupantIcon(occupant)}
+                                <span>{getRelationshipLabel(occupant)}</span>
+                              </div>
+
+                              {isFamilyMember && responsibleName && (
+                                <small className={styles.responsibleLine}>
+                                  A cargo de: {responsibleName}
+                                </small>
+                              )}
 
                               <small>
                                 Entrada:{" "}
-                                {user.startDate
-                                  ? new Date(user.startDate).toLocaleDateString(
+                                {occupant?.startDate
+                                  ? new Date(occupant.startDate).toLocaleDateString(
                                       "es-ES"
                                     )
                                   : "—"}
                               </small>
 
-                              {hasFamilyInfo(visibleFamily) && (
-                                <div className={styles.bedBadges}>
-                                  {!!visibleFamily.children && (
-                                    
-                                    <span><FaBabyCarriage/> {visibleFamily.children}</span>
-                                  )}
-
-                                  {!!visibleFamily.dependents && (
-                                    <span>
-                                      
-                                      <FaHandsHoldingChild/> {visibleFamily.dependents}
-                                    </span>
-                                  )}
-
-                                  {!!visibleFamily.adults && (
-                                    <span>
-                                      <IoMdPeople /> {visibleFamily.adults}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-
-                              {!!visibleFamily.notes && (
-                                <small>{visibleFamily.notes}</small>
+                              {!!occupant?.notes && !isFamilyMember && (
+                                <small>{occupant.notes}</small>
                               )}
 
                               <div className={styles.bedActions}>
-                                <button
-                                  type="button"
-                                  onClick={() => onAddNote?.(user)}
-                                >
-                                  <FaNoteSticky /> + Notas
-                                </button>
+                                {!isFamilyMember && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onAddNote?.(actionPayload)}
+                                  >
+                                    <FaNoteSticky /> + Notas
+                                  </button>
+                                )}
 
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    onMoveStay?.(user, selectedCenter)
+                                    onMoveStay?.(actionPayload, selectedCenter)
                                   }
                                 >
                                   <FaRightLeft /> Trasladar
@@ -344,7 +392,7 @@ const AnideOccupancyBoard = ({
 
                                 <button
                                   type="button"
-                                  onClick={() => onCloseStay?.(user)}
+                                  onClick={() => onCloseStay?.(actionPayload)}
                                 >
                                   <FaSignOutAlt /> Salida
                                 </button>

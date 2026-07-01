@@ -20,14 +20,35 @@ import { useLogin } from "../../hooks/useLogin";
 
 const MODULE_SCOPE_CONFIG = {
   attendedUsers: {
-    title: "USUARIOS ATENDIDOS",
     module: "attendedUsers",
-    description: "Acceso al módulo de usuarios atendidos por programa o dispositivo.",
-    empty: "No tiene acceso específico al módulo de usuarios atendidos",
+    title: "USUARIOS ATENDIDOS",
+    description:
+      "Acceso al módulo de usuarios atendidos por programa o dispositivo.",
+    empty: "No tiene acceso específico al módulo de usuarios atendidos.",
     addTitle: "Añadir acceso a Usuarios atendidos",
-    addMessage: "Seleccione un programa o dispositivo al que tendrá acceso dentro del módulo.",
+    addMessage:
+      "Seleccione un programa o dispositivo al que tendrá acceso dentro del módulo.",
+  },
+
+  anideOccupancyManager: {
+    module: "anideOccupancyManager",
+    title: "GESTIÓN DE CENTROS UTE ENGLOBA-ANIDE",
+    description:
+      "Acceso al módulo de gestión de centros UTE ENGLOBA-ANIDE por programa o dispositivo.",
+    empty: "No tiene acceso específico al módulo de gestión de centros UTE ENGLOBA-ANIDE.",
+    addTitle: "Añadir acceso a gestión de centros UTE ENGLOBA-ANIDE",
+    addMessage:
+      "Seleccione un programa o dispositivo al que tendrá acceso dentro del módulo.",
   },
 };
+
+const MODULE_SCOPE_ENTRIES = Object.entries(MODULE_SCOPE_CONFIG);
+
+const buildEmptyModuleScopes = () =>
+  Object.keys(MODULE_SCOPE_CONFIG).reduce((acc, moduleKey) => {
+    acc[moduleKey] = [];
+    return acc;
+  }, {});
 
 const ROLE_CONFIG = {
   supervisor: {
@@ -90,8 +111,10 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
   const [directGroups, setDirectGroups] = useState(buildEmptyGroups());
   const [ruleGroups, setRuleGroups] = useState(buildEmptyGroups());
 
-  const [moduleScopes, setModuleScopes] = useState([]);
-  const [openModuleScopeModal, setOpenModuleScopeModal] = useState(false);
+  const [moduleScopesByModule, setModuleScopesByModule] = useState(
+    buildEmptyModuleScopes()
+  );
+  const [openModuleScopeModal, setOpenModuleScopeModal] = useState(null);
 
   const programsIdx = enumsData?.programsIndex || {};
   const dispositiveIdx = enumsData?.dispositiveIndex || {};
@@ -194,7 +217,6 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
 
   const normalizeModuleScopes = useCallback((items = []) => {
     return items
-      .filter((item) => item?.module === "attendedUsers")
       .map((item) => {
         if (item.scopeType === "program") {
           return {
@@ -239,43 +261,87 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
     if (!user?._id) {
       setDirectGroups(buildEmptyGroups());
       setRuleGroups(buildEmptyGroups());
+      setModuleScopesByModule(buildEmptyModuleScopes());
       return;
     }
 
     try {
       setLoading(true);
       charge?.(true);
+
       const token = getToken();
 
-      const [rows, rules, moduleScopeRows] = await Promise.all([
+      const moduleScopeRequests = MODULE_SCOPE_ENTRIES.map(([, config]) =>
+        listModuleScopeAccess(
+          {
+            user: user._id,
+            module: config.module,
+            active: true,
+          },
+          token
+        )
+      );
+
+      const [rows, rules, ...moduleScopeResults] = await Promise.all([
         getUserScopedRoles({ userId: user._id }, token),
         listScopedRoleRules({ userId: user._id, active: true }, token),
-        listModuleScopeAccess({ user: user._id, module: "attendedUsers", active: true }, token),
+        ...moduleScopeRequests,
       ]);
 
-      if (rows?.error) throw new Error(rows?.message || "No se pudieron cargar las asignaciones.");
-      if (rules?.error) throw new Error(rules?.message || "No se pudieron cargar las reglas.");
-      if (moduleScopeRows?.error) throw new Error(moduleScopeRows?.message || "No se pudieron cargar los accesos de módulo.");
+      if (rows?.error) {
+        throw new Error(
+          rows?.message || "No se pudieron cargar las asignaciones."
+        );
+      }
 
-      setDirectGroups(normalizeRowsToDirectGroups(Array.isArray(rows) ? rows : []));
+      if (rules?.error) {
+        throw new Error(rules?.message || "No se pudieron cargar las reglas.");
+      }
+
+      const nextModuleScopes = buildEmptyModuleScopes();
+
+      MODULE_SCOPE_ENTRIES.forEach(([moduleKey, config], index) => {
+        const moduleScopeRows = moduleScopeResults[index];
+
+        if (moduleScopeRows?.error) {
+          throw new Error(
+            moduleScopeRows?.message ||
+              `No se pudieron cargar los accesos de ${config.title}.`
+          );
+        }
+
+        nextModuleScopes[moduleKey] = normalizeModuleScopes(
+          Array.isArray(moduleScopeRows) ? moduleScopeRows : []
+        );
+      });
+
+      setDirectGroups(
+        normalizeRowsToDirectGroups(Array.isArray(rows) ? rows : [])
+      );
       setRuleGroups(normalizeRulesToGroups(Array.isArray(rules) ? rules : []));
-      setModuleScopes(normalizeModuleScopes(Array.isArray(moduleScopeRows) ? moduleScopeRows : []));
+      setModuleScopesByModule(nextModuleScopes);
     } catch (e) {
       modal?.("Error", e.message || "Error al cargar asignaciones.");
       setDirectGroups(buildEmptyGroups());
       setRuleGroups(buildEmptyGroups());
-      setModuleScopes([]);
+      setModuleScopesByModule(buildEmptyModuleScopes());
     } finally {
       charge?.(false);
       setLoading(false);
     }
-  }, [user?._id, normalizeRowsToDirectGroups, normalizeRulesToGroups, normalizeModuleScopes]);
+  }, [
+    user?._id,
+    normalizeRowsToDirectGroups,
+    normalizeRulesToGroups,
+    normalizeModuleScopes,
+  ]);
 
   useEffect(() => {
     if (user?._id) refresh();
     else {
       setDirectGroups(buildEmptyGroups());
       setRuleGroups(buildEmptyGroups());
+      setModuleScopesByModule(buildEmptyModuleScopes());
     }
   }, [user?._id, refresh]);
 
@@ -480,17 +546,27 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
     }
   };
 
-  const handleSubmitModuleScopeAdd = async (form) => {
+  const handleSubmitModuleScopeAdd = async (moduleKey, form) => {
+    const config = MODULE_SCOPE_CONFIG[moduleKey];
+
+    if (!config) {
+      modal?.("Error", "El módulo seleccionado no está configurado.");
+      return;
+    }
+
     try {
       charge?.(true);
       const token = getToken();
 
       const [scopeType, scopeId] = String(form.selected || "").split(":");
-      if (!scopeType || !scopeId) throw new Error("Seleccione un programa o dispositivo válido.");
+
+      if (!scopeType || !scopeId) {
+        throw new Error("Seleccione un programa o dispositivo válido.");
+      }
 
       const payload = {
         user: user._id,
-        module: "attendedUsers",
+        module: config.module,
         scopeType,
         notes: form.notes || "",
       };
@@ -499,11 +575,14 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
       if (scopeType === "dispositive") payload.dispositive = scopeId;
 
       const result = await upsertModuleScopeAccess(payload, token);
-      if (result?.error) throw new Error(result.message || "No se pudo añadir el acceso.");
+
+      if (result?.error) {
+        throw new Error(result.message || "No se pudo añadir el acceso.");
+      }
 
       await refresh();
-      modal?.("Añadido", "Se ha añadido el acceso al módulo correctamente.");
-      setOpenModuleScopeModal(false);
+      modal?.("Añadido", `Se ha añadido el acceso a ${config.title}.`);
+      setOpenModuleScopeModal(null);
     } catch (e) {
       modal?.("Error", e.message || "No se pudo añadir el acceso.");
     } finally {
@@ -587,8 +666,11 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
     </li>
   );
 
-  const renderModuleScopeItem = (item) => (
-    <li key={`module-scope-${item._id}`} className={styles.dispositivos}>
+  const renderModuleScopeItem = (moduleKey, item) => (
+    <li
+      key={`${moduleKey}-module-scope-${item._id}`}
+      className={styles.dispositivos}
+    >
       <p>
         <span className={styles.tag}>
           {item.scopeType === "program" ? "Programa" : "Dispositivo"}
@@ -599,18 +681,22 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
         ) : (
           <>
             <span className={styles.itemTitle}>{item.name}</span>
-            {item.programAcronym && <small>Pertenece a: {item.programAcronym}</small>}
+            {item.programAcronym && (
+              <small>Pertenece a: {item.programAcronym}</small>
+            )}
           </>
         )}
 
         {!!item.notes && <small>{item.notes}</small>}
       </p>
 
-
+      {canEdit && (
         <span>
-          <FaTrashAlt onClick={() => handleDelete("moduleScope", null, item)} />
+          <FaTrashAlt
+            onClick={() => handleDelete("moduleScope", null, item)}
+          />
         </span>
-    
+      )}
     </li>
   );
 
@@ -664,28 +750,45 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
       <section className={styles.mainBlock}>
         <div className={styles.blockHeader}>
           <h1>SCOPES DE MÓDULOS</h1>
-          <p>Accesos funcionales a módulos concretos sin convertir a la persona en responsable, coordinadora o supervisora.</p>
+          <p>
+            Accesos funcionales a módulos concretos sin convertir a la persona
+            en responsable, coordinadora o supervisora.
+          </p>
         </div>
 
         <div className={styles.groupGrid}>
-          <div className={styles.contenedor}>
-            <h2>
-              {MODULE_SCOPE_CONFIG.attendedUsers.title}
-              <FaSquarePlus onClick={() => setOpenModuleScopeModal(true)} />
-            </h2>
+          {MODULE_SCOPE_ENTRIES.map(([moduleKey, config]) => {
+            const moduleScopes = moduleScopesByModule[moduleKey] || [];
 
-            <p className={styles.description}>{MODULE_SCOPE_CONFIG.attendedUsers.description}</p>
+            return (
+              <div className={styles.contenedor} key={moduleKey}>
+                <h2>
+                  {config.title}
+                  {canEdit && (
+                    <FaSquarePlus
+                      onClick={() => setOpenModuleScopeModal(moduleKey)}
+                    />
+                  )}
+                </h2>
 
-            <div className={styles.contenedorBotones}>
-              {loading ? (
-                <p>Cargando…</p>
-              ) : moduleScopes.length > 0 ? (
-                <ul>{moduleScopes.map(renderModuleScopeItem)}</ul>
-              ) : (
-                <p>{MODULE_SCOPE_CONFIG.attendedUsers.empty}</p>
-              )}
-            </div>
-          </div>
+                <p className={styles.description}>{config.description}</p>
+
+                <div className={styles.contenedorBotones}>
+                  {loading ? (
+                    <p>Cargando…</p>
+                  ) : moduleScopes.length > 0 ? (
+                    <ul>
+                      {moduleScopes.map((item) =>
+                        renderModuleScopeItem(moduleKey, item)
+                      )}
+                    </ul>
+                  ) : (
+                    <p>{config.empty}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -711,13 +814,15 @@ const ResponsabilityAndCoordination = ({ user, modal, charge, enumsData }) => {
         />
       )}
 
-      {openModuleScopeModal && (
+      {!!openModuleScopeModal && (
         <ModalForm
-          title={MODULE_SCOPE_CONFIG.attendedUsers.addTitle}
-          message={MODULE_SCOPE_CONFIG.attendedUsers.addMessage}
+          title={MODULE_SCOPE_CONFIG[openModuleScopeModal].addTitle}
+          message={MODULE_SCOPE_CONFIG[openModuleScopeModal].addMessage}
           fields={buildModuleScopeFields()}
-          onSubmit={handleSubmitModuleScopeAdd}
-          onClose={() => setOpenModuleScopeModal(false)}
+          onSubmit={(form) =>
+            handleSubmitModuleScopeAdd(openModuleScopeModal, form)
+          }
+          onClose={() => setOpenModuleScopeModal(null)}
           modal={modal}
         />
       )}

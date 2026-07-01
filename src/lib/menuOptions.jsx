@@ -1,4 +1,4 @@
-import { FaUserAlt } from "react-icons/fa";
+import { FaUserAlt, FaBed } from "react-icons/fa";
 import {
   FaBriefcase,
   FaChartLine,
@@ -14,6 +14,8 @@ import { MdOutlineVolunteerActivism } from "react-icons/md";
 import { LiaUsersSolid } from "react-icons/lia";
 import { FaHubspot } from "react-icons/fa";
 import { SiMoodle } from "react-icons/si";
+
+
 
 const MENU = {
   myself: {
@@ -96,9 +98,9 @@ const MENU = {
   },
   anide:{
     key: "anide",
-    label: "Anide",
-    icon: LiaUsersSolid,
-    accent: "#941031",
+    label: "Gestión de centros UTE Engloba-Anide",
+    icon: FaBed,
+    accent: "#efa2ff",
   },
   formacion:{
     key:"formacion",
@@ -157,6 +159,10 @@ const GROUPS = {
   attendedUsersOnly: [
     MENU.attendedusers,
   ],
+
+  anideOccupancyManager:[
+    MENU.anide
+  ]
 };
 
 const hasRealResponsability = (list = []) =>
@@ -197,6 +203,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
 
   const userHasRealResponsability = hasRealResponsability(list);
   const userHasAttendedUsersScope = hasModuleScope(list, "attendedUsers");
+  const userHasAnideOccupancyManagerScope=hasModuleScope(list, "anideOccupancyManager");
 
   if (role === "root") {
     return uniqueByKey([
@@ -240,6 +247,13 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     return uniqueByKey([
       ...GROUPS.base,
       ...GROUPS.attendedUsersOnly,
+    ]);
+  }
+
+  if(userHasAnideOccupancyManagerScope){
+        return uniqueByKey([
+      ...GROUPS.base,
+      ...GROUPS.anideOccupancyManager,
     ]);
   }
 

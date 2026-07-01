@@ -4,6 +4,7 @@ import {
   FaArrowsRotate,
   FaDoorOpen,
   FaHouseMedical,
+  FaPeopleGroup,
   FaUserPlus,
 } from "react-icons/fa6";
 import { FaEdit, FaSignOutAlt, FaStickyNote, FaUserEdit } from "react-icons/fa";
@@ -61,6 +62,38 @@ const genderLabel = (gender) => {
       return "—";
   }
 };
+
+const isActiveStay = (stay = {}) =>
+  stay.active !== false && (!stay.endDate || stay.endDate === null);
+
+const getActiveStay = (person = {}) =>
+  (person.staysAnide || []).find((stay) => isActiveStay(stay)) || null;
+
+const getActiveFamilyMembers = (user = {}) =>
+  (user.familyMembers || []).filter((member) => member.active !== false);
+
+const getFamilySummary = (user = {}) => {
+  const members = user.familyMembers || [];
+  const children = members.filter((member) => member.relationship === "child").length;
+  const dependents = members.filter((member) => member.relationship === "dependent").length;
+  const accommodated = members.filter((member) => !!getActiveStay(member)).length;
+  const active = members.filter((member) => member.active !== false).length;
+
+  return {
+    total: members.length,
+    active,
+    children,
+    dependents,
+    accommodated,
+    pending: Math.max(active - accommodated, 0),
+  };
+};
+
+const familyRelationshipLabel = (relationship) =>
+  relationship === "dependent" ? "Persona dependiente" : "Menor";
+
+const getPersonLabel = (person = {}) =>
+  `${buildFullName(person) || "Sin nombre"}${person.relationship ? ` · ${familyRelationshipLabel(person.relationship)}` : ""}`;
 
 const isBedAssignable = (bed = {}) => {
   if (bed.active === false) return false;
@@ -183,6 +216,13 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
   const [moveStayData, setMoveStayData] = useState(null);
   const [closeStayData, setCloseStayData] = useState(null);
   const [notesModal, setNotesModal] = useState(null);
+  const [familyMemberForm, setFamilyMemberForm] = useState(null);
+  const [expandedFamilyId, setExpandedFamilyId] = useState("");
+  const [expandedAliasesId, setExpandedAliasesId] = useState("");
+  const [openUserMenuId, setOpenUserMenuId] = useState("");
+  const [openFamilyMenuId, setOpenFamilyMenuId] = useState("");
+  const [aliasForm, setAliasForm] = useState(null);
+  const [returnStayData, setReturnStayData] = useState(null);
 
   const [userFilters, setUserFilters] = useState({
     q: "",
@@ -264,6 +304,14 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
 
     return options;
   }, [centers]);
+
+  const getFreeBedsForCenter = (centroId, excludedBedId = "") =>
+    freeBedsOptions.filter((bed) => {
+      return (
+        String(bed.centroId) === String(centroId) &&
+        String(bed.camaId) !== String(excludedBedId)
+      );
+    });
 
   const loadCenters = async (showLoader = true, preferredSelectedId = "") => {
     if (showLoader) charge(true);
@@ -574,6 +622,30 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
         return;
       }
 
+      const previous = userForm?.doc;
+      const changedName =
+        userForm?.mode === "edit" &&
+        previous &&
+        (
+          String(previous.firstName || "").trim() !== String(payload.firstName || "").trim() ||
+          String(previous.lastName || "").trim() !== String(payload.lastName || "").trim()
+        );
+
+      // Conservamos el nombre que deja de ser actual para mantener
+      // un historial completo de cambios de nombre.
+      if (changedName && previous?.firstName) {
+        await anideUsuariaManager(
+          {
+            type: "aliasAdd",
+            usuariaId: previous._id,
+            firstName: previous.firstName,
+            lastName: previous.lastName || "",
+            reason: "Cambio de nombre",
+          },
+          token
+        );
+      }
+
       setUserForm(null);
       await refreshAll(false);
 
@@ -603,36 +675,72 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
   };
 
   const submitAssignStay = async (values) => {
-    const usuariaId = getFieldValue(values.usuariaId);
+    const selectedUserId = getFieldValue(values.usuariaId);
+    const selectedUser =
+      assignStayData?.user ||
+      users.find((user) => String(user._id) === String(selectedUserId));
 
-    if (!assignUserOptions.length) {
-      modal(
-        "Sin usuarias disponibles",
-        "No hay usuarias libres para asignar. Si la usuaria ya está en una cama, usa la opción Trasladar."
-      );
+    if (!selectedUser) {
+      modal("Usuaria requerida", "Selecciona una usuaria para asignarla a la cama.");
       return;
     }
 
-    if (!usuariaId) {
-      modal("Usuaria requerida", "Selecciona una usuaria para asignarla a la cama.");
+    const familyMembers = getActiveFamilyMembers(selectedUser);
+
+    // Primera pantalla: seleccionar responsable. Si tiene familia, se pide después
+    // una cama para cada familiar activo antes de enviar nada al backend.
+    if (!assignStayData?.user && familyMembers.length) {
+      setAssignStayData((current) => ({
+        ...current,
+        user: selectedUser,
+        step: "family",
+        startDate: values.startDate,
+        notes: values.notes || "",
+      }));
+      return;
+    }
+
+    const familyAssignments = familyMembers.map((member) => ({
+      familyMemberId: member._id,
+      habitacionId: getFieldValue(values[`familyBed_${member._id}`]).split("|")[1],
+      camaId: getFieldValue(values[`familyBed_${member._id}`]).split("|")[2],
+      notes: "",
+    }));
+
+    const invalidFamilyAssignment = familyAssignments.some(
+      (item) => !item.habitacionId || !item.camaId
+    );
+
+    if (invalidFamilyAssignment) {
+      modal("Camas requeridas", "Debes asignar una cama a cada familiar activo.");
+      return;
+    }
+
+    const selectedBeds = [
+      assignStayData?.bed?._id,
+      ...familyAssignments.map((item) => item.camaId),
+    ].map(String);
+
+    if (new Set(selectedBeds).size !== selectedBeds.length) {
+      modal("Camas repetidas", "Cada persona de la unidad familiar necesita una cama distinta.");
       return;
     }
 
     try {
       charge(true);
-
       const token = getToken();
 
       const resp = await anideUsuariaManager(
         {
           type: "assignStay",
-          usuariaId,
+          usuariaId: selectedUser._id,
           centroId: assignStayData.center._id,
           province: refId(assignStayData.center.province),
           habitacionId: assignStayData.room._id,
           camaId: assignStayData.bed._id,
-          startDate: values.startDate,
-          notes: values.notes || "",
+          startDate: assignStayData?.startDate || values.startDate,
+          notes: assignStayData?.notes || values.notes || "",
+          familyAssignments,
         },
         token
       );
@@ -644,8 +752,12 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
 
       setAssignStayData(null);
       await refreshAll(false);
-
-      modal("ANIDE", "Cama asignada correctamente");
+      modal(
+        "ANIDE",
+        familyMembers.length
+          ? "Unidad familiar asignada correctamente"
+          : "Cama asignada correctamente"
+      );
     } catch (e) {
       modal("Error", e?.message || "No se pudo asignar la cama");
     } finally {
@@ -653,20 +765,143 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
     }
   };
 
-  const openMoveStay = (usuaria, currentCenter = null) => {
-    setMoveStayData({
-      usuaria,
-      currentCenter,
-    });
+  const openMoveStay = async (usuaria, currentCenter = null) => {
+    const usuariaId = usuaria?.usuariaId || usuaria?._id;
+
+    if (!usuariaId) {
+      modal("Usuaria no encontrada", "No se ha podido identificar a la persona alojada.");
+      return;
+    }
+
+    try {
+      charge(true);
+
+      const token = getToken();
+      const fullUser = await anideUsuariaManager(
+        {
+          type: "get",
+          usuariaId,
+        },
+        token
+      );
+
+      if (fullUser?.error) {
+        modal(
+          "Error",
+          fullUser.message || "No se pudo cargar la unidad familiar de la usuaria."
+        );
+        return;
+      }
+
+      setMoveStayData({
+        usuaria: fullUser,
+        currentCenter,
+        familyMemberId: usuaria?.familyMemberId || "",
+      });
+    } catch (e) {
+      modal(
+        "Error",
+        e?.message || "No se pudo cargar la unidad familiar de la usuaria."
+      );
+    } finally {
+      charge(false);
+    }
   };
 
   const submitMoveStay = async (values) => {
-    const target = freeBedsOptions.find(
-      (item) => item.value === getFieldValue(values.targetBed)
-    );
+    const user = moveStayData?.usuaria;
+    const isFamilyMemberMove = Boolean(moveStayData?.familyMemberId);
+
+    const target =
+      moveStayData?.step === "family"
+        ? moveStayData.target
+        : freeBedsOptions.find(
+            (item) => item.value === getFieldValue(values.targetBed)
+          );
 
     if (!target) {
       modal("Cama requerida", "Selecciona una cama libre de destino.");
+      return;
+    }
+
+    const familyMembers = getActiveFamilyMembers(user);
+
+    // Para mover a un menor/dependiente comprobamos siempre la vivienda de
+    // la responsable. `centro` puede llegar poblado como objeto, por eso
+    // usamos refId() en vez de String(stay.centro).
+    const currentStay = isFamilyMemberMove
+      ? getActiveStay(user)
+      : getActiveStay(user);
+
+    const currentCentroId = refId(currentStay?.centro);
+    const changesCenter =
+      Boolean(currentCentroId) &&
+      String(currentCentroId) !== String(target.centroId);
+
+    // Una responsable que cambia de vivienda debe trasladar a toda la unidad.
+    // Un menor/dependiente nunca puede cambiar de vivienda por separado.
+    if (
+      isFamilyMemberMove &&
+      changesCenter
+    ) {
+      modal(
+        "Traslado no permitido",
+        "Un menor o persona dependiente solo puede cambiar de cama o habitación dentro de la vivienda de su responsable."
+      );
+      return;
+    }
+
+    if (
+      !isFamilyMemberMove &&
+      !moveStayData?.step &&
+      changesCenter &&
+      familyMembers.length
+    ) {
+      setMoveStayData((current) => ({
+        ...current,
+        step: "family",
+        target,
+        moveDate: values.moveDate,
+        notes: values.notes || "",
+      }));
+      return;
+    }
+
+    const familyAssignments =
+      moveStayData?.step === "family"
+        ? familyMembers.map((member) => {
+            const value = getFieldValue(values[`familyBed_${member._id}`]);
+            const [, habitacionId, camaId] = value.split("|");
+
+            return {
+              familyMemberId: member._id,
+              habitacionId,
+              camaId,
+              notes: "",
+            };
+          })
+        : [];
+
+    if (
+      moveStayData?.step === "family" &&
+      familyAssignments.some((item) => !item.habitacionId || !item.camaId)
+    ) {
+      modal(
+        "Camas requeridas",
+        "Debes asignar una cama a cada familiar activo de la unidad familiar."
+      );
+      return;
+    }
+
+    const allBeds = [target.camaId, ...familyAssignments.map((item) => item.camaId)]
+      .filter(Boolean)
+      .map(String);
+
+    if (new Set(allBeds).size !== allBeds.length) {
+      modal(
+        "Camas repetidas",
+        "Cada persona de la unidad familiar necesita una cama distinta."
+      );
       return;
     }
 
@@ -678,13 +913,15 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
       const resp = await anideUsuariaManager(
         {
           type: "moveStay",
-          usuariaId: moveStayData.usuaria.usuariaId || moveStayData.usuaria._id,
+          usuariaId: user._id,
+          familyMemberId: moveStayData?.familyMemberId || undefined,
           centroId: target.centroId,
           province: target.province,
           habitacionId: target.habitacionId,
           camaId: target.camaId,
-          moveDate: values.moveDate,
-          notes: values.notes || "",
+          moveDate: moveStayData?.moveDate || values.moveDate,
+          notes: moveStayData?.notes || values.notes || "",
+          familyAssignments,
         },
         token
       );
@@ -697,7 +934,12 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
       setMoveStayData(null);
       await refreshAll(false);
 
-      modal("ANIDE", "Traslado registrado correctamente");
+      modal(
+        "ANIDE",
+        moveStayData?.step === "family"
+          ? "Unidad familiar trasladada correctamente"
+          : "Traslado registrado correctamente"
+      );
     } catch (e) {
       modal("Error", e?.message || "No se pudo trasladar la usuaria");
     } finally {
@@ -722,6 +964,7 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
         {
           type: "closeStay",
           usuariaId: closeStayData.usuariaId || closeStayData._id,
+          familyMemberId: closeStayData.familyMemberId || undefined,
           endDate: values.endDate,
           notes: values.notes || "",
         },
@@ -739,6 +982,165 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
       modal("ANIDE", "Salida registrada correctamente");
     } catch (e) {
       modal("Error", e?.message || "No se pudo cerrar la estancia");
+    } finally {
+      charge(false);
+    }
+  };
+
+  const submitFamilyMember = async (values) => {
+    const isEdit = familyMemberForm?.mode === "edit";
+
+    try {
+      charge(true);
+      const token = getToken();
+
+      const resp = await anideUsuariaManager(
+        {
+          type: isEdit ? "familyMemberUpdate" : "familyMemberAdd",
+          usuariaId: familyMemberForm.usuaria._id,
+          familyMemberId: isEdit ? familyMemberForm.member._id : undefined,
+          firstName: String(values.firstName || "").trim(),
+          lastName: String(values.lastName || "").trim(),
+          birthday: values.birthday || null,
+          relationship: values.relationship,
+          documentId: String(values.documentId || "").trim(),
+          notes: values.notes || "",
+        },
+        token
+      );
+
+      if (resp?.error) {
+        modal("Error", resp.message || "No se pudo guardar el familiar");
+        return;
+      }
+
+      setFamilyMemberForm(null);
+      await loadUsers(false);
+      await loadCenters(false, selectedCenterId);
+      modal("ANIDE", isEdit ? "Familiar actualizado" : "Familiar añadido");
+    } catch (e) {
+      modal("Error", e?.message || "No se pudo guardar el familiar");
+    } finally {
+      charge(false);
+    }
+  };
+
+  const openReturnStay = (user, familyMember = null) => {
+    if (familyMember && !getActiveStay(user)) {
+      modal(
+        "Responsable sin alojamiento",
+        "Primero debes volver a alojar a la responsable. Después podrás volver a alojar al menor o persona dependiente en esa misma vivienda."
+      );
+      return;
+    }
+
+    setReturnStayData({
+      user,
+      familyMember,
+    });
+  };
+
+  const submitReturnStay = async (values) => {
+    const target = freeBedsOptions.find(
+      (bed) => bed.value === getFieldValue(values.targetBed)
+    );
+
+    if (!target) {
+      modal("Cama requerida", "Selecciona una cama libre para volver a alojar.");
+      return;
+    }
+
+    const user = returnStayData?.user;
+    const familyMember = returnStayData?.familyMember;
+
+    if (!user?._id) {
+      modal("Error", "No se ha podido identificar a la responsable.");
+      return;
+    }
+
+    if (familyMember) {
+      const responsibleStay = getActiveStay(user);
+
+      if (
+        !responsibleStay ||
+        String(refId(responsibleStay.centro)) !== String(target.centroId)
+      ) {
+        modal(
+          "Vivienda no válida",
+          "Un menor o persona dependiente debe volver a alojarse en la misma vivienda de su responsable."
+        );
+        return;
+      }
+    }
+
+    try {
+      charge(true);
+
+      const token = getToken();
+
+      const resp = await anideUsuariaManager(
+        {
+          type: "assignStay",
+          usuariaId: user._id,
+          familyMemberId: familyMember?._id || undefined,
+          centroId: target.centroId,
+          province: target.province,
+          habitacionId: target.habitacionId,
+          camaId: target.camaId,
+          startDate: values.startDate,
+          notes: values.notes || "",
+          familyAssignments: [],
+        },
+        token
+      );
+
+      if (resp?.error) {
+        modal("Error", resp.message || "No se pudo volver a alojar.");
+        return;
+      }
+
+      setReturnStayData(null);
+      await refreshAll(false);
+      modal(
+        "ANIDE",
+        familyMember
+          ? "Familiar vuelto a alojar correctamente"
+          : "Usuaria vuelta a alojar correctamente"
+      );
+    } catch (e) {
+      modal("Error", e?.message || "No se pudo volver a alojar.");
+    } finally {
+      charge(false);
+    }
+  };
+
+  const submitAlias = async (values) => {
+    try {
+      charge(true);
+
+      const token = getToken();
+
+      const resp = await anideUsuariaManager(
+        {
+          type: "aliasAdd",
+          usuariaId: aliasForm.user._id,
+          firstName: String(values.firstName || "").trim(),
+          lastName: String(values.lastName || "").trim(),
+          reason: String(values.reason || "").trim(),
+        },
+        token
+      );
+
+      if (resp?.error) {
+        modal("Error", resp.message || "No se pudo guardar el nombre en el historial.");
+        return;
+      }
+
+      setAliasForm(null);
+      await loadUsers(false);
+      modal("ANIDE", "Nombre añadido al historial correctamente");
+    } catch (e) {
+      modal("Error", e?.message || "No se pudo guardar el nombre en el historial.");
     } finally {
       charge(false);
     }
@@ -873,7 +1275,7 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
   const assignUserFields = useMemo(() => [
     {
       name: "usuariaId",
-      label: "Usuaria",
+      label: "Usuaria responsable",
       type: "select",
       searchable: true,
       required: true,
@@ -903,34 +1305,203 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
     },
   ], [assignUserOptions]);
 
-  const moveFields = useMemo(() => [
-    {
-      name: "targetBed",
-      label: "Cama libre de destino",
+  const assignFamilyFields = useMemo(() => {
+    const user = assignStayData?.user;
+    const familyMembers = getActiveFamilyMembers(user);
+    const options = getFreeBedsForCenter(
+      assignStayData?.center?._id,
+      assignStayData?.bed?._id
+    ).map((bed) => ({
+      value: bed.value,
+      label: `${bed.label}`,
+    }));
+
+    return familyMembers.map((member) => ({
+      name: `familyBed_${member._id}`,
+      label: `${getPersonLabel(member)} · cama`,
       type: "select",
       searchable: true,
       required: true,
       defaultValue: "",
       options: [
         { value: "", label: "Selecciona una cama libre" },
-        ...freeBedsOptions,
+        ...options,
       ],
-    },
-    {
-      name: "moveDate",
-      label: "Fecha de traslado",
-      type: "date",
+    }));
+  }, [assignStayData, freeBedsOptions]);
+
+  const moveFields = useMemo(() => {
+    const isFamilyMemberMove = Boolean(moveStayData?.familyMemberId);
+    const responsibleStay = getActiveStay(moveStayData?.usuaria);
+    const responsibleCentroId = refId(responsibleStay?.centro);
+
+    const availableBeds = isFamilyMemberMove
+      ? freeBedsOptions.filter(
+          (bed) => String(bed.centroId) === String(responsibleCentroId)
+        )
+      : freeBedsOptions;
+
+    return [
+      {
+        name: "targetBed",
+        label: isFamilyMemberMove
+          ? "Cama libre en la vivienda de la responsable"
+          : "Cama libre de destino",
+        type: "select",
+        searchable: true,
+        required: true,
+        defaultValue: "",
+        options: [
+          {
+            value: "",
+            label: isFamilyMemberMove
+              ? availableBeds.length
+                ? "Selecciona una cama de la misma vivienda"
+                : "No hay camas libres en la vivienda de la responsable"
+              : "Selecciona una cama libre",
+          },
+          ...availableBeds,
+        ],
+      },
+      {
+        name: "moveDate",
+        label: "Fecha de traslado",
+        type: "date",
+        required: true,
+        defaultValue: todayInput(),
+      },
+      {
+        name: "notes",
+        label: "Notas",
+        type: "textarea",
+        required: false,
+        defaultValue: "",
+      },
+    ];
+  }, [freeBedsOptions, moveStayData]);
+
+  const moveFamilyFields = useMemo(() => {
+    const user = moveStayData?.usuaria;
+    const target = moveStayData?.target;
+    const familyMembers = getActiveFamilyMembers(user);
+    const options = getFreeBedsForCenter(target?.centroId, target?.camaId);
+
+    return familyMembers.map((member) => ({
+      name: `familyBed_${member._id}`,
+      label: `${getPersonLabel(member)} · cama en ${target?.label || "la nueva vivienda"}`,
+      type: "select",
+      searchable: true,
       required: true,
-      defaultValue: todayInput(),
-    },
-    {
-      name: "notes",
-      label: "Notas",
-      type: "textarea",
-      required: false,
       defaultValue: "",
-    },
-  ], [freeBedsOptions]);
+      options: [
+        { value: "", label: "Selecciona una cama libre" },
+        ...options,
+      ],
+    }));
+  }, [moveStayData, freeBedsOptions]);
+
+  const returnStayFields = useMemo(() => {
+    const user = returnStayData?.user;
+    const familyMember = returnStayData?.familyMember;
+    const responsibleStay = getActiveStay(user);
+    const availableBeds = familyMember
+      ? freeBedsOptions.filter(
+          (bed) =>
+            String(bed.centroId) === String(refId(responsibleStay?.centro))
+        )
+      : freeBedsOptions;
+
+    return [
+      {
+        name: "targetBed",
+        label: familyMember
+          ? "Cama libre en la vivienda de la responsable"
+          : "Cama libre para volver a alojar",
+        type: "select",
+        searchable: true,
+        required: true,
+        defaultValue: "",
+        options: [
+          {
+            value: "",
+            label: availableBeds.length
+              ? "Selecciona una cama libre"
+              : "No hay camas disponibles",
+          },
+          ...availableBeds,
+        ],
+      },
+      {
+        name: "startDate",
+        label: "Fecha de entrada",
+        type: "date",
+        required: true,
+        defaultValue: todayInput(),
+      },
+      {
+        name: "notes",
+        label: "Notas de la nueva estancia",
+        type: "textarea",
+        required: false,
+        defaultValue: "",
+      },
+    ];
+  }, [returnStayData, freeBedsOptions]);
+
+  const familyMemberFields = useMemo(() => {
+    const member = familyMemberForm?.member;
+
+    return [
+      {
+        name: "firstName",
+        label: "Nombre",
+        type: "text",
+        required: true,
+        defaultValue: member?.firstName || "",
+      },
+      {
+        name: "lastName",
+        label: "Apellidos",
+        type: "text",
+        required: false,
+        defaultValue: member?.lastName || "",
+      },
+      {
+        name: "birthday",
+        label: "Fecha de nacimiento",
+        type: "date",
+        required: false,
+        defaultValue: member?.birthday
+          ? new Date(member.birthday).toISOString().slice(0, 10)
+          : "",
+      },
+      {
+        name: "relationship",
+        label: "Tipo",
+        type: "select",
+        required: true,
+        defaultValue: member?.relationship || "child",
+        options: [
+          { value: "child", label: "Menor" },
+          { value: "dependent", label: "Persona dependiente" },
+        ],
+      },
+      {
+        name: "documentId",
+        label: "Documento / identificador",
+        type: "text",
+        required: false,
+        defaultValue: member?.documentId || "",
+      },
+      {
+        name: "notes",
+        label: "Notas",
+        type: "textarea",
+        required: false,
+        defaultValue: member?.notes || "",
+      },
+    ];
+  }, [familyMemberForm]);
 
   const centerFields = useMemo(() => [
     {
@@ -1165,39 +1736,400 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
               </div>
 
               <div className={styles.usersList}>
-                {users.map((user) => (
-                  <div className={styles.userRow} key={user._id}>
-                    <div>
-                      <strong>{buildFullName(user)}</strong>
-                      <span>{user.documentId || "—"}</span>
-                    </div>
+                {users.map((user) => {
+                  const stay = getActiveStay(user);
+                  const hasActiveStay = Boolean(stay);
+                  const summary = getFamilySummary(user);
+                  const aliases = user.aliases || [];
+                  const menuOpen = String(openUserMenuId) === String(user._id);
+                  const familyOpen = String(expandedFamilyId) === String(user._id);
+                  const aliasesOpen =
+                    String(expandedAliasesId) === String(user._id);
 
-                    <div>{getNationalityLabel(user.nationality)}</div>
-                    <div>{genderLabel(user.gender)}</div>
+                  return (
+                    <article
+                      className={[
+                        styles.userCard,
+                        hasActiveStay ? styles.userCardActive : styles.userCardInactive,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      key={user._id}
+                    >
+                      <div className={styles.userCardHeader}>
+                        <div className={styles.userIdentity}>
+                          <div className={styles.userNameLine}>
+                            <h3>{buildFullName(user)}</h3>
+                            <span
+                              className={
+                                hasActiveStay
+                                  ? styles.statusBadgeActive
+                                  : styles.statusBadgeInactive
+                              }
+                            >
+                              {hasActiveStay
+                                ? "Alojada"
+                                : user.active === false
+                                  ? "Salida registrada"
+                                  : "Sin alojamiento"}
+                            </span>
+                          </div>
 
-                    <div className={styles.userActions}>
-                      <button onClick={() => setUserForm({ mode: "edit", doc: user })}>
-                        <FaUserEdit /> Editar
-                      </button>
+                          <span className={styles.userDocument}>
+                            {user.documentId || "Sin identificador"}
+                          </span>
 
-                      <button onClick={() => viewUserNotes(user)}>
-                        <FaStickyNote /> Ver notas
-                      </button>
+                          <div className={styles.userMeta}>
+                            <span>{getNationalityLabel(user.nationality)}</span>
+                            <span>{genderLabel(user.gender)}</span>
+                          </div>
 
-                      <button onClick={() => openUserNotes(user)}>
-                        <FaStickyNote /> Añadir nota
-                      </button>
+                          {!!aliases.length && (
+                            <button
+                              type="button"
+                              className={styles.aliasToggle}
+                              onClick={() =>
+                                setExpandedAliasesId((current) =>
+                                  String(current) === String(user._id)
+                                    ? ""
+                                    : String(user._id)
+                                )
+                              }
+                            >
+                              Historial de nombres ({aliases.length})
+                              <span>{aliasesOpen ? "▴" : "▾"}</span>
+                            </button>
+                          )}
+                        </div>
 
-                      <button onClick={() => openMoveStay(user)}>
-                        <FaArrowRightArrowLeft /> Trasladar
-                      </button>
+                        <div className={styles.userCardActions}>
+                          {hasActiveStay ? (
+                            <button
+                              type="button"
+                              className={styles.primaryExitButton}
+                              onClick={() => openCloseStay(user)}
+                            >
+                              <FaSignOutAlt /> Salida
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className={styles.primaryReturnButton}
+                              onClick={() => openReturnStay(user)}
+                            >
+                              Volver a alojar
+                            </button>
+                          )}
 
-                      <button onClick={() => openCloseStay(user)}>
-                        <FaSignOutAlt /> Salida
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                          <div className={styles.actionMenuWrap}>
+                            <button
+                              type="button"
+                              className={styles.menuButton}
+                              onClick={() =>
+                                setOpenUserMenuId((current) =>
+                                  String(current) === String(user._id)
+                                    ? ""
+                                    : String(user._id)
+                                )
+                              }
+                              title="Más acciones"
+                              aria-label={`Más acciones para ${buildFullName(user)}`}
+                            >
+                              ⋮
+                            </button>
+
+                            {menuOpen && (
+                              <div className={styles.actionMenu}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setUserForm({ mode: "edit", doc: user });
+                                    setOpenUserMenuId("");
+                                  }}
+                                >
+                                  <FaUserEdit /> Editar datos
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setExpandedFamilyId((current) =>
+                                      String(current) === String(user._id)
+                                        ? ""
+                                        : String(user._id)
+                                    );
+                                    setOpenUserMenuId("");
+                                  }}
+                                >
+                                  <FaPeopleGroup /> Gestionar familia
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAliasForm({ user });
+                                    setOpenUserMenuId("");
+                                  }}
+                                >
+                                  + Registrar nombre usado
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    viewUserNotes(user);
+                                    setOpenUserMenuId("");
+                                  }}
+                                >
+                                  <FaStickyNote /> Ver notas
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    openUserNotes(user);
+                                    setOpenUserMenuId("");
+                                  }}
+                                >
+                                  <FaStickyNote /> Añadir nota
+                                </button>
+
+                                {hasActiveStay && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      openMoveStay(user);
+                                      setOpenUserMenuId("");
+                                    }}
+                                  >
+                                    <FaArrowRightArrowLeft /> Trasladar
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={styles.userCardInfo}>
+                        <div className={styles.familySummaryCard}>
+                          {summary.total ? (
+                            <>
+                              <strong>
+                                {summary.total} {summary.total === 1 ? "persona" : "personas"} a cargo
+                              </strong>
+                              <span>
+                                {summary.children
+                                  ? `${summary.children} menores`
+                                  : ""}
+                                {summary.children && summary.dependents
+                                  ? " · "
+                                  : ""}
+                                {summary.dependents
+                                  ? `${summary.dependents} dependientes`
+                                  : ""}
+                              </span>
+                              <span>
+                                {summary.accommodated}/{summary.total} alojadas actualmente
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <strong>Sin familiares a cargo</strong>
+                              <span>Unidad individual</span>
+                            </>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          className={styles.familyManageButton}
+                          onClick={() =>
+                            setExpandedFamilyId((current) =>
+                              String(current) === String(user._id)
+                                ? ""
+                                : String(user._id)
+                            )
+                          }
+                        >
+                          <FaPeopleGroup />
+                          {familyOpen ? "Ocultar familia" : "Ver familia"}
+                        </button>
+                      </div>
+
+                      {aliasesOpen && (
+                        <section className={styles.aliasesPanel}>
+                          <strong>Historial de nombres</strong>
+                          <div className={styles.aliasesList}>
+                            {aliases.map((alias) => (
+                              <div key={alias._id || `${alias.firstName}-${alias.changedAt}`}>
+                                <span>{buildFullName(alias)}</span>
+                                <small>
+                                  {alias.changedAt
+                                    ? new Date(alias.changedAt).toLocaleDateString("es-ES")
+                                    : "Fecha no disponible"}
+                                  {alias.reason ? ` · ${alias.reason}` : " · Cambio de nombre"}
+                                </small>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+
+                      {familyOpen && (
+                        <section className={styles.familyPanel}>
+                          <div className={styles.familyPanelHeader}>
+                            <div>
+                              <strong>Unidad familiar</strong>
+                              <span>
+                                Cada familiar ocupa una cama propia dentro de la vivienda de la responsable.
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFamilyMemberForm({
+                                  mode: "create",
+                                  usuaria: user,
+                                  member: null,
+                                })
+                              }
+                            >
+                              <FaUserPlus /> Añadir familiar
+                            </button>
+                          </div>
+
+                          <div className={styles.familyMembersList}>
+                            {(user.familyMembers || []).map((member) => {
+                              const memberStay = getActiveStay(member);
+                              const memberMenuId = `${user._id}:${member._id}`;
+                              const memberMenuOpen =
+                                String(openFamilyMenuId) === memberMenuId;
+
+                              return (
+                                <article
+                                  className={[
+                                    styles.familyMemberCard,
+                                    member.relationship === "dependent"
+                                      ? styles.familyMemberDependent
+                                      : styles.familyMemberChild,
+                                    memberStay
+                                      ? styles.familyMemberActive
+                                      : styles.familyMemberInactive,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" ")}
+                                  key={member._id}
+                                >
+                                  <div className={styles.familyMemberIdentity}>
+                                    <strong>{buildFullName(member)}</strong>
+                                    <span>
+                                      {familyRelationshipLabel(member.relationship)}
+                                    </span>
+                                    <small>
+                                      {memberStay
+                                        ? "Alojado/a"
+                                        : member.active === false
+                                          ? "Salida registrada"
+                                          : "Pendiente de alojamiento"}
+                                    </small>
+                                  </div>
+
+                                  <div className={styles.familyMemberActions}>
+                                    {memberStay ? (
+                                      <button
+                                        type="button"
+                                        className={styles.memberExitButton}
+                                        onClick={() =>
+                                          openCloseStay({
+                                            usuariaId: user._id,
+                                            familyMemberId: member._id,
+                                            name: buildFullName(member),
+                                          })
+                                        }
+                                      >
+                                        <FaSignOutAlt /> Salida
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        className={styles.memberReturnButton}
+                                        onClick={() => openReturnStay(user, member)}
+                                      >
+                                        {member.active === false
+                                          ? "Volver a alojar"
+                                          : "Alojar"}
+                                      </button>
+                                    )}
+
+                                    <div className={styles.actionMenuWrap}>
+                                      <button
+                                        type="button"
+                                        className={styles.menuButton}
+                                        onClick={() =>
+                                          setOpenFamilyMenuId((current) =>
+                                            String(current) === memberMenuId
+                                              ? ""
+                                              : memberMenuId
+                                          )
+                                        }
+                                        title="Más acciones"
+                                        aria-label={`Más acciones para ${buildFullName(member)}`}
+                                      >
+                                        ⋮
+                                      </button>
+
+                                      {memberMenuOpen && (
+                                        <div className={styles.actionMenu}>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setFamilyMemberForm({
+                                                mode: "edit",
+                                                usuaria: user,
+                                                member,
+                                              });
+                                              setOpenFamilyMenuId("");
+                                            }}
+                                          >
+                                            <FaEdit /> Editar datos
+                                          </button>
+
+                                          {memberStay && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                openMoveStay({
+                                                  usuariaId: user._id,
+                                                  familyMemberId: member._id,
+                                                  name: buildFullName(member),
+                                                });
+                                                setOpenFamilyMenuId("");
+                                              }}
+                                            >
+                                              <FaArrowRightArrowLeft /> Trasladar
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </article>
+                              );
+                            })}
+                          </div>
+
+                          {!(user.familyMembers || []).length && (
+                            <div className={styles.familyEmpty}>
+                              No hay menores ni personas dependientes registrados.
+                            </div>
+                          )}
+                        </section>
+                      )}
+                    </article>
+                  );
+                })}
 
                 {!users.length && (
                   <div className={styles.emptyState}>
@@ -1259,10 +2191,14 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
 
           {!!assignStayData && (
             <ModalForm
-              title="Asignar cama"
-              message={`${assignStayData.center?.name || ""} · ${assignStayData.room?.name || ""} · ${assignStayData.bed?.name || ""}`}
-              fields={assignUserFields}
-              submitText="Asignar"
+              title={assignStayData.step === "family" ? "Asignar unidad familiar" : "Asignar cama"}
+              message={
+                assignStayData.step === "family"
+                  ? `Asigna una cama a cada persona a cargo de ${buildFullName(assignStayData.user)} dentro de ${assignStayData.center?.name || "la vivienda"}.`
+                  : `${assignStayData.center?.name || ""} · ${assignStayData.room?.name || ""} · ${assignStayData.bed?.name || ""}`
+              }
+              fields={assignStayData.step === "family" ? assignFamilyFields : assignUserFields}
+              submitText={assignStayData.step === "family" ? "Asignar unidad" : "Continuar"}
               cancelText="Cancelar"
               onSubmit={submitAssignStay}
               onClose={() => setAssignStayData(null)}
@@ -1272,10 +2208,14 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
 
           {!!moveStayData && (
             <ModalForm
-              title="Trasladar usuaria"
-              message="Selecciona una cama libre de destino. Se cerrará la estancia actual y se abrirá una nueva."
-              fields={moveFields}
-              submitText="Trasladar"
+              title={moveStayData.step === "family" ? "Trasladar unidad familiar" : "Trasladar usuaria"}
+              message={
+                moveStayData.step === "family"
+                  ? `Como cambia de vivienda, asigna una cama a cada familiar de ${buildFullName(moveStayData.usuaria)}.`
+                  : "Selecciona una cama libre de destino. Dentro de la misma vivienda se mueve solo la responsable."
+              }
+              fields={moveStayData.step === "family" ? moveFamilyFields : moveFields}
+              submitText={moveStayData.step === "family" ? "Trasladar unidad" : "Continuar"}
               cancelText="Cancelar"
               onSubmit={submitMoveStay}
               onClose={() => setMoveStayData(null)}
@@ -1321,6 +2261,83 @@ const ManagingAnide = ({ modal, charge, enumsData }) => {
               cancelText="Cancelar"
               onSubmit={submitCloseStay}
               onClose={() => setCloseStayData(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!returnStayData && (
+            <ModalForm
+              title={
+                returnStayData.familyMember
+                  ? "Volver a alojar familiar"
+                  : "Volver a alojar usuaria"
+              }
+              message={
+                returnStayData.familyMember
+                  ? `Responsable: ${buildFullName(returnStayData.user)}. El familiar se alojará dentro de la misma vivienda.`
+                  : `Selecciona una cama para volver a alojar a ${buildFullName(returnStayData.user)}. Los familiares pueden volver después de forma individual.`
+              }
+              fields={returnStayFields}
+              submitText="Registrar entrada"
+              cancelText="Cancelar"
+              onSubmit={submitReturnStay}
+              onClose={() => setReturnStayData(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!aliasForm && (
+            <ModalForm
+              title="Registrar nombre usado"
+              message={`Registra un nombre que haya usado ${buildFullName(aliasForm.user)}. No modifica su nombre actual; el historial conserva todos los cambios de nombre.`}
+              fields={[
+                {
+                  name: "firstName",
+                  label: "Nombre",
+                  type: "text",
+                  required: true,
+                  defaultValue: "",
+                },
+                {
+                  name: "lastName",
+                  label: "Apellidos",
+                  type: "text",
+                  required: false,
+                  defaultValue: "",
+                },
+                {
+                  name: "reason",
+                  label: "Motivo o contexto",
+                  type: "text",
+                  required: false,
+                  defaultValue: "",
+                },
+              ]}
+              submitText="Guardar en historial"
+              cancelText="Cancelar"
+              onSubmit={submitAlias}
+              onClose={() => setAliasForm(null)}
+              modal={modal}
+            />
+          )}
+
+          {!!familyMemberForm && (
+            <ModalForm
+              title={
+                familyMemberForm.mode === "edit"
+                  ? "Editar familiar"
+                  : "Añadir familiar"
+              }
+              message={`Responsable: ${buildFullName(familyMemberForm.usuaria)}`}
+              fields={familyMemberFields}
+              submitText={
+                familyMemberForm.mode === "edit"
+                  ? "Guardar cambios"
+                  : "Añadir familiar"
+              }
+              cancelText="Cancelar"
+              onSubmit={submitFamilyMember}
+              onClose={() => setFamilyMemberForm(null)}
               modal={modal}
             />
           )}

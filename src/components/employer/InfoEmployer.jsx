@@ -704,7 +704,8 @@ const handleActivateInSesame = async (formData) => {
       workplaceId: workplaces[0]._id,
     });
   } catch (e) {
-    modal("Error", e.message || "No se pudo activar en Sesame");
+    console.log(e)
+    modal("Error", e.message || `No se pudo activar en Sesame`);
   } finally {
     charge(false);
   }

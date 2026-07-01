@@ -85,7 +85,7 @@ const FormAnideUser = ({
         label: "Género",
         type: "select",
         required: false,
-        defaultValue: doc?.gender || "",
+        defaultValue: doc?.gender || "female",
         options: [
           { value: "", label: "Seleccionar" },
           { value: "male", label: "Hombre" },
@@ -93,38 +93,6 @@ const FormAnideUser = ({
           { value: "others", label: "Otros" },
           { value: "nonBinary", label: "No binario" },
         ],
-      },
-      {
-        type: "section",
-        label: "Unidad familiar / acompañantes",
-      },
-      {
-        name: "children",
-        label: "Menores acompañantes",
-        type: "number",
-        required: false,
-        defaultValue: doc?.familyUnit?.children ?? 0,
-      },
-      {
-        name: "dependents",
-        label: "Personas dependientes",
-        type: "number",
-        required: false,
-        defaultValue: doc?.familyUnit?.dependents ?? 0,
-      },
-      {
-        name: "adults",
-        label: "Personas adultas acompañantes",
-        type: "number",
-        required: false,
-        defaultValue: doc?.familyUnit?.adults ?? 0,
-      },
-      {
-        name: "familyNotes",
-        label: "Notas de unidad familiar",
-        type: "textarea",
-        required: false,
-        defaultValue: doc?.familyUnit?.notes || "",
       },
       {
         type: "section",
@@ -164,12 +132,6 @@ const FormAnideUser = ({
       birthday: values.birthday || null,
       nationality: getFieldValue(values.nationality),
       gender: values.gender || "",
-      familyUnit: {
-        children: Number(values.children || 0),
-        dependents: Number(values.dependents || 0),
-        adults: Number(values.adults || 0),
-        notes: values.familyNotes || "",
-      },
       notes: values.notes || "",
     };
 
@@ -196,8 +158,8 @@ const FormAnideUser = ({
       title={isEdit ? "Editar usuaria ANIDE" : "Crear usuaria ANIDE"}
       message={
         isEdit
-          ? "Modifica los datos principales de la usuaria. Las estancias se gestionan desde el mapa de ocupación."
-          : "Crea la usuaria. Después podrás asignarla a una cama libre desde el mapa de ocupación."
+          ? "Modifica los datos principales de la usuaria. La unidad familiar y las estancias se gestionan desde la ficha de la usuaria y el mapa de ocupación."
+          : "Crea la usuaria. Después podrás registrar a sus menores o personas dependientes y asignar el alojamiento desde el mapa de ocupación."
       }
       submitText={isEdit ? "Guardar cambios" : "Crear usuaria"}
       cancelText="Cancelar"

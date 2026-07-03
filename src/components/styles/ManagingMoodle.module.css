@@ -1,17 +1,27 @@
+/* =========================================================
+   CONTENEDOR GENERAL
+   ========================================================= */
+
 .contenedor {
-  width: 100%;
+  flex: 1 1 auto;
   min-height: 100%;
   padding: 1.5rem;
 }
 
 .contenido {
-  width: 100%;
-  max-width: 980px;
+  flex: 1 1 auto;
+  max-width: 1100px;
   margin: 0 auto;
+
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
 }
+
+
+/* =========================================================
+   CABECERA / HERO
+   ========================================================= */
 
 .hero,
 .card {
@@ -28,11 +38,12 @@
 }
 
 .icon {
-  width: 62px;
-  height: 62px;
   flex: 0 0 62px;
+
+  height: 62px;
   display: grid;
   place-items: center;
+
   border-radius: 14px;
   background: #eef0ff;
   color: #4f529f;
@@ -52,52 +63,419 @@
   line-height: 1.55;
 }
 
+
+/* =========================================================
+   PESTAÑAS
+   ========================================================= */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tab,
+.tabActive {
+  flex: 0 1 auto;
+
+  border: none;
+  border-radius: 999px;
+  padding: 0.7rem 1.1rem;
+
+  cursor: pointer;
+  font-weight: 700;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.tab {
+  background: #eef0ff;
+  color: #4f529f;
+}
+
+.tabActive {
+  background: #4f529f;
+  color: #fff;
+}
+
+.tab:hover,
+.tabActive:hover {
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   TARJETAS
+   ========================================================= */
+
 .card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 1.5rem;
   padding: 1.5rem;
 }
 
-.accessButton {
+.pending {
+  color: #4f529f;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   BOTONES Y ACCIONES
+   ========================================================= */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.accessButton,
+.secondaryButton {
+  flex: 0 1 auto;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  flex: 0 0 auto;
-  min-width: 210px;
+
+  min-width: 180px;
   padding: 0.85rem 1rem;
+
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.accessButton {
+  border: none;
+  background: #4f529f;
+  color: #fff;
+}
+
+.secondaryButton {
+  border: 1px solid #4f529f;
+  background: #fff;
+  color: #4f529f;
+}
+
+.accessButton:hover:not(:disabled),
+.secondaryButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.accessButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   FORMULARIOS
+   ========================================================= */
+
+.formGrid {
+  flex: 1 1 auto;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field span {
+  color: #4f529f;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.field input,
+.field select,
+.searchRow input {
+  flex: 1 1 auto;
+
+  min-height: 42px;
+  border: 1px solid #d9d9ef;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+
+  background: #fff;
+  color: #333;
+}
+
+.field input:focus,
+.field select:focus,
+.searchRow input:focus {
+  outline: none;
+  border-color: #4f529f;
+  box-shadow: 0 0 0 3px rgba(79, 82, 159, 0.12);
+}
+
+
+/* =========================================================
+   SELECTOR DE DESTINATARIOS
+   ========================================================= */
+
+.targetSelector {
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  padding-top: 1rem;
+  border-top: 1px solid #ededf7;
+}
+
+.selectorHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.selectorHeader > div {
+  flex: 1 1 auto;
+}
+
+.selectorHeader h4,
+.selectorBlock h5,
+.resultBox h4 {
+  margin: 0;
+  color: #4f529f;
+}
+
+.selectorHeader p {
+  margin: 0.35rem 0 0;
+  color: #666;
+}
+
+.counter {
+  flex: 0 0 auto;
+
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+
+  background: #eef0ff;
+  color: #4f529f;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.selectorBlock {
+  flex: 1 1 auto;
+
+  padding: 1rem;
+  border: 1px solid #ededf7;
+  border-radius: 12px;
+
+  background: #fafaff;
+}
+
+.selectorBlock h5 {
+  margin-bottom: 0.75rem;
+}
+
+.selectorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+
+/* =========================================================
+   BUSCADOR DE USUARIOS
+   ========================================================= */
+
+.searchRow {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.searchRow button {
+  flex: 0 0 auto;
+
+  min-width: 120px;
   border: none;
   border-radius: 10px;
+  padding: 0.65rem 1rem;
+
   background: #4f529f;
   color: #fff;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.accessButton:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.accessButton:disabled {
+.searchRow button:disabled {
   opacity: 0.65;
   cursor: wait;
 }
+
+
+/* =========================================================
+   LISTAS CHECKBOX
+   ========================================================= */
+
+.checkList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+
+  max-height: 240px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.checkItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+
+  color: #333;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.checkItem input {
+  flex: 0 0 auto;
+
+  margin-top: 0.15rem;
+  accent-color: #4f529f;
+}
+
+.checkItem span {
+  flex: 1 1 auto;
+}
+
+
+/* =========================================================
+   RESULTADOS
+   ========================================================= */
+
+.resultBox {
+  flex: 1 1 auto;
+
+  padding: 1rem;
+  border: 1px solid #d9d9ef;
+  border-radius: 12px;
+
+  background: #f7f8ff;
+}
+
+.resultBox p {
+  margin: 0.35rem 0;
+}
+
+.resultBox ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  color: #8a1f1f;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
 
 @media (max-width: 700px) {
   .contenedor {
     padding: 1rem;
   }
 
-  .hero,
-  .card {
+  .hero {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .accessButton {
-    width: 100%;
+  .actions,
+  .searchRow,
+  .selectorHeader {
+    flex-direction: column;
+    align-items: stretch;
   }
+
+  .accessButton,
+  .secondaryButton,
+  .searchRow button {
+    flex: 1 1 auto;
+  }
+
+  .counter {
+    align-self: flex-start;
+  }
+}
+
+.criteriaList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.criteriaChip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  padding: 0.85rem 1rem;
+  border: 1px solid #d9d9ef;
+  border-radius: 12px;
+
+  background: #f7f8ff;
+}
+
+.criteriaChip > div {
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.criteriaChip strong {
+  color: #333;
+  font-weight: 700;
+}
+
+.criteriaTag {
+  color: #4f529f;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.chipRemove {
+  flex: 0 0 auto;
+
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+
+  background: #ffe9e9;
+  color: #9d1d1d;
+
+  font-size: 1.25rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.emptyCriteria {
+  margin: 0;
+  padding: 1rem;
+  border: 1px dashed #d9d9ef;
+  border-radius: 12px;
+
+  background: #fafaff;
+  color: #666;
 }

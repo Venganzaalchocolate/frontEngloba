@@ -663,5 +663,13 @@ export const anideCentroOccupancy = (datos, token) => fetchData("/anide/occupanc
 
 
 // Moodle
-export const moodleLaunch = (token) =>
-  fetchData("/moodle/launch", "POST", token);
+export const moodleLaunch = (token) =>fetchData("/moodle/launch", "POST", token);
+
+// Moodle gestión
+export const moodleTest = (token) => fetchData("/moodletest", "POST", token);
+export const moodleSyncUser = (datos, token) => fetchData("/moodlesyncuser", "POST", token, datos);
+export const moodleGetRoles = (token) => fetchData("/moodleroles", "POST", token);
+export const moodleGetCourseUsers = (datos, token) => fetchData("/moodlecourseusers", "POST", token, datos);
+export const moodleManageCourseEnrolments = (datos, token) => fetchData("/moodlecourseenrolments", "POST", token, datos);
+export const moodleManageSystemRole = (datos, token) => fetchData("/moodlesystemrole", "POST", token, datos);
+export const moodleInfo = (datos, token) =>  fetchData("/moodleinfo", "POST", token, datos);

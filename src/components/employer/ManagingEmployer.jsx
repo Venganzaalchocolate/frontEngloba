@@ -676,7 +676,7 @@ const formatHiringStartDate = (date) => {
           <div>
             <h2>GESTIÓN DE EMPLEADOS</h2>
 
-            {(role === 'rrhh' || role === 'root') && <FaSquarePlus onClick={openModal} />}
+            {(role === 'rrhh' || role === 'root' || role === 'global') && <FaSquarePlus onClick={openModal} />}
 
             <TbFileTypeXml onClick={openXlsForm} />
 

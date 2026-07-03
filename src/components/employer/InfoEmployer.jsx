@@ -542,7 +542,16 @@ if (datos.hasDrivingLicenceCar === "no" && originalData.drivingLicenceIssueDate)
     setConfirmRecreateEmail(true);
   };
 
-  // Recrea el correo corporativo del usuario en Workspace.
+  //Cambia el email coorporativo 
+  const changeEmailCor=async()=>{
+    const idUser=datos._id;
+    if (!idUser) return;
+
+
+
+  }
+
+  // Recrea el correo corporativo del usuario en Workspace. 
   const doRecreateEmail = async () => {
     const idUser = datos?._id;
     if (!idUser) return;

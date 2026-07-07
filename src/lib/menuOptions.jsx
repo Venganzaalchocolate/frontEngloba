@@ -201,9 +201,17 @@ const uniqueByKey = (items = []) => {
 export function getMenuOptions({ role, listResponsability = null } = {}) {
   const list = Array.isArray(listResponsability) ? listResponsability : [];
 
-  const userHasRealResponsability = hasRealResponsability(list);
-  const userHasAttendedUsersScope = hasModuleScope(list, "attendedUsers");
-  const userHasAnideOccupancyManagerScope=hasModuleScope(list, "anideOccupancyManager");
+const userHasRealResponsability = hasRealResponsability(list);
+const userHasAttendedUsersScope = hasModuleScope(list, "attendedUsers");
+const userHasAnideOccupancyManagerScope = hasModuleScope(
+  list,
+  "anideOccupancyManager"
+);
+
+const scopedModules = [
+  ...(userHasAttendedUsersScope ? GROUPS.attendedUsersOnly : []),
+  ...(userHasAnideOccupancyManagerScope ? GROUPS.anideOccupancyManager : []),
+];
 
   if (role === "root") {
     return uniqueByKey([
@@ -211,6 +219,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
       ...GROUPS.global,
       ...GROUPS.rootOnly,
       ...GROUPS.base,
+      ...scopedModules,
     ]);
   }
 
@@ -219,6 +228,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
       ...GROUPS.responsible,
       ...GROUPS.global,
       ...GROUPS.base,
+      ...scopedModules,
     ]);
   }
 
@@ -226,6 +236,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     return uniqueByKey([
       ...GROUPS.rrhh,
       ...GROUPS.base,
+      ...scopedModules,
     ]);
   }
 
@@ -233,6 +244,7 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     return uniqueByKey([
       ...GROUPS.auditor,
       ...GROUPS.base,
+      ...scopedModules,
     ]);
   }
 
@@ -240,20 +252,22 @@ export function getMenuOptions({ role, listResponsability = null } = {}) {
     return uniqueByKey([
       ...GROUPS.base,
       ...GROUPS.responsible,
+      ...scopedModules,
     ]);
   }
 
-  if (userHasAttendedUsersScope) {
+  if (userHasRealResponsability) {
     return uniqueByKey([
       ...GROUPS.base,
-      ...GROUPS.attendedUsersOnly,
+      ...GROUPS.responsible,
+      ...scopedModules,
     ]);
   }
 
-  if(userHasAnideOccupancyManagerScope){
-        return uniqueByKey([
+  if (scopedModules.length) {
+    return uniqueByKey([
       ...GROUPS.base,
-      ...GROUPS.anideOccupancyManager,
+      ...scopedModules,
     ]);
   }
 

@@ -673,3 +673,4 @@ export const moodleGetCourseUsers = (datos, token) => fetchData("/moodlecourseus
 export const moodleManageCourseEnrolments = (datos, token) => fetchData("/moodlecourseenrolments", "POST", token, datos);
 export const moodleManageSystemRole = (datos, token) => fetchData("/moodlesystemrole", "POST", token, datos);
 export const moodleInfo = (datos, token) =>  fetchData("/moodleinfo", "POST", token, datos);
+export const moodleUndoAssignment = (datos, token) => fetchData("/moodleassignmentundo", "POST", token, datos);

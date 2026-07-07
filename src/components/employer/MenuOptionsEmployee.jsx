@@ -20,7 +20,7 @@ export default function MenuOptionsEmployee({ current, onSelect }) {
   ];
 
   const responsable = ["mis-datos", "documentacion", "vacaciones", "contratos", "preferencias", "solicitudes", "controltime", "nominas", "resp-coord"];
-  const rrhh = ["nominas", "mis-datos", "documentacion", "contratos", "preferencias", "controltime", "vacaciones"];
+  const rrhh = ["nominas", ...responsable];
   const global = [...responsable, "resp-coord", "nominas"];
   const auditor=["mis-datos", "documentacion", "contratos"]
 

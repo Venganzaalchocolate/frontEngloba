@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaUserShield } from "react-icons/fa6";
 
-import {
-  moodleInfo,
-  moodleManageSystemRole,
-} from "../../lib/data";
+import { moodleManageSystemRole } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import MoodleTargetSelector from "./MoodleTargetSelector";
 import styles from "../styles/ManagingMoodle.module.css";
@@ -19,47 +16,32 @@ const EMPTY_TARGETS = {
   },
 };
 
-const MoodleSystemRoles = ({ modal, charge, enumsData }) => {
+const MoodleSystemRoles = ({
+  modal,
+  charge,
+  enumsData,
+  moodleBase,
+  selectedSystemRoleId,
+  setSelectedSystemRoleId,
+  onSystemRolesChanged,
+}) => {
   const [operation, setOperation] = useState("assign");
-  const [roleId, setRoleId] = useState("");
-  const [systemRoles, setSystemRoles] = useState([]);
   const [targets, setTargets] = useState(EMPTY_TARGETS);
   const [result, setResult] = useState(null);
 
+  const systemRoles = Array.isArray(moodleBase?.systemRoles)
+    ? moodleBase.systemRoles
+    : [];
+
   useEffect(() => {
-    const loadRoles = async () => {
-      const token = getToken();
+    if (selectedSystemRoleId || !systemRoles.length) return;
 
-      charge(true);
+    setSelectedSystemRoleId(String(systemRoles[0].id));
+  }, [selectedSystemRoleId, systemRoles, setSelectedSystemRoleId]);
 
-      const data = await moodleInfo(
-        {
-          lists: ["roles"],
-        },
-        token
-      );
-
-      charge(false);
-
-      if (data?.error) {
-        modal(
-          "Error en Moodle",
-          data.message || "No se ha podido cargar la información de Moodle."
-        );
-        return;
-      }
-
-      const roles = Array.isArray(data?.systemRoles) ? data.systemRoles : [];
-
-      setSystemRoles(roles);
-
-      if (roles.length) {
-        setRoleId(String(roles[0].id));
-      }
-    };
-
-    loadRoles();
-  }, []);
+  useEffect(() => {
+    setResult(null);
+  }, [selectedSystemRoleId]);
 
   const hasTargets = () => {
     const filters = targets.filters || {};
@@ -73,7 +55,7 @@ const MoodleSystemRoles = ({ modal, charge, enumsData }) => {
   };
 
   const submit = async () => {
-    if (!roleId) {
+    if (!selectedSystemRoleId) {
       modal("Falta el rol", "Selecciona el rol de sistema Moodle.");
       return;
     }
@@ -93,7 +75,7 @@ const MoodleSystemRoles = ({ modal, charge, enumsData }) => {
     const data = await moodleManageSystemRole(
       {
         operation,
-        roleId: Number(roleId),
+        roleId: Number(selectedSystemRoleId),
         userIds: targets.userIds,
         filters: {
           ...targets.filters,
@@ -121,6 +103,14 @@ const MoodleSystemRoles = ({ modal, charge, enumsData }) => {
         ? `Se ha asignado el rol a ${data.affected || 0} usuario(s).`
         : `Se ha retirado el rol a ${data.affected || 0} usuario(s).`
     );
+
+    if (onSystemRolesChanged) {
+      await onSystemRolesChanged({
+        operation,
+        roleId: selectedSystemRoleId,
+        result: data,
+      });
+    }
   };
 
   return (
@@ -153,9 +143,9 @@ const MoodleSystemRoles = ({ modal, charge, enumsData }) => {
         <label className={styles.field}>
           <span>Rol Moodle</span>
           <select
-            value={roleId}
+            value={selectedSystemRoleId}
             onChange={(event) => {
-              setRoleId(event.target.value);
+              setSelectedSystemRoleId(event.target.value);
               setResult(null);
             }}
           >

@@ -337,7 +337,9 @@ useEffect(() => {
     { value: "psychology", label: "Psicología" },
     { value: "education", label: "Educación" },
     { value: "tecnicos", label: "Equipo técnico" },
-    { value: 'juridico', label: 'Equipo Jurídico'}
+    { value: 'juridico', label: 'Equipo Jurídico'},
+    { value: 'auxiliar', label: 'Equipo Auxiliar'},
+    { value: 'referent', label: 'Equipo de Educadores Referentes'},
   ];
 
   const getSubgroupFields = () => {

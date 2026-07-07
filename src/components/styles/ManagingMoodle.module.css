@@ -3,66 +3,76 @@
    ========================================================= */
 
 .contenedor {
-  flex: 1 1 auto;
-  min-height: 100%;
-  padding: 1.5rem;
+  display: flex;
+  flex-direction: row;
+  flex: 1 100%;
+  background-color: var(--color-morado);
+  gap: 1rem;
+  padding: 1rem 2rem;
 }
 
 .contenido {
-  flex: 1 1 auto;
-  max-width: 1100px;
-  margin: 0 auto;
-
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  flex: 1;
+  background-color: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  flex-wrap: wrap;
+  color: var(--color-morado);
+  gap: 1rem;
+  min-width: 0;
 }
 
 
 /* =========================================================
-   CABECERA / HERO
+   CABECERA
    ========================================================= */
 
-.hero,
-.card {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+.titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.hero {
+.titulo > div {
   display: flex;
   align-items: center;
-  gap: 1.1rem;
-  padding: 1.5rem;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.icon {
-  flex: 0 0 62px;
-
-  height: 62px;
-  display: grid;
-  place-items: center;
-
-  border-radius: 14px;
-  background: #eef0ff;
-  color: #4f529f;
-  font-size: 1.8rem;
-}
-
-.hero h2,
-.card h3 {
+.titulo h2 {
   margin: 0;
-  color: #4f529f;
+  padding: 0.5rem 2rem 0 1rem;
+  border-left: 10px solid var(--color-morado);
+  display: flex;
+  flex: 1;
+  align-items: center;
+  color: var(--color-morado);
 }
 
-.hero p,
-.card p {
-  margin: 0.5rem 0 0;
-  color: #666;
-  line-height: 1.55;
+.titulo svg {
+  width: 3rem;
+  height: 3rem;
+  color: var(--color-morado);
+  flex: 0 0 auto;
 }
 
+.titulo p {
+  margin: 0;
+  color: var(--color-morado);
+  line-height: 1.5;
+  max-width: 760px;
+  opacity: 0.85;
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid var(--color-malva);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
 
 /* =========================================================
    PESTAÑAS
@@ -88,12 +98,12 @@
 }
 
 .tab {
-  background: #eef0ff;
-  color: #4f529f;
+  background: var(--color-malva);
+  color: var(--color-morado);
 }
 
 .tabActive {
-  background: #4f529f;
+  background: var(--color-morado);
   color: #fff;
 }
 
@@ -116,7 +126,7 @@
 }
 
 .pending {
-  color: #4f529f;
+  color: var(--color-morado);
   font-weight: 700;
 }
 
@@ -153,14 +163,14 @@
 
 .accessButton {
   border: none;
-  background: #4f529f;
+  background: var(--color-morado);
   color: #fff;
 }
 
 .secondaryButton {
-  border: 1px solid #4f529f;
+  border: 1px solid var(--color-morado);
   background: #fff;
-  color: #4f529f;
+  color: var(--color-morado);
 }
 
 .accessButton:hover:not(:disabled),
@@ -194,7 +204,7 @@
 }
 
 .field span {
-  color: #4f529f;
+  color: var(--color-morado);
   font-weight: 700;
   font-size: 0.9rem;
 }
@@ -217,7 +227,7 @@
 .field select:focus,
 .searchRow input:focus {
   outline: none;
-  border-color: #4f529f;
+  border-color: var(--color-morado);
   box-shadow: 0 0 0 3px rgba(79, 82, 159, 0.12);
 }
 
@@ -242,17 +252,22 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  align-items: center;
 }
 
 .selectorHeader > div {
   flex: 1 1 auto;
 }
 
+.selectorHeader h4{
+  font-size: larger;
+}
+
 .selectorHeader h4,
 .selectorBlock h5,
 .resultBox h4 {
   margin: 0;
-  color: #4f529f;
+  color: var(--color-morado);
 }
 
 .selectorHeader p {
@@ -266,8 +281,8 @@
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
 
-  background: #eef0ff;
-  color: #4f529f;
+  background: var(--color-malva);
+  color: var(--color-morado);
   font-weight: 700;
   font-size: 0.85rem;
 }
@@ -310,7 +325,7 @@
   border-radius: 10px;
   padding: 0.65rem 1rem;
 
-  background: #4f529f;
+  background: var(--color-morado);
   color: #fff;
   font-weight: 700;
   cursor: pointer;
@@ -350,7 +365,7 @@
   flex: 0 0 auto;
 
   margin-top: 0.15rem;
-  accent-color: #4f529f;
+  accent-color: var(--color-morado);
 }
 
 .checkItem span {
@@ -378,8 +393,13 @@
 
 .resultBox ul {
   margin: 0.5rem 0 0;
-  padding-left: 1.2rem;
-  color: #8a1f1f;
+  padding-left: 0;
+  list-style: none;
+  color: var(--color-morado);
+}
+
+.resultBox li {
+  color: color-mix(in srgb, var(--color-morado) 85%, #333);
 }
 
 
@@ -448,7 +468,7 @@
 }
 
 .criteriaTag {
-  color: #4f529f;
+  color: var(--color-morado);
   font-size: 0.8rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -478,4 +498,157 @@
 
   background: #fafaff;
   color: #666;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+}
+
+.userText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.userText strong {
+  color: var(--color-morado);
+}
+
+.iconActionDanger {
+  flex: 0 0 auto;
+  color: var(--color-morado);
+  cursor: pointer;
+  font-size: 1.05rem;
+  transition: transform 0.12s ease, color 0.12s ease;
+}
+
+.iconActionDanger:hover {
+  color: #8a1f1f;
+  transform: scale(1.08);
+}
+
+.resultBox ul {
+  margin: 0.5rem 0 0;
+  padding-left: 0;
+  list-style: none;
+  color: var(--color-morado);
+  background-color: white;
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+.resultBox li {
+  color: color-mix(in srgb, var(--color-morado) 85%, #333);
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+}
+
+.userText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.userText strong {
+  color: var(--color-morado);
+}
+
+.assignmentRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  align-items: center;
+}
+
+
+
+.assignmentContent {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.iconActionDanger {
+  flex: 0 0 auto;
+  color: tomato;
+  cursor: pointer;
+  font-size: 1.05rem;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.iconActionDanger:hover {
+  opacity: 0.75;
+  transform: scale(1.08);
+}
+
+
+.buttonTrash {
+  flex: 0 0 auto;
+  width: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: tomato;
+  cursor: pointer;
+}
+
+.buttonTrash svg {
+  font-size: 1.05rem;
+  color: tomato;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.buttonTrash:hover svg {
+  opacity: 0.75;
+  transform: scale(1.08);
+  color: white;
+}
+
+.assignmentRow {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+}
+
+.assignmentContent {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.buttonTrash, .svgTrash {
+  flex: 0 0 2.5rem;
+  align-self: stretch;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: tomato;
+  cursor: pointer;
+  border: solid tomato 2px;
+  border-radius: .5rem;
+}
+
+.svgTrash {
+  border: none
+}
+
+.svgTrash:hover{
+  scale: 120%;
+}
+
+.buttonTrash:hover{
+  color: white;
+  background-color: tomato;
 }

@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FaLayerGroup } from "react-icons/fa6";
 
-import {
-  moodleInfo,
-  moodleManageCourseEnrolments,
-} from "../../lib/data";
+import { moodleManageCourseEnrolments } from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 import MoodleTargetSelector from "./MoodleTargetSelector";
 import styles from "../styles/ManagingMoodle.module.css";
@@ -19,63 +16,42 @@ const EMPTY_TARGETS = {
   },
 };
 
-const MoodleCourseEnrolments = ({ modal, charge, enumsData }) => {
+const MoodleCourseEnrolments = ({
+  modal,
+  charge,
+  enumsData,
+  moodleBase,
+  selectedCourseId,
+  setSelectedCourseId,
+  onCourseEnrolmentsChanged,
+}) => {
   const [operation, setOperation] = useState("enrol");
-  const [courseId, setCourseId] = useState("");
-  const [courses, setCourses] = useState([]);
   const [roleId, setRoleId] = useState("");
-  const [courseRoles, setCourseRoles] = useState([]);
   const [targets, setTargets] = useState(EMPTY_TARGETS);
   const [result, setResult] = useState(null);
 
+  const courses = Array.isArray(moodleBase?.courses) ? moodleBase.courses : [];
+  const courseRoles = Array.isArray(moodleBase?.courseRoles)
+    ? moodleBase.courseRoles
+    : [];
+
   const selectedCourse = useMemo(() => {
-    return courses.find((course) => String(course.id) === String(courseId));
-  }, [courses, courseId]);
+    return courses.find(
+      (course) => String(course.id) === String(selectedCourseId)
+    );
+  }, [courses, selectedCourseId]);
 
   useEffect(() => {
-    const loadInfo = async () => {
-      const token = getToken();
+    if (!courseRoles.length || roleId) return;
 
-      charge(true);
+    const studentRole = courseRoles.find((role) => role.key === "student");
 
-      const data = await moodleInfo(
-        {
-          lists: ["courses", "roles"],
-        },
-        token
-      );
+    setRoleId(String(studentRole?.id || courseRoles[0].id));
+  }, [courseRoles, roleId]);
 
-      charge(false);
-
-      if (data?.error) {
-        modal(
-          "Error en Moodle",
-          data.message || "No se ha podido cargar la información de Moodle."
-        );
-        return;
-      }
-
-      const roles = Array.isArray(data?.courseRoles) ? data.courseRoles : [];
-      const moodleCourses = Array.isArray(data?.courses) ? data.courses : [];
-
-      setCourseRoles(roles);
-      setCourses(moodleCourses);
-
-      if (roles.length) {
-        setRoleId(
-          String(
-            roles.find((role) => role.key === "student")?.id || roles[0].id
-          )
-        );
-      }
-
-      if (moodleCourses.length) {
-        setCourseId(String(moodleCourses[0].id));
-      }
-    };
-
-    loadInfo();
-  }, []);
+  useEffect(() => {
+    setResult(null);
+  }, [selectedCourseId]);
 
   const hasTargets = () => {
     const filters = targets.filters || {};
@@ -90,7 +66,7 @@ const MoodleCourseEnrolments = ({ modal, charge, enumsData }) => {
   };
 
   const submit = async () => {
-    if (!courseId) {
+    if (!selectedCourseId) {
       modal("Falta el curso", "Selecciona un curso de Moodle.");
       return;
     }
@@ -115,7 +91,7 @@ const MoodleCourseEnrolments = ({ modal, charge, enumsData }) => {
     const data = await moodleManageCourseEnrolments(
       {
         operation,
-        courseId: Number(courseId),
+        courseId: Number(selectedCourseId),
         roleId: Number(roleId),
         userIds: targets.userIds,
         filters: targets.filters,
@@ -141,6 +117,14 @@ const MoodleCourseEnrolments = ({ modal, charge, enumsData }) => {
         ? `Se han matriculado ${data.affected || 0} usuario(s).`
         : `Se han desmatriculado ${data.affected || 0} usuario(s).`
     );
+
+    if (onCourseEnrolmentsChanged) {
+      await onCourseEnrolmentsChanged({
+        operation,
+        courseId: selectedCourseId,
+        result: data,
+      });
+    }
   };
 
   return (
@@ -159,9 +143,9 @@ const MoodleCourseEnrolments = ({ modal, charge, enumsData }) => {
         <label className={styles.field}>
           <span>Curso Moodle</span>
           <select
-            value={courseId}
+            value={selectedCourseId}
             onChange={(event) => {
-              setCourseId(event.target.value);
+              setSelectedCourseId(event.target.value);
               setResult(null);
             }}
           >

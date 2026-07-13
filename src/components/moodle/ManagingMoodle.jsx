@@ -12,6 +12,7 @@ import MoodleSystemRoles from "./MoodleSystemRoles";
 import MoodleInfoPanel from "./MoodleInfoPanel";
 
 const AUTHORIZED_EMAILS = [
+  "comunicacion@engloba.org.es",
   "santiago.ruizgalacho@engloba.org.es",
   "juanluis.crucessolis@engloba.org.es",
   "pablo.aragonsalguero@engloba.org.es",

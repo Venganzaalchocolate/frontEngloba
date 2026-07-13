@@ -27,7 +27,6 @@ import {
   postSesameCreateDepartmentForUser,
   postSesameDeleteDepartment,
   postSesameToggleEmployeeForUser,
-  postSesameInviteEmployeeForUser,
   assignDispositiveDepartmentAdminToUser,
   postSesameRemoveDepartmentAdminRoleFromUser,
   postSesameAssignEmployeeToDispositiveScopes,
@@ -433,25 +432,6 @@ export default function SesameEmployeeContext({
     charge(false);
   };
 
-  const handleInviteSesameEmployee = async () => {
-    charge(true);
-
-    const res = await postSesameInviteEmployeeForUser({ userId: employeeId }, getToken());
-
-    if (!res || res.error) {
-      modal("Error", res?.message || "No se pudo enviar la invitación");
-      charge(false);
-      return;
-    }
-
-    if (res?.sesameId && (!user?.userIdSesame || String(user.userIdSesame) !== String(res.sesameId))) {
-      changeUser?.({ ...user, userIdSesame: res.sesameId });
-    }
-
-    await loadContext(res?.sesameId || null);
-    modal("Invitación enviada", "La invitación de Sesame se ha enviado correctamente.");
-    charge(false);
-  };
 
   const handleDeleteOfficeAssignation = (item) => {
     if (!item?.id || !user?._id) {
@@ -921,25 +901,14 @@ export default function SesameEmployeeContext({
                 {sesameActionLabel}
               </button>
 
-              {contextData?.employee?.status === "active" && (
-                <button
-                  type="button"
-                  className={styles.inlineAddButton}
-                  onClick={handleInviteSesameEmployee}
-                  disabled={!employeeId || loadingLocal}
-                  title="Enviar invitación"
-                >
-                  <FaExchangeAlt />
-                  Enviar invitación
-                </button>
-              )}
+              
             </div>
           )}
         </div>
 
         {!hasSesameLinked && (
           <div className={styles.empty}>
-            Este usuario no tiene userIdSesame asociado. Puedes crearlo o enviar invitación desde los botones superiores.
+            Este usuario no tiene userIdSesame asociado. Puedes crearlo desde los botones superiores.
           </div>
         )}
 

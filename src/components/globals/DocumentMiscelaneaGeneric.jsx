@@ -191,67 +191,106 @@ const DocumentMiscelaneaGeneric = ({
   // FIRMA DE RICIBIS
   const [signRecibiDoc, setSignRecibiDoc] = useState(null);
 
-const handleSignRecibi = async (doc) => {
-  try {
-    charge?.(true);
+  const handleSignRecibi = async (doc) => {
+    try {
+      charge?.(true);
 
-    const token = getToken();
+      const token = getToken();
 
-    const questionsResult = await documentationReceiptTemplateGetActiveQuestions(
-      { documentationId: doc._id },
-      token
-    );
+      const templateResult =
+        await documentationReceiptTemplateGetActiveQuestions(
+          {
+            documentationId: doc._id,
+          },
+          token
+        );
 
-    if (questionsResult?.error) {
-      modal?.("Error", questionsResult.message || "No se pudo comprobar si el documento tiene preguntas.");
-      return;
-    }
+      if (templateResult?.error) {
+        modal?.(
+          "Error",
+          templateResult.message ||
+          "No se pudo comprobar la plantilla del recibí."
+        );
 
-    const questionsPayload = questionsResult?.data || questionsResult;
+        return;
+      }
 
-    // CASO NUEVO: el documento se genera desde plantilla.
-    // No necesita modelo PDF ni descarga previa.
-    if (questionsPayload?.hasTemplate && questionsPayload.questions?.length > 0) {
-      setReceiptQuestionsConfig({
-        documentation: doc,
-        template: questionsPayload.template,
-        questions: questionsPayload.questions,
-      });
-      return;
-    }
+      const templatePayload =
+        templateResult?.data || templateResult;
 
-    // CASO ANTIGUO: recibí de un modelo PDF descargado.
-    if (!doc.modeloPDF) {
+      /*
+       * Plantilla nueva.
+       *
+       * Se abre aunque no tenga preguntas, porque puede
+       * contener solamente textos o notas.
+       */
+      if (templatePayload?.hasTemplate) {
+        const blocks =
+          templatePayload.blocks?.length
+            ? templatePayload.blocks
+            : templatePayload.questions || [];
+
+        setReceiptQuestionsConfig({
+          documentation: doc,
+          template: templatePayload.template,
+          blocks,
+        });
+
+        return;
+      }
+
+      /*
+       * Flujo antiguo basado en el modelo PDF.
+       */
+      if (!doc.modeloPDF) {
+        modal?.(
+          "Modelo no disponible",
+          "Este documento requiere firma, pero no tiene modelo PDF ni plantilla de recibí configurada."
+        );
+
+        return;
+      }
+
+      const result =
+        await documentationAuditCanSign(
+          {
+            userId: data._id,
+            documentationId: doc._id,
+          },
+          token
+        );
+
+      if (!result || result.error) {
+        modal?.(
+          "Error",
+          result?.message ||
+          "No se pudo comprobar si puedes firmar el recibí."
+        );
+
+        return;
+      }
+
+      if (!result.canSign) {
+        modal?.(
+          "Descarga obligatoria",
+          "Antes de firmar el recibí debes descargar primero el documento oficial."
+        );
+
+        return;
+      }
+
+      setReceiptAnswers([]);
+      setSignRecibiDoc(doc);
+    } catch (error) {
       modal?.(
-        "Modelo no disponible",
-        "Este documento requiere firma, pero no tiene modelo PDF ni plantilla de recibí configurada."
+        "Error",
+        error?.message ||
+        "No se pudo comprobar si puedes firmar el recibí."
       );
-      return;
+    } finally {
+      charge?.(false);
     }
-
-    const result = await documentationAuditCanSign(
-      { userId: data._id, documentationId: doc._id },
-      token
-    );
-
-    if (!result || result.error) {
-      modal?.("Error", result?.message || "No se pudo comprobar si puedes firmar el recibí.");
-      return;
-    }
-
-    if (!result.canSign) {
-      modal?.("Descarga obligatoria", "Antes de firmar el recibí debes descargar primero el documento oficial.");
-      return;
-    }
-
-    setReceiptAnswers([]);
-    setSignRecibiDoc(doc);
-  } catch (error) {
-    modal?.("Error", error?.message || "No se pudo comprobar si puedes firmar el recibí.");
-  } finally {
-    charge?.(false);
-  }
-};
+  };
 
   const afterSignRecibi = (updatedUser) => {
     if (updatedUser) syncFromParent(updatedUser);
@@ -331,16 +370,16 @@ const handleSignRecibi = async (doc) => {
     [modelName, data?._id, relatedFileSources]
   );
 
-const handleReceiptQuestionsContinue = (answers) => {
-  if (!receiptQuestionsConfig?.documentation) {
-    modal?.("Error", "No se ha encontrado el documento a firmar.");
-    return;
-  }
+  const handleReceiptQuestionsContinue = (answers) => {
+    if (!receiptQuestionsConfig?.documentation) {
+      modal?.("Error", "No se ha encontrado el documento a firmar.");
+      return;
+    }
 
-  setReceiptAnswers(answers);
-  setSignRecibiDoc(receiptQuestionsConfig.documentation);
-  setReceiptQuestionsConfig(null);
-};
+    setReceiptAnswers(answers);
+    setSignRecibiDoc(receiptQuestionsConfig.documentation);
+    setReceiptQuestionsConfig(null);
+  };
 
   const getSourceForDoc = (doc) => {
     if (!doc?.model || doc.model === modelName) {
@@ -1125,21 +1164,21 @@ const handleReceiptQuestionsContinue = (answers) => {
                     }
 
                     {doc.modeloPDF && (
-  <button onClick={() => handleDownloadFile(doc, { idDrive: doc.modeloPDF }, true)}>
-    Descargar modelo
-  </button>
-)}
+                      <button onClick={() => handleDownloadFile(doc, { idDrive: doc.modeloPDF }, true)}>
+                        Descargar modelo
+                      </button>
+                    )}
                     {/* FIRMAR RECIBÍ OFICIAL */}
                     {doc.requiresSignature && String(data?._id) === String(logged?.user?._id) && (
-  <button
-    type="button"
-    className={styles.signRecibiBtn}
-    onClick={() => handleSignRecibi(doc)}
-    title={`Firmar ${doc.name}`}
-  >
-    Firmar
-  </button>
-)}
+                      <button
+                        type="button"
+                        className={styles.signRecibiBtn}
+                        onClick={() => handleSignRecibi(doc)}
+                        title={`Firmar ${doc.name}`}
+                      >
+                        Firmar
+                      </button>
+                    )}
                     {/* Indicador de fecha */}
                     {doc.date && renewal && renewal.lastDate && (
                       <div
@@ -1296,16 +1335,20 @@ const handleReceiptQuestionsContinue = (answers) => {
 
       {receiptQuestionsConfig && (
         <OfficialDocReceiptQuestions
-          documentation={receiptQuestionsConfig.documentation}
+          documentation={
+            receiptQuestionsConfig.documentation
+          }
           template={receiptQuestionsConfig.template}
-          questions={receiptQuestionsConfig.questions}
+          blocks={receiptQuestionsConfig.blocks}
           charge={charge}
           modal={modal}
           onClose={() => {
             setReceiptQuestionsConfig(null);
             setReceiptAnswers([]);
           }}
-          onContinue={handleReceiptQuestionsContinue}
+          onContinue={
+            handleReceiptQuestionsContinue
+          }
         />
       )}
 

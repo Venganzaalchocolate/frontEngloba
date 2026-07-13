@@ -348,3 +348,32 @@
     margin: 0;
   }
 }
+
+.textBlock {
+  padding: 0.25rem 0 0.75rem;
+}
+
+.textBlockTitle {
+  margin: 0 0 0.55rem;
+  color: var(--color-morado);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.noteBlock {
+  background: #fff8dc;
+  border: 1px solid #ead58f;
+  border-left: 5px solid #d3a62c;
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+}
+
+.blockText {
+  margin: 0;
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  text-align: left;
+  white-space: pre-line;
+}

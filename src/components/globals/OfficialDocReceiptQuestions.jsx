@@ -1,82 +1,133 @@
 import React, { useState } from "react";
 import styles from "../styles/recipeQuestions.module.css";
-import { documentationReceiptTemplateValidateAnswers } from "../../lib/data";
+import {
+  documentationReceiptTemplateValidateAnswers,
+} from "../../lib/data";
 import { getToken } from "../../lib/serviceToken";
 
 export default function OfficialDocReceiptQuestions({
   documentation,
   template,
+  blocks = [],
   questions = [],
   charge,
   modal,
   onClose,
   onContinue,
 }) {
+  const contentBlocks = [
+    ...(blocks.length ? blocks : questions),
+  ].sort(
+    (a, b) =>
+      Number(a.order || 0) -
+      Number(b.order || 0)
+  );
+
+  const questionBlocks = contentBlocks.filter(
+    (block) => block.type === "yesno"
+  );
+
+  const questionNumbers = new Map(
+    questionBlocks.map((question, index) => [
+      question.key,
+      index + 1,
+    ])
+  );
+
   const [answers, setAnswers] = useState(() =>
-    (questions || []).map((q) => ({
-      key: q.key,
+    questionBlocks.map((question) => ({
+      key: question.key,
       answer: "",
     }))
   );
 
   const setAnswer = (key, answer) => {
-    setAnswers((prev) =>
-      prev.map((item) =>
-        item.key === key ? { ...item, answer } : item
+    setAnswers((current) =>
+      current.map((item) =>
+        item.key === key
+          ? { ...item, answer }
+          : item
       )
     );
   };
 
- const handleContinue = async () => {
-  const missing = (questions || []).find((q) => {
-    const answer = answers.find((a) => a.key === q.key)?.answer;
-    return q.required && !answer;
-  });
+  const handleContinue = async () => {
+    const missing = questionBlocks.find(
+      (question) => {
+        const answer = answers.find(
+          (item) => item.key === question.key
+        )?.answer;
 
-  if (missing) {
-    modal?.("Campo obligatorio", `Debes responder: ${missing.label}`);
-    return;
-  }
-
-  try {
-    charge?.(true);
-
-    const token = getToken();
-
-
-    const result = await documentationReceiptTemplateValidateAnswers(
-      {
-        documentationId: documentation._id,
-        answers,
-      },
-      token
+        return question.required && !answer;
+      }
     );
 
-
-    if (result?.error) {
-      modal?.("Error", result.message || "No se pudieron validar las respuestas.");
-      return;
-    }
-
-    const payload = result?.data || result;
-
-    if (payload?.canSign === false || payload?.ok === false || payload?.valid === false) {
+    if (missing) {
       modal?.(
-        "No se puede continuar",
-        payload?.message || payload?.blockMessage || "Alguna de las respuestas impide continuar con la firma."
+        "Campo obligatorio",
+        `Debes responder: ${missing.label}`
       );
+
       return;
     }
 
+    try {
+      charge?.(true);
 
-    onContinue(answers);
-  } catch (error) {
-    console.error("[ReceiptQuestions] error", error);
-    modal?.("Error", error?.message || "No se pudieron validar las respuestas.");
-  } finally {
-    charge?.(false);
-  }
-};
+      const token = getToken();
+
+      const result =
+        await documentationReceiptTemplateValidateAnswers(
+          {
+            documentationId: documentation._id,
+            answers,
+          },
+          token
+        );
+
+      if (result?.error) {
+        modal?.(
+          "Error",
+          result.message ||
+            "No se pudieron validar las respuestas."
+        );
+
+        return;
+      }
+
+      const payload = result?.data || result;
+
+      if (
+        payload?.canSign === false ||
+        payload?.ok === false ||
+        payload?.valid === false
+      ) {
+        modal?.(
+          "No se puede continuar",
+          payload?.message ||
+            payload?.blockMessage ||
+            "Alguna respuesta impide continuar con la firma."
+        );
+
+        return;
+      }
+
+      onContinue(answers);
+    } catch (error) {
+      console.error(
+        "[ReceiptQuestions] error",
+        error
+      );
+
+      modal?.(
+        "Error",
+        error?.message ||
+          "No se pudieron validar las respuestas."
+      );
+    } finally {
+      charge?.(false);
+    }
+  };
 
   return (
     <div className={styles.overlay}>
@@ -84,9 +135,15 @@ export default function OfficialDocReceiptQuestions({
         <div className={styles.header}>
           <div className={styles.headerText}>
             <h3 className={styles.title}>
-              {template?.title || `Declaración de ${documentation?.name || "documento"}`}
+              {template?.title ||
+                `Declaración de ${
+                  documentation?.name || "documento"
+                }`}
             </h3>
-            <p className={styles.subtitle}>{documentation?.name}</p>
+
+            <p className={styles.subtitle}>
+              {documentation?.name}
+            </p>
           </div>
 
           <button
@@ -102,39 +159,121 @@ export default function OfficialDocReceiptQuestions({
         <div className={styles.body}>
           {template?.introText && (
             <div className={styles.introBox}>
-              <h4 className={styles.introTitle}>Texto de la declaración</h4>
-              <p className={styles.introText}>{template.introText}</p>
+              <p className={styles.introText}>
+                {template.introText}
+              </p>
             </div>
           )}
 
           <div className={styles.questionsList}>
-            {(questions || []).map((q, index) => {
-              const current = answers.find((a) => a.key === q.key)?.answer || "";
+            {contentBlocks.map((block, index) => {
+              if (block.type === "text") {
+                return (
+                  <div
+                    key={`text-${index}`}
+                    className={styles.textBlock}
+                  >
+                    <h4
+                      className={
+                        styles.textBlockTitle
+                      }
+                    >
+                      {block.label}
+                    </h4>
+
+                    <p className={styles.blockText}>
+                      {block.content}
+                    </p>
+                  </div>
+                );
+              }
+
+              if (block.type === "note") {
+                return (
+                  <div
+                    key={`note-${index}`}
+                    className={styles.noteBlock}
+                  >
+                    <p className={styles.blockText}>
+                      {block.content}
+                    </p>
+                  </div>
+                );
+              }
+
+              const current =
+                answers.find(
+                  (item) =>
+                    item.key === block.key
+                )?.answer || "";
 
               return (
-                <div key={q.key} className={styles.questionBlock}>
+                <div
+                  key={block.key}
+                  className={styles.questionBlock}
+                >
                   <div className={styles.questionTop}>
-                    <span className={styles.questionNumber}>{index + 1}</span>
+                    <span
+                      className={
+                        styles.questionNumber
+                      }
+                    >
+                      {questionNumbers.get(block.key)}
+                    </span>
 
-                    <p className={styles.questionLabel}>
-                      {q.label}
-                      {q.required && <span className={styles.requiredMark}> *</span>}
+                    <p
+                      className={
+                        styles.questionLabel
+                      }
+                    >
+                      {block.label}
+
+                      {block.required && (
+                        <span
+                          className={
+                            styles.requiredMark
+                          }
+                        >
+                          {" "}
+                          *
+                        </span>
+                      )}
                     </p>
                   </div>
 
-                  <div className={styles.answerOptions}>
+                  <div
+                    className={styles.answerOptions}
+                  >
                     <button
                       type="button"
-                      className={`${styles.answerBtn} ${current === "yes" ? styles.answerActive : ""}`}
-                      onClick={() => setAnswer(q.key, "yes")}
+                      className={`${styles.answerBtn} ${
+                        current === "yes"
+                          ? styles.answerActive
+                          : ""
+                      }`}
+                      onClick={() =>
+                        setAnswer(
+                          block.key,
+                          "yes"
+                        )
+                      }
                     >
                       Sí
                     </button>
 
                     <button
                       type="button"
-                      className={`${styles.answerBtn} ${current === "no" ? styles.answerActive : ""}`}
-                      onClick={() => setAnswer(q.key, "no")}
+                      className={`${styles.answerBtn} ${
+                        current === "no"
+                          ? styles.answerActive
+                          : ""
+                      }`}
+                      onClick={() =>
+                        setAnswer(
+                          block.key,
+                          "no"
+                        )
+                      }
                     >
                       No
                     </button>
@@ -143,6 +282,14 @@ export default function OfficialDocReceiptQuestions({
               );
             })}
           </div>
+
+          {template?.finalText && (
+            <div className={styles.finalBox}>
+              <p className={styles.blockText}>
+                {template.finalText}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className={styles.footer}>

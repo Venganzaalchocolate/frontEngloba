@@ -9,6 +9,7 @@ import {
   FaUserShield,
   FaSitemap,
   FaHouse,
+  FaBullhorn,
 } from "react-icons/fa6";
 import { MdOutlineVolunteerActivism } from "react-icons/md";
 import { LiaUsersSolid } from "react-icons/lia";
@@ -107,7 +108,12 @@ const MENU = {
     label: "Formación",
     icon: SiMoodle,
     accent:"#ff5e01"
-  }
+  },
+  communication: { 
+    key: "communication", 
+    label: "Comunicación", 
+    icon: FaBullhorn, 
+    accent: "#e11d48" },
 };
 
 const GROUPS = {
@@ -134,7 +140,8 @@ const GROUPS = {
     MENU.volunteer,
     MENU.organizationChart,
     MENU.attendedusers,
-    MENU.formacion
+    MENU.formacion,
+
   ],
 
   auditor: [
@@ -154,6 +161,7 @@ const GROUPS = {
   rootOnly: [
     MENU.root,
     MENU.anide,
+    MENU.communication
   ],
 
   attendedUsersOnly: [

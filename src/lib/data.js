@@ -674,3 +674,13 @@ export const moodleManageCourseEnrolments = (datos, token) => fetchData("/moodle
 export const moodleManageSystemRole = (datos, token) => fetchData("/moodlesystemrole", "POST", token, datos);
 export const moodleInfo = (datos, token) =>  fetchData("/moodleinfo", "POST", token, datos);
 export const moodleUndoAssignment = (datos, token) => fetchData("/moodleassignmentundo", "POST", token, datos);
+
+// Communication publications
+export const communicationConnections = (token) => fetchData("/communicationconnections", "POST", token, {});
+export const communicationWordpressPosts = (datos, token) => fetchData("/communicationwordpressposts", "POST", token, datos);
+export const communicationInstagramMedia = (datos, token) => fetchData("/communicationinstagrammedia", "POST", token, datos);
+export const communicationPublicationCreate = (datos, token) => fetchData("/communicationpublicationcreate", "POST", token, datos);
+export const communicationPublications = (datos, token) => fetchData("/communicationpublications", "POST", token, datos);
+export const communicationPublicationGet = (datos, token) => fetchData("/communicationpublication", "POST", token, datos);
+export const communicationPublicationUpdate = (datos, token) => fetchData("/communicationpublicationupdate", "POST", token, datos);
+export const communicationPublicationDelete = (datos, token) => fetchData("/communicationpublicationdelete", "POST", token, datos);

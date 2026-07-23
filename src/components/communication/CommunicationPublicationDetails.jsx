@@ -1,26 +1,36 @@
-import { FaExternalLinkAlt, FaInstagram, FaWordpress } from "react-icons/fa";
+import {
+  FaBuilding,
+  FaCalendarAlt,
+  FaChevronDown,
+  FaClock,
+  FaExternalLinkAlt,
+  FaInstagram,
+  FaLayerGroup,
+  FaWordpress,
+} from "react-icons/fa";
 import styles from "../styles/ManagingCommunicationPublications.module.css";
 
 const formatDate = (value) => {
   if (!value) return "—";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("es-ES");
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("es-ES");
 };
 
 const formatDateOnly = (value) => {
-  if (!value) return "—";
-  const [year, month, day] = String(value).slice(0, 10).split("-");
+  const [year, month, day] = String(value || "")
+    .slice(0, 10)
+    .split("-");
+
   return year && month && day ? `${day}/${month}/${year}` : "—";
 };
 
-const getUserName = (user) => {
-  if (!user) return "—";
-  if (typeof user === "string") return user;
-  return [user.firstName, user.lastName].filter(Boolean).join(" ") || "—";
-};
+const formatNumber = (value) =>
+  value === undefined || value === null
+    ? "—"
+    : Number(value).toLocaleString("es-ES");
 
-const getLatestStats = (stats) => Array.isArray(stats) && stats.length ? stats[stats.length - 1] : null;
+const getLatestStats = (stats) =>
+  stats?.length ? stats[stats.length - 1] : {};
 
 const STATUS_LABELS = {
   draft: "Borrador",
@@ -36,69 +46,292 @@ const MATCH_STATUS_LABELS = {
   ambiguous: "Varias coincidencias",
 };
 
-const CommunicationPublicationDetails = ({ publication }) => {
-  const wordpressStats = getLatestStats(publication?.wordpress?.stats);
-  const instagramStats = getLatestStats(publication?.instagram?.stats);
-  const platforms = publication?.platforms || [];
-  const scopeLabel = publication?.scopeType === "dispositive" ? publication?.dispositive?.name : publication?.program?.acronym || publication?.program?.name;
-  const scopeProgram = publication?.scopeType === "dispositive" ? publication?.dispositive?.program : null;
+const MetaItem = ({ icon: Icon, label, children }) => (
+  <div className={styles.metaItem}>
+    <span className={styles.metaIcon} aria-hidden="true">
+      <Icon />
+    </span>
+    <div>
+      <span className={styles.metaLabel}>{label}</span>
+      <div className={styles.metaValue}>{children}</div>
+    </div>
+  </div>
+);
+
+const StatItem = ({ label, value }) => (
+  <div className={styles.statItem}>
+    <span>{label}</span>
+    <strong>{value}</strong>
+  </div>
+);
+
+const Chips = ({ items, emptyText, getLabel }) => {
+  if (!items.length) {
+    return <span className={styles.emptyValue}>{emptyText}</span>;
+  }
 
   return (
-    <div className={styles.details}>
-      <div className={styles.detailsHeader}>
+    <div className={styles.chips}>
+      {items.map((item, index) => (
+        <span className={styles.chip} key={item._id || `${getLabel(item)}-${index}`}>
+          {getLabel(item)}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const TextDisclosure = ({ title, children }) => (
+  <details className={styles.textDisclosure}>
+    <summary>
+      <span>{title}</span>
+      <FaChevronDown aria-hidden="true" />
+    </summary>
+    <p>{children}</p>
+  </details>
+);
+
+const CommunicationPublicationDetails = ({ publication }) => {
+  const wordpressStats = getLatestStats(publication.wordpress?.stats);
+  const instagramStats = getLatestStats(publication.instagram?.stats);
+  const platforms = publication.platforms || [];
+  const programs = publication.programs || [];
+  const dispositives = publication.dispositives || [];
+
+  const titleId = `publication-detail-title-${publication._id || "current"}`;
+
+  return (
+    <article className={styles.details} aria-labelledby={titleId}>
+      <header className={styles.detailsHeader}>
         <div>
-          <h3>{publication.title}</h3>
-          <span className={`${styles.status} ${styles[publication.status] || ""}`}>{STATUS_LABELS[publication.status] || publication.status}</span>
+          <p className={styles.detailsEyebrow}>Detalle de publicación</p>
+          <h3 id={titleId}>{publication.title}</h3>
         </div>
+
+        <span
+          className={`${styles.status} ${styles[publication.status] || ""}`}
+        >
+          {STATUS_LABELS[publication.status] || publication.status}
+        </span>
+      </header>
+
+      <div className={styles.metadataGrid}>
+        <MetaItem icon={FaCalendarAlt} label="Fecha prevista">
+          <time dateTime={String(publication.publicationDate || "").slice(0, 10)}>
+            {formatDateOnly(publication.publicationDate)}
+          </time>
+        </MetaItem>
+
+        <MetaItem icon={FaClock} label="Última modificación">
+          {formatDate(publication.updatedAt)}
+        </MetaItem>
+
+        <MetaItem icon={FaLayerGroup} label="Programas">
+          <Chips
+            items={programs}
+            emptyText="Sin programas asociados"
+            getLabel={(program) => program.acronym || program.name || "—"}
+          />
+        </MetaItem>
+
+        <MetaItem icon={FaBuilding} label="Dispositivos">
+          <Chips
+            items={dispositives}
+            emptyText="Sin dispositivos asociados"
+            getLabel={(dispositive) => dispositive.name || "—"}
+          />
+        </MetaItem>
       </div>
-      <div className={styles.summaryGrid}>
-        <div className={styles.summaryItem}><span>Fecha prevista</span><strong>{formatDateOnly(publication.publicationDate)}</strong></div>
-        <div className={styles.summaryItem}><span>Creada por</span><strong>{getUserName(publication.createdBy)}</strong></div>
-        <div className={styles.summaryItem}><span>Última modificación</span><strong>{formatDate(publication.updatedAt)}</strong></div>
-        <div className={styles.summaryItem}><span>Modificada por</span><strong>{getUserName(publication.updatedBy)}</strong></div>
-      </div>
-      <div className={styles.relations}>
-        <div>
-          <h4>Ámbito</h4>
-          <div className={styles.chips}>
-            {scopeLabel ? <span className={styles.chip}>{scopeLabel}{scopeProgram ? ` · ${scopeProgram.acronym || scopeProgram.name}` : ""}</span> : <span className={styles.emptyValue}>Sin ámbito asociado</span>}
-          </div>
-        </div>
-      </div>
+
       <div className={styles.platformGrid}>
         {platforms.includes("wordpress") && (
           <section className={styles.platformCard}>
-            <div className={styles.platformTitle}><FaWordpress /><h4>WordPress</h4></div>
+            <div className={styles.platformTitle}>
+              <span className={styles.platformIcon} aria-hidden="true">
+                <FaWordpress />
+              </span>
+              <div>
+                <p>Web</p>
+                <h4>WordPress</h4>
+              </div>
+            </div>
+
             {publication.wordpress?.postId || publication.wordpress?.url ? (
               <>
-                <div className={styles.platformData}><span>ID de entrada</span><strong>{publication.wordpress?.postId || "—"}</strong></div>
-                <div className={styles.platformData}><span>Fecha de publicación</span><strong>{formatDate(publication.wordpress?.publishedAt)}</strong></div>
-                {publication.wordpress?.url && <a className={styles.externalLink} href={publication.wordpress.url} target="_blank" rel="noreferrer">Abrir noticia<FaExternalLinkAlt /></a>}
-                {wordpressStats && <div className={styles.statsGrid}><div><span>Visualizaciones</span><strong>{wordpressStats.views ?? 0}</strong></div><div><span>Usuarios</span><strong>{wordpressStats.users ?? 0}</strong></div><div><span>Sesiones</span><strong>{wordpressStats.sessions ?? 0}</strong></div><div><span>Actualización</span><strong>{formatDate(wordpressStats.collectedAt)}</strong></div></div>}
+                <div className={styles.platformMetaGrid}>
+                  <div className={styles.platformData}>
+                    <span>ID de entrada</span>
+                    <strong>{publication.wordpress?.postId || "—"}</strong>
+                  </div>
+
+                  <div className={styles.platformData}>
+                    <span>Fecha de publicación</span>
+                    <strong>
+                      {formatDate(publication.wordpress?.publishedAt)}
+                    </strong>
+                  </div>
+                </div>
+
+                {publication.wordpress?.url && (
+                  <a
+                    className={styles.externalLink}
+                    href={publication.wordpress.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Abrir noticia
+                    <FaExternalLinkAlt aria-hidden="true" />
+                  </a>
+                )}
+
+                <div className={styles.statsSection}>
+                  <h5>Rendimiento</h5>
+                  <div className={`${styles.statsGrid} ${styles.wordpressStats}`}>
+                    <StatItem
+                      label="Visualizaciones"
+                      value={formatNumber(wordpressStats.views)}
+                    />
+                    <StatItem
+                      label="Actualización"
+                      value={formatDate(wordpressStats.collectedAt)}
+                    />
+                  </div>
+                </div>
               </>
-            ) : <p className={styles.platformPending}>La publicación todavía no está vinculada con WordPress.</p>}
+            ) : (
+              <p className={styles.platformPending}>
+                La publicación todavía no está vinculada con WordPress.
+              </p>
+            )}
           </section>
         )}
+
         {platforms.includes("instagram") && (
           <section className={styles.platformCard}>
-            <div className={styles.platformTitle}><FaInstagram /><h4>Instagram</h4></div>
-            {publication.instagram?.matchStatus && <div className={styles.platformData}><span>Estado de búsqueda</span><strong>{MATCH_STATUS_LABELS[publication.instagram.matchStatus] || publication.instagram.matchStatus}</strong></div>}
-            {publication.instagram?.matchText && <div className={styles.caption}><span>Texto usado para buscar coincidencias</span><p>{publication.instagram.matchText}</p></div>}
+            <div className={styles.platformTitle}>
+              <span className={styles.platformIcon} aria-hidden="true">
+                <FaInstagram />
+              </span>
+              <div>
+                <p>Red social</p>
+                <h4>Instagram</h4>
+              </div>
+            </div>
+
+            {publication.instagram?.matchStatus && (
+              <div className={styles.matchStatus}>
+                <span>Estado de búsqueda</span>
+                <strong>
+                  {MATCH_STATUS_LABELS[publication.instagram.matchStatus] ||
+                    publication.instagram.matchStatus}
+                </strong>
+              </div>
+            )}
+
+            {publication.instagram?.matchText && (
+              <TextDisclosure title="Texto usado para localizar la publicación">
+                {publication.instagram.matchText}
+              </TextDisclosure>
+            )}
+
             {publication.instagram?.mediaId || publication.instagram?.url ? (
               <>
-                <div className={styles.platformData}><span>ID de publicación</span><strong>{publication.instagram?.mediaId || "—"}</strong></div>
-                <div className={styles.platformData}><span>Tipo de contenido</span><strong>{publication.instagram?.mediaType || "—"}</strong></div>
-                <div className={styles.platformData}><span>Fecha de publicación</span><strong>{formatDate(publication.instagram?.publishedAt)}</strong></div>
-                {publication.instagram?.url && <a className={styles.externalLink} href={publication.instagram.url} target="_blank" rel="noreferrer">Abrir publicación<FaExternalLinkAlt /></a>}
-                {publication.instagram?.caption && <div className={styles.caption}><span>Texto de Instagram</span><p>{publication.instagram.caption}</p></div>}
-                {instagramStats && <div className={styles.statsGrid}><div><span>Visualizaciones</span><strong>{instagramStats.views ?? 0}</strong></div><div><span>Alcance</span><strong>{instagramStats.reach ?? 0}</strong></div><div><span>Me gusta</span><strong>{instagramStats.likes ?? 0}</strong></div><div><span>Comentarios</span><strong>{instagramStats.comments ?? 0}</strong></div><div><span>Guardados</span><strong>{instagramStats.saved ?? 0}</strong></div><div><span>Compartidos</span><strong>{instagramStats.shares ?? 0}</strong></div><div><span>Interacciones</span><strong>{instagramStats.totalInteractions ?? 0}</strong></div><div><span>Actualización</span><strong>{formatDate(instagramStats.collectedAt)}</strong></div></div>}
+                <div className={styles.platformMetaGrid}>
+                  <div className={styles.platformData}>
+                    <span>ID de publicación</span>
+                    <strong>{publication.instagram?.mediaId || "—"}</strong>
+                  </div>
+
+                  <div className={styles.platformData}>
+                    <span>Fecha de publicación</span>
+                    <strong>
+                      {formatDate(publication.instagram?.publishedAt)}
+                    </strong>
+                  </div>
+                </div>
+
+                {publication.instagram?.url && (
+                  <a
+                    className={styles.externalLink}
+                    href={publication.instagram.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Abrir publicación
+                    <FaExternalLinkAlt aria-hidden="true" />
+                  </a>
+                )}
+
+                {publication.instagram?.caption && (
+                  <TextDisclosure title="Ver texto de Instagram">
+                    {publication.instagram.caption}
+                  </TextDisclosure>
+                )}
+
+                <div className={styles.statsSection}>
+                  <h5>Rendimiento</h5>
+                  <div className={styles.statsGrid}>
+                    <StatItem
+                      label="Visualizaciones"
+                      value={formatNumber(instagramStats.views)}
+                    />
+                    <StatItem
+                      label="Alcance"
+                      value={formatNumber(instagramStats.reach)}
+                    />
+                    <StatItem
+                      label="Me gusta"
+                      value={formatNumber(instagramStats.likes)}
+                    />
+                    <StatItem
+                      label="Comentarios"
+                      value={formatNumber(instagramStats.comments)}
+                    />
+                    <StatItem
+                      label="Guardados"
+                      value={formatNumber(instagramStats.saved)}
+                    />
+                    <StatItem
+                      label="Compartidos"
+                      value={formatNumber(instagramStats.shares)}
+                    />
+                    <StatItem
+                      label="Interacciones"
+                      value={formatNumber(instagramStats.totalInteractions)}
+                    />
+                    <StatItem
+                      label="Actualización"
+                      value={formatDate(instagramStats.collectedAt)}
+                    />
+                  </div>
+                </div>
               </>
-            ) : <p className={styles.platformPending}>La publicación todavía no está vinculada con Instagram.</p>}
+            ) : (
+              <p className={styles.platformPending}>
+                La publicación todavía no está vinculada con Instagram.
+              </p>
+            )}
           </section>
         )}
       </div>
-      {!!publication.history?.length && <div className={styles.history}><h4>Historial</h4>{[...publication.history].reverse().map((item, index) => <div className={styles.historyItem} key={`${item.changedAt || index}-${index}`}><div><strong>{item.action || "Modificación"}</strong><span>{getUserName(item.changedBy)}</span></div><span>{formatDate(item.changedAt)}</span></div>)}</div>}
-    </div>
+
+      {!!publication.history?.length && (
+        <details className={styles.history}>
+          <summary>Historial ({publication.history.length})</summary>
+          <div>
+            {[...publication.history].reverse().map((item, index) => (
+              <div
+                className={styles.historyItem}
+                key={`${item.changedAt || index}-${index}`}
+              >
+                <strong>{item.action || "Modificación"}</strong>
+                <span>{formatDate(item.changedAt)}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </article>
   );
 };
 

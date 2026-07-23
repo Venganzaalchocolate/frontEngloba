@@ -141,6 +141,7 @@ const GROUPS = {
     MENU.organizationChart,
     MENU.attendedusers,
     MENU.formacion,
+    MENU.communication
 
   ],
 
@@ -161,7 +162,7 @@ const GROUPS = {
   rootOnly: [
     MENU.root,
     MENU.anide,
-    MENU.communication
+
   ],
 
   attendedUsersOnly: [

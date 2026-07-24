@@ -1,6 +1,5 @@
 import {
   FaBuilding,
-  FaCalendarAlt,
   FaChevronDown,
   FaClock,
   FaExternalLinkAlt,
@@ -13,7 +12,9 @@ import styles from "../styles/ManagingCommunicationPublications.module.css";
 const formatDate = (value) => {
   if (!value) return "—";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("es-ES");
+  return Number.isNaN(date.getTime())
+    ? "—"
+    : date.toLocaleString("es-ES");
 };
 
 const formatDateOnly = (value) => {
@@ -21,7 +22,9 @@ const formatDateOnly = (value) => {
     .slice(0, 10)
     .split("-");
 
-  return year && month && day ? `${day}/${month}/${year}` : "—";
+  return year && month && day
+    ? `${day}/${month}/${year}`
+    : "—";
 };
 
 const formatNumber = (value) =>
@@ -73,7 +76,10 @@ const Chips = ({ items, emptyText, getLabel }) => {
   return (
     <div className={styles.chips}>
       {items.map((item, index) => (
-        <span className={styles.chip} key={item._id || `${getLabel(item)}-${index}`}>
+        <span
+          className={styles.chip}
+          key={item._id || `${getLabel(item)}-${index}`}
+        >
           {getLabel(item)}
         </span>
       ))}
@@ -92,35 +98,73 @@ const TextDisclosure = ({ title, children }) => (
 );
 
 const CommunicationPublicationDetails = ({ publication }) => {
-  const wordpressStats = getLatestStats(publication.wordpress?.stats);
-  const instagramStats = getLatestStats(publication.instagram?.stats);
+  const wordpressStats = getLatestStats(
+    publication.wordpress?.stats
+  );
+  const instagramStats = getLatestStats(
+    publication.instagram?.stats
+  );
   const platforms = publication.platforms || [];
   const programs = publication.programs || [];
   const dispositives = publication.dispositives || [];
 
-  const titleId = `publication-detail-title-${publication._id || "current"}`;
+  const titleId = `publication-detail-title-${
+    publication._id || "current"
+  }`;
 
   return (
     <article className={styles.details} aria-labelledby={titleId}>
       <header className={styles.detailsHeader}>
         <div>
-          <p className={styles.detailsEyebrow}>Detalle de publicación</p>
+          <p className={styles.detailsEyebrow}>
+            Detalle de publicación
+          </p>
           <h3 id={titleId}>{publication.title}</h3>
         </div>
 
         <span
-          className={`${styles.status} ${styles[publication.status] || ""}`}
+          className={`${styles.status} ${
+            styles[publication.status] || ""
+          }`}
         >
           {STATUS_LABELS[publication.status] || publication.status}
         </span>
       </header>
 
       <div className={styles.metadataGrid}>
-        <MetaItem icon={FaCalendarAlt} label="Fecha prevista">
-          <time dateTime={String(publication.publicationDate || "").slice(0, 10)}>
-            {formatDateOnly(publication.publicationDate)}
-          </time>
-        </MetaItem>
+        {platforms.includes("wordpress") && (
+          <MetaItem
+            icon={FaWordpress}
+            label="Fecha prevista · WordPress"
+          >
+            <time
+              dateTime={String(
+                publication.wordpress?.publicationDate || ""
+              )}
+            >
+              {formatDateOnly(
+                publication.wordpress?.publicationDate
+              )}
+            </time>
+          </MetaItem>
+        )}
+
+        {platforms.includes("instagram") && (
+          <MetaItem
+            icon={FaInstagram}
+            label="Fecha prevista · Instagram"
+          >
+            <time
+              dateTime={String(
+                publication.instagram?.publicationDate || ""
+              )}
+            >
+              {formatDateOnly(
+                publication.instagram?.publicationDate
+              )}
+            </time>
+          </MetaItem>
+        )}
 
         <MetaItem icon={FaClock} label="Última modificación">
           {formatDate(publication.updatedAt)}
@@ -130,7 +174,9 @@ const CommunicationPublicationDetails = ({ publication }) => {
           <Chips
             items={programs}
             emptyText="Sin programas asociados"
-            getLabel={(program) => program.acronym || program.name || "—"}
+            getLabel={(program) =>
+              program.acronym || program.name || "—"
+            }
           />
         </MetaItem>
 
@@ -138,7 +184,9 @@ const CommunicationPublicationDetails = ({ publication }) => {
           <Chips
             items={dispositives}
             emptyText="Sin dispositivos asociados"
-            getLabel={(dispositive) => dispositive.name || "—"}
+            getLabel={(dispositive) =>
+              dispositive.name || "—"
+            }
           />
         </MetaItem>
       </div>
@@ -147,7 +195,10 @@ const CommunicationPublicationDetails = ({ publication }) => {
         {platforms.includes("wordpress") && (
           <section className={styles.platformCard}>
             <div className={styles.platformTitle}>
-              <span className={styles.platformIcon} aria-hidden="true">
+              <span
+                className={styles.platformIcon}
+                aria-hidden="true"
+              >
                 <FaWordpress />
               </span>
               <div>
@@ -156,18 +207,23 @@ const CommunicationPublicationDetails = ({ publication }) => {
               </div>
             </div>
 
-            {publication.wordpress?.postId || publication.wordpress?.url ? (
+            {publication.wordpress?.postId ||
+            publication.wordpress?.url ? (
               <>
                 <div className={styles.platformMetaGrid}>
                   <div className={styles.platformData}>
                     <span>ID de entrada</span>
-                    <strong>{publication.wordpress?.postId || "—"}</strong>
+                    <strong>
+                      {publication.wordpress?.postId || "—"}
+                    </strong>
                   </div>
 
                   <div className={styles.platformData}>
-                    <span>Fecha de publicación</span>
+                    <span>Fecha real de publicación</span>
                     <strong>
-                      {formatDate(publication.wordpress?.publishedAt)}
+                      {formatDate(
+                        publication.wordpress?.publishedAt
+                      )}
                     </strong>
                   </div>
                 </div>
@@ -186,21 +242,28 @@ const CommunicationPublicationDetails = ({ publication }) => {
 
                 <div className={styles.statsSection}>
                   <h5>Rendimiento</h5>
-                  <div className={`${styles.statsGrid} ${styles.wordpressStats}`}>
+                  <div
+                    className={`${styles.statsGrid} ${
+                      styles.wordpressStats
+                    }`}
+                  >
                     <StatItem
                       label="Visualizaciones"
                       value={formatNumber(wordpressStats.views)}
                     />
                     <StatItem
                       label="Actualización"
-                      value={formatDate(wordpressStats.collectedAt)}
+                      value={formatDate(
+                        wordpressStats.collectedAt
+                      )}
                     />
                   </div>
                 </div>
               </>
             ) : (
               <p className={styles.platformPending}>
-                La publicación todavía no está vinculada con WordPress.
+                La publicación todavía no está vinculada con
+                WordPress.
               </p>
             )}
           </section>
@@ -209,7 +272,10 @@ const CommunicationPublicationDetails = ({ publication }) => {
         {platforms.includes("instagram") && (
           <section className={styles.platformCard}>
             <div className={styles.platformTitle}>
-              <span className={styles.platformIcon} aria-hidden="true">
+              <span
+                className={styles.platformIcon}
+                aria-hidden="true"
+              >
                 <FaInstagram />
               </span>
               <div>
@@ -222,8 +288,9 @@ const CommunicationPublicationDetails = ({ publication }) => {
               <div className={styles.matchStatus}>
                 <span>Estado de búsqueda</span>
                 <strong>
-                  {MATCH_STATUS_LABELS[publication.instagram.matchStatus] ||
-                    publication.instagram.matchStatus}
+                  {MATCH_STATUS_LABELS[
+                    publication.instagram.matchStatus
+                  ] || publication.instagram.matchStatus}
                 </strong>
               </div>
             )}
@@ -234,18 +301,23 @@ const CommunicationPublicationDetails = ({ publication }) => {
               </TextDisclosure>
             )}
 
-            {publication.instagram?.mediaId || publication.instagram?.url ? (
+            {publication.instagram?.mediaId ||
+            publication.instagram?.url ? (
               <>
                 <div className={styles.platformMetaGrid}>
                   <div className={styles.platformData}>
                     <span>ID de publicación</span>
-                    <strong>{publication.instagram?.mediaId || "—"}</strong>
+                    <strong>
+                      {publication.instagram?.mediaId || "—"}
+                    </strong>
                   </div>
 
                   <div className={styles.platformData}>
-                    <span>Fecha de publicación</span>
+                    <span>Fecha real de publicación</span>
                     <strong>
-                      {formatDate(publication.instagram?.publishedAt)}
+                      {formatDate(
+                        publication.instagram?.publishedAt
+                      )}
                     </strong>
                   </div>
                 </div>
@@ -297,18 +369,23 @@ const CommunicationPublicationDetails = ({ publication }) => {
                     />
                     <StatItem
                       label="Interacciones"
-                      value={formatNumber(instagramStats.totalInteractions)}
+                      value={formatNumber(
+                        instagramStats.totalInteractions
+                      )}
                     />
                     <StatItem
                       label="Actualización"
-                      value={formatDate(instagramStats.collectedAt)}
+                      value={formatDate(
+                        instagramStats.collectedAt
+                      )}
                     />
                   </div>
                 </div>
               </>
             ) : (
               <p className={styles.platformPending}>
-                La publicación todavía no está vinculada con Instagram.
+                La publicación todavía no está vinculada con
+                Instagram.
               </p>
             )}
           </section>
@@ -317,17 +394,23 @@ const CommunicationPublicationDetails = ({ publication }) => {
 
       {!!publication.history?.length && (
         <details className={styles.history}>
-          <summary>Historial ({publication.history.length})</summary>
+          <summary>
+            Historial ({publication.history.length})
+          </summary>
           <div>
-            {[...publication.history].reverse().map((item, index) => (
-              <div
-                className={styles.historyItem}
-                key={`${item.changedAt || index}-${index}`}
-              >
-                <strong>{item.action || "Modificación"}</strong>
-                <span>{formatDate(item.changedAt)}</span>
-              </div>
-            ))}
+            {[...publication.history]
+              .reverse()
+              .map((item, index) => (
+                <div
+                  className={styles.historyItem}
+                  key={`${item.changedAt || index}-${index}`}
+                >
+                  <strong>
+                    {item.action || "Modificación"}
+                  </strong>
+                  <span>{formatDate(item.changedAt)}</span>
+                </div>
+              ))}
           </div>
         </details>
       )}

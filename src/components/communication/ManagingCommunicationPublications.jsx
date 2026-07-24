@@ -44,12 +44,6 @@ const STATUS_LABELS = {
   error: "Error",
 };
 
-const MATCH_STATUS_LABELS = {
-  pending: "Pendiente de localizar",
-  matched: "Publicación localizada",
-  ambiguous: "Varias coincidencias",
-};
-
 const MEDIUM_LABELS = {
   all: "Todos",
   both: "WordPress e Instagram",
@@ -70,17 +64,28 @@ const getReferenceIds = (values) =>
 
 const formatDateInput = (value) => {
   if (!value) return "";
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+
+  if (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
     return value;
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toISOString().slice(0, 10);
 };
 
 const formatDateOnly = (value) => {
   const [year, month, day] = formatDateInput(value).split("-");
   return year ? `${day}/${month}/${year}` : "—";
+};
+
+const formatDateCompact = (value) => {
+  const [year, month, day] = formatDateInput(value).split("-");
+  return year ? `${day}/${month}/${year.slice(-2)}` : "—";
 };
 
 const toExcelDateOnly = (value) => {
@@ -98,13 +103,18 @@ const toExcelDateTime = (value) => {
 };
 
 const toExcelNumber = (value) => {
-  if (value === undefined || value === null || value === "") return "";
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+
   const number = Number(value);
   return Number.isFinite(number) ? number : "";
 };
 
 const getLatestStats = (stats) =>
-  Array.isArray(stats) && stats.length ? stats[stats.length - 1] : {};
+  Array.isArray(stats) && stats.length
+    ? stats[stats.length - 1]
+    : {};
 
 const getUserName = (user) => {
   if (!user) return "";
@@ -132,7 +142,7 @@ const getPublicationPlatforms = (publication) => {
   return [
     hasWordpress(publication) && "wordpress",
     (hasInstagram(publication) || publication?.instagram?.matchText) &&
-    "instagram",
+      "instagram",
   ].filter(Boolean);
 };
 
@@ -147,7 +157,11 @@ const compactLabels = (labels) => {
   return `${labels.slice(0, 2).join(", ")} +${labels.length - 2}`;
 };
 
-const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
+const ManagingCommunicationPublications = ({
+  modal,
+  charge,
+  enumsData,
+}) => {
   const { logged } = useLogin();
   const isRoot = logged?.user?.role === "root";
 
@@ -168,9 +182,14 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
   const dispositiveIndex = enumsData?.dispositiveIndex || {};
 
   const programs = Object.entries(programsIndex)
-    .map(([id, program]) => ({ ...program, _id: program._id || id }))
+    .map(([id, program]) => ({
+      ...program,
+      _id: program._id || id,
+    }))
     .filter(({ active }) => active !== false)
-    .sort((a, b) => (a.name || "").localeCompare(b.name || "", "es"));
+    .sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", "es")
+    );
 
   const dispositives = Object.entries(dispositiveIndex)
     .map(([id, dispositive]) => ({
@@ -178,7 +197,9 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
       _id: dispositive._id || id,
     }))
     .filter(({ active }) => active !== false)
-    .sort((a, b) => (a.name || "").localeCompare(b.name || "", "es"));
+    .sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", "es")
+    );
 
   const programOptions = programs.map((program) => ({
     value: String(program._id),
@@ -225,13 +246,19 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
       ].filter(Boolean)
     );
 
-  const buildListParams = (sourceFilters, requestedPage, requestedLimit) => ({
+  const buildListParams = (
+    sourceFilters,
+    requestedPage,
+    requestedLimit
+  ) => ({
     page: requestedPage,
     limit: requestedLimit,
     search: sourceFilters.search?.trim() || undefined,
     status: sourceFilters.status || undefined,
     medium:
-      sourceFilters.medium !== "all" ? sourceFilters.medium : undefined,
+      sourceFilters.medium !== "all"
+        ? sourceFilters.medium
+        : undefined,
     program: sourceFilters.program || undefined,
     dispositive: sourceFilters.dispositive || undefined,
     dateFrom: sourceFilters.dateFrom || undefined,
@@ -273,14 +300,19 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
     }
 
     charge(true);
+
     const data = await communicationPublicationGet(
       { publicationId },
       getToken()
     );
+
     charge(false);
 
     if (data?.error) {
-      modal("Error", data.message || "No se pudo cargar la publicación");
+      modal(
+        "Error",
+        data.message || "No se pudo cargar la publicación"
+      );
       return;
     }
 
@@ -290,14 +322,19 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
 
   const openEdit = async (publicationId) => {
     charge(true);
+
     const data = await communicationPublicationGet(
       { publicationId },
       getToken()
     );
+
     charge(false);
 
     if (data?.error) {
-      modal("Error", data.message || "No se pudo cargar la publicación");
+      modal(
+        "Error",
+        data.message || "No se pudo cargar la publicación"
+      );
       return;
     }
 
@@ -319,13 +356,6 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
       required: true,
       capsGuard: true,
       defaultValue: editingDoc?.title || "",
-    },
-    {
-      name: "publicationDate",
-      label: "Día previsto de publicación",
-      type: "date",
-      required: true,
-      defaultValue: formatDateInput(editingDoc?.publicationDate),
     },
     {
       name: "platforms",
@@ -363,6 +393,16 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
       showIf: ({ platforms }) => platforms?.includes("wordpress"),
     },
     {
+      name: "wordpressPublicationDate",
+      label: "Fecha prevista de publicación en la web",
+      type: "date",
+      required: true,
+      defaultValue: formatDateInput(
+        editingDoc?.wordpress?.publicationDate
+      ),
+      showIf: ({ platforms }) => platforms?.includes("wordpress"),
+    },
+    {
       name: "wordpressUrl",
       label: "Enlace de la noticia, si ya está publicada",
       type: "url",
@@ -373,6 +413,16 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
     {
       type: "section",
       label: "INSTAGRAM",
+      showIf: ({ platforms }) => platforms?.includes("instagram"),
+    },
+    {
+      name: "instagramPublicationDate",
+      label: "Fecha prevista de publicación en Instagram",
+      type: "date",
+      required: true,
+      defaultValue: formatDateInput(
+        editingDoc?.instagram?.publicationDate
+      ),
       showIf: ({ platforms }) => platforms?.includes("instagram"),
     },
     {
@@ -397,7 +447,30 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
   const submitPublication = async (values) => {
     const platforms = values.platforms || [];
     const instagramUrl = values.instagramUrl?.trim() || "";
-    const instagramMatchText = values.instagramMatchText?.trim() || "";
+    const instagramMatchText =
+      values.instagramMatchText?.trim() || "";
+
+    if (
+      platforms.includes("wordpress") &&
+      !values.wordpressPublicationDate
+    ) {
+      modal(
+        "WordPress",
+        "Selecciona la fecha prevista de publicación en la web."
+      );
+      return;
+    }
+
+    if (
+      platforms.includes("instagram") &&
+      !values.instagramPublicationDate
+    ) {
+      modal(
+        "Instagram",
+        "Selecciona la fecha prevista de publicación en Instagram."
+      );
+      return;
+    }
 
     if (
       platforms.includes("instagram") &&
@@ -411,27 +484,41 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
       return;
     }
 
-    const dispositiveIds = [...new Set(values.dispositiveIds || [])];
+    const dispositiveIds = [
+      ...new Set(values.dispositiveIds || []),
+    ];
+
     const parentProgramIds = dispositiveIds
       .map((id) => getReferenceId(dispositiveIndex[id]?.program))
       .filter(Boolean);
+
     const programIds = [
-      ...new Set([...(values.programIds || []), ...parentProgramIds]),
+      ...new Set([
+        ...(values.programIds || []),
+        ...parentProgramIds,
+      ]),
     ];
 
     const payload = {
       title: values.title.trim(),
-      publicationDate: values.publicationDate,
       platforms,
       programs: programIds,
       dispositives: dispositiveIds,
       wordpress: {
+        publicationDate: platforms.includes("wordpress")
+          ? values.wordpressPublicationDate
+          : null,
         url: platforms.includes("wordpress")
           ? values.wordpressUrl?.trim() || null
           : null,
       },
       instagram: {
-        url: platforms.includes("instagram") ? instagramUrl || null : null,
+        publicationDate: platforms.includes("instagram")
+          ? values.instagramPublicationDate
+          : null,
+        url: platforms.includes("instagram")
+          ? instagramUrl || null
+          : null,
         matchText: platforms.includes("instagram")
           ? instagramMatchText
           : "",
@@ -439,25 +526,36 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
     };
 
     charge(true);
+
     const data =
       formMode === "edit"
         ? await communicationPublicationUpdate(
-          { publicationId: editingDoc._id, ...payload },
-          getToken()
-        )
-        : await communicationPublicationCreate(payload, getToken());
+            { publicationId: editingDoc._id, ...payload },
+            getToken()
+          )
+        : await communicationPublicationCreate(
+            payload,
+            getToken()
+          );
+
     charge(false);
 
     if (data?.error) {
-      modal("Error", data.message || "No se pudo guardar la publicación");
+      modal(
+        "Error",
+        data.message || "No se pudo guardar la publicación"
+      );
       return;
     }
 
     const wasEditing = formMode === "edit";
+
     closeForm();
     setSelectedId("");
     setSelected(null);
+
     await loadPublications();
+
     modal(
       "Comunicación",
       wasEditing
@@ -470,21 +568,28 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
     if (!deleteDoc?._id) return;
 
     charge(true);
+
     const data = await communicationPublicationDelete(
       { publicationId: deleteDoc._id },
       getToken()
     );
+
     charge(false);
 
     if (data?.error) {
-      modal("Error", data.message || "No se pudo eliminar la publicación");
+      modal(
+        "Error",
+        data.message || "No se pudo eliminar la publicación"
+      );
       return;
     }
 
     setDeleteDoc(null);
     setSelectedId("");
     setSelected(null);
+
     await loadPublications();
+
     modal("Comunicación", "Publicación eliminada correctamente");
   };
 
@@ -492,6 +597,7 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
     setPage(1);
     setSelectedId("");
     setSelected(null);
+
     setFilters((current) => ({
       ...current,
       ...(patch || { [target.name]: target.value }),
@@ -518,7 +624,10 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
     setSelected(null);
   };
 
-  const handlePublicationRowKeyDown = (event, publicationId) => {
+  const handlePublicationRowKeyDown = (
+    event,
+    publicationId
+  ) => {
     if (event.target !== event.currentTarget) return;
     if (event.key !== "Enter" && event.key !== " ") return;
 
@@ -528,6 +637,7 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
 
   const fetchAllFilteredPublications = async () => {
     const token = getToken();
+
     const firstPage = await communicationPublications(
       buildListParams(filters, 1, EXPORT_PAGE_SIZE),
       token
@@ -535,27 +645,36 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
 
     if (firstPage?.error) {
       throw new Error(
-        firstPage.message || "No se pudieron obtener las publicaciones"
+        firstPage.message ||
+          "No se pudieron obtener las publicaciones"
       );
     }
 
     const publications = [...(firstPage.publications || [])];
     const pages = Math.max(Number(firstPage.totalPages) || 1, 1);
 
-    for (let currentPage = 2; currentPage <= pages; currentPage += 1) {
-      const response = await communicationPublications(
-        buildListParams(filters, currentPage, EXPORT_PAGE_SIZE),
+    for (
+      let currentPage = 2;
+      currentPage <= pages;
+      currentPage += 1
+    ) {
+      const result = await communicationPublications(
+        buildListParams(
+          filters,
+          currentPage,
+          EXPORT_PAGE_SIZE
+        ),
         token
       );
 
-      if (response?.error) {
+      if (result?.error) {
         throw new Error(
-          response.message ||
-          `No se pudo obtener la página ${currentPage} de la exportación`
+          result.message ||
+            `No se pudo obtener la página ${currentPage} de la exportación`
         );
       }
 
-      publications.push(...(response.publications || []));
+      publications.push(...(result.publications || []));
     }
 
     return publications;
@@ -570,13 +689,19 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
 
     const header = worksheet.getRow(1);
     header.height = 28;
-    header.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    header.font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
     header.fill = {
       type: "pattern",
       pattern: "solid",
       fgColor: { argb: "FF4E4B99" },
     };
-    header.alignment = { vertical: "middle", horizontal: "center" };
+    header.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+    };
 
     worksheet.eachRow((row, rowNumber) => {
       row.eachCell((cell) => {
@@ -614,21 +739,21 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
       }
 
       const workbook = new ExcelJS.Workbook();
-
       workbook.creator = "Asociación Engloba";
       workbook.created = new Date();
-
-      /* =========================================================
-         HOJA PRINCIPAL
-      ========================================================= */
 
       const sheet = workbook.addWorksheet("Publicaciones");
 
       sheet.columns = [
         {
-          header: "Fecha de publicación",
-          key: "publicationDate",
-          width: 16,
+          header: "WordPress · Fecha prevista",
+          key: "wordpressPublicationDate",
+          width: 22,
+        },
+        {
+          header: "Instagram · Fecha prevista",
+          key: "instagramPublicationDate",
+          width: 22,
         },
         {
           header: "Actividad",
@@ -646,6 +771,11 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
           width: 38,
         },
         {
+          header: "Estado",
+          key: "status",
+          width: 22,
+        },
+        {
           header: "WordPress · ID",
           key: "wordpressPostId",
           width: 18,
@@ -656,9 +786,14 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
           width: 48,
         },
         {
-          header: "WordPress · Fecha publicación",
+          header: "WordPress · Fecha real",
           key: "wordpressPublishedAt",
           width: 23,
+        },
+        {
+          header: "WordPress · Visualizaciones",
+          key: "wordpressViews",
+          width: 24,
         },
         {
           header: "Instagram · ID",
@@ -669,6 +804,11 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
           header: "Instagram · URL",
           key: "instagramUrl",
           width: 48,
+        },
+        {
+          header: "Instagram · Fecha real",
+          key: "instagramPublishedAt",
+          width: 23,
         },
         {
           header: "Instagram · Texto",
@@ -710,84 +850,73 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
           key: "instagramInteractions",
           width: 20,
         },
-        {
-          header: "Instagram · Métricas actualizadas",
-          key: "instagramCollectedAt",
-          width: 25,
-        },
       ];
 
       publications.forEach((publication) => {
+        const wordpressStats = getLatestStats(
+          publication.wordpress?.stats
+        );
         const instagramStats = getLatestStats(
           publication.instagram?.stats
         );
 
         const row = sheet.addRow({
-          publicationDate: toExcelDateOnly(
-            publication.publicationDate
+          wordpressPublicationDate: toExcelDateOnly(
+            publication.wordpress?.publicationDate
           ),
-
+          instagramPublicationDate: toExcelDateOnly(
+            publication.instagram?.publicationDate
+          ),
           title: publication.title || "",
-
           programs: (publication.programs || [])
             .map(getProgramLabel)
             .filter(Boolean)
             .join(", "),
-
           dispositives: (publication.dispositives || [])
             .map(getDispositiveLabel)
             .filter(Boolean)
             .join(", "),
-
+          status:
+            STATUS_LABELS[publication.status] ||
+            publication.status ||
+            "",
           wordpressPostId:
             publication.wordpress?.postId || "",
-
-          wordpressUrl:
-            publication.wordpress?.url || "",
-
+          wordpressUrl: publication.wordpress?.url || "",
           wordpressPublishedAt: toExcelDateTime(
             publication.wordpress?.publishedAt
           ),
-
+          wordpressViews: toExcelNumber(
+            wordpressStats.views
+          ),
           instagramMediaId:
             publication.instagram?.mediaId || "",
-
-          instagramUrl:
-            publication.instagram?.url || "",
-
+          instagramUrl: publication.instagram?.url || "",
+          instagramPublishedAt: toExcelDateTime(
+            publication.instagram?.publishedAt
+          ),
           instagramCaption:
             publication.instagram?.caption || "",
-
           instagramViews: toExcelNumber(
             instagramStats.views
           ),
-
           instagramReach: toExcelNumber(
             instagramStats.reach
           ),
-
           instagramLikes: toExcelNumber(
             instagramStats.likes
           ),
-
           instagramComments: toExcelNumber(
             instagramStats.comments
           ),
-
           instagramSaved: toExcelNumber(
             instagramStats.saved
           ),
-
           instagramShares: toExcelNumber(
             instagramStats.shares
           ),
-
           instagramInteractions: toExcelNumber(
             instagramStats.totalInteractions
-          ),
-
-          instagramCollectedAt: toExcelDateTime(
-            instagramStats.collectedAt
           ),
         });
 
@@ -796,7 +925,6 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
             text: publication.wordpress.url,
             hyperlink: publication.wordpress.url,
           };
-
           row.getCell("wordpressUrl").font = {
             color: { argb: "FF0563C1" },
             underline: true,
@@ -808,7 +936,6 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
             text: publication.instagram.url,
             hyperlink: publication.instagram.url,
           };
-
           row.getCell("instagramUrl").font = {
             color: { argb: "FF0563C1" },
             underline: true,
@@ -816,16 +943,22 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
         }
       });
 
-      sheet.getColumn("publicationDate").numFmt =
-        "dd/mm/yyyy";
-
-      sheet.getColumn("wordpressPublishedAt").numFmt =
-        "dd/mm/yyyy hh:mm";
-
-      sheet.getColumn("instagramCollectedAt").numFmt =
-        "dd/mm/yyyy hh:mm";
+      [
+        "wordpressPublicationDate",
+        "instagramPublicationDate",
+      ].forEach((key) => {
+        sheet.getColumn(key).numFmt = "dd/mm/yyyy";
+      });
 
       [
+        "wordpressPublishedAt",
+        "instagramPublishedAt",
+      ].forEach((key) => {
+        sheet.getColumn(key).numFmt = "dd/mm/yyyy hh:mm";
+      });
+
+      [
+        "wordpressViews",
         "instagramViews",
         "instagramReach",
         "instagramLikes",
@@ -839,10 +972,6 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
 
       styleWorksheet(sheet);
 
-      /* =========================================================
-         HOJA DE HISTORIAL
-      ========================================================= */
-
       const historySheet = workbook.addWorksheet("Historial");
 
       historySheet.columns = [
@@ -852,9 +981,14 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
           width: 48,
         },
         {
-          header: "Fecha prevista",
-          key: "publicationDate",
-          width: 16,
+          header: "Fecha prevista WordPress",
+          key: "wordpressPublicationDate",
+          width: 23,
+        },
+        {
+          header: "Fecha prevista Instagram",
+          key: "instagramPublicationDate",
+          width: 23,
         },
         {
           header: "Acción",
@@ -874,43 +1008,32 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
       ];
 
       publications.forEach((publication) => {
-        (publication.history || []).forEach(
-          (historyItem) => {
-            historySheet.addRow({
-              title: publication.title || "",
-
-              publicationDate: toExcelDateOnly(
-                publication.publicationDate
-              ),
-
-              action:
-                historyItem.action || "Modificación",
-
-              changedAt: toExcelDateTime(
-                historyItem.changedAt
-              ),
-
-              changedBy: getUserName(
-                historyItem.changedBy
-              ),
-            });
-          }
-        );
+        (publication.history || []).forEach((historyItem) => {
+          historySheet.addRow({
+            title: publication.title || "",
+            wordpressPublicationDate: toExcelDateOnly(
+              publication.wordpress?.publicationDate
+            ),
+            instagramPublicationDate: toExcelDateOnly(
+              publication.instagram?.publicationDate
+            ),
+            action: historyItem.action || "Modificación",
+            changedAt: toExcelDateTime(historyItem.changedAt),
+            changedBy: getUserName(historyItem.changedBy),
+          });
+        });
       });
 
       historySheet.getColumn(
-        "publicationDate"
+        "wordpressPublicationDate"
       ).numFmt = "dd/mm/yyyy";
-
       historySheet.getColumn(
-        "changedAt"
-      ).numFmt = "dd/mm/yyyy hh:mm";
+        "instagramPublicationDate"
+      ).numFmt = "dd/mm/yyyy";
+      historySheet.getColumn("changedAt").numFmt =
+        "dd/mm/yyyy hh:mm";
 
       styleWorksheet(historySheet);
-
-      /* =========================================================
-         HOJA DE FILTROS
-      ========================================================= */
 
       const filtersSheet = workbook.addWorksheet(
         "Filtros aplicados"
@@ -937,8 +1060,7 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
         {
           filter: "Estado",
           value: filters.status
-            ? STATUS_LABELS[filters.status] ||
-            filters.status
+            ? STATUS_LABELS[filters.status] || filters.status
             : "Todos",
         },
         {
@@ -984,47 +1106,33 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
 
       styleWorksheet(filtersSheet);
 
-      /* =========================================================
-         DESCARGA
-      ========================================================= */
-
       const buffer = await workbook.xlsx.writeBuffer();
-
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-
-      const dateSuffix = new Date()
-        .toISOString()
-        .slice(0, 10);
-
+      const dateSuffix = new Date().toISOString().slice(0, 10);
       const filterSuffix = filters.dispositive
         ? `_${safeFilePart(
-          getDispositiveLabel(filters.dispositive)
-        )}`
-        : filters.program
-          ? `_${safeFilePart(
-            getProgramLabel(filters.program)
+            getDispositiveLabel(filters.dispositive)
           )}`
+        : filters.program
+          ? `_${safeFilePart(getProgramLabel(filters.program))}`
           : "";
 
       link.href = url;
-      link.download =
-        `publicaciones_comunicacion${filterSuffix}_${dateSuffix}.xlsx`;
+      link.download = `publicaciones_comunicacion${filterSuffix}_${dateSuffix}.xlsx`;
 
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
       URL.revokeObjectURL(url);
     } catch (error) {
       modal(
         "Error",
         error?.message ||
-        "No se pudo generar el archivo Excel."
+          "No se pudo generar el archivo Excel."
       );
     } finally {
       charge(false);
@@ -1061,6 +1169,29 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
     );
   };
 
+  const renderPublicationDates = (publication) => {
+    const platforms = getPublicationPlatforms(publication);
+
+    return (
+      <span>
+        {platforms.includes("wordpress") && (
+          <span>
+            W: {formatDateCompact(publication.wordpress?.publicationDate)}
+          </span>
+        )}
+
+        {platforms.includes("wordpress") &&
+          platforms.includes("instagram") && <br />}
+
+        {platforms.includes("instagram") && (
+          <span>
+            I: {formatDateCompact(publication.instagram?.publicationDate)}
+          </span>
+        )}
+      </span>
+    );
+  };
+
   return (
     <div className={styles.contenedor}>
       <div className={styles.contenido}>
@@ -1079,7 +1210,12 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
                   setFormMode("create");
                 }}
                 onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") return;
+                  if (
+                    event.key !== "Enter" &&
+                    event.key !== " "
+                  ) {
+                    return;
+                  }
 
                   event.preventDefault();
                   setEditingDoc(null);
@@ -1110,7 +1246,12 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
               }
               onKeyDown={(event) => {
                 if (isExporting) return;
-                if (event.key !== "Enter" && event.key !== " ") return;
+                if (
+                  event.key !== "Enter" &&
+                  event.key !== " "
+                ) {
+                  return;
+                }
 
                 event.preventDefault();
                 exportPublicationsToExcel();
@@ -1125,7 +1266,11 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
           <div className={styles.paginacion}>
             <div>
               <label htmlFor="limit">Items por página:</label>
-              <select id="limit" value={limit} onChange={handleLimitChange}>
+              <select
+                id="limit"
+                value={limit}
+                onChange={handleLimitChange}
+              >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
@@ -1142,10 +1287,12 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
               >
                 {"<"}
               </button>
+
               <span>
                 Página {page}
                 {totalPages ? ` de ${totalPages}` : ""}
               </span>
+
               <button
                 type="button"
                 aria-label="Página siguiente"
@@ -1169,14 +1316,16 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
 
           <div className={styles.containerTableContainer}>
             <div>
-<div
-  className={`${styles.tableContainer} ${
-    publicationStyles.publicationHeader
-  } ${isRoot ? publicationStyles.withActions : ""}`}
->
+              <div
+                className={`${styles.tableContainer} ${
+                  publicationStyles.publicationHeader
+                } ${
+                  isRoot ? publicationStyles.withActions : ""
+                }`}
+              >
                 <div className={publicationStyles.dateCell}>
                   <FaCalendarAlt aria-hidden="true" />
-                  <span>Fecha</span>
+                  <span>Fechas</span>
                 </div>
 
                 <div className={publicationStyles.titleCell}>
@@ -1208,37 +1357,49 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
                 const scopeLabel = getScopeLabel(publication);
 
                 return (
-                  <div className={styles.containerEmployer} key={publication._id}>
+                  <div
+                    className={styles.containerEmployer}
+                    key={publication._id}
+                  >
                     <div>
                       <div
-                        className={`${styles.tableContainer} ${publicationStyles.publicationRow} ${isRoot ? publicationStyles.withActions : ""
-                          }`}
+                        className={`${styles.tableContainer} ${
+                          publicationStyles.publicationRow
+                        } ${
+                          isRoot
+                            ? publicationStyles.withActions
+                            : ""
+                        }`}
                         role="button"
                         tabIndex={0}
                         aria-expanded={isOpen}
                         aria-controls={`publication-details-${publication._id}`}
-                        aria-label={`${isOpen ? "Cerrar" : "Abrir"
-                          } detalles de ${publication.title}`}
-                        onClick={() => openPublication(publication._id)}
+                        aria-label={`${isOpen ? "Cerrar" : "Abrir"} detalles de ${publication.title}`}
+                        onClick={() =>
+                          openPublication(publication._id)
+                        }
                         onKeyDown={(event) =>
-                          handlePublicationRowKeyDown(event, publication._id)
+                          handlePublicationRowKeyDown(
+                            event,
+                            publication._id
+                          )
                         }
                       >
                         <div
                           className={publicationStyles.dateCell}
-                          data-label="Fecha"
+                          data-label="Fechas"
                         >
                           <FaCalendarAlt aria-hidden="true" />
-                          <time dateTime={formatDateInput(publication.publicationDate)}>
-                            {formatDateOnly(publication.publicationDate)}
-                          </time>
+                          {renderPublicationDates(publication)}
                         </div>
 
                         <div
                           className={publicationStyles.titleCell}
                           data-label="Actividad"
                         >
-                          <span className={publicationStyles.titleText}>
+                          <span
+                            className={publicationStyles.titleText}
+                          >
                             {publication.title}
                           </span>
                         </div>
@@ -1256,8 +1417,10 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
                           data-label="Estado"
                         >
                           <span
-                            className={`${publicationStyles.status} ${publicationStyles[publication.status] || ""
-                              }`}
+                            className={`${publicationStyles.status} ${
+                              publicationStyles[publication.status] ||
+                              ""
+                            }`}
                           >
                             {STATUS_LABELS[publication.status] ||
                               publication.status}
@@ -1279,24 +1442,34 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
                           <div
                             className={publicationStyles.actionsCell}
                             data-label="Acciones"
-                            onClick={(event) => event.stopPropagation()}
+                            onClick={(event) =>
+                              event.stopPropagation()
+                            }
                           >
                             <button
                               type="button"
                               className={publicationStyles.iconButton}
                               aria-label={`Editar ${publication.title}`}
                               title="Editar publicación"
-                              onClick={() => openEdit(publication._id)}
+                              onClick={() =>
+                                openEdit(publication._id)
+                              }
                             >
                               <FaEdit aria-hidden="true" />
                             </button>
 
                             <button
                               type="button"
-                              className={`${publicationStyles.iconButton} ${publicationStyles.dangerButton}`}
+                              className={`${
+                                publicationStyles.iconButton
+                              } ${
+                                publicationStyles.dangerButton
+                              }`}
                               aria-label={`Eliminar ${publication.title}`}
                               title="Eliminar publicación"
-                              onClick={() => setDeleteDoc(publication)}
+                              onClick={() =>
+                                setDeleteDoc(publication)
+                              }
                             >
                               <FaTrashAlt aria-hidden="true" />
                             </button>
@@ -1305,8 +1478,12 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
                       </div>
 
                       {isOpen && selected && (
-                        <div id={`publication-details-${publication._id}`}>
-                          <CommunicationPublicationDetails publication={selected} />
+                        <div
+                          id={`publication-details-${publication._id}`}
+                        >
+                          <CommunicationPublicationDetails
+                            publication={selected}
+                          />
                         </div>
                       )}
                     </div>
@@ -1330,7 +1507,7 @@ const ManagingCommunicationPublications = ({ modal, charge, enumsData }) => {
                 ? "Editar publicación"
                 : "Crear publicación"
             }
-            message="Selecciona el día, los medios y todos los programas o dispositivos relacionados."
+            message="Selecciona los medios, la fecha prevista de cada uno y todos los programas o dispositivos relacionados."
             fields={getFormFields()}
             onSubmit={submitPublication}
             onClose={closeForm}
